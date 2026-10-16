@@ -1,0 +1,22 @@
+{
+  "name": "immersion-tracker-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "sync-zoo": "node scripts/sync-zoo.mjs",
+    "dev": "node scripts/sync-zoo.mjs && vite",
+    "build": "node scripts/sync-zoo.mjs && vite build",
+    "preview": "vite preview",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "jszip": "3.10.1",
+    "preact": "10.24.3",
+    "sql.js": "1.11.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "2.9.1",
+    "vite": "5.4.10"
+  }
+}

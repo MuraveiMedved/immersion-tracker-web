@@ -1,0 +1,121 @@
+// Run with: TZ=America/Chicago npm test
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { goldenStreakDays, computeStreak, counts, dailyTotalsFor, PODCAST, READING, ANKI, LISTENING } from '../src/model/rules.js'
+import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
+import { lootBoxTier, immersionReachedAt, computeCertificate } from '../src/model/zoo.js'
+import { parsePolyLogger, parseToggl, csvRows, guessMapping } from '../src/model/imports.js'
+import { HOUR } from '../src/model/time.js'
+
+const at = (y, m, d, h = 12, min = 0) => new Date(y, m - 1, d, h, min).getTime()
+const entry = (start, ms, type = PODCAST, lang = 1, extra = {}) => ({ startTimeMillis: start, endTimeMillis: start + ms, contentType: type, languageProfileId: lang, mediaTitle: '', ...extra })
+
+test('what counts as immersion', () => {
+  assert.equal(counts(PODCAST, 1), true)
+  assert.equal(counts(READING, 1), true)
+  assert.equal(counts(LISTENING, 1), false)
+  assert.equal(counts(ANKI, 1), false)
+  assert.equal(counts(PODCAST, null), false)
+})
+
+test('Momentum: today counts only once it reaches 2h', () => {
+  const now = at(2026, 10, 16, 9)
+  const days = [13, 14, 15].map((d) => entry(at(2026, 10, d, 10), 2 * HOUR))
+  assert.equal(goldenStreakDays(days, now), 3)
+  // An hour today doesn't break or add to it.
+  assert.equal(goldenStreakDays([...days, entry(at(2026, 10, 16, 8), HOUR)], now), 3)
+  assert.equal(goldenStreakDays([...days, entry(at(2026, 10, 16, 6), 2 * HOUR)], at(2026, 10, 16, 9)), 4)
+  // A short day breaks the run.
+  assert.equal(goldenStreakDays([entry(at(2026, 10, 13, 10), 2 * HOUR), entry(at(2026, 10, 14, 10), HOUR), entry(at(2026, 10, 15, 10), 2 * HOUR)], now), 1)
+  // Music and Anki don't count.
+  assert.equal(goldenStreakDays([13, 14, 15].map((d) => entry(at(2026, 10, d, 10), 3 * HOUR, ANKI))), 0)
+})
+
+test('Momentum splits sessions across midnight', () => {
+  const now = at(2026, 10, 16, 12)
+  // 22:00 -> 02:00 is 2h on the 14th and 2h on the 15th.
+  const list = [entry(at(2026, 10, 14, 22), 4 * HOUR)]
+  assert.equal(goldenStreakDays(list, now), 2)
+})
+
+test('goal streaks: missed today does not break, a missed day does', () => {
+  const now = at(2026, 10, 16, 9)
+  const list = [12, 14, 15].map((d) => entry(at(2026, 10, d, 10), 30 * 60000))
+  const r = computeStreak(dailyTotalsFor(list, 1, PODCAST, now), 30 * 60000, now)
+  assert.deepEqual(r, { current: 2, record: 2 })
+})
+
+test('Anki counts up to 10% of immersion, the rest is banked', () => {
+  const r = cappedAnki(new Map([[20261001, 10 * HOUR], [20261002, 0]]), new Map([[20261001, 3 * HOUR], [20261002, 0]]))
+  assert.equal(r.counted, HOUR)
+  assert.equal(r.banked, 2 * HOUR)
+  const later = cappedAnki(new Map([[20261001, 10 * HOUR], [20261002, 10 * HOUR]]), new Map([[20261001, 3 * HOUR]]))
+  assert.equal(later.counted, 2 * HOUR)
+  assert.equal(later.countedByDay.get(20261002), HOUR)
+})
+
+test('race days start at 4am', () => {
+  const m = new Map()
+  addSplitByDay(m, at(2026, 10, 15, 23), at(2026, 10, 16, 5))
+  assert.equal(m.get(20261015), 5 * HOUR)
+  assert.equal(m.get(20261016), HOUR)
+})
+
+test('race score: only the window, no music, reading split out', () => {
+  const event = { id: 'e', startMillis: at(2026, 10, 10, 0), endMillis: at(2026, 10, 12, 0) }
+  const list = [
+    entry(at(2026, 10, 9, 23), 2 * HOUR), // 1h inside
+    entry(at(2026, 10, 10, 12), HOUR, READING),
+    entry(at(2026, 10, 10, 13), HOUR, LISTENING),
+    entry(at(2026, 10, 10, 14), HOUR, PODCAST, null),
+  ]
+  const s = scoreFor(event, list, at(2026, 10, 20))
+  assert.equal(s.millis, 2 * HOUR)
+  assert.equal(s.readingMillis, HOUR)
+  assert.equal(s.windowEnd, event.endMillis)
+  assert.equal(s.active, false)
+})
+
+test('loot box odds table', () => {
+  assert.equal(lootBoxTier(0), 'RAINBOW')
+  assert.equal(lootBoxTier(1), 'ORANGE')
+  assert.equal(lootBoxTier(5), 'ORANGE')
+  assert.equal(lootBoxTier(6), 'PURPLE')
+  assert.equal(lootBoxTier(15), 'PURPLE')
+  assert.equal(lootBoxTier(16), 'BLUE')
+  assert.equal(lootBoxTier(45), 'BLUE')
+  assert.equal(lootBoxTier(46), 'GREEN')
+  assert.equal(lootBoxTier(99), 'GREEN')
+})
+
+test('certificates: hour mark, native language, latest title', () => {
+  const list = [entry(at(2026, 10, 1, 10), 5 * HOUR, PODCAST, 1, { mediaTitle: 'A' }), entry(at(2026, 10, 2, 10), 6 * HOUR, READING, 2, { mediaTitle: 'B' })]
+  const profiles = [{ id: 1, name: 'Japanese', colorHex: '#111111' }, { id: 2, name: 'Russian', colorHex: '#222222' }]
+  assert.equal(immersionReachedAt(list, 10 * HOUR, Date.now()), at(2026, 10, 2, 15))
+  const c = computeCertificate(list, profiles, at(2026, 10, 3))
+  assert.equal(c.hourMark, 11)
+  assert.equal(c.languageName, 'Russian')
+  assert.equal(c.mediaTitle, 'B')
+})
+
+test('CSV with quotes and line breaks', () => {
+  assert.deepEqual(csvRows('a,"b,c","d""e"\n"multi\nline",x'), [['a', 'b,c', 'd"e'], ['multi\nline', 'x']])
+})
+
+test('PolyLogger: back to back from noon, in logged order', () => {
+  const csv = 'Activity,Language,Activity Type,Time (minutes),Date\nShow B,Japanese,Listening,30,2026-10-01\nShow A,Japanese,Listening,60,2026-10-01\n'
+  const rows = parsePolyLogger(csv)
+  assert.equal(rows.length, 2)
+  assert.equal(rows[0].description, 'Show A')
+  assert.equal(rows[0].start, at(2026, 10, 1, 12))
+  assert.equal(rows[1].start, at(2026, 10, 1, 13))
+  assert.equal(rows[0].project, 'Japanese · Listening')
+})
+
+test('Toggl detailed export', () => {
+  const csv = 'Project,Description,Start date,Start time,End date,End time,Duration\nJP Reading,Book,2026-10-01,09:00:00,2026-10-01,10:30:00,01:30:00\n'
+  const rows = parseToggl(csv)
+  assert.equal(rows[0].end - rows[0].start, 90 * 60000)
+  const m = guessMapping('JP Reading', [{ id: 3, name: 'Japanese', scriptDetectors: ['JAPANESE_KANA'], isAnki: false }])
+  assert.deepEqual(m, { type: READING, languageProfileId: 3 })
+})
