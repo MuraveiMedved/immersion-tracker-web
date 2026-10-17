@@ -114,7 +114,7 @@ function Race({ onEditName }) {
           )}
         </div>
         <button class="icon-btn" title="Refresh" onClick={() => sync()}><Icon name="refresh" /></button>
-        <button class="icon-btn" title="Race settings" onClick={() => setSettings(true)}><Icon name="settings" /></button>
+        <button class="icon-btn" title="Race settings" onClick={() => setSettings(true)}><Icon name="brush" /></button>
       </div>
       {status.error && (
         <div class="notice section">
