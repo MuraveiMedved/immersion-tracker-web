@@ -653,3 +653,24 @@ textarea.input { resize: vertical; }
 .cos-opt.on { background: var(--primary-container); border: 2px solid var(--primary); padding: 11px 7px; color: var(--on-primary-container); }
 .cos-opt-preview { width: 100%; height: 44px; display: grid; place-items: center; }
 .cos-opt-label { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .5px; text-align: center; }
+
+/* ---------- day picker (the phone's DayPickerDialog) ---------- */
+.dialog.day-picker { max-width: 360px; padding: 20px 16px 8px; background: var(--c-high); }
+.day-picker h2 { margin: 0 0 0 8px; font-size: 24px; line-height: 32px; font-weight: 400; }
+.dp-month { margin: 12px 0 4px; padding-left: 8px; font-size: 16px; font-weight: 600; letter-spacing: .15px; }
+.dp-month .icon-btn:disabled { opacity: .3; cursor: default; }
+.dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); touch-action: pan-y; user-select: none; }
+.dp-names span { text-align: center; font-size: 12px; font-weight: 500; letter-spacing: .5px; color: var(--on-surface-variant); padding-bottom: 4px; }
+.dp-grid > span { aspect-ratio: 1; }
+.dp-day {
+  position: relative; aspect-ratio: 1; margin: 3px; border-radius: 50%; border: 0; background: transparent;
+  color: var(--on-surface); font-size: 14px; cursor: pointer; transition: background .15s;
+}
+.dp-day:hover:not(:disabled):not(.on) { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+.dp-day:disabled { color: color-mix(in srgb, var(--on-surface) 30%, transparent); cursor: default; }
+.dp-day.today { box-shadow: inset 0 0 0 1.5px var(--primary); color: var(--primary); font-weight: 700; }
+.dp-day.on { background: var(--primary); color: var(--on-primary); font-weight: 700; box-shadow: none; }
+.dp-day.logged::after {
+  content: ''; position: absolute; left: 50%; bottom: 5px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--primary);
+}
+.dp-day.on.logged::after { background: var(--on-primary); }

@@ -122,3 +122,15 @@ test('Toggl detailed export', () => {
   const m = guessMapping('JP Reading', [{ id: 3, name: 'Japanese', scriptDetectors: ['JAPANESE_KANA'], isAnki: false }])
   assert.deepEqual(m, { type: READING, languageProfileId: 3 })
 })
+
+test('time of day leaves out PolyLogger imports from the web and from the phone', async () => {
+  const { timeOfDay } = await import('../src/model/stats.js')
+  const entries = [
+    entry(at(2026, 3, 1, 12), HOUR, PODCAST, 1, { appPackage: 'import:polylogger' }),
+    entry(at(2026, 3, 2, 12), HOUR, PODCAST, 1, { appPackage: 'polylogger-import' }),
+    entry(at(2026, 3, 3, 20), HOUR, PODCAST, 1, { appPackage: 'manual' }),
+  ]
+  const hours = timeOfDay(entries, null, at(2026, 3, 10)).get(1)
+  assert.equal(hours[12], 0)
+  assert.equal(hours[20], HOUR)
+})

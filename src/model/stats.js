@@ -189,10 +189,14 @@ export function heatmap(entries, langSet, profiles, now = Date.now()) {
 /** All of history folded onto the clock, per language: language id -> 24 hourly totals, read in
  *  each session's own time zone. PolyLogger imports are left out - they have no real time of day
  *  (the importer lays each day's sessions from noon), which would show as a false midday peak. */
+// The web importer's marker and the phone's (TrackingRepository.POLYLOGGER_APP_PACKAGE), which
+// arrives with synced entries and phone backups.
+const POLYLOGGER_PACKAGES = new Set(['import:polylogger', 'polylogger-import'])
+
 export function timeOfDay(entries, langSet, now = Date.now()) {
   const out = new Map()
   for (const e of entries) {
-    if (!included(e, langSet) || e.appPackage === 'import:polylogger') continue
+    if (!included(e, langSet) || POLYLOGGER_PACKAGES.has(e.appPackage)) continue
     const hours = out.get(e.languageProfileId) || new Array(24).fill(0)
     out.set(e.languageProfileId, hours)
     let s = e.startTimeMillis

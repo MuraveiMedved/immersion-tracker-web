@@ -27,6 +27,75 @@ export function Dialog({ title, onClose, children, actions, wide, sheet = true, 
   )
 }
 
+/** First day of the week for this browser's locale (1 = Monday ... 7 = Sunday). */
+function firstDayOfWeek() {
+  try {
+    const loc = new Intl.Locale(navigator.language)
+    const info = loc.getWeekInfo?.() || loc.weekInfo
+    if (info?.firstDay) return info.firstDay
+  } catch { /* older browsers */ }
+  return /^en-(US|CA)|^ja|^ko|^zh-TW|^he|^pt-BR/.test(navigator.language) ? 7 : 1
+}
+
+/** The app's own calendar for picking a past day (the phone's DayPickerDialog): the picked day
+ *  filled, today ringed, future days greyed out, a dot under every day in `logged` (day-start
+ *  millis), arrows or a sideways swipe to change month, and tapping a day picks it and closes. */
+export function DayPicker({ selected, today, logged, onPick, onClose }) {
+  const first = firstDayOfWeek() % 7 // as JS getDay(): 0 = Sunday
+  const t = new Date(today)
+  const thisMonth = t.getFullYear() * 12 + t.getMonth()
+  const sel = new Date(selected)
+  const [month, setMonth] = useState(Math.min(sel.getFullYear() * 12 + sel.getMonth(), thisMonth))
+  const y = Math.floor(month / 12), m = month % 12
+  const canForward = month < thisMonth
+  const lead = (new Date(y, m, 1).getDay() - first + 7) % 7
+  const length = new Date(y, m + 1, 0).getDate()
+  const names = [...Array(7)].map((_, i) => new Date(2024, 0, 7 + first + i).toLocaleDateString(undefined, { weekday: 'narrow' }))
+  const title = new Date(y, m, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+  const swipe = useRef(null)
+  useEffect(() => {
+    // Capture, so Escape closes only the calendar and not the dialog underneath it.
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [onClose])
+  return createPortal(
+    <div class="scrim" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div class="dialog day-picker" role="dialog" aria-label="Pick a day">
+        <h2>Pick a day</h2>
+        <div class="row dp-month">
+          <span class="grow">{title}</span>
+          <button class="icon-btn" title="Previous month" onClick={() => setMonth(month - 1)}><Icon name="keyboard_arrow_left" /></button>
+          <button class="icon-btn" title="Next month" disabled={!canForward} onClick={() => setMonth(month + 1)}><Icon name="keyboard_arrow_right" /></button>
+        </div>
+        <div class="dp-grid dp-names">{names.map((n, i) => <span key={i}>{n}</span>)}</div>
+        <div class="dp-grid"
+          onPointerDown={(e) => { swipe.current = e.clientX }}
+          onPointerUp={(e) => {
+            const dx = swipe.current == null ? 0 : e.clientX - swipe.current
+            swipe.current = null
+            if (dx > 56) setMonth(month - 1)
+            else if (dx < -56 && canForward) setMonth(month + 1)
+          }}>
+          {[...Array(42)].map((_, i) => {
+            const d = i - lead + 1
+            if (d < 1 || d > length) return <span key={i} />
+            const ms = new Date(y, m, d).getTime()
+            const future = ms > today
+            const cls = ['dp-day', ms === selected && 'on', ms === today && 'today', logged?.has(ms) && 'logged'].filter(Boolean).join(' ')
+            return <button key={i} class={cls} disabled={future} onClick={() => onPick(ms)}>{d}</button>
+          })}
+        </div>
+        <div class="dialog-actions" style="justify-content:space-between">
+          <button class="btn text" onClick={() => onPick(today)}>Today</button>
+          <button class="btn text" onClick={onClose}>Cancel</button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 export function Confirm({ title, text, confirmLabel = 'OK', danger, onConfirm, onClose }) {
   return (
     <Dialog title={title} onClose={onClose} sheet={false} actions={<>

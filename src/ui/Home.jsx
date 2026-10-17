@@ -3,11 +3,11 @@ import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
 } from '../store.js'
-import { computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAYS, GOLDEN_DAILY_MILLIS, typeLabel } from '../model/rules.js'
+import { counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAYS, GOLDEN_DAILY_MILLIS, typeLabel } from '../model/rules.js'
 import { dayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, toast } from './common.jsx'
+import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
 import { ICONS } from './icons.js'
@@ -474,21 +474,24 @@ function TypeButton({ type, label, selected, onClick }) {
   return <button class={`type-btn ${selected ? 'on' : ''}`} title={label} aria-label={label} aria-pressed={selected} onClick={onClick}><TypeIcon type={type} size={22} /></button>
 }
 
-/** Today, Yesterday, a chip for an older picked day, then a calendar button. */
+/** Today, Yesterday, a chip for an older picked day, then a calendar button (the app's own
+ *  DayPicker, with the days you've already logged marked). */
 function DayChips({ today, selected, onSelect }) {
+  const s = useStore()
+  const [open, setOpen] = useState(false)
   const recent = [today, dayStart(addDays(today, -1))]
   const days = recent.includes(selected) ? recent : [...recent, selected]
   const label = (d) => (d === today ? 'Today' : d === recent[1] ? 'Yesterday' : new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }))
-  const iso = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
-  const input = useRef(null)
+  const logged = useMemo(() => {
+    const set = new Set()
+    for (const e of s.entries) if (counts(e.contentType, e.languageProfileId)) set.add(dayStart(e.startTimeMillis))
+    return set
+  }, [s.entries, open])
   return (
     <div class="chips" style="align-items:center">
       {days.map((d) => <button key={d} class={`chip ${d === selected ? 'on' : ''}`} onClick={() => onSelect(d)}>{d === selected && <Icon name="check" size={18} />}{label(d)}</button>)}
-      <span style="position:relative;display:inline-grid">
-        <button class="icon-btn" style="width:40px;height:40px" title="Pick a date" onClick={() => { try { input.current.showPicker() } catch { input.current.click() } }}><Icon name="calendar_month" size={24} /></button>
-        <input ref={input} type="date" tabIndex={-1} style="position:absolute;inset:0;opacity:0;pointer-events:none" max={iso(today)} value={iso(selected)}
-          onChange={(e) => { const [y, mo, d] = e.currentTarget.value.split('-').map(Number); if (y) onSelect(new Date(y, mo - 1, d).getTime()) }} />
-      </span>
+      <button class="icon-btn" style="width:40px;height:40px" title="Pick a date" onClick={() => setOpen(true)}><Icon name="calendar_month" size={24} /></button>
+      {open && <DayPicker selected={selected} today={today} logged={logged} onPick={(d) => { onSelect(d); setOpen(false) }} onClose={() => setOpen(false)} />}
     </div>
   )
 }
