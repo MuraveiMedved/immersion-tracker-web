@@ -134,3 +134,15 @@ test('time of day leaves out PolyLogger imports from the web and from the phone'
   assert.equal(hours[12], 0)
   assert.equal(hours[20], HOUR)
 })
+
+test('race chart bubbles: close racers are spread apart, lone ones stay on their tips', async () => {
+  const { spreadApart } = await import('../src/model/layout.js')
+  const out = spreadApart([{ id: 'a', y: 100 }, { id: 'b', y: 104 }, { id: 'c', y: 200 }], 29, 14, 246)
+  assert.ok(out.get('b') - out.get('a') >= 29 - 1e-9)
+  assert.ok(Math.abs((out.get('a') + out.get('b')) / 2 - 102) < 1e-9) // centred on where they wanted to be
+  assert.equal(out.get('c'), 200)
+  // Pushed against the bottom edge, they stack upward instead of leaving the chart.
+  const edge = spreadApart([{ id: 'x', y: 246 }, { id: 'y', y: 246 }, { id: 'z', y: 246 }], 29, 14, 246)
+  assert.equal(Math.max(...edge.values()), 246)
+  assert.equal(Math.min(...edge.values()), 246 - 58)
+})
