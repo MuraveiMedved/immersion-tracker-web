@@ -498,11 +498,6 @@ textarea.input { resize: vertical; }
 .acard-wrap.legendary { filter: drop-shadow(0 0 12px rgba(255, 194, 26, .75)); }
 .acard-frame { border-radius: 24px; }
 .acard { position: relative; border-radius: 22px; overflow: hidden; background: var(--c-high); }
-.mythic .acard-frame { border-radius: 24px 24px 0 0; clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut))); }
-.mythic .acard { border-radius: 21px 21px 0 0; --c2: calc(var(--cut) - 1.8px); clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--c2)), calc(100% - var(--c2)) 100%, var(--c2) 100%, 0 calc(100% - var(--c2))); }
-.mythic-corner { position: absolute; bottom: 0; width: 48px; height: 48px; }
-.mythic-corner.left { left: 0; clip-path: polygon(0 0, 0 100%, 100% 100%); }
-.mythic-corner.right { right: 0; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
 .acard .photo { position: relative; aspect-ratio: 4 / 3; background: var(--surface-variant); overflow: hidden; }
 .acard .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .photo-rule { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--p), var(--s), transparent); }
@@ -595,3 +590,5 @@ textarea.input { resize: vertical; }
 .banner-swatch { width: 44px; height: 22px; border-radius: 999px; flex: none; }
 .avatar-choice { flex: 1; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--outline-variant); background: transparent; color: inherit; font-size: 14px; font-weight: 600; text-align: left; }
 .avatar-choice.on { border: 2px solid var(--primary); padding: 9px 11px; background: color-mix(in srgb, var(--primary) 10%, transparent); }
+
+.mythic-corners { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }

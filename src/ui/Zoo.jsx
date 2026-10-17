@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow } from '../store.js'
 import {
   loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound,
@@ -370,6 +370,75 @@ function FoilGlints({ seed }) {
   ))
 }
 
+/** A closed polygon through [corners] ([x, y, radius]), every corner softened: the edges stop short
+ *  by its radius and a curve joins them (the phone's roundedPolygon). As an SVG path. */
+function roundedPolygon(corners) {
+  const toward = (a, b, r) => {
+    const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy)
+    if (!len) return [a[0], a[1]]
+    const k = Math.min(r, len / 2) / len
+    return [a[0] + dx * k, a[1] + dy * k]
+  }
+  let d = ''
+  corners.forEach(([x, y, r], i) => {
+    const prev = corners[(i + corners.length - 1) % corners.length], next = corners[(i + 1) % corners.length]
+    const a = toward([x, y], prev, r), b = toward([x, y], next, r)
+    d += `${i ? 'L' : 'M'}${a[0].toFixed(2)} ${a[1].toFixed(2)} Q${x} ${y} ${b[0].toFixed(2)} ${b[1].toFixed(2)} `
+  })
+  return d + 'Z'
+}
+
+/** A Mythic card's outline at [w]x[h], inset by [b] (0 = the outer edge): rounded top corners, the
+ *  bottom two cut off at an angle and softly rounded (the phone's MythicCardShape). */
+function mythicPath(w, h, b = 0) {
+  const c = Math.min(w * 0.16, h * 0.2)
+  const ci = c - b * (2 - Math.SQRT2)
+  const W = w - 2 * b, H = h - 2 * b
+  const top = Math.max(0, c * 0.7 - b), bot = Math.max(0, c * 0.3 - b * 0.4)
+  return roundedPolygon([[0, 0, top], [W, 0, top], [W, H - ci, bot], [W - ci, H, bot], [ci, H, bot], [0, H - ci, bot]])
+}
+
+/** A Mythic's corner pieces: a softly rounded triangle in each bottom corner its shape cuts away,
+ *  set back a little from the cut, filled with the shimmer streaming outward toward the tip. */
+function MythicCorners({ w, h, id }) {
+  const c = Math.min(w * 0.16, h * 0.2)
+  const leg = c - 4 * Math.SQRT2
+  if (leg <= 0) return null
+  const round = leg * 0.22, band = leg * 3.5
+  const corner = (x, y, dx, side) => {
+    const d = roundedPolygon([[x, y, round], [x + dx * leg, y, round], [x, y - leg, round]])
+    const ix = x + (dx * leg) / 2, iy = y - leg / 2
+    const ox = x - ix, oy = y - iy, len = Math.hypot(ox, oy)
+    const ux = ox / len, uy = oy / len
+    const gid = `${id}-${side}`
+    return (
+      <g key={side}>
+        <defs>
+          <linearGradient id={gid} gradientUnits="userSpaceOnUse" spreadMethod="repeat" x1={ix} y1={iy} x2={ix + ux * band} y2={iy + uy * band}>
+            {[...RAINBOW, RAINBOW[0]].map((col, i) => <stop key={i} offset={i / RAINBOW.length} stop-color={col} />)}
+            <animateTransform attributeName="gradientTransform" type="translate" from="0 0" to={`${ux * band} ${uy * band}`} dur="6s" repeatCount="indefinite" />
+          </linearGradient>
+        </defs>
+        <path d={d} fill={`url(#${gid})`} />
+      </g>
+    )
+  }
+  return <svg class="mythic-corners" width={w} height={h} viewBox={`0 0 ${w} ${h}`}>{corner(0, h, 1, 'l')}{corner(w, h, -1, 'r')}</svg>
+}
+
+/** The size of an element, kept up to date. */
+function useSize(ref) {
+  const [size, setSize] = useState(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setSize([el.offsetWidth, el.offsetHeight]))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return size
+}
+
 /** The full trading card: photo (rarity pill, chips), names, Wikipedia's one-liner, stats, the
  *  fun fact, its birth certificate, conservation status and the photo credit. */
 export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false }) {
@@ -377,11 +446,17 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
   const mythic = animal.rarity === 'RAINBOW'
   const foil = !!cert?.foil
   const hasCert = cert && (cert.hourMark != null || cert.languageName)
+  const wrapRef = useRef(null)
+  const size = useSize(wrapRef)
+  const border = mythic || foil ? 3 : 2
+  // A Mythic's shape is measured and drawn as a path - CSS polygons can't round its corners.
+  const outer = mythic && size ? { clipPath: `path('${mythicPath(size[0], size[1])}')` } : {}
+  const inner = mythic && size ? { clipPath: `path('${mythicPath(size[0], size[1], border)}')`, borderRadius: 0 } : {}
   return (
-    <div class={`acard-wrap ${animal.rarity === 'ORANGE' ? 'legendary' : ''} ${mythic ? 'mythic' : ''}`} style={{ '--p': p, '--s': s2 }}>
+    <div ref={wrapRef} class={`acard-wrap ${animal.rarity === 'ORANGE' ? 'legendary' : ''} ${mythic ? 'mythic' : ''}`} style={{ '--p': p, '--s': s2 }}>
       <div class={`acard-frame ${mythic ? 'shimmer' : ''} ${foil ? 'foil-border' : ''}`}
-        style={{ backgroundImage: foil ? FOIL_BORDER : rarityBrush(animal.rarity), padding: mythic || foil ? 3 : 2 }}>
-        <div class="acard">
+        style={{ backgroundImage: foil ? FOIL_BORDER : rarityBrush(animal.rarity), padding: border, ...outer, ...(mythic ? { borderRadius: 0 } : {}) }}>
+        <div class="acard" style={inner}>
           <div class="photo">
             <AnimalPhoto animal={animal} />
             {foil && <div class="foil-sheen" />}
@@ -419,7 +494,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
         </div>
       </div>
       {/* A Mythic's corner pieces, tucked into the corners its shape cuts away. */}
-      {mythic && <><span class="mythic-corner left shimmer" style={{ backgroundImage: rarityBrush('RAINBOW') }} /><span class="mythic-corner right shimmer" style={{ backgroundImage: rarityBrush('RAINBOW') }} /></>}
+      {mythic && size && <MythicCorners w={size[0]} h={size[1]} id={`mc-${animal.id}`} />}
     </div>
   )
 }
