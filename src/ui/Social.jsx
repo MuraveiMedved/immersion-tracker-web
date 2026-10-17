@@ -88,7 +88,6 @@ function Race({ onEditName }) {
   const [create, setCreate] = useState(false)
   const [join, setJoin] = useState(false)
   const [settings, setSettings] = useState(false)
-  const [showDone, setShowDone] = useState(false)
   useEffect(() => {
     sync()
     const t = setInterval(() => document.visibilityState === 'visible' && sync(), 60000)
@@ -101,9 +100,9 @@ function Race({ onEditName }) {
     <div style="margin-top:14px">
       {/* The phone's header: who you race as (tap to change), how fresh the standings are, then add / settings. */}
       <div class="row" style="margin-right:-12px">
-        <div class="grow clickable" onClick={onEditName}>
-          <div class="title-medium">Racing as {s.race.emoji ? `${s.race.emoji} ` : ''}{s.race.name}</div>
-          <div class="muted small">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)} · tap to change name` : 'Tap to change name'}</div>
+        <div class="grow clickable" style="min-width:0" onClick={onEditName}>
+          <div class="title-medium ellipsis">Racing as {s.race.emoji ? `${s.race.emoji} ` : ''}{s.race.name}</div>
+          <div class="muted ellipsis" style="font-size:11px">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)} · tap to change name` : 'Tap to change name'}</div>
         </div>
         <div style="position:relative">
           <button class="icon-btn" title="Add a race" onClick={() => setAddMenu(!addMenu)}><Icon name="add" /></button>
@@ -140,12 +139,11 @@ function Race({ onEditName }) {
         </div>
       )}
       {running.map((e) => <RaceCard key={e.id} event={e} now={now} />)}
-      {done.length > 0 && (
-        <div class="section">
-          <div class="section-title"><h2>Completed races</h2><button class="btn text small" onClick={() => setShowDone(!showDone)}>{showDone ? 'Hide' : `Show ${done.length}`}</button></div>
-          {showDone && done.map((e) => <RaceCard key={e.id} event={e} now={now} completed />)}
-        </div>
-      )}
+      {/* Finished races keep their own area below everything still in play, each collapsed. */}
+      {done.length > 0 && <>
+        <div class="row" style="gap:6px;margin-top:24px"><Icon name="emoji_events" size={18} color="var(--tertiary)" /><span class="title-small">Completed races</span></div>
+        {done.map((e) => <RaceCard key={e.id} event={e} now={now} completed />)}
+      </>}
       {create && <CreateRaceDialog onClose={() => setCreate(false)} />}
       {join && <JoinDialog onClose={() => setJoin(false)} />}
       {settings && <RaceSettingsDialog onClose={() => setSettings(false)} />}
@@ -175,6 +173,161 @@ function remaining(ms) {
   return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
+const GOLD = '#E8B93E', SILVER = '#B9C0CC', BRONZE = '#CB8D5E', LIVE_GREEN = '#4CAF50', TODAY_GREEN = '#43A047'
+const STALE_REPORT_MS = HOUR
+
+/** "12", "3.4" or "0.2" - whole percents once they're big enough to read, one decimal below. */
+const percentText = (ms, goal) => { const p = goal > 0 ? (ms * 100) / goal : 0; return p >= 10 ? String(Math.floor(p)) : p.toFixed(1) }
+const withEmoji = (emoji, name) => (emoji ? `${emoji} ${name}` : name)
+const factDate = (ms, withTime) => {
+  const d = new Date(ms)
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric', ...(withTime ? { hour: 'numeric', minute: '2-digit' } : {}) })
+}
+/** A racer's best day - from the server when it says, else worked out from their days. */
+function bestDayOf(st) {
+  if (st.bestDayMillis > 0 && st.bestDay > 0) return [st.bestDay, st.bestDayMillis]
+  let best = null
+  for (const [k, v] of Object.entries(st.daily || {})) if (v > 0 && (!best || v > best[1])) best = [+k, v]
+  return best
+}
+
+function RankMedal({ rank }) {
+  const medal = rank === 1 ? GOLD : rank === 2 ? SILVER : rank === 3 ? BRONZE : null
+  return <span class="rank-medal" style={medal ? { background: medal, color: '#1A1B3A' } : {}}>{rank}</span>
+}
+
+function LiveBadge({ kind }) {
+  const type = kind === 'reading' ? 'READING' : kind === 'anki' ? 'ANKI' : kind === 'listening' ? 'PODCAST' : null
+  return <span class="live-badge"><span class="pulse" />{type && <TypeIcon type={type} size={13} color={LIVE_GREEN} />}</span>
+}
+
+function StaleBadge({ since }) {
+  const m = Math.floor(since / 60000)
+  return <span class="stale-badge">{m < 60 ? `${m}m` : m < 48 * 60 ? `${Math.floor(m / 60)}h` : `${Math.floor(m / 1440)}d`}</span>
+}
+
+function CardTag({ text, color }) {
+  return <span class="card-tag" style={{ color, background: `color-mix(in srgb, ${color} 14%, transparent)` }}>{text}</span>
+}
+
+function IconBadge({ icon, color }) {
+  return <span class="icon-badge" style={{ color, background: `color-mix(in srgb, ${color} 16%, transparent)` }}><Icon name={icon} size={22} /></span>
+}
+
+function SplitAmount({ type, color, millis, short }) {
+  return <span class="split-amount"><TypeIcon type={type} size={14} color={color} />{short && millis > 5 * HOUR ? `${Math.floor(millis / HOUR)}h` : formatHm(millis)}</span>
+}
+
+/** A bar of [total] against [max], split into its listening, reading and Anki parts (one grey
+ *  block when the split isn't known). */
+function SplitBar({ listening, reading, anki = 0, total, max, colors, height = 10 }) {
+  const m = Math.max(1, max)
+  const filled = Math.min(1, total / m)
+  const known = listening != null && reading != null
+  const l = known ? Math.min(filled, listening / m) : 0
+  const a = known ? Math.min(Math.max(0, filled - l), anki / m) : 0
+  const r = known ? Math.max(0, filled - l - a) : 0
+  return (
+    <div class="split-bar" style={{ height }}>
+      {known ? <>
+        {listening > 0 && <div style={{ width: `${Math.max(l, 0.01) * 100}%`, background: colors.listening }} />}
+        {reading > 0 && <div style={{ width: `${Math.max(r, 0.01) * 100}%`, background: colors.reading }} />}
+        {anki > 0 && <div style={{ width: `${Math.max(a, 0.01) * 100}%`, background: colors.anki }} />}
+      </> : total > 0 && <div style={{ width: `${Math.max(filled, 0.01) * 100}%`, background: 'color-mix(in srgb, var(--on-surface-variant) 60%, transparent)' }} />}
+    </div>
+  )
+}
+
+/** One person's line in the standings: medal, name, the figure, its split bar and the split in numbers. */
+function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayMax, colors, onClick }) {
+  const todayKey = localTodayKey(st, now)
+  const hasDaily = Object.keys(st.daily || {}).length > 0
+  const today = isLive && hasDaily ? Math.min(st.millis, st.daily[todayKey] || 0) : null
+  const todayReading = today != null && Object.keys(st.dailyReading || {}).length ? Math.min(today, st.dailyReading[todayKey] || 0) : null
+  const todayAnki = today != null ? Math.min(today, (st.dailyAnki || {})[todayKey] || 0) : null
+  const showingToday = view === 'today'
+  const figure = showingToday ? today : st.millis
+  const readingPart = showingToday ? todayReading : st.readingMillis
+  const ankiPart = (showingToday ? todayAnki : st.ankiMillis) || 0
+  const listeningPart = figure != null && readingPart != null ? Math.max(0, figure - readingPart - ankiPart) : null
+  const since = now - (st.updatedAt || 0)
+  return (
+    <div class={`standing-row ${isMe ? 'me' : ''}`} onClick={onClick}>
+      <RankMedal rank={rank} />
+      <div class="grow" style="min-width:0;padding-left:10px">
+        <div class="row" style="gap:0;align-items:center">
+          <div class="row grow" style="gap:8px;min-width:0">
+            <span class="st-name ellipsis" style={{ fontWeight: isMe ? 600 : 500 }}>{withEmoji(st.emoji, st.name)}</span>
+            {st.active ? <LiveBadge kind={st.activeKind} /> : isLive && !isMe && st.updatedAt > 0 && since >= STALE_REPORT_MS && <StaleBadge since={since} />}
+          </div>
+          <div class="st-figure">
+            <div class="v" style={figure == null ? { color: 'var(--on-surface-variant)' } : {}}>{figure != null ? formatHm(figure) : '–'}</div>
+            {isLive && (showingToday
+              ? <div class="sub">{formatHm(st.millis)} total</div>
+              : today != null && <div class="sub" style={today > 0 ? { color: TODAY_GREEN, fontWeight: 600 } : {}}>+{formatHm(today)} today</div>)}
+          </div>
+        </div>
+        <div style="margin-top:6px"><SplitBar listening={listeningPart} reading={readingPart} anki={ankiPart} total={figure || 0} max={showingToday ? todayMax : scaleMax} colors={colors} /></div>
+        <div class="row split-line">
+          {listeningPart != null && readingPart != null && <>
+            <SplitAmount type="PODCAST" color={colors.listening} millis={listeningPart} short />
+            <SplitAmount type="READING" color={colors.reading} millis={readingPart} short />
+            {ankiPart > 0 && <SplitAmount type="ANKI" color={colors.anki} millis={ankiPart} short />}
+          </>}
+          <span class="spacer" />
+          {!isLive && <span class="muted" style="font-size:11px">{percentText(st.millis, goal)}%</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Standings({ event, now, isLive, view, onPerson }) {
+  const s = useStore()
+  const me = s.race.userId
+  const goal = event.goalHours * HOUR
+  const leader = Math.max(0, ...event.standings.map((x) => x.millis))
+  // Early in a long race everyone's a sliver of the goal, so bars measure against the leader until
+  // they're halfway there.
+  const scaleMax = leader <= 0 || leader * 2 >= goal ? Math.max(goal, leader, 1) : leader
+  const todayMax = Math.max(0, ...event.standings.map((x) => (x.daily || {})[localTodayKey(x, now)] || 0))
+  const colors = barColors(s)
+  return (
+    <div class="col" style="gap:6px;margin-top:14px">
+      {event.standings.map((st, i) => (
+        <StandingRow key={st.userId} rank={i + 1} st={st} isMe={st.userId === me} goal={goal} scaleMax={scaleMax} now={now} isLive={isLive} view={view} todayMax={todayMax} colors={colors} onClick={() => onPerson(st)} />
+      ))}
+    </div>
+  )
+}
+
+function RaceFacts({ event, started }) {
+  const tile = (icon, label, value) => (
+    <div class="fact-tile">
+      <div class="row" style="gap:5px"><Icon name={icon} size={14} color="var(--primary)" /><span class="k">{label.toUpperCase()}</span></div>
+      <div class="v">{value}</div>
+    </div>
+  )
+  return (
+    <div class="race-facts">
+      {tile('emoji_events', 'Goal', `${event.goalHours} h`)}
+      {tile('flag', started ? 'Started' : 'Starts', factDate(event.startMillis, !started))}
+      {event.endMillis != null && tile('sports_score', 'Ends', factDate(event.endMillis, true))}
+    </div>
+  )
+}
+
+function RaceCharts({ event, now }) {
+  const hasDaily = event.standings.some((x) => Object.keys(x.daily || {}).length)
+  const best = event.standings.map((x) => [x, bestDayOf(x)]).filter(([, b]) => b).sort((a, b) => b[1][1] - a[1][1])[0]
+  return (
+    <>
+      {hasDaily && <><div class="label-medium muted" style="margin:16px 0 6px">Progress</div><ProgressChart event={event} now={now} /></>}
+      {best && <div class="row best-day-line"><Icon name="bolt" size={16} color="var(--tertiary)" /><span class="ellipsis">Best day: {best[0].name}, {formatHm(best[1][1])} on {formatYmd(best[1][0])}</span></div>}
+    </>
+  )
+}
+
 function RaceCard({ event, now, completed }) {
   const s = useStore()
   const me = s.race.userId
@@ -182,92 +335,101 @@ function RaceCard({ event, now, completed }) {
   const [person, setPerson] = useState(null)
   const [confirm, setConfirm] = useState(null)
   const [edit, setEdit] = useState(false)
-  const [results, setResults] = useState(!completed)
-  const goal = event.goalHours * HOUR
+  const [view, setView] = useState('total')
+  const [expanded, setExpanded] = useState(false)
   const started = now >= event.startMillis
-  const ended = event.endMillis != null && event.endMillis <= now
-  const colors = barColors(s)
-  const outlook = raceOutlook(event, me, now)
+  const joined = event.standings.some((x) => x.userId === me)
   const isCreator = event.createdBy === me
-  const winner = ended && event.standings[0]
-  const reason = { goal: 'goal reached', time: 'time ran out', manual: 'ended early' }[event.endReason] || 'ended'
-  const waiting = ended ? event.standings.filter((x) => !x.final).map((x) => x.name) : []
+  const canShowToday = started && event.standings.some((x) => Object.keys(x.daily || {}).length)
+  const zonesDiffer = event.standings.some((x) => {
+    try { return x.timeZone && new Date(new Date(now).toLocaleString('en-US', { timeZone: x.timeZone })).getTime() !== new Date(new Date(now).toLocaleString('en-US')).getTime() } catch { return false }
+  })
+  const outlook = raceOutlook(event, me, now)
+  const dialogs = <>
+    {person && <PersonSheet event={event} standing={event.standings.find((x) => x.userId === person.userId) || person} now={now} onClose={() => setPerson(null)} />}
+    {edit && <EditRaceDialog event={event} onClose={() => setEdit(false)} />}
+    {confirm === 'leave' && <Confirm title="Leave this race?" text={`You'll be removed from the standings of "${event.name}". You can join again while it's still running.`} confirmLabel="Leave" danger onConfirm={() => leaveEvent(event.id)} onClose={() => setConfirm(null)} />}
+    {confirm === 'end' && <Confirm title="End this event?" text={`"${event.name}" will stop counting time for everyone, the standings will be locked, and it will move to Completed races.`} confirmLabel="End event" danger onConfirm={() => endEvent(event.id)} onClose={() => setConfirm(null)} />}
+    {confirm === 'delete' && <Confirm title="Delete this race?" text={`"${event.name}" will be removed from your history in this browser. Your friends keep their own copies.`} confirmLabel="Delete" danger onConfirm={() => deleteCompleted(event.id)} onClose={() => setConfirm(null)} />}
+    {confirm === 'deleteAll' && <Confirm title="Delete this race for everyone?" text={`"${event.name}" and everyone's scores in it will be removed from the server.`} confirmLabel="Delete" danger onConfirm={() => deleteEventForEveryone(event.id)} onClose={() => setConfirm(null)} />}
+  </>
 
+  if (completed) {
+    const winner = event.standings[0]?.millis > 0 ? event.standings[0] : null
+    const reason = { goal: 'goal reached', manual: 'ended early' }[event.endReason] || 'time ran out'
+    const waiting = event.standings.filter((x) => !x.final).map((x) => x.name)
+    return (
+      <div class="race-card">
+        <div class="row" style="gap:12px">
+          <IconBadge icon="sports_score" color="var(--tertiary)" />
+          <div class="race-title grow">{event.name}</div>
+          <CardTag text="Completed" color="var(--tertiary)" />
+        </div>
+        <div class="muted small" style="margin-top:8px">Ended {formatDateTime(event.endMillis || 0)} · {reason}</div>
+        {winner && (
+          <div class="winner-row">
+            <Icon name="emoji_events" size={26} color="var(--tertiary)" />
+            <span class="grow ellipsis">{winner.name} won</span>
+            <span>{formatHm(winner.millis)}</span>
+          </div>
+        )}
+        {expanded && <>
+          <Standings event={event} now={now} isLive={false} view="total" onPerson={setPerson} />
+          <RaceCharts event={event} now={now} />
+          {waiting.length > 0 && <div class="muted" style="font-size:11px;margin-top:10px">Still waiting for final totals from: {waiting.join(', ')}</div>}
+        </>}
+        <div class="row" style="margin-top:4px">
+          <button class="btn text danger" onClick={() => setConfirm('delete')}>Delete</button>
+          <span class="spacer" />
+          {event.standings.length > 0 && <button class="btn text" onClick={() => setExpanded(!expanded)}>{expanded ? 'Hide results' : 'Show results'}<Icon name={expanded ? 'expand_less' : 'expand_more'} size={18} /></button>}
+        </div>
+        {dialogs}
+      </div>
+    )
+  }
+
+  const countdown = !started ? `Starts in ${remaining(event.startMillis - now)}` : event.endMillis != null ? `${remaining(event.endMillis - now)} left` : null
   return (
-    <div class="card race-card section">
-      <div class="row" style="align-items:flex-start">
-        <div class="grow">
-          <h2>{event.name}</h2>
-          <div class="muted small">
-            {ended ? `Ended ${formatDate(event.endMillis)} · ${reason}${winner ? ` · ${winner.name} won` : ''}`
-              : !started ? `Starts in ${remaining(event.startMillis - now)}`
-                : event.endMillis ? `${remaining(event.endMillis - now)} left` : 'Runs until someone reaches the goal'}
+    <div class={`race-card ${started && joined ? 'live' : ''}`}>
+      <div class="row" style="gap:12px">
+        <IconBadge icon={started ? 'flag' : 'schedule'} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />
+        <div class="race-title grow">{event.name}</div>
+        {countdown && <CardTag text={countdown} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
+      </div>
+      <RaceFacts event={event} started={started} />
+      {!event.standings.length ? <div class="muted small" style="margin-top:12px">Nobody has joined yet.</div> : <>
+        {canShowToday && (
+          <div class="standings-switch">
+            {[['total', 'Total'], ['today', 'Today']].map(([k, l]) => <button key={k} class={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}
+          </div>
+        )}
+        {canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
+        <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={setPerson} />
+        {started && <RaceCharts event={event} now={now} />}
+        {outlook && <OutlookNote o={outlook} event={event} />}
+      </>}
+      {!joined ? <button class="btn" style="width:100%;margin-top:14px" onClick={() => sync({ joinEventId: event.id })}>Join</button> : <>
+        <div class="race-rule" />
+        <div class="row" style="justify-content:flex-end">
+          {event.code && (
+            <button class="btn text grow" style="justify-content:flex-start" onClick={() => share(`Join my race "${event.name}" in Immersion Tracker: Social → Race → Join with a code → ${event.code}`)}>
+              <Icon name="share" size={16} />Code {event.code}
+            </button>
+          )}
+          <div style="position:relative">
+            <button class="icon-btn muted" title="More options" onClick={() => setMenu(!menu)}><Icon name="more_vert" /></button>
+            {menu && (
+              <div class="menu" style="top:auto;bottom:46px" onMouseLeave={() => setMenu(false)}>
+                <button onClick={() => { setMenu(false); setConfirm('leave') }}>Leave</button>
+                {isCreator && <button onClick={() => { setMenu(false); setEdit(true) }}>Edit event</button>}
+                {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('end') }}>End event</button>}
+                {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('deleteAll') }}>Delete for everyone</button>}
+              </div>
+            )}
           </div>
         </div>
-        {event.code && !ended && <button class="code-pill" style="border:0;color:inherit" title="Share this race's code" onClick={() => share(`Join my race "${event.name}" in Immersion Tracker: Social → Race → Join with a code → ${event.code}`)}>{event.code}</button>}
-        <button class="icon-btn" onClick={() => setMenu(!menu)}>⋮</button>
-      </div>
-      {menu && (
-        <div class="chips" style="margin-top:10px">
-          {!ended && isCreator && <button class="chip" onClick={() => { setMenu(false); setEdit(true) }}>Edit race</button>}
-          {!ended && isCreator && <button class="chip" onClick={() => { setMenu(false); setConfirm('end') }}>End event</button>}
-          {!ended && <button class="chip" onClick={() => { setMenu(false); setConfirm('leave') }}>Leave</button>}
-          {ended && <button class="chip" onClick={() => { setMenu(false); setConfirm('delete') }}>Delete from my history</button>}
-          {!ended && isCreator && <button class="chip" onClick={() => { setMenu(false); setConfirm('deleteAll') }}>Delete for everyone</button>}
-        </div>
-      )}
-      <div class="row small muted wrap" style="gap:14px;margin-top:8px">
-        <span>Goal <b>{event.goalHours} h</b></span>
-        <span>{started ? 'Started' : 'Starts'} <b>{formatDateTime(event.startMillis)}</b></span>
-        {event.endMillis && <span>Ends <b>{formatDateTime(event.endMillis)}</b></span>}
-      </div>
-
-      {completed && <button class="btn text small" style="padding:0;margin-top:6px" onClick={() => setResults(!results)}>{results ? 'Hide results' : 'Show results'}</button>}
-      {results && (
-        <>
-          {outlook && <OutlookNote o={outlook} event={event} />}
-          <div class="col" style="gap:2px;margin-top:10px">
-            {!event.standings.length && <div class="muted small">Nobody has joined yet.</div>}
-            {event.standings.map((st, i) => {
-              const listening = Math.max(0, st.millis - st.readingMillis - st.ankiMillis)
-              const scale = Math.max(goal, event.standings[0]?.millis || 1)
-              return (
-                <div key={st.userId} class={`standing ${st.userId === me ? 'me' : ''}`} onClick={() => setPerson(st)}>
-                  <span class="rank">{i + 1}</span>
-                  <Avatar standing={st} />
-                  <div class="grow">
-                    <div class="row" style="gap:6px">
-                      <b class="name ellipsis">{st.name}</b>
-                      {st.active && <span class="now-tag row" style="gap:3px;display:inline-flex"><TypeIcon type={st.activeKind === 'reading' ? 'READING' : st.activeKind === 'anki' ? 'ANKI' : 'PODCAST'} size={11} />now</span>}
-                      <span class="spacer" />
-                      <span class="small" style="font-variant-numeric:tabular-nums;font-weight:650">{formatHm(st.millis)}</span>
-                      <span class="muted tiny" style="width:40px;text-align:right">{Math.floor((st.millis / goal) * 100)}%</span>
-                    </div>
-                    <div class="progress" style="margin-top:4px;height:8px">
-                      <div style={{ width: `${(listening / scale) * 100}%`, background: colors.listening }} />
-                      <div style={{ width: `${(st.readingMillis / scale) * 100}%`, background: colors.reading }} />
-                      <div style={{ width: `${(st.ankiMillis / scale) * 100}%`, background: colors.anki }} />
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div class="row tiny muted wrap" style="gap:12px;margin-top:8px">
-            <span class="row" style="gap:4px"><span class="dot" style={{ background: colors.listening }} />Listening</span>
-            <span class="row" style="gap:4px"><span class="dot" style={{ background: colors.reading }} />Reading</span>
-            <span class="row" style="gap:4px"><span class="dot" style={{ background: colors.anki }} />Anki (up to 10% of immersion)</span>
-          </div>
-          {waiting.length > 0 && <div class="muted tiny" style="margin-top:6px">Still waiting for final totals from: {waiting.join(', ')}</div>}
-          {started && event.standings.length > 0 && <ProgressChart event={event} now={now} />}
-        </>
-      )}
-      {person && <PersonSheet event={event} standing={person} now={now} onClose={() => setPerson(null)} />}
-      {edit && <EditRaceDialog event={event} onClose={() => setEdit(false)} />}
-      {confirm === 'leave' && <Confirm title="Leave this race?" text={`You'll be removed from the standings of "${event.name}". You can join again while it's still running.`} confirmLabel="Leave" danger onConfirm={() => leaveEvent(event.id)} onClose={() => setConfirm(null)} />}
-      {confirm === 'end' && <Confirm title="End this event?" text={`"${event.name}" will stop counting time for everyone, the standings will be locked, and it will move to Completed races.`} confirmLabel="End event" danger onConfirm={() => endEvent(event.id)} onClose={() => setConfirm(null)} />}
-      {confirm === 'delete' && <Confirm title="Delete this race?" text={`"${event.name}" will be removed from your history in this browser. Your friends keep their own copies.`} confirmLabel="Delete" danger onConfirm={() => deleteCompleted(event.id)} onClose={() => setConfirm(null)} />}
-      {confirm === 'deleteAll' && <Confirm title="Delete this race for everyone?" text={`"${event.name}" and everyone's scores in it will be removed from the server.`} confirmLabel="Delete" danger onConfirm={() => deleteEventForEveryone(event.id)} onClose={() => setConfirm(null)} />}
+      </>}
+      {dialogs}
     </div>
   )
 }
@@ -303,12 +465,11 @@ function OutlookNote({ o, event }) {
     lines.push(o.projectedGoal ? `Your pace: ${formatHm(o.myPerDay)} a day, reaching ${o.goalHours}h around ${formatDate(o.projectedGoal)}`
       : o.projectedAtEnd ? `Your pace: ${formatHm(o.myPerDay)} a day, about ${formatHm(o.projectedAtEnd)} by the end` : `Your pace: ${formatHm(o.myPerDay)} a day`)
   }
-  return <div class="col small" style="gap:2px;margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--c)">{lines.map((l, i) => <span key={i} class={i ? 'muted' : ''} style={i ? '' : 'font-weight:650'}>{l}</span>)}</div>
+  return <div class="col small" style="gap:2px;margin-top:14px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb, var(--primary) 8%, transparent)">{lines.map((l, i) => <span key={i} class={i ? 'muted' : ''} style={i ? '' : 'font-weight:650'}>{l}</span>)}</div>
 }
 
 /** Everyone's running total, day by day, as lines. */
 function ProgressChart({ event, now }) {
-  const [view, setView] = useState('total')
   const [replay, setReplay] = useState(null)
   const startDay = ymdToEpochDay(ymdOf(event.startMillis - 4 * HOUR))
   const endMs = Math.min(event.endMillis ?? now, now)
@@ -329,29 +490,14 @@ function ProgressChart({ event, now }) {
     return () => clearTimeout(t)
   }, [replay])
 
-  if (view === 'today') {
-    return (
-      <div class="section">
-        <div class="row"><h3 class="grow">Progress</h3><Seg options={[['total', 'Total'], ['today', 'Today']]} value={view} onChange={setView} /></div>
-        <div class="muted tiny" style="margin:6px 0">Each person's own today, where they are.</div>
-        <div class="col" style="gap:6px">
-          {event.standings.map((st, i) => {
-            const today = st.daily[localTodayKey(st, now)] || 0
-            const max = Math.max(1, ...event.standings.map((x) => x.daily[localTodayKey(x, now)] || 0))
-            return <div key={st.userId} class="row small"><span style="width:90px" class="ellipsis">{st.emoji} {st.name}</span><div class="progress grow"><div style={{ width: `${(today / max) * 100}%`, background: lineColor(st, i, event.standings) }} /></div><span style="width:64px;text-align:right">+{formatHm(today)}</span></div>
-          })}
-        </div>
-      </div>
-    )
-  }
   const W = 600, H = 200, P = 6
   const goal = event.goalHours * HOUR
   const maxY = Math.max(1, ...series.flatMap((x) => x.pts.slice(0, shownDays)), Math.min(goal, Math.max(...series.map((x) => x.st.millis)) * 1.1))
   const x = (i) => P + (days.length <= 1 ? 0 : (i / (days.length - 1)) * (W - 2 * P))
   const y = (v) => H - P - (v / maxY) * (H - 2 * P)
   return (
-    <div class="section">
-      <div class="row"><h3 class="grow">Progress</h3><button class="btn text small" onClick={() => setReplay(replay == null ? 1 : null)}>{replay == null ? 'Replay' : 'Stop'}</button><Seg options={[['total', 'Total'], ['today', 'Today']]} value={view} onChange={setView} /></div>
+    <div>
+      <div class="row" style="justify-content:flex-end;margin-top:-30px"><button class="btn text small" onClick={() => setReplay(replay == null ? 1 : null)}>{replay == null ? 'Replay' : 'Stop'}</button></div>
       <svg viewBox={`0 0 ${W} ${H}`} style="width:100%;height:auto;margin-top:8px;overflow:visible">
         {goal <= maxY && <line x1={P} x2={W - P} y1={y(goal)} y2={y(goal)} stroke="var(--outline)" stroke-dasharray="6 6" />}
         {series.map((sr) => (
@@ -369,68 +515,139 @@ function ProgressChart({ event, now }) {
   )
 }
 
+/** Everything about one person in one race, like the phone's PersonSheet: who and where they
+ *  stand, their total against the goal, against you, being friends, their profile, how it splits,
+ *  the numbers, and a bar per day. */
 function PersonSheet({ event, standing: st, now, onClose }) {
   const s = useStore()
   const me = s.race.userId
-  const mine = event.standings.find((x) => x.userId === me)
-  const place = event.standings.findIndex((x) => x.userId === st.userId) + 1
+  const isMe = st.userId === me
+  const rank = event.standings.findIndex((x) => x.userId === st.userId) + 1
   const goal = event.goalHours * HOUR
-  const todayKey = localTodayKey(st, now)
-  const dailyKeys = Object.keys(st.daily).map(Number).sort((a, b) => a - b)
-  const active = dailyKeys.filter((k) => st.daily[k] > 0).length
-  const spanDays = Math.max(1, Math.ceil((Math.min(event.endMillis ?? now, now) - event.startMillis) / DAY))
-  const best = dailyKeys.reduce((b, k) => (!b || st.daily[k] > st.daily[b] ? k : b), null)
-  const listening = Math.max(0, st.millis - st.readingMillis - st.ankiMillis)
-  const pct = (v) => (st.millis ? Math.round((v / st.millis) * 100) : 0)
+  const live = now >= event.startMillis && (event.endMillis == null || event.endMillis > now)
+  const colors = barColors(s)
+  const mine = event.standings.find((x) => x.userId === me)
   const isFriend = s.friends.friends.some((f) => f.userId === st.userId)
   const outgoing = s.friends.outgoing.some((f) => f.userId === st.userId)
   const incoming = s.friends.incoming.some((f) => f.userId === st.userId)
-  const profile = s.race.profiles?.[st.userId] ? readProfile(s.race.profiles[st.userId]) : null
-  const [viewProfile, setViewProfile] = useState(false)
-  const maxDay = Math.max(1, ...dailyKeys.map((k) => st.daily[k]))
+  const [busy, setBusy] = useState(false)
+  const raw = s.race.profiles?.[st.userId]
+  const profile = raw ? readProfile({ ...raw, userId: st.userId }) : null
+  const hasDaily = Object.keys(st.daily || {}).length > 0
+  const windowEnd = Math.min(now, event.endMillis ?? now)
+  const elapsedDays = Math.max(1, (windowEnd - event.startMillis) / DAY)
+  const best = bestDayOf(st)
+  const listening = Math.max(0, st.millis - (st.readingMillis || 0) - (st.ankiMillis || 0))
+  const pct = (v) => (st.millis > 0 ? Math.round((v * 100) / st.millis) : 0)
   let localTime = ''
-  try { if (st.timeZone && st.userId !== me) localTime = new Date(now).toLocaleTimeString(undefined, { timeZone: st.timeZone, hour: 'numeric', minute: '2-digit' }) } catch { /* unknown zone */ }
-
+  try {
+    if (st.timeZone && !isMe) {
+      const theirs = new Date(new Date(now).toLocaleString('en-US', { timeZone: st.timeZone })).getTime()
+      const mineT = new Date(new Date(now).toLocaleString('en-US')).getTime()
+      if (theirs !== mineT) localTime = new Date(now).toLocaleString(undefined, { timeZone: st.timeZone, weekday: 'short', hour: 'numeric', minute: '2-digit' })
+    }
+  } catch { /* unknown zone */ }
+  const report = st.active ? null : !live && st.final ? 'Final total' : st.updatedAt > 0 ? `Last reported ${agoText(st.updatedAt, now)}` : null
   const friendAction = async (fn, ok) => {
-    try { await fn(); toast(ok) } catch (err) { toast(errorText(err) || 'Couldn\'t send the friend request') }
+    setBusy(true)
+    try { await fn(); toast(ok) } catch (err) { toast(errorText(err) || 'Couldn\'t send the friend request') } finally { setBusy(false) }
   }
+  const diff = mine ? st.millis - mine.millis : 0
   return (
-    <Dialog onClose={onClose} actions={<>
-      {profile && <button class="btn text" onClick={() => setViewProfile(true)}>Profile</button>}
-      <span class="spacer" />
-      {st.userId !== me && (isFriend ? <span class="muted small">Friends ✓</span>
-        : incoming ? <button class="btn tonal" onClick={() => friendAction(() => respondFriend(st.userId, true), `You and ${st.name} are now friends!`)}>Accept friend request</button>
-          : outgoing ? <span class="muted small">Friend request sent</span>
-            : <button class="btn tonal" onClick={() => friendAction(() => addFriendById(st.userId), `Friend request sent to ${st.name}`)}>Add friend</button>)}
-      <button class="btn" onClick={onClose}>Close</button>
-    </>}>
-      <div class="row" style="margin-bottom:12px"><Avatar standing={st} size={48} /><div class="grow"><h2 style="margin:0">{st.name}</h2><div class="muted small">{ordinal(place)} of {event.standings.length} in {event.name}</div></div></div>
-      <div class="stat-tiles">
-        <div class="tile"><div class="k">Total</div><div class="v">{formatHm(st.millis)}</div><div class="k">{Math.floor((st.millis / goal) * 100)}% of the {event.goalHours}h goal</div></div>
-        <div class="tile"><div class="k">{st.userId === me ? 'Today' : 'Their today'}</div><div class="v">{formatHm(st.daily[todayKey] || 0)}</div>{localTime && <div class="k">{localTime} where they are</div>}</div>
-        <div class="tile"><div class="k">Daily average</div><div class="v">{formatHm(st.millis / spanDays)}</div></div>
-        <div class="tile"><div class="k">Days active</div><div class="v">{active} of {spanDays}</div></div>
-        <div class="tile"><div class="k">Best day</div><div class="v">{best ? formatHm(st.daily[best]) : '–'}</div>{best && <div class="k">{formatYmd(best)}</div>}</div>
+    <Dialog onClose={onClose} actions={<button class="btn" onClick={onClose}>Close</button>}>
+      <div class="row" style="gap:12px">
+        <RankMedal rank={rank} />
+        <div class="grow" style="min-width:0">
+          <div class="row" style="gap:8px"><span class="title-large ellipsis">{withEmoji(st.emoji, st.name)}</span>{st.active && <LiveBadge kind={st.activeKind} />}</div>
+          <div class="muted small">{ordinal(rank)} of {event.standings.length} in {event.name}</div>
+        </div>
       </div>
-      <div class="small muted" style="margin-top:12px">
-        <span class="row wrap" style="gap:12px">
-          <TypeLabel type="PODCAST" size={14}>{formatHm(listening)} · {pct(listening)}%</TypeLabel>
-          <TypeLabel type="READING" size={14}>{formatHm(st.readingMillis)} · {pct(st.readingMillis)}%</TypeLabel>
-          <TypeLabel type="ANKI" size={14}>{formatHm(st.ankiMillis)} counted{st.ankiBankedMillis > 0 ? ` · ${formatHm(st.ankiBankedMillis)} banked` : ''}</TypeLabel>
-        </span>
-      </div>
-      {mine && st.userId !== me && <div class="small" style="margin-top:6px">{st.millis === mine.millis ? 'Tied with you' : st.millis > mine.millis ? `${formatHm(st.millis - mine.millis)} ahead of you` : `${formatHm(mine.millis - st.millis)} behind you`}</div>}
-      <div class="muted tiny" style="margin-top:4px">{st.final ? 'Final total' : `Last reported ${agoText(st.updatedAt, now)}`}</div>
-      <h3 style="margin:14px 0 8px">Day by day</h3>
-      {!dailyKeys.length ? <div class="muted small">Day-by-day totals appear once this person updates the app.</div> : (
-        <div class="col" style="gap:4px">
-          {[...dailyKeys].reverse().map((k) => (
-            <div key={k} class="row tiny"><span style="width:70px" class="muted">{formatYmd(k)}</span><div class="progress grow" style="height:7px"><div style={{ width: `${(st.daily[k] / maxDay) * 100}%`, background: 'var(--primary)' }} /></div><span style="width:56px;text-align:right">{formatHm(st.daily[k])}</span></div>
-          ))}
+      <div class="person-total">{formatHm(st.millis)}</div>
+      <div class="muted">{percentText(st.millis, goal)}% of the {event.goalHours}h goal</div>
+      {localTime && <div class="muted" style="font-size:11px;margin-top:2px">{localTime} where they are</div>}
+      {report && <div class="muted" style="font-size:11px;margin-top:2px">{report}</div>}
+      {!isMe && mine && (
+        <div style={{ marginTop: 8, fontWeight: 500, color: diff > 0 ? 'var(--danger)' : 'var(--primary)' }}>
+          {diff > 0 ? `${formatHm(diff)} ahead of you` : diff < 0 ? `${formatHm(-diff)} behind you` : 'Tied with you'}
         </div>
       )}
-      {viewProfile && profile && <ProfileDialog profile={profile} onClose={() => setViewProfile(false)} />}
+      {!isMe && (
+        <div class="row" style="margin-top:12px">
+          {isFriend ? <span class="label-large" style="color:var(--primary)">Friends</span>
+            : incoming ? <button class="btn" onClick={() => friendAction(() => respondFriend(st.userId, true), `You and ${st.name} are now friends!`)}>Accept friend request</button>
+              : outgoing ? <span class="label-large muted">Friend request sent</span>
+                : <button class="btn outline" disabled={busy} onClick={() => friendAction(() => addFriendById(st.userId), `Friend request sent to ${st.name}`)}>{busy ? 'Sending…' : 'Add friend'}</button>}
+        </div>
+      )}
+      {profile && <>
+        <div class="title-small" style="margin:24px 0 8px">Profile</div>
+        <ProfileFrame p={profile}><ProfileSections p={profile} /></ProfileFrame>
+      </>}
+      <div style="margin-top:20px">
+        <SplitBar listening={listening} reading={st.readingMillis || 0} anki={st.ankiMillis || 0} total={st.millis} max={st.millis} colors={colors} height={12} />
+        <div class="row split-line" style="gap:4px;margin-top:6px">
+          <SplitAmount type="PODCAST" color={colors.listening} millis={listening} /><span class="muted" style="font-size:11px">Listening · {pct(listening)}%</span>
+          <span style="width:12px" />
+          <SplitAmount type="READING" color={colors.reading} millis={st.readingMillis || 0} /><span class="muted" style="font-size:11px">Reading · {pct(st.readingMillis || 0)}%</span>
+        </div>
+        {(st.ankiMillis > 0 || st.ankiBankedMillis > 0) && (
+          <div class="row split-line" style="gap:4px;margin-top:6px">
+            <SplitAmount type="ANKI" color={colors.anki} millis={st.ankiMillis || 0} />
+            <span class="muted" style="font-size:11px">{st.ankiBankedMillis > 0 ? `counted · ${formatHm(st.ankiBankedMillis)} banked` : 'counted'}</span>
+          </div>
+        )}
+      </div>
+      <div class="person-stats">
+        {live && hasDaily && <StatTile label={localTime ? 'Their today' : 'Today'} value={formatHm((st.daily || {})[localTodayKey(st, now)] || 0)} />}
+        <StatTile label="Daily average" value={formatHm(st.millis / elapsedDays)} />
+        {hasDaily && <StatTile label="Days active" value={`${Object.values(st.daily).filter((v) => v > 0).length} of ${Math.ceil(elapsedDays)}`} />}
+      </div>
+      {best && <div style="margin-top:10px"><StatTile label="Best day" value={`${formatHm(best[1])} on ${formatYmd(best[0])}`} /></div>}
+      <div class="title-small" style="margin:24px 0 8px">Day by day</div>
+      {hasDaily ? <DayBars event={event} st={st} now={now} colors={colors} best={best} /> : <div class="muted small">Day-by-day totals appear once this person updates the app.</div>}
     </Dialog>
+  )
+}
+
+function StatTile({ label, value }) {
+  return <div class="stat-tile"><div class="k">{label}</div><div class="v ellipsis">{value}</div></div>
+}
+
+/** A bar per day of the race (the last 60), split into listening, reading and Anki when known;
+ *  their best day marked with a dot. */
+function DayBars({ event, st, now, colors, best }) {
+  const first = Math.min(ymdToEpochDay(+localTodayKey(st, event.startMillis)), ...Object.keys(st.daily).map((k) => ymdToEpochDay(+k)))
+  const last = Math.max(ymdToEpochDay(+localTodayKey(st, Math.min(now, event.endMillis ?? now))), ...Object.keys(st.daily).map((k) => ymdToEpochDay(+k)))
+  const days = []
+  for (let d = Math.max(first, last - 59); d <= last; d++) days.push(epochDayToYmd(d))
+  const values = days.map((k) => st.daily[k] || 0)
+  const max = Math.max(1, ...values)
+  const split = Object.keys(st.dailyReading || {}).length > 0
+  return (
+    <div>
+      <div class="muted" style="font-size:11px">{formatHm(max)}</div>
+      <div class="day-bars">
+        {days.map((k, i) => {
+          const v = values[i]
+          const reading = split ? Math.min(v, st.dailyReading[k] || 0) : 0
+          const anki = Math.min(v - reading, (st.dailyAnki || {})[k] || 0)
+          const listening = v - reading - anki
+          return (
+            <div key={k} class="day-bar" title={`${formatYmd(+k)}: ${formatHm(v)}`}>
+              {best && +k === best[0] && v > 0 && <span class="best-dot" style={{ bottom: `calc(${(v / max) * 100}% + 3px)` }} />}
+              <div class="stack" style={{ height: `${(v / max) * 100}%` }}>
+                {split ? <>
+                  {anki > 0 && <div style={{ flex: anki, background: colors.anki }} />}
+                  {reading > 0 && <div style={{ flex: reading, background: colors.reading }} />}
+                  {listening > 0 && <div style={{ flex: listening, background: colors.listening }} />}
+                </> : <div style="flex:1;background:color-mix(in srgb, var(--on-surface-variant) 60%, transparent)" />}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      <div class="row muted" style="font-size:11px;margin-top:4px"><span class="grow">{formatYmd(+days[0])}</span><span>{formatYmd(+days[days.length - 1])}</span></div>
+    </div>
   )
 }
 
@@ -693,9 +910,9 @@ function ProfileTodayCard({ p }) {
   }
   if (!cards.length) return null
   return (
-    <div class="section">
+    <div>
       <div class="row" style="margin-bottom:6px">
-        <h2 class="grow">Today</h2>
+        <div class="title-medium grow" style="font-weight:400">Today</div>
         {asOf && <span class="label-small muted">as of {formatYmd(p.dayKey)}</span>}
         {p.shows.streaks && p.goldenDays >= 3 && <MomentumPill days={p.goldenDays} progress={1} />}
       </div>
@@ -729,7 +946,7 @@ function ProfileGoalCard({ l, ringStyle, wide }) {
         return (
           <div key={k} class="ring-stat">
             {progress != null
-              ? <Ring size={64} progress={progress} color={color} stops={stops} ringStyle={ringStyle || 'CLASSIC'} icon={<TypeIcon type={type} size={22} color={iconColor} />} light={light} />
+              ? <Ring size={64} progress={progress} color={color} stops={stops} ringStyle={ringStyle || 'CLASSIC'} iconType={type} iconColor={iconColor} light={light} />
               : <div style="width:64px;height:64px;display:grid;place-items:center"><TypeIcon type={type} size={40} color={color} /></div>}
             {goal != null && <span class="val">{formatHm(today * 60000)} / {formatHm(goal * 60000, true)}</span>}
             {streak && <StreakBadge streak={{ current: streak.current, record: streak.record }} />}
@@ -740,58 +957,124 @@ function ProfileGoalCard({ l, ringStyle, wide }) {
   )
 }
 
+/** Someone's profile, laid out like the phone's ProfileSheet: their banner (picture and name on a
+ *  wash of their banner colour), the animal on display, their zoo, Today's goal cards, records,
+ *  and when it was last updated - on their chosen background. */
+/** Someone's profile in a dialog, like the phone's ProfileSheet: their banner, then the sections. */
 export function ProfileDialog({ profile: p, onClose, onRemove }) {
+  const light = !isDarkFor(getState().settings.uiColorPreset)
+  return (
+    <Dialog onClose={onClose} actions={<>{onRemove && <button class="btn text danger" onClick={onRemove}>Remove friend</button>}<span class="spacer" /><button class="btn" onClick={onClose}>Close</button></>}>
+      <ProfileFrame p={p}>
+        <ProfileBanner p={p} light={light} />
+        <ProfileSections p={p} />
+      </ProfileFrame>
+    </Dialog>
+  )
+}
+
+/** A profile's chosen background: one of the app's themes, or a wash of a colour or gradient that
+ *  also tints the blocks inside. */
+function ProfileFrame({ p, children }) {
+  const light = !isDarkFor(getState().settings.uiColorPreset)
+  const preset = p.background?.startsWith('theme:') ? p.background.slice(6) : null
+  const theme = preset ? schemeFor(preset, isDarkFor(preset)) : null
+  const wash = p.background && !preset ? p.background.split(',').map((c) => c.trim()).filter(Boolean) : null
+  const tint = wash ? wash[Math.floor(wash.length / 2)] : null
+  const style = theme
+    ? { ...theme, background: 'var(--bg)', color: 'var(--on-surface)', borderRadius: 22, padding: 12 }
+    : wash
+      ? { background: `linear-gradient(180deg, ${wash.map((c) => withAlpha(c, 0.28)).join(', ')})`, borderRadius: 22, padding: 12,
+          '--profile-block': `color-mix(in srgb, color-mix(in srgb, ${tint} 18%, var(--block)) ${light ? 90 : 55}%, black)` }
+      : {}
+  return <div class="profile-page" style={style}>{children}</div>
+}
+
+/** The animal on display, their zoo, Today's goal cards, records and when it was updated. */
+function ProfileSections({ p }) {
   const catalog = useCatalog()
   const [all, setAll] = useState(false)
-  const theme = p.background?.startsWith('theme:') ? schemeFor(p.background.slice(6), true) : null
-  const wash = p.background && !theme ? p.background.split(',') : null
+  const [open, setOpen] = useState(null)
   const trophy = p.trophy && catalog?.find((a) => a.id === p.trophy)
   const cert = (id) => {
     const c = p.certs?.[id]
     return c ? { hourMark: c[0] >= 0 ? c[0] : null, languageName: c[1] || null, languageColor: c[2] || null, mediaTitle: c[3] || null, foil: c[4] === 1 } : null
   }
+  const ORDER = ['RAINBOW', 'ORANGE', 'PURPLE', 'BLUE', 'GREEN']
   const zoo = p.zoo && catalog ? Object.entries(p.zoo).map(([id, n]) => [catalog.find((a) => a.id === id), n]).filter(([a]) => a)
-    .sort((a, b) => ['RAINBOW', 'ORANGE', 'PURPLE', 'BLUE', 'GREEN'].indexOf(a[0].rarity) - ['RAINBOW', 'ORANGE', 'PURPLE', 'BLUE', 'GREEN'].indexOf(b[0].rarity)) : []
-  const banner = p.banner ? p.banner.split(',') : null
+    .sort((a, b) => ORDER.indexOf(a[0].rarity) - ORDER.indexOf(b[0].rarity) || a[0].name.toLowerCase().localeCompare(b[0].name.toLowerCase())) : []
   return (
-    <Dialog onClose={onClose} actions={<>{onRemove && <button class="btn text danger" onClick={onRemove}>Remove friend</button>}<span class="spacer" /><button class="btn" onClick={onClose}>Close</button></>}>
-      <div style={theme ? { ...theme, background: 'var(--bg)', color: 'var(--on-surface)', margin: -22, padding: 22, borderRadius: 28 } : wash ? { background: `linear-gradient(160deg, ${wash.map((c) => withAlpha(c, 0.22)).join(', ')})`, margin: -22, padding: 22, borderRadius: 28 } : {}}>
-        <div style={{ height: 70, borderRadius: 18, margin: '-4px 0 -30px', background: banner ? (banner.length > 1 ? `linear-gradient(90deg, ${banner.join(', ')})` : banner[0]) : 'var(--c-high)' }} />
-        <div class="row" style="padding:0 12px;align-items:flex-end">
-          <Avatar profile={p} size={64} />
-          <div class="grow" style="padding-bottom:4px"><h2 style="margin:0">{p.emoji} {p.name}</h2>{p.updatedAt > 0 && <div class="muted tiny">Updated {agoText(p.updatedAt)}</div>}</div>
+    <div class="col" style="gap:16px">
+      {trophy && p.shows.trophy && (
+        <button class="trophy-card" style={{ '--rarity': RARITY_COLOR[trophy.rarity] }} onClick={() => setOpen(trophy)}>
+          <div class="photo"><AnimalPhoto animal={trophy} /></div>
+          <div class="grow" style="min-width:0;text-align:left">
+            <div class="row muted" style="gap:4px;font-size:12px;font-weight:500"><Icon name="emoji_events" size={16} color={RARITY_COLOR[trophy.rarity]} />On display</div>
+            <div class="title-medium" style="font-weight:700">{trophy.name}</div>
+            <div style="padding-top:4px"><RarityBadge rarity={trophy.rarity} /></div>
+          </div>
+        </button>
+      )}
+      {zoo.length > 0 && (
+        <div class="profile-card">
+          <div class="pc-title">Zoo · {zoo.length}</div>
+          <div class="profile-zoo">
+            {(all ? zoo : zoo.slice(0, 12)).map(([a, n]) => (
+              <button key={a.id} class="tile-animal" style={{ borderColor: RARITY_COLOR[a.rarity] }} title={a.name} onClick={() => setOpen(a)}>
+                <AnimalPhoto animal={a} />{cert(a.id)?.foil && <div class="foil-sheen" />}{n > 1 && <span class="count">×{n}</span>}
+              </button>
+            ))}
+          </div>
+          {zoo.length > 12 && <button class="btn text small" onClick={() => setAll(!all)}>{all ? 'Show fewer' : 'Show all'}</button>}
         </div>
-        {p.code && <div class="muted small" style="margin:10px 12px 0">Friend code <span class="code-pill">{p.code}</span></div>}
-        {trophy && p.shows.trophy && <div class="section"><div class="muted small" style="margin-bottom:6px">On display</div><AnimalCardView animal={trophy} cert={cert(trophy.id)} compact /></div>}
-        {p.languages.length > 0 && (p.shows.rings || p.shows.goals || p.shows.streaks) && (
-          <ProfileTodayCard p={p} />
-        )}
-        {p.records && (
-          <div class="section">
-            <h3 style="margin-bottom:8px">Records</h3>
-            <div class="stat-tiles">
-              <div class="tile"><div class="k">All-time immersion</div><div class="v">{Math.round(p.records.totalMillis / HOUR)}h</div></div>
-              <div class="tile"><div class="k">Longest streak</div><div class="v">{p.records.longestStreak}d</div></div>
-              <div class="tile"><div class="k">Best day</div><div class="v">{formatHm(p.records.bestDayMillis)}</div>{p.records.bestDay > 0 && <div class="k">{formatYmd(p.records.bestDay)}</div>}</div>
-              <div class="tile"><div class="k">Days tracked</div><div class="v">{p.records.daysTracked}</div></div>
-            </div>
+      )}
+      {p.languages.length > 0 && (p.shows.rings || p.shows.goals || p.shows.streaks) && <ProfileTodayCard p={p} />}
+      {p.records && (
+        <div class="profile-card">
+          <div class="pc-title">Records</div>
+          <div class="record-tiles">
+            <RecordTile label="All-time immersion" value={formatHm(p.records.totalMillis)} />
+            <RecordTile label="Longest streak" value={`${p.records.longestStreak}d`} />
+            <RecordTile label="Best day" value={p.records.bestDay > 0 ? `${formatHm(p.records.bestDayMillis)} · ${formatYmd(p.records.bestDay)}` : '-'} />
+            <RecordTile label="Days tracked" value={String(p.records.daysTracked)} />
           </div>
-        )}
-        {zoo.length > 0 && (
-          <div class="section">
-            <div class="row" style="margin-bottom:8px"><h3 class="grow">Zoo · {zoo.length}</h3>{zoo.length > 12 && <button class="btn text small" onClick={() => setAll(!all)}>{all ? 'Show fewer' : 'Show all'}</button>}</div>
-            <div class="zoo-grid" style="grid-template-columns:repeat(auto-fill,minmax(72px,1fr))">
-              {(all ? zoo : zoo.slice(0, 12)).map(([a, n]) => (
-                <div key={a.id} class="tile-animal" style={{ borderColor: RARITY_COLOR[a.rarity] }} title={a.name}>
-                  <AnimalPhoto animal={a} />{cert(a.id)?.foil && <div class="foil-sheen" />}{n > 1 && <span class="count">×{n}</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </Dialog>
+        </div>
+      )}
+      {p.updatedAt > 0 && <div class="muted" style="font-size:11px;font-weight:500;letter-spacing:.5px">Updated {agoText(p.updatedAt)}</div>}
+      {open && (
+        <Dialog onClose={() => setOpen(null)} sheet={false} actions={<button class="btn" onClick={() => setOpen(null)}>Close</button>}>
+          <AnimalCardView animal={open} cert={cert(open.id)} />
+        </Dialog>
+      )}
+    </div>
   )
+}
+
+/** The top of a profile: their picture and name on a wash of their banner colour (or gradient),
+ *  else their race colour, else the theme's. */
+function ProfileBanner({ p, light }) {
+  const colors = (p.banner || p.color || '').split(',').map((c) => c.trim()).filter((c) => /^#[0-9a-f]{6}$/i.test(c))
+  const cs = colors.length ? (colors.length === 1 ? [colors[0], colors[0]] : colors) : null
+  const fill = cs ? `linear-gradient(90deg, ${cs.map((c) => withAlpha(c, light ? 0.4 : 0.5)).join(', ')})` : 'linear-gradient(color-mix(in srgb, var(--primary) 45%, transparent), color-mix(in srgb, var(--primary) 45%, transparent))'
+  const edge = cs ? `linear-gradient(90deg, ${cs.map((c) => withAlpha(c, 0.8)).join(', ')})` : 'linear-gradient(var(--primary), var(--primary))'
+  return (
+    <div class="profile-banner" style={{ background: `${fill} padding-box, linear-gradient(var(--bg), var(--bg)) padding-box, ${edge} border-box` }}>
+      <ProfilePicture p={p} color={cs ? cs[0] : null} />
+      <div class="name ellipsis">{p.name}</div>
+    </div>
+  )
+}
+
+/** Their picture as friends see it: the animal on display, else their race emoji in a circle. */
+function ProfilePicture({ p, color, size = 48 }) {
+  const catalog = useCatalog()
+  const animal = p.avatar !== 'emoji' && p.trophy && catalog ? catalog.find((a) => a.id === p.trophy) : null
+  if (animal) return <div class="pp-animal" style={{ width: size, height: size, borderColor: RARITY_COLOR[animal.rarity] }}><AnimalPhoto animal={animal} /></div>
+  return <div class="pp-emoji" style={{ width: size, height: size, background: color ? withAlpha(color, 0.3) : 'color-mix(in srgb, var(--primary) 30%, transparent)' }}>{(p.emoji || '').trim() || (p.name || '?').slice(0, 1).toUpperCase()}</div>
+}
+
+function RecordTile({ label, value }) {
+  return <div class="record-tile"><div class="k">{label}</div><div class="v ellipsis">{value}</div></div>
 }
 
 export { RarityBadge }

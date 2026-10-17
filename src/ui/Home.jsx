@@ -210,7 +210,7 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
         const goalMs = goal * 60000
         return (
           <div key={type} class="ring-stat">
-            <Ring size={64} progress={ms / goalMs} color={profile.colorHex} stops={stops} ringStyle={s.settings.ringStyle} icon={<TypeIcon type={type} size={22} color={iconColor} />} active={isActive(type)} light={light} />
+            <Ring size={64} progress={ms / goalMs} color={profile.colorHex} stops={stops} ringStyle={s.settings.ringStyle} iconType={type} iconColor={iconColor} active={isActive(type)} light={light} />
             <span class="val">{formatHm(ms)} / {formatHm(goalMs, true)}</span>
             <StreakBadge streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} />
           </div>

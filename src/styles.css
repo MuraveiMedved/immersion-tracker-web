@@ -420,3 +420,71 @@ textarea.input { resize: vertical; }
 .empty-races { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding: 28px 24px; }
 .empty-races .flag-circle { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
 .empty-races .btn { gap: 8px; }
+
+/* Profiles (the phone's ProfileSheet). */
+.profile-banner { display: flex; align-items: center; gap: 12px; border-radius: 18px; border: 1px solid transparent; padding: 16px 18px; margin-bottom: 14px; }
+.profile-banner .name { font-size: 24px; line-height: 32px; font-weight: 700; min-width: 0; }
+.pp-emoji { border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 22px; font-weight: 700; }
+.pp-animal { border-radius: 12px; overflow: hidden; flex: none; border: 2px solid; }
+.pp-animal img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profile-card { border-radius: 20px; padding: 16px; background: var(--profile-block, var(--block)); }
+.profile-card .pc-title { font-size: 14px; font-weight: 600; letter-spacing: .1px; margin-bottom: 10px; }
+.record-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.record-tile { border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--surface-variant) 50%, transparent); min-width: 0; }
+.record-tile .k { font-size: 11px; font-weight: 500; letter-spacing: .5px; color: var(--on-surface-variant); }
+.record-tile .v { font-size: 14px; font-weight: 700; }
+.profile-zoo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.profile-zoo .tile-animal { padding: 0; aspect-ratio: 1; }
+.trophy-card {
+  display: flex; align-items: center; gap: 14px; width: calc(100% - 12px); margin: 6px; padding: 12px; border-radius: 22px;
+  background: var(--profile-block, var(--c-high)); border: 2px solid var(--rarity); color: inherit;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--rarity) 35%, transparent);
+}
+.trophy-card .photo { width: 84px; height: 84px; border-radius: 16px; overflow: hidden; flex: none; box-shadow: 0 6px 16px color-mix(in srgb, var(--rarity) 45%, transparent); }
+.trophy-card .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Race cards (the phone's OpenEventCard / CompletedEventCard). */
+.race-card { border-radius: 16px; padding: 16px; margin-top: 12px; background: var(--block); border: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent); }
+.race-card.live { border-color: color-mix(in srgb, var(--primary) 60%, transparent); }
+.race-title { font-size: 22px; line-height: 28px; font-weight: 400; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.icon-badge { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+.card-tag { font-size: 12px; font-weight: 500; letter-spacing: .5px; padding: 4px 10px; border-radius: 999px; white-space: nowrap; flex: none; }
+.race-facts { display: flex; gap: 8px; margin-top: 12px; }
+.fact-tile { flex: 1; min-width: 0; border-radius: 12px; padding: 8px 10px; background: color-mix(in srgb, var(--surface-variant) 60%, var(--bg)); border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent); }
+.fact-tile .k { font-size: 11px; font-weight: 500; letter-spacing: .5px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fact-tile .v { font-size: 14px; font-weight: 600; margin-top: 3px; }
+.standings-switch { display: flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface) 6%, transparent); margin-top: 14px; }
+.standings-switch button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 7px 0; font-size: 14px; font-weight: 600; color: var(--on-surface-variant); }
+.standings-switch button.on { background: var(--secondary-container); color: var(--on-surface); }
+.standing-row { display: flex; align-items: center; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--outline-variant); cursor: pointer; }
+.standing-row.me { border: 2.5px solid color-mix(in srgb, var(--primary) 80%, transparent); background: color-mix(in srgb, var(--primary) 10%, transparent); padding: 6.5px 8.5px; }
+.standing-row .st-name { font-size: 16px; line-height: 24px; min-width: 0; }
+.st-figure { text-align: right; padding-left: 8px; flex: none; }
+.st-figure .v { font-size: 16px; font-weight: 500; line-height: 22px; }
+.st-figure .sub { font-size: 11px; color: var(--on-surface-variant); white-space: nowrap; }
+.rank-medal { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 14px; font-weight: 700; color: var(--on-surface-variant); border: 1px solid var(--outline-variant); }
+.rank-medal[style*="background"] { border: 0; }
+.split-bar { display: flex; width: 100%; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+.split-bar > div { height: 100%; }
+.split-line { gap: 14px; margin-top: 5px; height: 18px; align-items: center; }
+.split-amount { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--on-surface-variant); white-space: nowrap; }
+.live-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 999px; background: rgba(76, 175, 80, .14); flex: none; }
+.live-badge .pulse { width: 7px; height: 7px; border-radius: 50%; background: #4CAF50; animation: livepulse .9s ease-in-out infinite alternate; }
+@keyframes livepulse { to { opacity: .35; } }
+.stale-badge { font-size: 11px; color: var(--on-surface-variant); background: color-mix(in srgb, var(--on-surface-variant) 12%, transparent); padding: 1px 7px; border-radius: 999px; flex: none; }
+.best-day-line { gap: 6px; margin-top: 10px; font-size: 12px; color: var(--on-surface-variant); }
+.race-rule { height: 1px; background: color-mix(in srgb, var(--outline-variant) 50%, transparent); margin-top: 12px; }
+.winner-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--tertiary) 12%, transparent); font-size: 16px; font-weight: 500; }
+.label-medium { font-size: 12px; font-weight: 500; letter-spacing: .5px; }
+.title-large { font-size: 22px; line-height: 28px; }
+.title-small { font-size: 14px; font-weight: 600; letter-spacing: .1px; }
+.person-total { font-size: 36px; line-height: 44px; font-weight: 600; margin-top: 18px; }
+.person-stats { display: flex; gap: 10px; margin-top: 20px; }
+.person-stats > * { flex: 1; }
+.stat-tile { border-radius: 12px; padding: 10px 12px; background: color-mix(in srgb, var(--on-surface) 5%, transparent); min-width: 0; }
+.stat-tile .k { font-size: 11px; font-weight: 500; letter-spacing: .5px; color: var(--on-surface-variant); }
+.stat-tile .v { font-size: 16px; font-weight: 500; margin-top: 2px; }
+.day-bars { display: flex; align-items: flex-end; gap: 2px; height: 128px; margin-top: 4px; border-top: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent); padding-top: 8px; }
+.day-bar { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; position: relative; min-width: 0; }
+.day-bar .stack { display: flex; flex-direction: column; border-radius: 3px 3px 0 0; overflow: hidden; }
+.day-bar .best-dot { position: absolute; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--on-surface); }

@@ -233,6 +233,7 @@ function Appearance() {
   const main = s.profiles.find((p) => p.isMain && !p.isAnki) || s.profiles.find((p) => !p.isAnki)
   const color = main?.colorHex || '#2A9D8F'
   const stops = main?.gradientColors ? main.gradientColors.split(',') : null
+  const light = !isDarkFor(s.settings.uiColorPreset)
   const dark = window.matchMedia?.('(prefers-color-scheme: dark)').matches
   const pick = (key, options) => (
     <div class="chips">{options.map(([v, l]) => <button key={v} class={`chip ${s.settings[key] === v ? 'on' : ''}`} onClick={() => setSetting(key, v)}>{l}</button>)}</div>
@@ -269,10 +270,12 @@ function Appearance() {
       {tab === 'ring' && (
         <>
           <p class="muted" style="margin:16px 0 12px">Pick how your goal rings look, both in progress and once complete.</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px">
+          {/* Like the phone: two a row, each showing the in-progress fill and the completed look,
+              both active so they play the style's still-tracking animation. */}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             {RING_STYLES.map((r) => (
-              <button key={r} onClick={() => setSetting('ringStyle', r)} class="col" style={{ alignItems: 'center', background: 'var(--block)', border: `2px solid ${s.settings.ringStyle === r ? 'var(--primary)' : 'var(--block-line)'}`, borderRadius: 16, padding: 10, gap: 6 }}>
-                <div class="row" style="gap:4px"><Ring progress={0.62} color={color} stops={stops} ringStyle={r} size={44} /><Ring progress={1} color={color} stops={stops} ringStyle={r} size={44} /></div>
+              <button key={r} onClick={() => setSetting('ringStyle', r)} class="col" style={{ alignItems: 'center', background: 'var(--block)', border: `2px solid ${s.settings.ringStyle === r ? 'var(--primary)' : 'var(--block-line)'}`, borderRadius: 16, padding: 16, gap: 10 }}>
+                <div class="row" style="gap:16px"><Ring progress={0.65} color={color} stops={stops} ringStyle={r} size={52} iconType="PODCAST" iconColor={light ? '#000' : '#fff'} active light={light} /><Ring progress={1} color={color} stops={stops} ringStyle={r} size={52} iconType="PODCAST" active light={light} /></div>
                 <span class="label-large">{RING_LABEL[r]}</span>
               </button>
             ))}
