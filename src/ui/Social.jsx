@@ -6,7 +6,7 @@ import {
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL,
 } from '../model/race.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf } from '../model/time.js'
-import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor } from '../model/theme.js'
+import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill } from './common.jsx'
 import { Ring } from './Ring.jsx'
 import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge } from './Zoo.jsx'
@@ -660,36 +660,63 @@ function ProfileSettings({ onPreview }) {
   )
 }
 
-/** A profile's goals, as on Home: per language, each goal's ring (in their own ring style),
- *  today's minutes and the streak under it - with their Momentum pill on top once it's gold. */
+/** A profile's goals laid out like its owner's Home: the heading with their Momentum pill, then a
+ *  goal card per language - two columns, an odd one out across the full width. */
 function ProfileTodayCard({ p }) {
   const asOf = p.dayKey > 0 && p.dayKey !== ymdOf(Date.now())
+  const has = (l, k) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || !!l[k + 'Streak']
+  const cards = p.languages.filter((l) => has(l, 'listen') || has(l, 'read'))
+  const odd = cards.length % 2 === 1 ? cards[cards.length - 1] : null
+  const grid = cards.filter((l) => l !== odd)
+  const columns = [[], []]
+  const weights = [0, 0]
+  for (const l of grid) {
+    const i = weights[0] <= weights[1] ? 0 : 1
+    columns[i].push(l)
+    weights[i] += has(l, 'listen') + has(l, 'read')
+  }
+  if (!cards.length) return null
   return (
-    <div class="section profile-card">
-      <div class="row" style="align-items:baseline;margin-bottom:10px">
-        <h3 style="font-weight:600">Today</h3>
+    <div class="section">
+      <div class="row" style="margin-bottom:6px">
+        <h2 class="grow">Today</h2>
         {asOf && <span class="label-small muted">as of {formatYmd(p.dayKey)}</span>}
+        {p.shows.streaks && p.goldenDays >= 3 && <MomentumPill days={p.goldenDays} progress={1} />}
       </div>
-      {p.shows.streaks && p.goldenDays >= 3 && <div style="margin-bottom:6px"><MomentumPill days={p.goldenDays} progress={1} /></div>}
-      {p.languages.map((l, i) => {
-        const goals = [['listen', 'PODCAST'], ['read', 'READING']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak'])
-        if (!goals.length) return null
+      {grid.length > 0 && <div class="goal-cols">{columns.map((col, i) => <div key={i}>{col.map((l, j) => <ProfileGoalCard key={j} l={l} ringStyle={p.ringStyle} />)}</div>)}</div>}
+      {odd && <ProfileGoalCard l={odd} ringStyle={p.ringStyle} wide />}
+    </div>
+  )
+}
+
+/** One language as a goal card on its owner's Home: the language's colour taken down to the card,
+ *  its name in that colour, and per goal its ring, today's minutes and the streak under it. */
+function ProfileGoalCard({ l, ringStyle, wide }) {
+  const light = !isDarkFor(getState().settings.uiColorPreset)
+  const color = l.color || '#888888'
+  const stops = l.gradient ? l.gradient.split(',').map((c) => c.trim()) : null
+  const multi = stops && stops.length > 1
+  const bg = multi ? `linear-gradient(135deg, ${stops.map((c) => dimColor(c, 0.6, 0.18, light)).join(', ')})` : dimColor(color, 0.6, 0.18, light)
+  const nameStyle = multi
+    ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+    : { color: light ? deepened(color, 0.42) : color }
+  const iconColor = light ? '#000' : '#fff'
+  const goals = [['listen', 'PODCAST'], ['read', 'READING']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak'])
+  return (
+    <div class={`goal-card ${wide ? 'wide' : ''}`} style={{ background: bg, cursor: 'default' }}>
+      <div class="name ellipsis" style={nameStyle}>{l.name}</div>
+      {goals.map(([k, type]) => {
+        const goal = l[k + 'Goal']
+        const today = l[k + 'Today'] ?? 0
+        const progress = l[k + 'Progress'] ?? (goal > 0 ? today / goal : null)
+        const streak = l[k + 'Streak']
         return (
-          <div key={i} class="row" style="padding:6px 0;align-items:flex-start">
-            <span class="grow ellipsis" style={{ color: l.color || 'inherit', fontWeight: 600, paddingTop: 12 }}>{l.name}</span>
-            {goals.map(([k, type]) => {
-              const progress = l[k + 'Progress'] ?? (l[k + 'Goal'] > 0 && l[k + 'Today'] != null ? l[k + 'Today'] / l[k + 'Goal'] : null)
-              const streak = l[k + 'Streak']
-              return (
-                <div key={k} class="ring-stat" style="margin-left:14px">
-                  {progress != null
-                    ? <Ring size={46} progress={progress} color={l.color || '#888'} stops={l.gradient ? l.gradient.split(',') : null} ringStyle={p.ringStyle || 'CLASSIC'} icon={<TypeIcon type={type} size={16} />} />
-                    : <TypeIcon type={type} size={28} color={l.color} />}
-                  {l[k + 'Goal'] != null && <span class="val muted">{l[k + 'Today'] ?? 0}/{l[k + 'Goal']}m</span>}
-                  {streak && <StreakBadge streak={{ current: streak.current, record: streak.record }} />}
-                </div>
-              )
-            })}
+          <div key={k} class="ring-stat">
+            {progress != null
+              ? <Ring size={64} progress={progress} color={color} stops={stops} ringStyle={ringStyle || 'CLASSIC'} icon={<TypeIcon type={type} size={22} color={iconColor} />} light={light} />
+              : <div style="width:64px;height:64px;display:grid;place-items:center"><TypeIcon type={type} size={40} color={color} /></div>}
+            {goal != null && <span class="val">{formatHm(today * 60000)} / {formatHm(goal * 60000, true)}</span>}
+            {streak && <StreakBadge streak={{ current: streak.current, record: streak.record }} />}
           </div>
         )
       })}
