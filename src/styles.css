@@ -744,3 +744,8 @@ textarea.input { resize: vertical; }
 .toast { padding-right: 8px; gap: 8px; }
 .toast-close { width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; display: grid; place-items: center; background: transparent; color: var(--bg); opacity: .7; cursor: pointer; }
 .toast-close:hover { opacity: 1; background: color-mix(in srgb, var(--bg) 14%, transparent); }
+
+/* Race person sheet: goal bar and the ahead/behind chip. */
+.goal-bar { height: 6px; border-radius: 999px; background: var(--surface-variant); overflow: hidden; }
+.goal-bar > div { height: 100%; border-radius: 999px; background: var(--primary); }
+.diff-chip { flex: none; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); white-space: nowrap; }

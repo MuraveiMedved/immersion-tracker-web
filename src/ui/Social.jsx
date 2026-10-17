@@ -494,6 +494,8 @@ function OutlookNote({ o, event }) {
  * The progress chart and its replay - a port of the phone's ProgressChart (RaceInsights.kt).
  * --------------------------------------------------------------------------------------------- */
 
+// Tall enough that racers close together don't sit on top of each other (was 160).
+const CHART_HEIGHT = 260
 const MONTH_LABEL_MIN_DAYS = 120
 const JOIN_REACTION_PROGRESS = 0.04
 const OVERTAKE_REACTION_PROGRESS = 0.06
@@ -591,15 +593,19 @@ function ProgressChart({ event, now }) {
   for (let d = first; d <= last && days.length < 731; d++) days.push(epochDayToYmd(d))
   const lines = useMemo(() => withData.map((st) => {
     let run = 0
-    const cumulative = days.map((k) => Math.min((run += st.daily[k] || 0), st.millis))
+    // Point 0 is the start of the first day (nothing yet, for everyone); point i is the end of
+    // day i - so every line rises from zero instead of starting in mid-air at its first day's total.
+    const cumulative = [0, ...days.map((k) => Math.min((run += st.daily[k] || 0), st.millis))]
     const joinedLate = st.joinedAt > event.startMillis && st.userId !== event.createdBy
     // Time logged on race days before they joined still counts - so a late joiner comes in on their
     // first day with any, and the replay grows their line through those days rather than jumping
     // it up all at once on the day they joined.
+    // The point they come in at is the start of that day (still zero), so their line grows up from
+    // the baseline like everyone else's.
     const joinIndex = !joinedLate ? 0 : (() => {
       const i = days.indexOf(epochDayToYmd(raceDay(st.joinedAt)))
       const joinDay = i < 0 ? days.length - 1 : i
-      const firstWithTime = cumulative.findIndex((v) => v > 0)
+      const firstWithTime = cumulative.findIndex((v) => v > 0) - 1
       return firstWithTime < 0 ? joinDay : Math.min(joinDay, firstWithTime)
     })()
     const color = lineColor(st, event.standings.indexOf(st), event.standings)
@@ -609,9 +615,11 @@ function ProgressChart({ event, now }) {
   const overtakes = useMemo(() => findOvertakes(lines, Math.max(60000, topValue * 0.005)), [lines])
   const significantDays = [...new Set(overtakes.filter((o) => o.important).map((o) => o.day))]
   const replayMillis = Math.min(12000, Math.max(3000, days.length * 220))
-  const timeline = useMemo(() => new ReplayTimeline(replayMillis, significantDays.map((d) => d / Math.max(1, days.length - 1))), [overtakes, replayMillis, days.length])
+  // Chart points: the start of the first day, then the end of each day.
+  const points = days.length + 1
+  const timeline = useMemo(() => new ReplayTimeline(replayMillis, significantDays.map((d) => d / Math.max(1, points - 1))), [overtakes, replayMillis, points])
   const tailNeeded = useMemo(() => {
-    const li = Math.max(1, days.length - 1)
+    const li = Math.max(1, points - 1)
     const ends = [...overtakes.map((o) => o.day / li + OVERTAKE_REACTION_PROGRESS / 2), ...lines.filter((l) => l.joinIndex > 0).map((l) => l.joinIndex / li + JOIN_REACTION_PROGRESS * 1.4), ...significantDays.map((d) => d / li + SPOTLIGHT_REACH)]
     return Math.max(0, Math.max(0, ...ends) - 1)
   }, [overtakes, lines, days.length])
@@ -637,7 +645,7 @@ function ProgressChart({ event, now }) {
     const canvas = canvasRef.current
     if (!canvas || !lines.length || topValue <= 0) return
     const dpr = window.devicePixelRatio || 1
-    const H = 160, W = width
+    const H = CHART_HEIGHT, W = width
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr)
     const ctx = canvas.getContext('2d')
     const css = getComputedStyle(canvas)
@@ -655,14 +663,14 @@ function ProgressChart({ event, now }) {
         if (t > tailStart) tail = Math.min(tailNeeded, ((t - tailStart) / Math.max(1, tailMillis)) * tailNeeded)
       }
       const progress = replaying ? timeline.progressAt(time) : 1
-      const lastIndex = Math.max(1, days.length - 1)
-      const position = progress * (days.length - 1)
+      const lastIndex = Math.max(1, points - 1)
+      const position = progress * (points - 1)
       const effect = progress + (replaying ? tail : 0)
       const since = (day) => effect - day / lastIndex
       const bubble = 10
       const inset = lines.some((l) => l.st.emoji) ? bubble : 0
       const plotW = W - inset
-      const x = (i) => (days.length <= 1 ? plotW / 2 : (i * plotW) / (days.length - 1))
+      const x = (i) => (i * plotW) / (points - 1)
       const y = (v) => H - (v / yMax) * (H - inset)
       const visible = lines.filter((l) => !replaying || position >= l.joinIndex)
       const arrival = (l) => (!replaying || l.joinIndex === 0 ? 1 : Math.min(1, Math.max(0, since(l.joinIndex) / JOIN_REACTION_PROGRESS)))
@@ -696,14 +704,14 @@ function ProgressChart({ event, now }) {
         ctx.save(); ctx.setLineDash([8, 6]); ctx.lineWidth = 1.5; ctx.strokeStyle = goalColor
         ctx.beginPath(); ctx.moveTo(0, y(goal)); ctx.lineTo(W, y(goal)); ctx.stroke(); ctx.restore()
       }
-      const step = Math.max(1, days.length / (plotW / 2))
+      const step = Math.max(1, points / (plotW / 2))
       for (const l of visible) {
         const sw = l.isMe ? 3 : 2
         const start = replaying ? l.joinIndex : 0
         const tip = [x(position), y(valueAt(l, position))]
         const alpha = arrival(l) * dimFor(l)
         ctx.strokeStyle = ctx.fillStyle = `rgba(${l.rgb},${alpha})`
-        if (l.cumulative.length === 1 || position <= start) {
+        if (position <= start) {
           ctx.beginPath(); ctx.arc(tip[0], tip[1], sw * 1.5, 0, Math.PI * 2); ctx.fill()
         } else {
           ctx.beginPath(); ctx.moveTo(x(start), y(valueAt(l, start)))
@@ -752,7 +760,7 @@ function ProgressChart({ event, now }) {
         ctx.restore()
       }
       if (replaying) {
-        const k = days[Math.min(days.length - 1, Math.max(0, Math.round(progress * (days.length - 1))))]
+        const k = days[Math.min(days.length - 1, Math.max(0, Math.round(progress * (points - 1)) - 1))]
         setShownDay(k)
         if (time >= 1 && tail >= tailNeeded) { setReplay(null); setShownDay(null); return }
       }
@@ -776,7 +784,7 @@ function ProgressChart({ event, now }) {
           </button>
         )}
       </div>
-      <div style="margin-top:4px"><canvas ref={canvasRef} style={{ width: '100%', height: 160, display: 'block' }} /></div>
+      <div style="margin-top:4px"><canvas ref={canvasRef} style={{ width: '100%', height: CHART_HEIGHT, display: 'block' }} /></div>
       <div class="row" style="margin-top:4px;font-size:11px">
         <span class="muted grow">{formatYmd(+days[0])}</span>
         {days.length > 1 && <span style={replay ? { color: 'var(--primary)', fontWeight: 600 } : { color: 'var(--on-surface-variant)' }}>{label(replay && shownDay ? shownDay : days[days.length - 1])}</span>}
@@ -831,30 +839,37 @@ function PersonSheet({ event, standing: st, now, onClose, onOpenMe }) {
   const diff = mine ? st.millis - mine.millis : 0
   return (
     <Dialog hideScrollbar onClose={onClose} actions={<button class="btn" onClick={onClose}>Close</button>}>
+      {/* Who: medal, name and place, with being friends as a small action on the right. */}
       <div class="row" style="gap:12px">
         <RankMedal rank={rank} />
         <div class="grow" style="min-width:0">
           <div class="row" style="gap:8px"><span class="title-large ellipsis">{withEmoji(st.emoji, st.name)}</span>{isLiveAt(st, now) && <LiveBadge kind={st.activeKind} />}</div>
-          <div class="muted small">{ordinal(rank)} of {event.standings.length} in {event.name}</div>
+          <div class="muted small">{ordinal(rank)} of {event.standings.length}</div>
         </div>
+        {isMe && onOpenMe && <button class="btn tonal small" onClick={onOpenMe}><Icon name="edit" size={16} />Profile</button>}
+        {!isMe && (isFriend ? <span class="label-large" style="color:var(--primary)">Friends ✓</span>
+          : incoming ? <button class="btn small" onClick={() => friendAction(() => respondFriend(st.userId, true), `You and ${st.name} are now friends!`)}>Accept</button>
+            : outgoing ? <span class="label-large muted">Requested</span>
+              : <button class="btn tonal small" disabled={busy} onClick={() => friendAction(() => addFriendById(st.userId), `Friend request sent to ${st.name}`)}>{busy ? 'Sending…' : 'Add friend'}</button>)}
       </div>
-      <div class="person-total">{formatHm(st.millis)}</div>
-      <div class="muted">{percentText(st.millis, goal)}% of the {event.goalHours}h goal</div>
-      {localTime && <div class="muted" style="font-size:11px;margin-top:2px">{localTime} where they are</div>}
-      {report && <div class="muted" style="font-size:11px;margin-top:2px">{report}</div>}
-      {!isMe && mine && (
-        <div style={{ marginTop: 8, fontWeight: 500, color: diff > 0 ? 'var(--danger)' : 'var(--primary)' }}>
-          {diff > 0 ? `${formatHm(diff)} ahead of you` : diff < 0 ? `${formatHm(-diff)} behind you` : 'Tied with you'}
-        </div>
-      )}
-      {/* Your own: everything about your profile is one tap away. */}
-      {isMe && onOpenMe && <div class="row" style="margin-top:12px"><button class="btn outline" onClick={onOpenMe}><Icon name="edit" size={18} />Edit my profile</button></div>}
-      {!isMe && (
-        <div class="row" style="margin-top:12px">
-          {isFriend ? <span class="label-large" style="color:var(--primary)">Friends</span>
-            : incoming ? <button class="btn" onClick={() => friendAction(() => respondFriend(st.userId, true), `You and ${st.name} are now friends!`)}>Accept friend request</button>
-              : outgoing ? <span class="label-large muted">Friend request sent</span>
-                : <button class="btn outline" disabled={busy} onClick={() => friendAction(() => addFriendById(st.userId), `Friend request sent to ${st.name}`)}>{busy ? 'Sending…' : 'Add friend'}</button>}
+      {/* The total against the goal: the number, then a bar instead of a sentence. */}
+      <div class="row" style="align-items:baseline;gap:8px;margin-top:18px">
+        <span class="person-total" style="margin:0">{formatHm(st.millis)}</span>
+        <span class="muted" style="font-size:16px;font-weight:500">/ {event.goalHours}h</span>
+      </div>
+      <div class="row" style="gap:10px;margin-top:8px">
+        <div class="goal-bar grow"><div style={{ width: `${Math.min(100, goal > 0 ? (st.millis * 100) / goal : 0)}%` }} /></div>
+        <span class="muted" style="font-size:12px;font-weight:500">{percentText(st.millis, goal)}%</span>
+      </div>
+      {/* Against me, then their clock and how fresh the number is - one line. */}
+      {((!isMe && mine) || localTime || report) && (
+        <div class="row" style="gap:10px;margin-top:10px">
+          {!isMe && mine && (
+            <span class="diff-chip" style={{ '--c': diff > 0 ? 'var(--danger)' : 'var(--primary)' }}>
+              {diff > 0 ? `${formatHm(diff)} ahead of you` : diff < 0 ? `${formatHm(-diff)} behind you` : 'Tied with you'}
+            </span>
+          )}
+          <span class="muted grow" style="font-size:11px;line-height:15px">{[localTime && `${localTime} their time`, report].filter(Boolean).join(' · ')}</span>
         </div>
       )}
       {profile && <>
