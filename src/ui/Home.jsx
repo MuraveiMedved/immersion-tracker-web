@@ -84,7 +84,7 @@ export function Home({ nav }) {
 
       {!languages.length ? (
         <div class="card center" style="margin-top:8px">
-          <h2 style="margin-bottom:4px">Add your first language</h2>
+          <h2 style="margin-bottom:4px">Add a language you're studying</h2>
           <p class="muted" style="margin:0 0 14px">Pick a name, a colour and a daily goal - its rings show up here.</p>
           <button class="btn" onClick={() => nav('settings', { addLanguage: true })}>Add language</button>
         </div>
