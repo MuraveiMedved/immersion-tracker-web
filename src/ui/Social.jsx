@@ -590,7 +590,15 @@ function ProgressChart({ event, now }) {
     let run = 0
     const cumulative = days.map((k) => Math.min((run += st.daily[k] || 0), st.millis))
     const joinedLate = st.joinedAt > event.startMillis && st.userId !== event.createdBy
-    const joinIndex = !joinedLate ? 0 : (() => { const i = days.indexOf(epochDayToYmd(raceDay(st.joinedAt))); return i < 0 ? days.length - 1 : i })()
+    // Time logged on race days before they joined still counts - so a late joiner comes in on their
+    // first day with any, and the replay grows their line through those days rather than jumping
+    // it up all at once on the day they joined.
+    const joinIndex = !joinedLate ? 0 : (() => {
+      const i = days.indexOf(epochDayToYmd(raceDay(st.joinedAt)))
+      const joinDay = i < 0 ? days.length - 1 : i
+      const firstWithTime = cumulative.findIndex((v) => v > 0)
+      return firstWithTime < 0 ? joinDay : Math.min(joinDay, firstWithTime)
+    })()
     const color = lineColor(st, event.standings.indexOf(st), event.standings)
     return { st, color, rgb: rgbOf(color), cumulative, isMe: st.userId === me, joinIndex }
   }).sort((x, y) => x.isMe - y.isMe), [event, days.length, me])
