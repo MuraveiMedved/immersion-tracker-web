@@ -14,6 +14,8 @@ export const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbyUSUQG
 const SNAPSHOT_KEY = 'syncSnapshot'
 const PUSH_CHUNK = 1500
 const AUTO_DELAY = 4000
+// Just long enough for one action's several updates (and its IndexedDB save) to land together.
+const ENTRY_DELAY = 300
 const PERIODIC = 2 * 60 * 1000
 
 export const syncUrl = () => getState().sync.url || DEFAULT_SYNC_URL
@@ -319,6 +321,16 @@ export async function signOut({ tellServer = true } = {}) {
 }
 
 /** Syncs a few seconds after any change, every couple of minutes, and when the page comes back. */
+/** Cheap fingerprint of the entries - changes whenever one is added, removed or edited. */
+function entrySignature(state) {
+  let h = state.entries.length
+  for (const e of state.entries) {
+    const key = `${e.id}|${e.startTimeMillis}|${e.endTimeMillis}|${e.languageProfileId}|${e.contentType}|${e.mediaTitle}`
+    for (let i = 0; i < key.length; i++) h = (Math.imul(h, 31) + key.charCodeAt(i)) | 0
+  }
+  return h
+}
+
 export function startAutoSync() {
   let timer = null
   const check = async () => {
@@ -326,12 +338,22 @@ export function startAutoSync() {
     await loadSnapshot()
     if (diff(collect(getState()), snapshot).length) syncNow()
   }
+  // Entries (added, started, stopped, edited, deleted) go up straight away so other devices see
+  // them at once; anything else waits AUTO_DELAY so a run of settings edits is sent together.
+  let lastEntries = entrySignature(getState())
   subscribe(() => {
     if (!signedIn()) return
+    const sig = entrySignature(getState())
+    const entriesChanged = sig !== lastEntries
+    lastEntries = sig
     clearTimeout(timer)
-    timer = setTimeout(check, AUTO_DELAY)
+    timer = setTimeout(check, entriesChanged ? ENTRY_DELAY : AUTO_DELAY)
   })
   setInterval(() => { if (signedIn() && document.visibilityState === 'visible') syncNow() }, PERIODIC)
-  document.addEventListener('visibilitychange', () => { if (signedIn() && document.visibilityState === 'visible') syncNow() })
+  document.addEventListener('visibilitychange', () => {
+    if (!signedIn()) return
+    if (document.visibilityState === 'visible') syncNow()
+    else { clearTimeout(timer); check() } // leaving the tab: send what's waiting now
+  })
   if (signedIn()) syncNow()
 }
