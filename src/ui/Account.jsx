@@ -26,12 +26,12 @@ export function AccountSection() {
         {!signed ? (
           <>
             <div class="muted small" style="padding:10px 4px">
-              Save your history online and use it on several devices - an iPhone and a laptop, say. Without an account, everything stays in this browser only.
+              Save your history online and use it on several devices - an iPhone and a laptop, say. Without an account, everything stays in this browser only. (This is for the web app - the Android app doesn't use accounts; bring its history in with Import below.)
             </div>
-            <SettingRow icon="☁️" title="Create an account" hint="Starts with what's on this device.">
+            <SettingRow icon="☁️" title="Create an account" hint="Start here on your first device - no code needed. It saves what's on this device.">
               <button class="btn small" onClick={() => setDialog('create')}>Create</button>
             </SettingRow>
-            <SettingRow icon="🔗" title="I already have one" hint="Sign in with a code from your other device, or your recovery key.">
+            <SettingRow icon="🔗" title="I already have one" hint="You made an account in the web app on another device - get a code there (Settings › Account & sync › Add another device), or use your recovery key.">
               <button class="btn tonal small" onClick={() => setDialog('join')}>Sign in</button>
             </SettingRow>
           </>
@@ -114,7 +114,7 @@ function SignInDialog({ mode, onClose }) {
             <p class="muted small" style="margin:0">Your account's data comes to this device, and anything already here is added to it.{s.race.name ? ' Your race name and settings become the account\'s.' : ''}</p>
             {useKey
               ? <label class="field">Recovery key<input class="input" value={key} autoFocus onInput={(e) => setKey(e.currentTarget.value)} /></label>
-              : <label class="field">Code from your other device (Settings › Account › Add another device)
+              : <label class="field">Code shown on your other device's web app (Settings › Account &amp; sync › Add another device). Not a code from the Android app.
                 <input class="input" style="text-transform:uppercase;letter-spacing:3px;font-weight:700" value={code} autoFocus onInput={(e) => setCode(e.currentTarget.value.toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && ready && go()} />
               </label>}
             <button class="btn text small" style="align-self:flex-start;padding:0" onClick={() => setUseKey(!useKey)}>{useKey ? 'Use a code instead' : 'Use a recovery key instead'}</button>
@@ -139,7 +139,7 @@ function LinkCodeDialog({ onClose }) {
       {res && left === 0 && <button class="btn tonal" onClick={get}>New code</button>}
       <button class="btn" onClick={onClose}>Done</button>
     </>}>
-      <p class="muted small" style="margin-top:0">On the new device open Immersion Tracker → Settings → Account &amp; sync → I already have one, and type:</p>
+      <p class="muted small" style="margin-top:0">On the new device, open the web app (muraveimedved.github.io/immersion-tracker-web) → Settings → Account &amp; sync → I already have one, and type:</p>
       {error ? <div class="err">{error}</div> : !res ? <Spinner /> : (
         <div class="center">
           <div class="code-pill" style="display:inline-block;font-size:28px;padding:10px 18px">{res.code}</div>
