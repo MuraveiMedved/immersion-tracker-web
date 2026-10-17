@@ -3,7 +3,7 @@ import { useStore, useNow, update, getState } from '../store.js'
 import {
   sync, createEvent, joinByCode, leaveEvent, endEvent, editEvent, deleteEventForEveryone, deleteCompleted, visibleEvents, raceOutlook,
   raceStatus, onRaceStatus, errorText, ordinal, localTodayKey, refreshFriends, addFriendByCode, addFriendById, respondFriend, removeFriend,
-  readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL,
+  readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
@@ -328,9 +328,21 @@ function RaceCharts({ event, now }) {
   )
 }
 
-function RaceCard({ event, now, completed }) {
+/** [event] with your own standing's live tag taken from what this browser is tracking right now,
+ *  rather than from your last report - so it's right the moment you start or stop. */
+function withMyLive(event, me, entries, now) {
+  const live = now >= event.startMillis && !(event.endMillis != null && now >= event.endMillis)
+  if (!live || !event.standings.some((x) => x.userId === me)) return event
+  const running = runningForRace(entries)
+  return { ...event, standings: event.standings.map((x) => (x.userId === me ? { ...x, active: !!running, activeKind: activeKindOf(running) } : x)) }
+}
+
+function RaceCard({ event: raw, now: tickNow, completed }) {
   const s = useStore()
   const me = s.race.userId
+  // Ticks every 30s for countdowns; your own live tag follows the store straight away.
+  const now = Math.max(tickNow, Date.now())
+  const event = withMyLive(raw, me, s.entries, now)
   const [menu, setMenu] = useState(false)
   const [person, setPerson] = useState(null)
   const [confirm, setConfirm] = useState(null)

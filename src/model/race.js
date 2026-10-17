@@ -66,6 +66,14 @@ export function cappedAnki(immersionByDay, ankiByDay, share = ANKI_RACE_SHARE) {
   return { countedByDay, counted, banked: anki - counted }
 }
 
+/** What this browser is tracking that counts in races (listening, reading or Anki with a
+ *  language) - the newest, if several. Shared by the report and your own row's live tag. */
+export function runningForRace(entries) {
+  return entries.filter((e) => e.endTimeMillis == null && e.languageProfileId != null && (e.contentType === PODCAST || e.contentType === READING || e.contentType === ANKI))
+    .sort((a, b) => b.startTimeMillis - a.startTimeMillis)[0] || null
+}
+export const activeKindOf = (e) => (e ? (e.contentType === READING ? 'reading' : e.contentType === ANKI ? 'anki' : 'listening') : '')
+
 /** This browser's numbers for [event]: only entries with a language count, music never does, and
  *  only the part inside the event's window. */
 export function scoreFor(event, entries, now = Date.now()) {
@@ -93,10 +101,7 @@ export function scoreFor(event, entries, now = Date.now()) {
   for (const [d, m] of [...byDay].sort((a, b) => a[0] - b[0])) if (!best || m > best[1]) best = [d, m]
   const obj = (map) => Object.fromEntries([...map].sort((a, b) => a[0] - b[0]).map(([k, v]) => [String(k), v]))
   const live = now >= event.startMillis && !(event.endMillis != null && now >= event.endMillis)
-  const running = live
-    ? entries.filter((e) => e.endTimeMillis == null && e.languageProfileId != null && (e.contentType === PODCAST || e.contentType === READING || e.contentType === ANKI))
-      .sort((a, b) => b.startTimeMillis - a.startTimeMillis)[0]
-    : null
+  const running = live ? runningForRace(entries) : null
   return {
     eventId: event.id,
     windowEnd: event.endMillis ?? 0,
@@ -112,7 +117,7 @@ export function scoreFor(event, entries, now = Date.now()) {
     timeZone: localZone(),
     dayStartHour: RACE_DAY_START_HOUR,
     active: !!running,
-    activeKind: running ? (running.contentType === READING ? 'reading' : running.contentType === ANKI ? 'anki' : 'listening') : '',
+    activeKind: activeKindOf(running),
   }
 }
 

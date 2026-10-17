@@ -1,9 +1,9 @@
 import { render } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import './styles.css'
-import { loadState, useStore, getState, flush, update } from './store.js'
+import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
 import { applyTheme } from './model/theme.js'
-import { sync, shouldReport, raceConfigured } from './model/race.js'
+import { sync, shouldReport, raceConfigured, runningForRace } from './model/race.js'
 import { ensureBase, recordEarnedEggs } from './model/zoo.js'
 import * as syncModule from './model/sync.js'
 import { Home } from './ui/Home.jsx'
@@ -77,14 +77,30 @@ function App() {
 function startBackgroundWork() {
   let lastRunning = ''
   let lastSync = 0
+  let reportTimer = null
+  // Starting or stopping tracking is reported straight away (a beat later, so a quick switch from
+  // one session to another goes up as one report), so your green tag shows for everyone at once.
+  const runningKey = () => {
+    const r = runningForRace(getState().entries)
+    return r ? `${r.id}:${r.contentType}` : ''
+  }
+  const checkRunning = () => {
+    const key = runningKey()
+    if (key === lastRunning) return false
+    lastRunning = key
+    lastSync = Date.now()
+    clearTimeout(reportTimer)
+    reportTimer = setTimeout(() => shouldReport() && sync(), 1500)
+    return true
+  }
+  lastRunning = runningKey()
+  subscribe(checkRunning)
   const tick = () => {
     const s = getState()
-    const running = s.entries.filter((e) => e.endTimeMillis == null && e.languageProfileId != null && e.contentType !== 'LISTENING').map((e) => e.id).join(',')
+    const running = runningKey()
     const now = Date.now()
-    if (running !== lastRunning) {
-      lastRunning = running
-      setTimeout(() => shouldReport() && sync(), 3000)
-      lastSync = now
+    if (checkRunning()) {
+      // reported above
     } else if (shouldReport() && now - lastSync > (running ? 10 : 30) * 60 * 1000) {
       lastSync = now
       sync()
