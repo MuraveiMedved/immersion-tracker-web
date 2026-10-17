@@ -731,3 +731,12 @@ textarea.input { resize: vertical; }
 .sa-item:hover .sa-go, .sa-item.live .sa-go { opacity: 1; }
 .sa-tip { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 0 6px; font-size: 12px; line-height: 17px; color: var(--on-surface-variant); }
 .sa-tip svg { margin-top: 1px; }
+
+/* A goal card's rings sit side by side whenever the card has the room (most desktop and tablet
+   widths, even two cards to a row), stacked only when it's too narrow - like on a phone. */
+.goal-card { container-type: inline-size; }
+.goal-card .rings { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.goal-card.wide .rings { display: contents; }
+@container (min-width: 236px) {
+  .goal-card:not(.wide) .rings { flex-direction: row; justify-content: space-evenly; align-items: flex-start; }
+}

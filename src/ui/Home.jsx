@@ -307,6 +307,7 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
   return (
     <div class={`goal-card ${wide ? 'wide' : ''}`} style={{ background: bg, borderColor: outline }} onClick={onOpen} role="button">
       <div class="name" style={nameStyle}>{profile.name}</div>
+      <div class="rings">
       {rings.map(([type, goal]) => {
         const ms = todayOf(type)
         const on = isActive(type)
@@ -332,6 +333,7 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
