@@ -1,7 +1,7 @@
 // Run with: TZ=America/Chicago npm test
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { goldenStreakDays, computeStreak, counts, dailyTotalsFor, PODCAST, READING, ANKI, LISTENING } from '../src/model/rules.js'
+import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, PODCAST, READING, ANKI, LISTENING } from '../src/model/rules.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate } from '../src/model/zoo.js'
 import { parsePolyLogger, parseToggl, csvRows, guessMapping } from '../src/model/imports.js'
@@ -18,17 +18,20 @@ test('what counts as immersion', () => {
   assert.equal(counts(PODCAST, null), false)
 })
 
-test('Momentum: today counts only once it reaches 2h', () => {
+test('Momentum: today counts only once it reaches 1h', () => {
   const now = at(2026, 10, 16, 9)
-  const days = [13, 14, 15].map((d) => entry(at(2026, 10, d, 10), 2 * HOUR))
-  assert.equal(goldenStreakDays(days, now), 3)
-  // An hour today doesn't break or add to it.
-  assert.equal(goldenStreakDays([...days, entry(at(2026, 10, 16, 8), HOUR)], now), 3)
-  assert.equal(goldenStreakDays([...days, entry(at(2026, 10, 16, 6), 2 * HOUR)], at(2026, 10, 16, 9)), 4)
+  const days = [11, 12, 13, 14, 15].map((d) => entry(at(2026, 10, d, 10), HOUR))
+  assert.equal(goldenStreakDays(days, now), 5)
+  // Half an hour today doesn't break or add to it.
+  assert.equal(goldenStreakDays([...days, entry(at(2026, 10, 16, 8), HOUR / 2)], now), 5)
+  assert.equal(goldenStreakDays([...days, entry(at(2026, 10, 16, 6), HOUR)], at(2026, 10, 16, 9)), 6)
   // A short day breaks the run.
-  assert.equal(goldenStreakDays([entry(at(2026, 10, 13, 10), 2 * HOUR), entry(at(2026, 10, 14, 10), HOUR), entry(at(2026, 10, 15, 10), 2 * HOUR)], now), 1)
+  assert.equal(goldenStreakDays([entry(at(2026, 10, 13, 10), HOUR), entry(at(2026, 10, 14, 10), HOUR / 2), entry(at(2026, 10, 15, 10), HOUR)], now), 1)
   // Music and Anki don't count.
   assert.equal(goldenStreakDays([13, 14, 15].map((d) => entry(at(2026, 10, d, 10), 3 * HOUR, ANKI))), 0)
+  // Gold from five days.
+  assert.equal(isGolden(days.slice(1), now), false)
+  assert.equal(isGolden(days, now), true)
 })
 
 test('Momentum splits sessions across midnight', () => {

@@ -237,7 +237,7 @@ export function StreakBadge({ streak }) {
   )
 }
 
-/** The phone's GoldenStreakPill: today's progress toward 2 hours as a thin gold ring round the
+/** The phone's GoldenStreakPill: today's progress toward 1 hour as a thin gold ring round the
  *  flame (just the flame once today is done), then the days. */
 export function MomentumPill({ days, progress, onClick }) {
   const lit = days >= 3

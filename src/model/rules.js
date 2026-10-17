@@ -7,8 +7,8 @@ export const PODCAST = 'PODCAST' // spoken listening - "Listening" in the UI
 export const READING = 'READING'
 export const ANKI = 'ANKI'
 
-export const GOLDEN_DAYS = 3
-export const GOLDEN_DAILY_MILLIS = 2 * HOUR
+export const GOLDEN_DAYS = 5
+export const GOLDEN_DAILY_MILLIS = HOUR
 const MAX_GOLDEN_LOOKBACK_DAYS = 400
 
 export const durationOf = (e, now = Date.now()) => Math.max(0, (e.endTimeMillis ?? now) - e.startTimeMillis)
@@ -38,7 +38,7 @@ export function dailyMillis(entries, now, days = GOLDEN_DAYS + 1) {
   return totals
 }
 
-/** Days in a row with 2+ hours - today counts once it reaches that, otherwise up to yesterday. */
+/** Days in a row with 1+ hour - today counts once it reaches that, otherwise up to yesterday. */
 export function goldenStreakDays(entries, now = Date.now()) {
   const daily = dailyMillis(entries, now, MAX_GOLDEN_LOOKBACK_DAYS)
   const today = epochDay(now)

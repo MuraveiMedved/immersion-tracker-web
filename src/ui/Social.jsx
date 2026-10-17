@@ -5,6 +5,7 @@ import {
   raceStatus, onRaceStatus, errorText, ordinal, localTodayKey, refreshFriends, addFriendByCode, addFriendById, respondFriend, removeFriend,
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
+import { GOLDEN_DAYS } from '../model/rules.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf, epochDayStart } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill } from './common.jsx'
@@ -1136,7 +1137,7 @@ function FriendRow({ p, onClick }) {
     <div class="friend-row" onClick={onClick} style={{ background: `${fill} padding-box, linear-gradient(var(--bg), var(--bg)) padding-box, ${edge} border-box` }}>
       <ProfilePicture p={p} color={cs[0]} />
       <div class="grow" style="min-width:0;padding-left:12px">
-        <div class="row" style="gap:8px"><span class="title-medium ellipsis" style="font-weight:600">{p.name}</span>{p.goldenDays >= 3 && <MomentumPill days={p.goldenDays} progress={1} />}</div>
+        <div class="row" style="gap:8px"><span class="title-medium ellipsis" style="font-weight:600">{p.name}</span>{p.goldenDays >= GOLDEN_DAYS && <MomentumPill days={p.goldenDays} progress={1} />}</div>
         <div class="muted ellipsis" style="font-size:12px">{[trophy?.name, p.updatedAt ? agoText(p.updatedAt) : null].filter(Boolean).join(' · ')}</div>
       </div>
       <Icon name="chevron_right" color={cs[0]} />
@@ -1247,7 +1248,7 @@ function ProfileTodayCard({ p }) {
       <div class="row" style="margin-bottom:6px">
         <div class="title-medium grow" style="font-weight:400">Today</div>
         {asOf && <span class="label-small muted">as of {formatYmd(p.dayKey)}</span>}
-        {p.shows.streaks && p.goldenDays >= 3 && <MomentumPill days={p.goldenDays} progress={1} />}
+        {p.shows.streaks && p.goldenDays >= GOLDEN_DAYS && <MomentumPill days={p.goldenDays} progress={1} />}
       </div>
       {grid.length > 0 && <div class="goal-cols">{columns.map((col, i) => <div key={i}>{col.map((l, j) => <ProfileGoalCard key={j} l={l} ringStyle={p.ringStyle} />)}</div>)}</div>}
       {odd && <ProfileGoalCard l={odd} ringStyle={p.ringStyle} wide />}
