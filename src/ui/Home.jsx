@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
@@ -10,6 +10,7 @@ import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
+import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName } from './timers.js'
 import { ICONS } from './icons.js'
 
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
@@ -56,6 +57,23 @@ export function Home({ nav }) {
   const recent = sorted.filter((e) => e.languageProfileId != null).slice(0, 5)
   const uncategorized = s.settings.logUncategorized ? sorted.filter((e) => e.languageProfileId == null) : []
   const activeProfile = running.map((e) => profileById(e.languageProfileId)).find((p) => p && !p.isAnki)
+  // Desktop: Space stops what's running (the newest one), or resumes the last session.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.code !== 'Space' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return
+      if (e.target.closest?.('input, textarea, select, button, [contenteditable], a') || document.querySelector('.scrim')) return
+      e.preventDefault()
+      const live = RUNNING_ORDER.map((t) => getState().entries.find((x) => x.endTimeMillis == null && x.contentType === t)).filter(Boolean)
+      if (live.length) stopTimer(live.reduce((a, b) => (b.startTimeMillis > a.startTimeMillis ? b : a)))
+      else {
+        const last = lastSession()
+        if (last) startTimer(last.contentType, last.languageProfileId, last.mediaTitle)
+        else setManual({})
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const card = (p, wide) => <GoalCard key={p.id} profile={p} now={now} running={running} light={light} wide={wide} onOpen={() => setGoalCard(p.id)} />
 
   return (
@@ -74,7 +92,7 @@ export function Home({ nav }) {
 
       {running.length
         ? running.map((e) => <NowTrackingBanner key={e.id} entry={e} now={now} light={light} mode={s.settings.goalCardStyleMode} />)
-        : <div class="idle-banner" role="button" onClick={() => setManual({})}>Not tracking · tap to start a session</div>}
+        : <IdleBanner onOther={() => setManual({})} />}
 
       <div class="today-row">
         <h2>Today</h2>
@@ -132,7 +150,6 @@ function Title({ mode, active, light }) {
 function NowTrackingBanner({ entry, now, light, mode }) {
   const profile = profileById(entry.languageProfileId)
   const [edit, setEdit] = useState(false)
-  const [discard, setDiscard] = useState(false)
   const color = profile?.colorHex || '#6FA8C9'
   const grey = mode === 'GREY_TINT'
   const stops = !grey && gradientStops(profile)
@@ -148,12 +165,43 @@ function NowTrackingBanner({ entry, now, light, mode }) {
         {entry.mediaTitle && <div class="small ellipsis">{entry.mediaTitle}</div>}
         <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>Manual · tap to edit time</div>
       </div>
-      <button class="stop" style={{ color: ink }} title="Stop" onClick={(ev) => { ev.stopPropagation(); stopRunningEntry(entry.contentType); toast(`${formatHm(durationOf(entry))} saved`) }}><span /></button>
-      <button class="stop" style={{ color: ink }} title="Discard this session without counting its time" onClick={(ev) => { ev.stopPropagation(); setDiscard(true) }}><Icon name="close" size={18} /></button>
+      <button class="stop" style={{ color: ink }} title="Stop and save (Space)" onClick={(ev) => { ev.stopPropagation(); stopTimer(entry) }}><span /></button>
+      <button class="stop" style={{ color: ink }} title="Discard without counting its time" onClick={(ev) => { ev.stopPropagation(); discardTimer(entry) }}><Icon name="close" size={18} /></button>
       {edit && <EditElapsedDialog entry={entry} onClose={() => setEdit(false)} />}
-      {discard && <Confirm title="Discard this session?" text={`This ${typeLabel(entry.contentType).toLowerCase()} session won't be counted toward any goal.`} confirmLabel="Discard" danger onConfirm={() => deleteRunningEntry(entry.contentType)} onClose={() => setDiscard(false)} />}
     </div>
   )
+}
+
+/** Not tracking: your last session, one tap from running again, and the way to start anything
+ *  else. (With nothing to resume, the whole banner opens Add a session.) */
+function IdleBanner({ onOther }) {
+  useStore()
+  const last = lastSession()
+  if (!last) return <div class="idle-banner" role="button" onClick={onOther}>Not tracking · tap to start a session</div>
+  const profile = profileById(last.languageProfileId)
+  const color = profile?.colorHex || '#6FA8C9'
+  return (
+    <div class="idle-banner resume">
+      <button class="resume-btn" title="Resume (Space)" onClick={() => startTimer(last.contentType, last.languageProfileId, last.mediaTitle)}>
+        <span class="resume-play" style={{ background: withAlpha(color, 0.22), color }}><Icon name="play_arrow" size={26} /></span>
+        <span class="grow" style="min-width:0;text-align:left">
+          <span class="resume-label">Resume · {sessionName(last.contentType, last.languageProfileId)}</span>
+          {last.mediaTitle && <span class="resume-title ellipsis">{last.mediaTitle}</span>}
+        </span>
+      </button>
+      <button class="btn text" onClick={onOther}><Icon name="add" size={18} />Other</button>
+    </div>
+  )
+}
+
+/** The running timer in the browser tab's title, so it can be seen from any other tab. */
+export function TabTitle() {
+  const s = useStore()
+  const now = useNow(1000)
+  const live = RUNNING_ORDER.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).filter(Boolean)
+  const label = live.length ? `${formatClock(durationOf(live[0], now))} · ${sessionName(live[0].contentType, live[0].languageProfileId)}` : 'Immersion Tracker'
+  useEffect(() => { document.title = label }, [label])
+  return null
 }
 
 function EditElapsedDialog({ entry, onClose }) {
@@ -166,6 +214,17 @@ function EditElapsedDialog({ entry, onClose }) {
       <button class="btn" onClick={() => { editRunningElapsed(entry.contentType, hmToMillis(h, m)); onClose() }}>Save</button>
     </>}>
       <DurationInput hours={h} minutes={m} onHours={setH} onMinutes={setM} autoFocus />
+      {/* Started late? Add the minutes you forgot in one tap. */}
+      <div class="muted small" style="margin:14px 0 6px">Forgot to start it? Add time</div>
+      <div class="chips">
+        {[5, 10, 15, 30, 60].map((min) => (
+          <button key={min} class="chip" onClick={() => {
+            const total = hmToMillis(h, m) + min * 60000
+            setH(String(Math.floor(total / HOUR)))
+            setM(String(Math.floor((total % HOUR) / 60000)))
+          }}>+{formatHm(min * 60000, true)}</button>
+        ))}
+      </div>
     </Dialog>
   )
 }
@@ -199,20 +258,26 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
       <div class="name" style={nameStyle}>{profile.name}</div>
       {rings.map(([type, goal]) => {
         const ms = todayOf(type)
+        const on = isActive(type)
+        const tap = { role: 'button', tabIndex: 0, title: on ? `Stop ${sessionName(type, profile.id)}` : `Start ${sessionName(type, profile.id)}`,
+          onClick: (ev) => { ev.stopPropagation(); toggleTimer(type, profile.id) },
+          onKeyDown: (ev) => { if (ev.key === 'Enter') { ev.stopPropagation(); toggleTimer(type, profile.id) } } }
         if (!goal) {
           return (
-            <div key={type} class="ring-stat">
+            <div key={type} class={`ring-stat tap ${on ? 'on' : ''}`} {...tap}>
               <div style="width:64px;height:64px;display:grid;place-items:center"><TypeIcon type={type} size={40} color={profile.colorHex} style={active ? { animation: 'pulse-a .9s ease-in-out infinite alternate' } : undefined} /></div>
               <span class="val">{formatHm(ms)}</span>
+              <span class="tap-hint"><Icon name={on ? 'stop' : 'play_arrow'} size={16} /></span>
             </div>
           )
         }
         const goalMs = goal * 60000
         return (
-          <div key={type} class="ring-stat">
+          <div key={type} class={`ring-stat tap ${on ? 'on' : ''}`} {...tap}>
             <Ring size={64} progress={ms / goalMs} color={profile.colorHex} stops={stops} ringStyle={s.settings.ringStyle} iconType={type} iconColor={iconColor} active={isActive(type)} light={light} />
             <span class="val">{formatHm(ms)} / {formatHm(goalMs, true)}</span>
             <StreakBadge streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} />
+            <span class="tap-hint"><Icon name={on ? 'stop' : 'play_arrow'} size={16} /></span>
           </div>
         )
       })}
@@ -321,7 +386,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
       logCompletedManualEntry(type, langFor(type), t, millis, day)
       toast(`${formatHm(millis)} logged`)
     } else {
-      startManualEntry(type, langFor(type), t)
+      startTimer(type, langFor(type), t)
     }
     onClose()
   }
@@ -355,7 +420,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
               {visible.map((p) => (
                 <RecentSessionRow key={p.key} preset={p} profile={profileById(p.profileId)} selected={picked?.key === p.key}
                   onClick={() => usePreset(p)}
-                  onPlay={() => { startManualEntry(p.type, p.profileId, p.title); onClose() }} />
+                  onPlay={() => { startTimer(p.type, p.profileId, p.title); onClose() }} />
               ))}
             </div>
             {presets.length > RECENT_SESSIONS_PREVIEW_COUNT && (

@@ -674,3 +674,27 @@ textarea.input { resize: vertical; }
   content: ''; position: absolute; left: 50%; bottom: 5px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--primary);
 }
 .dp-day.on.logged::after { background: var(--on-primary); }
+
+/* ---------- quick timers: tap a ring, resume banner ---------- */
+.ring-stat.tap { position: relative; cursor: pointer; border-radius: 14px; padding: 4px 6px; margin-left: -6px; margin-right: -6px; transition: background .15s, transform .1s; -webkit-tap-highlight-color: transparent; }
+.ring-stat.tap:active { transform: scale(.96); }
+.ring-stat.tap:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.ring-stat .tap-hint {
+  position: absolute; top: 2px; right: 2px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--on-surface) 14%, transparent); color: var(--on-surface); opacity: 0; transition: opacity .15s;
+}
+@media (hover: hover) {
+  .ring-stat.tap:hover { background: color-mix(in srgb, var(--on-surface) 6%, transparent); }
+  .ring-stat.tap:hover .tap-hint { opacity: 1; }
+}
+.idle-banner.resume { display: flex; align-items: center; gap: 4px; padding: 8px 8px 8px 10px; cursor: default; place-items: initial; }
+.resume-btn { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 4px; border: 0; background: transparent; color: var(--on-surface); border-radius: 12px; cursor: pointer; }
+.resume-btn:active .resume-play { transform: scale(.92); }
+.resume-play { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; transition: transform .1s; }
+.resume-label { display: block; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: .1px; }
+.resume-title { display: block; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); font-weight: 500; }
+/* Snackbar width, like the phone's: one comfortable line, the action at the end. */
+.toast { min-width: min(344px, calc(100vw - 32px)); }
+.toast > span { flex: 1; }
+.resume-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.idle-banner.resume .btn.text { flex: none; padding: 0 12px; }

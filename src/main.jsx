@@ -6,7 +6,7 @@ import { applyTheme } from './model/theme.js'
 import { sync, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
 import { ensureBase, recordEarnedEggs } from './model/zoo.js'
 import * as syncModule from './model/sync.js'
-import { Home } from './ui/Home.jsx'
+import { Home, TabTitle } from './ui/Home.jsx'
 import { Entries } from './ui/Entries.jsx'
 import { Social } from './ui/Social.jsx'
 import { Zoo } from './ui/Zoo.jsx'
@@ -68,6 +68,7 @@ function App() {
         {tab === 'settings' && <Settings params={route.params} nav={nav} />}
       </main>
       <ToastHost />
+      <TabTitle />
     </div>
   )
 }

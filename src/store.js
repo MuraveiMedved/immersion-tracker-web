@@ -275,19 +275,42 @@ function addEntry(s, fields) {
   return entry
 }
 
+/** Starts a live timer (closing whatever of the same type was running). Returns the new entry's id. */
 export function startManualEntry(type, languageProfileId, title) {
+  let id = null
   update((s) => {
     const now = Date.now()
     delete s.paused[type]
     closeRunning(s, type, now)
-    addEntry(s, {
+    id = addEntry(s, {
       startTimeMillis: now,
       contentType: type,
       languageProfileId,
       mediaTitle: title || '',
       detectionReason: languageProfileId != null ? 'Manually started' : null,
-    })
+    }).id
   })
+  return id
+}
+
+/** Undo for a stop or a discard: the session runs on from where it started, as if never stopped.
+ *  Does nothing when something of the same type has started since. */
+export function reopenEntry(snapshot) {
+  update((s) => {
+    if (s.entries.some((e) => e.endTimeMillis == null && e.contentType === snapshot.contentType)) return
+    delete s.paused[snapshot.contentType]
+    const e = s.entries.find((x) => x.id === snapshot.id)
+    if (e) e.endTimeMillis = null
+    else {
+      const { id, ...fields } = snapshot
+      addEntry(s, { ...fields, endTimeMillis: null })
+    }
+  })
+}
+
+/** Removes one entry outright (undoing a start). */
+export function discardEntry(id) {
+  update((s) => { s.entries = s.entries.filter((e) => e.id !== id) })
 }
 
 export function stopRunningEntry(type) {
