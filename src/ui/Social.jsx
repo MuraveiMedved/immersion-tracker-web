@@ -828,7 +828,7 @@ function PersonSheet({ event, standing: st, now, onClose, onOpenMe }) {
   }
   const diff = mine ? st.millis - mine.millis : 0
   return (
-    <Dialog onClose={onClose} actions={<button class="btn" onClick={onClose}>Close</button>}>
+    <Dialog hideScrollbar onClose={onClose} actions={<button class="btn" onClick={onClose}>Close</button>}>
       <div class="row" style="gap:12px">
         <RankMedal rank={rank} />
         <div class="grow" style="min-width:0">
@@ -1174,7 +1174,7 @@ function MyProfileSheet({ onClose }) {
   )
   const bannerStops = (s.friends.banner || '').split(',').filter(Boolean)
   return (
-    <Dialog title="Your profile" onClose={onClose} actions={<button class="btn" onClick={onClose}>Done</button>}>
+    <Dialog hideScrollbar title="Your profile" onClose={onClose} actions={<button class="btn" onClick={onClose}>Done</button>}>
       <div class="card row" style="margin:0 0 12px">
         <div class="grow clickable" onClick={() => s.friends.code && copyText(s.friends.code, 'Friend code copied')}>
           <div class="muted small">Your friend code · tap to copy</div>
@@ -1298,7 +1298,7 @@ function ProfileGoalCard({ l, ringStyle, wide }) {
 export function ProfileDialog({ profile: p, onClose, onRemove }) {
   const light = !isDarkFor(getState().settings.uiColorPreset)
   return (
-    <Dialog onClose={onClose} actions={<>{onRemove && <button class="btn text danger" onClick={onRemove}>Remove friend</button>}<span class="spacer" /><button class="btn" onClick={onClose}>Close</button></>}>
+    <Dialog hideScrollbar onClose={onClose} actions={<>{onRemove && <button class="btn text danger" onClick={onRemove}>Remove friend</button>}<span class="spacer" /><button class="btn" onClick={onClose}>Close</button></>}>
       <ProfileFrame p={p}>
         <ProfileBanner p={p} light={light} />
         <ProfileSections p={p} />
