@@ -7,7 +7,7 @@ import {
 } from '../model/race.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor } from '../model/theme.js'
-import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon } from './common.jsx'
+import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill } from './common.jsx'
 import { Ring } from './Ring.jsx'
 import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'
@@ -660,6 +660,43 @@ function ProfileSettings({ onPreview }) {
   )
 }
 
+/** A profile's goals, as on Home: per language, each goal's ring (in their own ring style),
+ *  today's minutes and the streak under it - with their Momentum pill on top once it's gold. */
+function ProfileTodayCard({ p }) {
+  const asOf = p.dayKey > 0 && p.dayKey !== ymdOf(Date.now())
+  return (
+    <div class="section profile-card">
+      <div class="row" style="align-items:baseline;margin-bottom:10px">
+        <h3 style="font-weight:600">Today</h3>
+        {asOf && <span class="label-small muted">as of {formatYmd(p.dayKey)}</span>}
+      </div>
+      {p.shows.streaks && p.goldenDays >= 3 && <div style="margin-bottom:6px"><MomentumPill days={p.goldenDays} progress={1} /></div>}
+      {p.languages.map((l, i) => {
+        const goals = [['listen', 'PODCAST'], ['read', 'READING']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak'])
+        if (!goals.length) return null
+        return (
+          <div key={i} class="row" style="padding:6px 0;align-items:flex-start">
+            <span class="grow ellipsis" style={{ color: l.color || 'inherit', fontWeight: 600, paddingTop: 12 }}>{l.name}</span>
+            {goals.map(([k, type]) => {
+              const progress = l[k + 'Progress'] ?? (l[k + 'Goal'] > 0 && l[k + 'Today'] != null ? l[k + 'Today'] / l[k + 'Goal'] : null)
+              const streak = l[k + 'Streak']
+              return (
+                <div key={k} class="ring-stat" style="margin-left:14px">
+                  {progress != null
+                    ? <Ring size={46} progress={progress} color={l.color || '#888'} stops={l.gradient ? l.gradient.split(',') : null} ringStyle={p.ringStyle || 'CLASSIC'} icon={<TypeIcon type={type} size={16} />} />
+                    : <TypeIcon type={type} size={28} color={l.color} />}
+                  {l[k + 'Goal'] != null && <span class="val muted">{l[k + 'Today'] ?? 0}/{l[k + 'Goal']}m</span>}
+                  {streak && <StreakBadge streak={{ current: streak.current, record: streak.record }} />}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function ProfileDialog({ profile: p, onClose, onRemove }) {
   const catalog = useCatalog()
   const [all, setAll] = useState(false)
@@ -680,31 +717,11 @@ export function ProfileDialog({ profile: p, onClose, onRemove }) {
         <div class="row" style="padding:0 12px;align-items:flex-end">
           <Avatar profile={p} size={64} />
           <div class="grow" style="padding-bottom:4px"><h2 style="margin:0">{p.emoji} {p.name}</h2>{p.updatedAt > 0 && <div class="muted tiny">Updated {agoText(p.updatedAt)}</div>}</div>
-          {p.goldenDays >= 3 && <span class="momentum gold"><Flame gold /> {p.goldenDays}d</span>}
         </div>
         {p.code && <div class="muted small" style="margin:10px 12px 0">Friend code <span class="code-pill">{p.code}</span></div>}
         {trophy && p.shows.trophy && <div class="section"><div class="muted small" style="margin-bottom:6px">On display</div><AnimalCardView animal={trophy} cert={cert(trophy.id)} compact /></div>}
-        {p.languages.length > 0 && (
-          <div class="section">
-            <h3 style="margin-bottom:8px">Today</h3>
-            <div class="goal-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
-              {p.languages.map((l, i) => (
-                <div key={i} class="goal-card" style={{ background: `linear-gradient(135deg, ${withAlpha(l.color || '#888', 0.3)}, ${withAlpha(l.color || '#888', 0.08)})` }}>
-                  <b>{l.name}</b>
-                  <div class="rings">
-                    {[['listen', 'PODCAST'], ['read', 'READING']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak']).map(([k, ico]) => (
-                      <div key={k} class="col" style="align-items:center;gap:2px">
-                        <Ring size={58} progress={l[k + 'Progress'] ?? 0} color={l.color || '#888'} stops={l.gradient ? l.gradient.split(',') : null} ringStyle={p.ringStyle || 'CLASSIC'} icon={<TypeIcon type={ico} size={18} />} />
-                        {l[k + 'Goal'] != null && <span class="tiny">{l[k + 'Today'] ?? 0}/{l[k + 'Goal']}m</span>}
-                        {l[k + 'Streak'] && <span class="tiny streak"><Flame />{l[k + 'Streak'].current} · 🏆{l[k + 'Streak'].record}</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {p.dayKey > 0 && p.dayKey !== ymdOf(Date.now()) && <div class="muted tiny" style="margin-top:4px">Their today: {formatYmd(p.dayKey)}</div>}
-          </div>
+        {p.languages.length > 0 && (p.shows.rings || p.shows.goals || p.shows.streaks) && (
+          <ProfileTodayCard p={p} />
         )}
         {p.records && (
           <div class="section">

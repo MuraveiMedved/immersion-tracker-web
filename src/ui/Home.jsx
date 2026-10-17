@@ -7,7 +7,7 @@ import { computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenToda
 import { dayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, toast } from './common.jsx'
+import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, StreakBadge, MomentumPill, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
 
@@ -126,28 +126,6 @@ function Title({ mode, active, light }) {
   return <h1 class="app-title">Immersion Tracker</h1>
 }
 
-/** The phone's GoldenStreakPill: today's progress toward 2 hours as a thin gold ring round the
- *  flame (just the flame once today is done), then the days. */
-function MomentumPill({ days, progress, onClick }) {
-  const lit = days >= GOLDEN_DAYS
-  const p = Math.max(0, Math.min(1, progress))
-  const r = 12.75, c = 2 * Math.PI * r
-  return (
-    <button class={`momentum ${lit ? 'gold' : ''}`} onClick={onClick} title={`Momentum · ${days} days`}>
-      <span style="position:relative;width:28px;height:28px;display:grid;place-items:center">
-        {p < 1 && (
-          <svg width="28" height="28" style="position:absolute;inset:0;transform:rotate(-90deg)">
-            <circle cx="14" cy="14" r={r} fill="none" stroke="color-mix(in srgb, var(--surface-variant) 60%, transparent)" stroke-width="2.5" />
-            {p > 0 && <circle cx="14" cy="14" r={r} fill="none" stroke={lit ? 'rgba(255,194,26,.75)' : 'rgba(255,194,26,.52)'} stroke-width="2.5" stroke-linecap="round" stroke-dasharray={`${c * p} ${c}`} />}
-          </svg>
-        )}
-        <Flame gold={lit} muted={!lit} size={12} />
-      </span>
-      <span class="days">{days}d</span>
-    </button>
-  )
-}
-
 /** The phone's NowTrackingBanner: the language's colour taken down to a background, its outline,
  *  "Listening · Japanese · 12:34" in the language colour, the title, and stop / discard. */
 function NowTrackingBanner({ entry, now, light, mode }) {
@@ -188,19 +166,6 @@ function EditElapsedDialog({ entry, onClose }) {
     </>}>
       <DurationInput hours={h} minutes={m} onHours={setH} onMinutes={setM} autoFocus />
     </Dialog>
-  )
-}
-
-/** The phone's StreakBadge: the current run (green, after a flame) and the best when it's higher. */
-function StreakBadge({ streak }) {
-  const cur = streak.current > 0
-  const rec = cur ? streak.current < streak.record : streak.record > 0
-  if (!cur && !rec) return <div class="streak" style="visibility:hidden">0d</div>
-  return (
-    <div class="streak">
-      {cur && <><span style="font-size:12px">🔥</span><span class="cur">{streak.current}d</span></>}
-      {rec && <><span style={{ width: cur ? 6 : 0 }} /><Icon name="emoji_events" size={12} color="var(--on-surface-variant)" /><span class="rec">{streak.record}d</span></>}
-    </div>
   )
 }
 

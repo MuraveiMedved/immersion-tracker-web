@@ -25,14 +25,20 @@ function spread(entry, buckets, now, add) {
   }
 }
 
-/** The [start, end) window and its buckets for [range] shifted back [offset] windows. */
+/** The [start, end) window and its buckets for [range] shifted back [offset] windows. A bucket is
+ *  [start, end, label | null, tick] - labels and ticks as sparse as the phone's chart: a day labels
+ *  every 6 hours (ticks every 3), a month its 1st and every 5th day, all time is one bar a year. */
 export function windowFor(range, offset, now = Date.now(), firstEntryMs = now) {
   const d = new Date(now)
   const buckets = []
   let label = ''
   if (range === 'DAY') {
     const day = new Date(d.getFullYear(), d.getMonth(), d.getDate() - offset)
-    for (let h = 0; h < 24; h++) buckets.push([new Date(day).setHours(h), new Date(day).setHours(h + 1), `${h}`])
+    for (let h = 0; h < 24; h++) {
+      const start = new Date(day).setHours(h)
+      const lbl = h % 6 === 0 ? new Date(start).toLocaleTimeString(undefined, { hour: 'numeric' }).replace(':00', '') : null
+      buckets.push([start, new Date(day).setHours(h + 1), lbl, h % 3 === 0])
+    }
     label = offset === 0 ? 'Today' : offset === 1 ? 'Yesterday' : day.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
   } else if (range === 'WEEK') {
     // Weeks start Monday.
@@ -40,32 +46,24 @@ export function windowFor(range, offset, now = Date.now(), firstEntryMs = now) {
     const start = new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow - offset * 7)
     for (let i = 0; i < 7; i++) {
       const a = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)
-      buckets.push([a.getTime(), new Date(a.getFullYear(), a.getMonth(), a.getDate() + 1).getTime(), a.toLocaleDateString(undefined, { weekday: 'narrow' })])
+      buckets.push([a.getTime(), new Date(a.getFullYear(), a.getMonth(), a.getDate() + 1).getTime(), a.toLocaleDateString(undefined, { weekday: 'short' }), false])
     }
     const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6)
     label = offset === 0 ? 'This week' : `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
   } else if (range === 'MONTH') {
     const m = new Date(d.getFullYear(), d.getMonth() - offset, 1)
     const days = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate()
-    for (let i = 1; i <= days; i++) buckets.push([new Date(m.getFullYear(), m.getMonth(), i).getTime(), new Date(m.getFullYear(), m.getMonth(), i + 1).getTime(), String(i)])
+    for (let i = 1; i <= days; i++) buckets.push([new Date(m.getFullYear(), m.getMonth(), i).getTime(), new Date(m.getFullYear(), m.getMonth(), i + 1).getTime(), i === 1 || i % 5 === 0 ? String(i) : null, false])
     label = m.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
   } else if (range === 'YEAR') {
     const y = d.getFullYear() - offset
-    for (let i = 0; i < 12; i++) buckets.push([new Date(y, i, 1).getTime(), new Date(y, i + 1, 1).getTime(), new Date(y, i, 1).toLocaleDateString(undefined, { month: 'narrow' })])
+    for (let i = 0; i < 12; i++) buckets.push([new Date(y, i, 1).getTime(), new Date(y, i + 1, 1).getTime(), new Date(y, i, 1).toLocaleDateString(undefined, { month: 'narrow' }), false])
     label = String(y)
   } else {
-    const first = new Date(firstEntryMs)
-    const years = d.getFullYear() - first.getFullYear() + 1
-    if (years <= 2) {
-      const months = (d.getFullYear() - first.getFullYear()) * 12 + d.getMonth() - first.getMonth() + 1
-      for (let i = 0; i < months; i++) {
-        const a = new Date(first.getFullYear(), first.getMonth() + i, 1)
-        buckets.push([a.getTime(), new Date(a.getFullYear(), a.getMonth() + 1, 1).getTime(), a.toLocaleDateString(undefined, { month: 'narrow' })])
-      }
-    } else {
-      for (let y = first.getFullYear(); y <= d.getFullYear(); y++) buckets.push([new Date(y, 0, 1).getTime(), new Date(y + 1, 0, 1).getTime(), String(y).slice(2)])
-    }
-    label = `Since ${first.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`
+    const first = new Date(firstEntryMs).getFullYear()
+    const years = Math.max(1, d.getFullYear() - first + 1)
+    for (let y = first; y < first + years; y++) buckets.push([new Date(y, 0, 1).getTime(), new Date(y + 1, 0, 1).getTime(), years <= 6 ? String(y) : `'${String(y).slice(2)}`, false])
+    label = `Since ${new Date(firstEntryMs).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`
   }
   return { buckets, label, start: buckets[0][0], end: buckets[buckets.length - 1][1] }
 }
@@ -136,15 +134,19 @@ export function quickStats(entries, win, langSet, now = Date.now()) {
   return { total, dailyAvg: total / daysInWindow, best, streak: current, longest, byLang, byType }
 }
 
-/** 53 weeks x 7 days of totals plus the day's top language, ending today (or [endDay]). */
+/** The phone's YearHeatmap: whole weeks (Monday first) back to the first tracked day, at least
+ *  53 of them; each day's total and top language; a week carries a month label (the year at
+ *  January) when a month starts in it; [p95] is the busy-day mark opacity is scaled against. */
 export function heatmap(entries, langSet, profiles, now = Date.now()) {
   const byDayLang = new Map()
+  let firstDay = epochDay(now)
   for (const e of entries) {
     if (!included(e, langSet)) continue
     const end = Math.min(e.endTimeMillis ?? now, now)
     let start = e.startTimeMillis
     while (start < end) {
       const day = epochDay(start)
+      firstDay = Math.min(firstDay, day)
       const partEnd = Math.min(end, epochDayStart(day + 1))
       if (!byDayLang.has(day)) byDayLang.set(day, new Map())
       const m = byDayLang.get(day)
@@ -153,32 +155,46 @@ export function heatmap(entries, langSet, profiles, now = Date.now()) {
     }
   }
   const today = epochDay(now)
-  const todayDow = (new Date(now).getDay() + 6) % 7
-  const lastCol = today - todayDow // Monday of this week
-  const first = lastCol - 52 * 7
+  const monday = today - ((new Date(now).getDay() + 6) % 7)
+  const weekCount = Math.max(53, Math.floor((monday - firstDay) / 7) + 1)
   const order = new Map(profiles.map((p, i) => [p.id, p.sortOrder ?? i]))
-  const cells = []
+  const weeks = []
   const totals = []
-  for (let d = first; d <= today; d++) {
-    const m = byDayLang.get(d)
-    let total = 0, top = null, topMs = -1
-    if (m) for (const [id, ms] of m) {
-      total += ms
-      if (ms > topMs || (ms === topMs && (order.get(id) ?? 0) < (order.get(top) ?? 0))) { topMs = ms; top = id }
+  for (let w = weekCount - 1; w >= 0; w--) {
+    const startDay = monday - w * 7
+    let monthLabel = null
+    const days = []
+    for (let i = 0; i < 7; i++) {
+      const day = startDay + i
+      const date = new Date(epochDayStart(day))
+      if (date.getDate() === 1) monthLabel = date.getMonth() === 0 ? { text: String(date.getFullYear()), year: true } : { text: date.toLocaleDateString(undefined, { month: 'short' }), year: false }
+      if (day > today) { days.push(null); continue }
+      const m = byDayLang.get(day)
+      let total = 0, top = null, topMs = -1
+      if (m) for (const [id, ms] of m) {
+        total += ms
+        if (ms > topMs || (ms === topMs && (order.get(id) ?? 0) < (order.get(top) ?? 0))) { topMs = ms; top = id }
+      }
+      days.push({ day, total, top })
+      if (total > 0) totals.push(total)
     }
-    cells.push({ day: d, total, top })
-    if (total > 0) totals.push(total)
+    weeks.push({ days, monthLabel })
   }
   totals.sort((a, b) => a - b)
-  const p95 = totals.length ? totals[Math.min(totals.length - 1, Math.floor(totals.length * 0.95))] : HOUR
-  return { cells, first, p95 }
+  const p95 = totals.length ? totals[Math.floor((totals.length - 1) * 0.95)] : 0
+  const tops = new Set(weeks.flatMap((w) => w.days.filter((d) => d && d.total > 0).map((d) => d.top)))
+  return { weeks, p95, legend: profiles.filter((p) => tops.has(p.id)) }
 }
 
-/** Share of all included time in each hour of the day, read in each session's own time zone. */
+/** All of history folded onto the clock, per language: language id -> 24 hourly totals, read in
+ *  each session's own time zone. PolyLogger imports are left out - they have no real time of day
+ *  (the importer lays each day's sessions from noon), which would show as a false midday peak. */
 export function timeOfDay(entries, langSet, now = Date.now()) {
-  const hours = new Array(24).fill(0)
+  const out = new Map()
   for (const e of entries) {
-    if (!included(e, langSet)) continue
+    if (!included(e, langSet) || e.appPackage === 'import:polylogger') continue
+    const hours = out.get(e.languageProfileId) || new Array(24).fill(0)
+    out.set(e.languageProfileId, hours)
     let s = e.startTimeMillis
     const end = Math.min(e.endTimeMillis ?? now, now)
     while (s < end) {
@@ -187,8 +203,7 @@ export function timeOfDay(entries, langSet, now = Date.now()) {
       s = next
     }
   }
-  const total = hours.reduce((a, b) => a + b, 0)
-  return hours.map((h) => (total ? h / total : 0))
+  return out
 }
 
 export { durationOf }
