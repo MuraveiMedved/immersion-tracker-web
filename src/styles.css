@@ -611,3 +611,40 @@ textarea.input { resize: vertical; }
   display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--primary-container); color: var(--on-primary-container); }
 .code-input { margin-top: 8px; text-transform: uppercase; letter-spacing: 6px; font-weight: 700; font-size: 22px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; }
 .banner-ok { padding: 14px 16px; border-radius: 16px; background: var(--primary-container); color: var(--on-primary-container); }
+
+/* ---------- Appearance (the phone's CosmeticsScreen) ---------- */
+.cos-cats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cos-cat {
+  display: flex; align-items: center; gap: 12px; padding: 12px; text-align: left; color: var(--on-surface);
+  background: var(--block); border: 1px solid var(--block-line); border-radius: 16px;
+  transition: background .25s, border-color .25s, color .25s;
+}
+.cos-cat.on { background: var(--primary-container); border: 2px solid var(--primary); padding: 11px; color: var(--on-primary-container); }
+.cos-badge {
+  width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none;
+  background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); transition: background .25s, color .25s;
+}
+.cos-cat.on .cos-badge { background: var(--primary); color: var(--on-primary); }
+.cos-cat-title { display: block; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: .1px; }
+.cos-cat-value { display: block; font-size: 12px; line-height: 16px; letter-spacing: .4px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cos-cat.on .cos-cat-value { color: color-mix(in srgb, var(--on-primary-container) 75%, transparent); }
+.cos-head { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: .15px; color: var(--primary); }
+.cos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cos-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; color: var(--on-surface);
+  background: var(--surface-variant); border: 2px solid transparent; border-radius: 16px;
+}
+.cos-tile.on { background: var(--primary-container); border-color: var(--primary); color: var(--on-primary-container); }
+.cos-swatch { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; }
+.cos-swatch > span { width: 32px; height: 32px; border-radius: 8px; box-sizing: border-box; }
+.cos-group { background: var(--block); border: 1px solid var(--block-line); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+.cos-group-title { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: .1px; }
+.cos-opts { display: flex; gap: 10px; margin-top: 12px; }
+.cos-opt {
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px;
+  background: color-mix(in srgb, var(--surface) 60%, var(--bg)); border: 1px solid color-mix(in srgb, var(--outline-variant) 50%, transparent);
+  border-radius: 14px; color: var(--on-surface-variant); transition: background .25s, border-color .25s;
+}
+.cos-opt.on { background: var(--primary-container); border: 2px solid var(--primary); padding: 11px 7px; color: var(--on-primary-container); }
+.cos-opt-preview { width: 100%; height: 44px; display: grid; place-items: center; }
+.cos-opt-label { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .5px; text-align: center; }

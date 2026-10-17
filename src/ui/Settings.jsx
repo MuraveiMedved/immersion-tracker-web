@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import { useStore, getState, upsertProfile, deleteProfile, newProfile, setSetting, importEntries, replaceState, PODCAST, READING, ANKI, LISTENING } from '../store.js'
-import { PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS, withAlpha, deepened, isDarkFor } from '../model/theme.js'
+import { PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS, GRADIENTS, mix, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntries, exportBackup, readJsonBackup, readPhoneBackup } from '../model/imports.js'
 import { formatHm } from '../model/time.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
@@ -230,63 +230,136 @@ function LanguageEdit({ id, onClose }) {
   )
 }
 
-/** Appearance, as the phone's Cosmetics screen: Display / UI Color / Ring Style tabs. */
+/** Appearance, as the phone's Cosmetics screen (CosmeticsScreen.kt): a 2-column grid of category
+ *  cards (icon badge, name, what's picked), the picked category's heading + hint, then its tiles.
+ *  The phone's App icon category is left out - a web app can't change its own home-screen icon. */
+const PREVIEW_COLOR = '#2A9D8F'
+const COSMETIC_TABS = [
+  ['ring', 'Ring Style', 'radio_button_unchecked', 'Pick how your goal rings look, both in progress and once complete.'],
+  ['display', 'Display', 'tune', null],
+  ['ui', 'UI Color', 'palette', 'Pick how dark or light the app itself looks - applies everywhere, not just here.'],
+]
+const TITLE_STYLES = [['DEFAULT', 'Default'], ['GRADIENT', 'Gradient'], ['CURRENT_LANGUAGE', 'Language color'], ['THEME_COLOR', 'Theme color']]
+const GOAL_CARD_STYLES = [['LANGUAGE_COLOR', 'Language color'], ['GREY_TINT', 'Grey tint']]
+const ENTRY_LABEL_STYLES = [['CHIP', 'Colored label'], ['DOT', 'Colored dot'], ['ICON', 'Icons']]
+
 function Appearance() {
   const s = useStore()
-  const [tab, setTab] = useState('ui')
-  const main = s.profiles.find((p) => p.isMain && !p.isAnki) || s.profiles.find((p) => !p.isAnki)
-  const color = main?.colorHex || '#2A9D8F'
+  const [tab, setTab] = useState('ring')
+  const main = s.profiles.find((p) => p.isMain && !p.isAnki)
+  const color = main?.colorHex || PREVIEW_COLOR
   const stops = main?.gradientColors ? main.gradientColors.split(',') : null
   const light = !isDarkFor(s.settings.uiColorPreset)
   const dark = window.matchMedia?.('(prefers-color-scheme: dark)').matches
-  const pick = (key, options) => (
-    <div class="chips">{options.map(([v, l]) => <button key={v} class={`chip ${s.settings[key] === v ? 'on' : ''}`} onClick={() => setSetting(key, v)}>{l}</button>)}</div>
-  )
+  const current = { ring: RING_LABEL[s.settings.ringStyle] || RING_LABEL.CLASSIC, display: null, ui: presetLabel(s.settings.uiColorPreset) }
+  const [, label, , hint] = COSMETIC_TABS.find(([k]) => k === tab)
   return (
     <>
-      <Seg options={[['display', 'Display'], ['ui', 'UI Color'], ['ring', 'Ring Style']]} value={tab} onChange={setTab} />
+      <div class="cos-cats" role="tablist">
+        {COSMETIC_TABS.map(([k, l, icon]) => (
+          <button key={k} role="tab" aria-selected={tab === k} class={`cos-cat ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>
+            <span class="cos-badge"><Icon name={icon} size={22} /></span>
+            <span class="grow" style="min-width:0">
+              <span class="cos-cat-title">{l}</span>
+              {current[k] && <span class="cos-cat-value">{current[k]}</span>}
+            </span>
+          </button>
+        ))}
+      </div>
+      <div style="padding:24px 0 8px">
+        <div class="cos-head">{label}</div>
+        {hint && <div class="muted small" style="margin-top:4px">{hint}</div>}
+      </div>
       {tab === 'display' && (
-        <Block>
-          <div class="col" style="gap:16px;padding-top:10px">
-            <div><h2 style="margin-bottom:8px">"Immersion Tracker" title style</h2>{pick('titleStyleMode', [['DEFAULT', 'Default'], ['GRADIENT', 'Gradient'], ['CURRENT_LANGUAGE', 'Language color'], ['THEME_COLOR', 'Theme color']])}</div>
-            <div><h2 style="margin-bottom:8px">Goal card background</h2>{pick('goalCardStyleMode', [['LANGUAGE_COLOR', 'Language color'], ['GREY_TINT', 'Grey tint']])}</div>
-            <div><h2 style="margin-bottom:8px">Entry language label</h2>{pick('entryLabelStyle', [['ICON', 'Icons'], ['CHIP', 'Colored label'], ['DOT', 'Colored dot']])}</div>
-          </div>
-        </Block>
+        <>
+          <DisplayGroup label={'"Immersion Tracker" title style'} options={TITLE_STYLES} value={s.settings.titleStyleMode} onPick={(v) => setSetting('titleStyleMode', v)}
+            preview={(v) => <TitleStylePreview mode={v} />} />
+          <DisplayGroup label="Goal card background" options={GOAL_CARD_STYLES} value={s.settings.goalCardStyleMode} onPick={(v) => setSetting('goalCardStyleMode', v)}
+            preview={(v) => <GoalCardPreview mode={v} />} />
+          <DisplayGroup label="Entry language label" options={ENTRY_LABEL_STYLES} value={s.settings.entryLabelStyle} onPick={(v) => setSetting('entryLabelStyle', v)}
+            preview={(v) => <EntryLabelPreview style={v} />} />
+        </>
       )}
       {tab === 'ui' && (
-        <>
-          <p class="muted" style="margin:16px 0 12px">Pick how dark or light the app itself looks - applies everywhere, not just here.</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px">
-            {PRESETS.map((p) => {
-              const v = schemeFor(p, isLightPreset(p) ? false : dark !== false)
-              const on = s.settings.uiColorPreset === p
-              return (
-                <button key={p} onClick={() => setSetting('uiColorPreset', p)} style={{ background: v['--bg'], color: v['--on-surface'], border: `2px solid ${on ? v['--primary'] : v['--outline-variant']}`, borderRadius: 16, padding: '10px 8px', textAlign: 'left' }}>
-                  <div style={{ height: 24, borderRadius: 8, background: v['--c-high'], marginBottom: 6, display: 'flex', alignItems: 'center', padding: '0 6px' }}><span class="dot" style={{ background: v['--primary'] }} /></div>
-                  <div style="font-size:12px;font-weight:600">{presetLabel(p)}</div>
-                </button>
-              )
-            })}
-          </div>
-        </>
+        <div class="cos-grid">
+          {PRESETS.map((p) => {
+            const v = schemeFor(p, isLightPreset(p) ? false : dark !== false)
+            return (
+              <button key={p} class={`cos-tile ${s.settings.uiColorPreset === p ? 'on' : ''}`} onClick={() => setSetting('uiColorPreset', p)}>
+                <span class="cos-swatch" style={{ background: v['--bg'] }}>
+                  <span style={{ background: v['--c-high'], border: `1px solid ${v['--outline-variant']}` }} />
+                </span>
+                <span class="label-large">{presetLabel(p)}</span>
+              </button>
+            )
+          })}
+        </div>
       )}
       {tab === 'ring' && (
-        <>
-          <p class="muted" style="margin:16px 0 12px">Pick how your goal rings look, both in progress and once complete.</p>
-          {/* Like the phone: two a row, each showing the in-progress fill and the completed look,
-              both active so they play the style's still-tracking animation. */}
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            {RING_STYLES.map((r) => (
-              <button key={r} onClick={() => setSetting('ringStyle', r)} class="col" style={{ alignItems: 'center', background: 'var(--block)', border: `2px solid ${s.settings.ringStyle === r ? 'var(--primary)' : 'var(--block-line)'}`, borderRadius: 16, padding: 16, gap: 10 }}>
-                <div class="row" style="gap:16px"><Ring progress={0.65} color={color} stops={stops} ringStyle={r} size={52} iconType="PODCAST" iconColor={light ? '#000' : '#fff'} active light={light} /><Ring progress={1} color={color} stops={stops} ringStyle={r} size={52} iconType="PODCAST" active light={light} /></div>
-                <span class="label-large">{RING_LABEL[r]}</span>
-              </button>
-            ))}
-          </div>
-        </>
+        // Each tile shows the in-progress fill and the completed look, both active so they play
+        // the style's still-tracking animation - in the main language's colour, as on the phone.
+        <div class="cos-grid">
+          {RING_STYLES.map((r) => (
+            <button key={r} class={`cos-tile ${s.settings.ringStyle === r ? 'on' : ''}`} onClick={() => setSetting('ringStyle', r)}>
+              <div class="row" style="gap:16px">
+                <Ring progress={0.65} color={color} stops={stops} ringStyle={r} size={52} iconType="PODCAST" iconColor={light ? '#000' : '#fff'} active light={light} />
+                <Ring progress={1} color={color} stops={stops} ringStyle={r} size={52} iconType="PODCAST" active light={light} />
+              </div>
+              <span class="label-large">{RING_LABEL[r]}</span>
+            </button>
+          ))}
+        </div>
       )}
     </>
+  )
+}
+
+/** One Display setting as a card of side-by-side tiles, each with a small live preview. */
+function DisplayGroup({ label, options, value, onPick, preview }) {
+  return (
+    <div class="cos-group">
+      <div class="cos-group-title">{label}</div>
+      <div class="cos-opts" role="radiogroup">
+        {options.map(([v, l]) => (
+          <button key={v} role="radio" aria-checked={value === v} class={`cos-opt ${value === v ? 'on' : ''}`} onClick={() => onPick(v)}>
+            <span class="cos-opt-preview">{preview(v)}</span>
+            <span class="cos-opt-label">{l}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TitleStylePreview({ mode }) {
+  const base = { fontSize: 24, lineHeight: '32px', fontWeight: mode === 'CURRENT_LANGUAGE' || mode === 'THEME_COLOR' ? 900 : 700 }
+  const style = mode === 'GRADIENT'
+    ? { ...base, background: `linear-gradient(90deg, ${GRADIENTS[0].join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+    : { ...base, color: mode === 'CURRENT_LANGUAGE' ? mix(PREVIEW_COLOR, '#FFFFFF', 0.18) : mode === 'THEME_COLOR' ? 'var(--primary)' : 'var(--on-surface)' }
+  return <span style={style}>Aa</span>
+}
+
+function GoalCardPreview({ mode }) {
+  const bg = mode === 'LANGUAGE_COLOR' ? `color-mix(in srgb, ${PREVIEW_COLOR} 28%, var(--c-high))` : 'var(--c-high)'
+  return (
+    <span style={{ width: 64, height: 44, borderRadius: 10, background: bg, display: 'grid', placeItems: 'center' }}>
+      <span style={{ width: 20, height: 20, borderRadius: '50%', border: `3px solid ${PREVIEW_COLOR}`, boxSizing: 'border-box' }} />
+    </span>
+  )
+}
+
+function EntryLabelPreview({ style }) {
+  const line = 'color-mix(in srgb, var(--on-surface-variant) 35%, transparent)'
+  return (
+    <span class="row" style="gap:6px">
+      {style === 'CHIP' && <span style={{ background: PREVIEW_COLOR, color: '#fff', borderRadius: 999, padding: '2px 6px', fontSize: 11, fontWeight: 600, lineHeight: '16px' }}>ES</span>}
+      {style === 'DOT' && <span style={{ width: 9, height: 9, borderRadius: '50%', background: PREVIEW_COLOR }} />}
+      {style === 'ICON' && <Icon name="headphones" size={16} color={PREVIEW_COLOR} />}
+      <span class="col" style="gap:4px">
+        <span style={{ width: 26, height: 5, borderRadius: 999, background: line }} />
+        <span style={{ width: 18, height: 5, borderRadius: 999, background: line, opacity: 0.2 }} />
+      </span>
+    </span>
   )
 }
 
