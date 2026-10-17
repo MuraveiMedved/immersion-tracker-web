@@ -592,3 +592,8 @@ textarea.input { resize: vertical; }
 .avatar-choice.on { border: 2px solid var(--primary); padding: 9px 11px; background: color-mix(in srgb, var(--primary) 10%, transparent); }
 
 .mythic-corners { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+
+.replay-btn { display: inline-flex; align-items: center; gap: 2px; border: 0; background: transparent; color: var(--primary); font-size: 12px; font-weight: 500; padding: 2px 6px; border-radius: 999px; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px; font-weight: 500; }
+.chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.chart-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }

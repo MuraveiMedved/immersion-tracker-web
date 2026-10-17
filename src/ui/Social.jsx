@@ -5,7 +5,7 @@ import {
   raceStatus, onRaceStatus, errorText, ordinal, localTodayKey, refreshFriends, addFriendByCode, addFriendById, respondFriend, removeFriend,
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
-import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf } from '../model/time.js'
+import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf, epochDayStart } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill } from './common.jsx'
 import { Ring } from './Ring.jsx'
@@ -487,77 +487,295 @@ function OutlookNote({ o, event }) {
   return <div class="col small" style="gap:2px;margin-top:14px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb, var(--primary) 8%, transparent)">{lines.map((l, i) => <span key={i} class={i ? 'muted' : ''} style={i ? '' : 'font-weight:650'}>{l}</span>)}</div>
 }
 
-/** Everyone's running total, day by day, as lines. */
-function ProgressChart({ event, now }) {
-  const [replay, setReplay] = useState(null)
-  const startDay = ymdToEpochDay(ymdOf(event.startMillis - 4 * HOUR))
-  const endMs = Math.min(event.endMillis ?? now, now)
-  const lastDay = Math.max(startDay, ymdToEpochDay(ymdOf(endMs - 4 * HOUR)))
-  const days = []
-  for (let d = startDay; d <= lastDay; d++) days.push(epochDayToYmd(d))
-  const series = event.standings.map((st, i) => {
-    let acc = 0
-    const pts = days.map((k) => (acc += st.daily[k] || 0))
-    return { st, pts, color: lineColor(st, i, event.standings) }
-  })
-  const missing = event.standings.filter((st) => !Object.keys(st.daily).length && st.millis > 0)
-  const shownDays = replay != null ? Math.min(days.length, replay) : days.length
-  useEffect(() => {
-    if (replay == null) return
-    if (replay >= days.length) { setReplay(null); return }
-    const t = setTimeout(() => setReplay(replay + 1), Math.max(60, 2400 / days.length))
-    return () => clearTimeout(t)
-  }, [replay])
+/* ------------------------------------------------------------------------------------------------
+ * The progress chart and its replay - a port of the phone's ProgressChart (RaceInsights.kt).
+ * --------------------------------------------------------------------------------------------- */
 
-  // Drawn in a 600-wide viewBox; [k] turns screen px into its units, so the bubbles stay the
-  // phone's size (10px, a 13px emoji) however wide the chart is.
-  const svgRef = useRef(null)
-  const [pxWidth, setPxWidth] = useState(300)
+const MONTH_LABEL_MIN_DAYS = 120
+const JOIN_REACTION_PROGRESS = 0.04
+const OVERTAKE_REACTION_PROGRESS = 0.06
+const SPOTLIGHT_DIM = 0.65
+const SLOWMO_FACTOR = 5
+const SLOWMO_WIDTH = 0.03
+const SPOTLIGHT_REACH = SLOWMO_WIDTH * 2
+const SLOWMO_MAX_EXTRA_MILLIS = 6000
+const SUBTLE_OVERTAKE_WEIGHT = 0.35
+const LIVE_GREEN_RGB = '76,175,80'
+
+/** How a replay moves through the race over time: an even pace that slows smoothly (to 5x at the
+ *  peak) into each significant pass, and eases in and out at the very start and end. */
+class ReplayTimeline {
+  constructor(baseMillis, moments) {
+    this.moments = moments
+    const steps = this.steps = 1000
+    const gauss = (p, c, w) => Math.exp(-(((p - c) / w) ** 2))
+    const ends = (p) => 1 + 1.5 * gauss(p, 0, 0.06) + 1.5 * gauss(p, 1, 0.06)
+    const slowness = (p) => ends(p) + moments.reduce((t, m) => t + (SLOWMO_FACTOR - 1) * gauss(p, m, SLOWMO_WIDTH), 0)
+    this.elapsed = new Float64Array(steps + 1)
+    let plain = 0
+    for (let i = 1; i <= steps; i++) {
+      const p = (i - 0.5) / steps
+      this.elapsed[i] = this.elapsed[i - 1] + slowness(p) / steps
+      plain += ends(p) / steps
+    }
+    this.totalMillis = Math.min(Math.round((baseMillis * this.elapsed[steps]) / plain), baseMillis + SLOWMO_MAX_EXTRA_MILLIS)
+  }
+  progressAt(time) {
+    const { elapsed, steps } = this
+    const target = Math.min(1, Math.max(0, time)) * elapsed[steps]
+    let lo = 0, hi = steps
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (elapsed[mid] < target) lo = mid; else hi = mid }
+    const span = elapsed[hi] - elapsed[lo]
+    return (lo + (span > 0 ? (target - elapsed[lo]) / span : 0)) / steps
+  }
+  get millisPerProgressAtEnd() { const { elapsed, steps } = this; return (this.totalMillis * (elapsed[steps] - elapsed[steps - 1]) * steps) / elapsed[steps] }
+  spotlightAt(progress) {
+    const v = Math.max(0, ...this.moments.map((m) => Math.exp(-(((progress - m) / SLOWMO_WIDTH) ** 2))))
+    return v > 0.02 ? v : 0
+  }
+}
+
+/** Every pass in the race, day by day (against the last day the two weren't level); [important]
+ *  when it's a change of leader. */
+function findOvertakes(lines, levelWithin) {
+  const out = []
+  const lastDay = Math.max(-1, ...lines.map((l) => l.cumulative.length - 1))
+  if (lastDay < 0) return out
+  const at = (l, d) => l.cumulative[Math.min(d, l.cumulative.length - 1)]
+  const leaders = []
+  for (let d = 0; d <= lastDay; d++) {
+    let best = null
+    for (const l of lines) if (l.joinIndex <= d && (!best || at(l, d) > at(best, d))) best = l
+    leaders.push(best?.st.userId)
+  }
+  for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
+    const a = lines[i], b = lines[j]
+    let sign = 0
+    for (let d = Math.max(a.joinIndex, b.joinIndex); d <= lastDay; d++) {
+      const diff = at(a, d) - at(b, d)
+      const now = diff > levelWithin ? 1 : diff < -levelWithin ? -1 : 0
+      if (!now) continue
+      if (sign && now !== sign) {
+        const [passer, passed] = now > 0 ? [a, b] : [b, a]
+        out.push({ day: d, passer: passer.st.userId, passed: passed.st.userId, important: leaders[d] === passer.st.userId && leaders[d - 1] === passed.st.userId })
+      }
+      sign = now
+    }
+  }
+  return out
+}
+
+const valueAt = (line, at) => {
+  const c = line.cumulative
+  if (c.length === 1) return c[0]
+  const k = Math.min(Math.max(0, Math.floor(at)), c.length - 2)
+  const u = Math.min(1, Math.max(0, at - k))
+  return c[k] + (c[k + 1] - c[k]) * u
+}
+const rgbOf = (hex) => { const h = hex.replace('#', ''); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)).join(',') }
+
+/** Everyone's running total, day by day, with a replay of the race. */
+function ProgressChart({ event, now }) {
+  const s = useStore()
+  const me = s.race.userId
+  const raceDay = (t) => ymdToEpochDay(ymdOf(t - 4 * HOUR))
+  const withData = event.standings.filter((st) => Object.keys(st.daily || {}).length)
+  const missing = event.standings.filter((st) => !Object.keys(st.daily || {}).length && st.millis > 0)
+  const dayKeys = withData.flatMap((st) => Object.keys(st.daily).map((k) => ymdToEpochDay(+k)))
+  const first = Math.min(raceDay(event.startMillis), ...dayKeys)
+  const last = Math.max(raceDay(Math.min(now, event.endMillis ?? now)), ...dayKeys)
+  const days = []
+  for (let d = first; d <= last && days.length < 731; d++) days.push(epochDayToYmd(d))
+  const lines = useMemo(() => withData.map((st) => {
+    let run = 0
+    const cumulative = days.map((k) => Math.min((run += st.daily[k] || 0), st.millis))
+    const joinedLate = st.joinedAt > event.startMillis && st.userId !== event.createdBy
+    const joinIndex = !joinedLate ? 0 : (() => { const i = days.indexOf(epochDayToYmd(raceDay(st.joinedAt))); return i < 0 ? days.length - 1 : i })()
+    const color = lineColor(st, event.standings.indexOf(st), event.standings)
+    return { st, color, rgb: rgbOf(color), cumulative, isMe: st.userId === me, joinIndex }
+  }).sort((x, y) => x.isMe - y.isMe), [event, days.length, me])
+  const topValue = Math.max(0, ...lines.map((l) => l.cumulative[l.cumulative.length - 1] || 0))
+  const overtakes = useMemo(() => findOvertakes(lines, Math.max(60000, topValue * 0.005)), [lines])
+  const significantDays = [...new Set(overtakes.filter((o) => o.important).map((o) => o.day))]
+  const replayMillis = Math.min(12000, Math.max(3000, days.length * 220))
+  const timeline = useMemo(() => new ReplayTimeline(replayMillis, significantDays.map((d) => d / Math.max(1, days.length - 1))), [overtakes, replayMillis, days.length])
+  const tailNeeded = useMemo(() => {
+    const li = Math.max(1, days.length - 1)
+    const ends = [...overtakes.map((o) => o.day / li + OVERTAKE_REACTION_PROGRESS / 2), ...lines.filter((l) => l.joinIndex > 0).map((l) => l.joinIndex / li + JOIN_REACTION_PROGRESS * 1.4), ...significantDays.map((d) => d / li + SPOTLIGHT_REACH)]
+    return Math.max(0, Math.max(0, ...ends) - 1)
+  }, [overtakes, lines, days.length])
+
+  const canvasRef = useRef(null)
+  const [width, setWidth] = useState(300)
+  const [replay, setReplay] = useState(null) // { start } while playing
+  const [shownDay, setShownDay] = useState(null)
   useEffect(() => {
-    const el = svgRef.current
+    const el = canvasRef.current?.parentElement
     if (!el) return
-    const ro = new ResizeObserver(() => el.clientWidth && setPxWidth(el.clientWidth))
+    const ro = new ResizeObserver(() => el.clientWidth && setWidth(el.clientWidth))
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
-  const W = 600, H = 200
-  const k = W / Math.max(1, pxWidth)
-  const bubble = 10 * k
-  // Inset by a bubble, so one at either end sits centred on its line without spilling out.
-  const P = series.some((sr) => sr.st.emoji) ? bubble + 2 * k : 6
+
   const goal = event.goalHours * HOUR
-  const maxY = Math.max(1, ...series.flatMap((x) => x.pts.slice(0, shownDays)), Math.min(goal, Math.max(...series.map((x) => x.st.millis)) * 1.1))
-  const x = (i) => P + (days.length <= 1 ? 0 : (i / (days.length - 1)) * (W - 2 * P))
-  const y = (v) => H - P - (v / maxY) * (H - 2 * P)
+  const showGoal = goal <= (topValue * 3) / 2
+  const yMax = Math.max(1, showGoal ? (Math.max(topValue, goal) * 21) / 20 : (topValue * 21) / 20)
+  const anyLive = lines.some((l) => isLiveAt(l.st, now) && l.st.emoji)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !lines.length || topValue <= 0) return
+    const dpr = window.devicePixelRatio || 1
+    const H = 160, W = width
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr)
+    const ctx = canvas.getContext('2d')
+    const css = getComputedStyle(canvas)
+    const grid = css.getPropertyValue('--outline-variant').trim() || '#33364F'
+    const goalColor = css.getPropertyValue('--tertiary').trim() || '#E8B93E'
+    const base = css.getPropertyValue('--bg').trim() || '#121420'
+    const tailStart = replay ? replay.start + timeline.totalMillis : 0
+    const tailMillis = tailNeeded * timeline.millisPerProgressAtEnd
+    let raf = 0
+    const frame = (t) => {
+      const replaying = !!replay
+      let time = 1, tail = 0
+      if (replaying) {
+        time = Math.min(1, (t - replay.start) / timeline.totalMillis)
+        if (t > tailStart) tail = Math.min(tailNeeded, ((t - tailStart) / Math.max(1, tailMillis)) * tailNeeded)
+      }
+      const progress = replaying ? timeline.progressAt(time) : 1
+      const lastIndex = Math.max(1, days.length - 1)
+      const position = progress * (days.length - 1)
+      const effect = progress + (replaying ? tail : 0)
+      const since = (day) => effect - day / lastIndex
+      const bubble = 10
+      const inset = lines.some((l) => l.st.emoji) ? bubble : 0
+      const plotW = W - inset
+      const x = (i) => (days.length <= 1 ? plotW / 2 : (i * plotW) / (days.length - 1))
+      const y = (v) => H - (v / yMax) * (H - inset)
+      const visible = lines.filter((l) => !replaying || position >= l.joinIndex)
+      const arrival = (l) => (!replaying || l.joinIndex === 0 ? 1 : Math.min(1, Math.max(0, since(l.joinIndex) / JOIN_REACTION_PROGRESS)))
+      const phaseOf = (o) => since(o.day) / OVERTAKE_REACTION_PROGRESS + 0.5
+      const newLeaders = new Set(overtakes.filter((o) => o.important && phaseOf(o) >= 0 && phaseOf(o) <= 1).map((o) => o.passer))
+      const reaction = (id, asPasser) => {
+        if (!replaying || days.length < 2) return 0
+        if (newLeaders.size && (!asPasser || !newLeaders.has(id))) return 0
+        let best = 0
+        for (const o of overtakes) {
+          if ((asPasser ? o.passer : o.passed) !== id) continue
+          const p = phaseOf(o)
+          if (p >= 0 && p <= 1) best = Math.max(best, Math.sin(Math.PI * p) * (o.important ? 1 : SUBTLE_OVERTAKE_WEIGHT))
+        }
+        return best
+      }
+      const spotlight = replaying ? timeline.spotlightAt(effect) : 0
+      const spotDay = spotlight > 0 ? significantDays.reduce((b, d) => (b == null || Math.abs(since(d)) < Math.abs(since(b)) ? d : b), null) : null
+      const inSpot = new Set(spotDay == null ? [] : overtakes.filter((o) => o.day === spotDay && o.important).map((o) => o.passer))
+      const dimFor = (l) => (spotlight > 0 && !inSpot.has(l.st.userId) ? 1 - SPOTLIGHT_DIM * spotlight : 1)
+      const livePulse = anyLive ? 1 - 0.65 * (0.5 - 0.5 * Math.cos((t / 900) * Math.PI)) : 1
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      ctx.clearRect(0, 0, W, H)
+      ctx.lineWidth = 1
+      ctx.strokeStyle = grid
+      ctx.globalAlpha = 0.6
+      for (const f of [0, 0.5, 1]) { ctx.beginPath(); ctx.moveTo(0, y(yMax * f)); ctx.lineTo(W, y(yMax * f)); ctx.stroke() }
+      ctx.globalAlpha = 1
+      if (showGoal) {
+        ctx.save(); ctx.setLineDash([8, 6]); ctx.lineWidth = 1.5; ctx.strokeStyle = goalColor
+        ctx.beginPath(); ctx.moveTo(0, y(goal)); ctx.lineTo(W, y(goal)); ctx.stroke(); ctx.restore()
+      }
+      const step = Math.max(1, days.length / (plotW / 2))
+      for (const l of visible) {
+        const sw = l.isMe ? 3 : 2
+        const start = replaying ? l.joinIndex : 0
+        const tip = [x(position), y(valueAt(l, position))]
+        const alpha = arrival(l) * dimFor(l)
+        ctx.strokeStyle = ctx.fillStyle = `rgba(${l.rgb},${alpha})`
+        if (l.cumulative.length === 1 || position <= start) {
+          ctx.beginPath(); ctx.arc(tip[0], tip[1], sw * 1.5, 0, Math.PI * 2); ctx.fill()
+        } else {
+          ctx.beginPath(); ctx.moveTo(x(start), y(valueAt(l, start)))
+          for (let at = start + step; at < position; at += step) ctx.lineTo(x(at), y(valueAt(l, at)))
+          ctx.lineTo(tip[0], tip[1])
+          ctx.lineWidth = sw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke()
+          if (!l.st.emoji) { ctx.beginPath(); ctx.arc(tip[0], tip[1], sw * 1.2, 0, Math.PI * 2); ctx.fill() }
+        }
+        // A late joiner arriving mid-replay: a quick ring pulse where they appear.
+        const sj = since(l.joinIndex) / (JOIN_REACTION_PROGRESS * 1.4)
+        if (replaying && l.joinIndex > 0 && sj >= 0 && sj <= 1) {
+          ctx.strokeStyle = `rgba(${l.rgb},${1 - sj})`; ctx.lineWidth = 2
+          ctx.beginPath(); ctx.arc(x(l.joinIndex), y(l.cumulative[l.joinIndex]), bubble * (0.8 + 1.4 * sj), 0, Math.PI * 2); ctx.stroke()
+        }
+      }
+      // Emoji bubbles, whoever's ahead at this point drawn last (on top).
+      const order = event.standings.map((x2) => x2.userId)
+      const withE = visible.filter((l) => l.st.emoji).sort((a2, b2) => valueAt(a2, position) - valueAt(b2, position) || order.indexOf(b2.st.userId) - order.indexOf(a2.st.userId))
+      for (const l of withE) {
+        const a = arrival(l)
+        const pop = a >= 1 ? 1 : 1 + 2.70158 * (a - 1) ** 3 + 1.70158 * (a - 1) ** 2
+        if (pop <= 0) continue
+        const cx = x(position), cy = y(valueAt(l, position))
+        const passing = reaction(l.st.userId, true), passed = reaction(l.st.userId, false)
+        const dim = dimFor(l)
+        if (spotlight > 0 && inSpot.has(l.st.userId)) {
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, bubble * 2.6)
+          g.addColorStop(0, `rgba(${l.rgb},${0.42 * spotlight})`); g.addColorStop(1, `rgba(${l.rgb},0)`)
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, bubble * 2.6, 0, Math.PI * 2); ctx.fill()
+        }
+        const sc = pop * (1 + 0.28 * passing) * (1 - 0.16 * passed)
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc)
+        ctx.globalAlpha = dim
+        ctx.fillStyle = base; ctx.beginPath(); ctx.arc(0, 0, bubble, 0, Math.PI * 2); ctx.fill()
+        if (isLiveAt(l.st, now) && !replaying) {
+          ctx.fillStyle = `rgba(${LIVE_GREEN_RGB},${0.12 + 0.2 * livePulse})`; ctx.fill()
+          ctx.strokeStyle = `rgba(${LIVE_GREEN_RGB},${livePulse})`; ctx.lineWidth = 2; ctx.stroke()
+        } else {
+          ctx.fillStyle = `rgba(${l.rgb},${0.22 * dim})`; ctx.fill()
+          ctx.strokeStyle = `rgba(${l.rgb},${dim})`; ctx.lineWidth = 1.5; ctx.stroke()
+        }
+        ctx.font = '13px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif'
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+        ctx.fillStyle = '#000' // opaque, or the colour emoji comes out faded
+        ctx.fillText(l.st.emoji, 0, 1)
+        ctx.restore()
+      }
+      if (replaying) {
+        const k = days[Math.min(days.length - 1, Math.max(0, Math.round(progress * (days.length - 1))))]
+        setShownDay(k)
+        if (time >= 1 && tail >= tailNeeded) { setReplay(null); setShownDay(null); return }
+      }
+      if (replaying || anyLive) raf = requestAnimationFrame(frame)
+    }
+    raf = requestAnimationFrame(frame)
+    return () => cancelAnimationFrame(raf)
+  }, [lines, width, replay, yMax, anyLive, now, timeline, tailNeeded])
+
+  if (!lines.length || topValue <= 0) return <div class="muted small">No day-by-day totals yet.</div>
+  const longRace = days.length > MONTH_LABEL_MIN_DAYS
+  const label = (k) => (replay && longRace ? new Date(epochDayStart(ymdToEpochDay(+k))).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : formatYmd(+k))
   return (
     <div>
-      <div class="row" style="justify-content:flex-end;margin-top:-30px"><button class="btn text small" onClick={() => setReplay(replay == null ? 1 : null)}>{replay == null ? 'Replay' : 'Stop'}</button></div>
-      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} style="width:100%;height:auto;margin-top:8px;overflow:visible">
-        {goal <= maxY && <line x1={P} x2={W - P} y1={y(goal)} y2={y(goal)} stroke="var(--outline)" stroke-dasharray="6 6" />}
-        {series.map((sr) => (
-          <polyline key={sr.st.userId} fill="none" stroke={sr.color} stroke-width="3" stroke-linejoin="round" stroke-linecap="round"
-            points={sr.pts.slice(0, shownDays).map((v, i) => `${x(i)},${y(v)}`).join(' ')} />
+      <div class="row" style="align-items:flex-start;gap:10px">
+        <span class="muted grow" style="font-size:11px">{formatHm(yMax)}</span>
+        {showGoal && <span style="font-size:11px;color:var(--tertiary)">Goal {event.goalHours}h</span>}
+        {days.length > 1 && (
+          <button class="replay-btn" onClick={() => (replay ? (setReplay(null), setShownDay(null)) : setReplay({ start: performance.now() }))}>
+            <Icon name={replay ? 'stop' : 'play_arrow'} size={16} />{replay ? 'Stop' : 'Replay'}
+          </button>
+        )}
+      </div>
+      <div style="margin-top:4px"><canvas ref={canvasRef} style={{ width: '100%', height: 160, display: 'block' }} /></div>
+      <div class="row" style="margin-top:4px;font-size:11px">
+        <span class="muted grow">{formatYmd(+days[0])}</span>
+        {days.length > 1 && <span style={replay ? { color: 'var(--primary)', fontWeight: 600 } : { color: 'var(--on-surface-variant)' }}>{label(replay && shownDay ? shownDay : days[days.length - 1])}</span>}
+      </div>
+      <div class="chart-legend">
+        {event.standings.map((st) => lines.find((l) => l.st.userId === st.userId)).filter(Boolean).map((l) => (
+          <span key={l.st.userId}><i style={{ background: l.color }} />{withEmoji(l.st.emoji, l.st.name)}</span>
         ))}
-        {/* Each person's emoji rides the end of their line in a bubble of their line's colour -
-            solid underneath, so a bubble on top covers the one below; the leader's on top.
-            Someone tracking right now breathes green. No emoji: a dot. */}
-        {[...series].reverse().map((sr) => {
-          const i = Math.max(0, shownDays - 1)
-          const cx = x(i), cy = y(sr.pts[i] || 0)
-          if (!sr.st.emoji) return <circle key={'e' + sr.st.userId} cx={cx} cy={cy} r={3.6 * k} fill={sr.color} />
-          return (
-            <g key={'e' + sr.st.userId}>
-              <circle cx={cx} cy={cy} r={bubble} fill="var(--bg)" />
-              {isLiveAt(sr.st, now)
-                ? <circle class="bubble-live" cx={cx} cy={cy} r={bubble} stroke-width={2 * k} />
-                : <circle cx={cx} cy={cy} r={bubble} fill={withAlpha(sr.color, 0.22)} stroke={sr.color} stroke-width={1.5 * k} />}
-              <text x={cx} y={cy} font-size={13 * k} text-anchor="middle" dominant-baseline="central">{sr.st.emoji}</text>
-            </g>
-          )
-        })}
-      </svg>
-      <div class="row tiny muted"><span class="grow">{formatYmd(days[0])}</span>{goal <= maxY && <span>Goal {event.goalHours}h</span>}<span class="grow" style="text-align:right">{formatYmd(days[days.length - 1])}</span></div>
-      {missing.length > 0 && <div class="muted tiny">No day-by-day data from {missing.map((m) => m.name).join(', ')} yet.</div>}
+      </div>
+      {missing.length > 0 && <div class="muted" style="font-size:11px;margin-top:6px">No day-by-day data from {missing.map((m) => m.name).join(', ')} yet.</div>}
     </div>
   )
 }
