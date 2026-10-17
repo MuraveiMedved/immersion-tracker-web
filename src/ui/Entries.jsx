@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'preact/hooks'
-import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI } from '../store.js'
+import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
 import { durationOf, typeLabel } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
 import { Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, Seg, toast } from './common.jsx'
@@ -67,6 +67,17 @@ export function EntryDetails({ id, onClose }) {
         </div>
         {entry.detectionReason && <div class="muted tiny">{entry.detectionReason}</div>}
         <div class="divider" />
+        {/* The mode, fixable afterwards - listening and reading swap; not while it's running (only
+            one of each type runs at a time). */}
+        {!running && (entry.contentType === PODCAST || entry.contentType === READING) && (
+          <div class="row" style="gap:10px">
+            <span class="title-medium grow">Change type</span>
+            {[[PODCAST, 'Listening'], [READING, 'Reading']].map(([t, l]) => (
+              <button key={t} class={`type-btn ${entry.contentType === t ? 'on' : ''}`} title={l} aria-label={l} aria-pressed={entry.contentType === t}
+                onClick={() => entry.contentType !== t && editEntry(entry.id, { contentType: t })}><TypeIcon type={t} size={22} /></button>
+            ))}
+          </div>
+        )}
         {entry.contentType !== ANKI && <button class="btn tonal" onClick={() => setMode('lang')}>Change language</button>}
         {!running && <button class="btn tonal" onClick={() => setMode('dur')}>Change duration</button>}
         <button class="btn tonal" onClick={() => setMode('title')}>Change title</button>
