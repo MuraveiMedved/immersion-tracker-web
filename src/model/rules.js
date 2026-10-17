@@ -98,4 +98,3 @@ export function immersionTotal(entries, now = Date.now()) {
 }
 
 export const typeLabel = (t) => ({ [PODCAST]: 'Listening', [READING]: 'Reading', [ANKI]: 'Anki', [LISTENING]: 'Music' }[t] || t)
-export const typeIcon = (t) => ({ [PODCAST]: '🎧', [READING]: '📖', [ANKI]: '🗂️', [LISTENING]: '🎵' }[t] || '•')

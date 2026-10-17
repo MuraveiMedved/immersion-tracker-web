@@ -5,7 +5,7 @@ import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntri
 import { formatHm } from '../model/time.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
 import { AccountSection } from './Account.jsx'
-import { Dialog, Confirm, Switch, SettingRow, ColorPicker, LanguageChip, Spinner, toast } from './common.jsx'
+import { Dialog, Confirm, Switch, SettingRow, ColorPicker, LanguageChip, Spinner, TypeIcon, TypeLabel, toast } from './common.jsx'
 
 const SCRIPTS = [
   ['CYRILLIC_RUSSIAN', 'Russian', 'Cyrillic script'], ['CYRILLIC_UKRAINIAN', 'Ukrainian', 'і, ї, є, ґ'], ['JAPANESE_KANA', 'Japanese', 'hiragana / katakana'],
@@ -44,7 +44,12 @@ export function Settings({ params, nav }) {
         {!languages.length && <div class="muted small" style="padding:10px 4px">No languages yet - tap + to add one.</div>}
         {languages.map((p, i) => (
           <SettingRow key={p.id} icon={<span class="dot" style={{ width: 22, height: 22, background: languageFill(p, 135) }} />} title={<span>{p.name}{p.isMain && <span class="muted small"> · main</span>}</span>}
-            hint={[p.podcastGoalMinutes && `🎧 ${p.podcastGoalMinutes}m`, p.readingGoalMinutes && `📖 ${p.readingGoalMinutes}m`].filter(Boolean).join(' · ') || 'No daily goal'}
+            hint={p.podcastGoalMinutes || p.readingGoalMinutes ? (
+              <span class="row" style="gap:10px">
+                {p.podcastGoalMinutes > 0 && <TypeLabel type="PODCAST" size={13}>{p.podcastGoalMinutes}m</TypeLabel>}
+                {p.readingGoalMinutes > 0 && <TypeLabel type="READING" size={13}>{p.readingGoalMinutes}m</TypeLabel>}
+              </span>
+            ) : 'No daily goal'}
             onClick={() => setEditing(p.id)}>
             <div class="row" style="gap:0">
               <button class="icon-btn" title="Move up" disabled={i === 0} onClick={(e) => { e.stopPropagation(); swap(languages, i, i - 1) }}>↑</button>
@@ -72,7 +77,7 @@ export function Settings({ params, nav }) {
             <button class="icon-btn filled" onClick={() => setSetting('entryThresholdSeconds', Math.min(600, s.settings.entryThresholdSeconds + 5))}>＋</button>
           </div>
         )}
-        <SettingRow icon="🗂️" title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
+        <SettingRow icon={<TypeIcon type="ANKI" size={20} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
           <Switch checked={s.settings.showAnkiOnHome} onChange={(v) => setSetting('showAnkiOnHome', v)} />
         </SettingRow>
         <div class="muted tiny" style="padding:8px 4px 10px">On the web, sessions are started and stopped by hand (or logged afterwards) - a browser can't see what other apps are playing, so automatic tracking stays on the Android app.</div>
@@ -171,8 +176,8 @@ function LanguageEdit({ id, onClose }) {
         <div class="col">
           <div style="font-weight:600">Daily goals</div>
           <div class="row">
-            <label class="field grow">🎧 Listening (minutes)<input class="input" inputMode="numeric" value={p.podcastGoalMinutes} onInput={(e) => set('podcastGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
-            <label class="field grow">📖 Reading (minutes)<input class="input" inputMode="numeric" value={p.readingGoalMinutes} onInput={(e) => set('readingGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+            <label class="field grow"><TypeLabel type="PODCAST" size={14}>Listening (minutes)</TypeLabel><input class="input" inputMode="numeric" value={p.podcastGoalMinutes} onInput={(e) => set('podcastGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+            <label class="field grow"><TypeLabel type="READING" size={14}>Reading (minutes)</TypeLabel><input class="input" inputMode="numeric" value={p.readingGoalMinutes} onInput={(e) => set('readingGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
           </div>
           <div class="muted small">Set either to 0 to hide that ring.</div>
         </div>
@@ -249,7 +254,7 @@ function Appearance() {
   )
 }
 
-const TYPE_OPTIONS = [[null, 'Skip'], [PODCAST, '🎧 Listening'], [READING, '📖 Reading'], [ANKI, '🗂️ Anki'], [LISTENING, '🎵 Music']]
+const TYPE_OPTIONS = [[null, 'Skip'], [PODCAST, 'Listening'], [READING, 'Reading'], [ANKI, 'Anki'], [LISTENING, 'Music']]
 
 function ImportDialog({ kind, files, onClose }) {
   const s = useStore()
@@ -310,7 +315,7 @@ function ImportDialog({ kind, files, onClose }) {
               <div key={p.name} class="card" style="padding:12px">
                 <div class="row"><b class="grow ellipsis">{p.name || '(No project)'}</b><span class="muted small">{p.count} entries · {formatHm(p.ms)}</span></div>
                 <div class="chips" style="margin-top:8px">
-                  {TYPE_OPTIONS.map(([t, l]) => <button key={String(t)} class={`chip ${m.type === t ? 'on' : ''}`} onClick={() => setM({ type: t, languageProfileId: t === ANKI ? anki?.id ?? null : m.languageProfileId })}>{l}</button>)}
+                  {TYPE_OPTIONS.map(([t, l]) => <button key={String(t)} class={`chip ${m.type === t ? 'on' : ''}`} onClick={() => setM({ type: t, languageProfileId: t === ANKI ? anki?.id ?? null : m.languageProfileId })}>{t && <TypeIcon type={t} size={15} />}{l}</button>)}
                 </div>
                 {m.type && m.type !== ANKI && (
                   <div class="chips" style="margin-top:8px">

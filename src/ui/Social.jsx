@@ -7,7 +7,7 @@ import {
 } from '../model/race.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor } from '../model/theme.js'
-import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame } from './common.jsx'
+import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel } from './common.jsx'
 import { Ring } from './Ring.jsx'
 import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'
@@ -213,7 +213,7 @@ function RaceCard({ event, now, completed }) {
                   <div class="grow">
                     <div class="row" style="gap:6px">
                       <b class="name ellipsis">{st.name}</b>
-                      {st.active && <span class="now-tag">{st.activeKind === 'reading' ? '📖' : st.activeKind === 'anki' ? '🗂️' : '🎧'} now</span>}
+                      {st.active && <span class="now-tag row" style="gap:3px;display:inline-flex"><TypeIcon type={st.activeKind === 'reading' ? 'READING' : st.activeKind === 'anki' ? 'ANKI' : 'PODCAST'} size={11} />now</span>}
                       <span class="spacer" />
                       <span class="small" style="font-variant-numeric:tabular-nums;font-weight:650">{formatHm(st.millis)}</span>
                       <span class="muted tiny" style="width:40px;text-align:right">{Math.floor((st.millis / goal) * 100)}%</span>
@@ -388,7 +388,11 @@ function PersonSheet({ event, standing: st, now, onClose }) {
         <div class="tile"><div class="k">Best day</div><div class="v">{best ? formatHm(st.daily[best]) : '–'}</div>{best && <div class="k">{formatYmd(best)}</div>}</div>
       </div>
       <div class="small muted" style="margin-top:12px">
-        🎧 {formatHm(listening)} · {pct(listening)}% &nbsp; 📖 {formatHm(st.readingMillis)} · {pct(st.readingMillis)}% &nbsp; 🗂️ {formatHm(st.ankiMillis)} counted{st.ankiBankedMillis > 0 ? ` · ${formatHm(st.ankiBankedMillis)} banked` : ''}
+        <span class="row wrap" style="gap:12px">
+          <TypeLabel type="PODCAST" size={14}>{formatHm(listening)} · {pct(listening)}%</TypeLabel>
+          <TypeLabel type="READING" size={14}>{formatHm(st.readingMillis)} · {pct(st.readingMillis)}%</TypeLabel>
+          <TypeLabel type="ANKI" size={14}>{formatHm(st.ankiMillis)} counted{st.ankiBankedMillis > 0 ? ` · ${formatHm(st.ankiBankedMillis)} banked` : ''}</TypeLabel>
+        </span>
       </div>
       {mine && st.userId !== me && <div class="small" style="margin-top:6px">{st.millis === mine.millis ? 'Tied with you' : st.millis > mine.millis ? `${formatHm(st.millis - mine.millis)} ahead of you` : `${formatHm(mine.millis - st.millis)} behind you`}</div>}
       <div class="muted tiny" style="margin-top:4px">{st.final ? 'Final total' : `Last reported ${agoText(st.updatedAt, now)}`}</div>
@@ -503,7 +507,7 @@ function RaceSettingsDialog({ onClose }) {
         {[[0, 1, 2], [1, 0, 2], [0, 2, 1], [2, 0, 1], [1, 2, 0], [2, 1, 0]].map((o) => {
           const pal = BAR_PALETTES[s.race.barPalette] || BAR_PALETTES.theme
           return <button key={o.join()} class={`chip ${String(s.race.barOrder) === String(o) ? 'on' : ''}`} onClick={() => update((st) => { st.race.barOrder = o })}>
-            <span class="dot" style={{ background: pal[o[0]] }} />🎧<span class="dot" style={{ background: pal[o[1]] }} />📖<span class="dot" style={{ background: pal[o[2]] }} />🗂️
+            <span class="dot" style={{ background: pal[o[0]] }} /><TypeIcon type="PODCAST" size={14} /><span class="dot" style={{ background: pal[o[1]] }} /><TypeIcon type="READING" size={14} /><span class="dot" style={{ background: pal[o[2]] }} /><TypeIcon type="ANKI" size={14} />
           </button>
         })}
       </div>
@@ -679,9 +683,9 @@ export function ProfileDialog({ profile: p, onClose, onRemove }) {
                 <div key={i} class="goal-card" style={{ background: `linear-gradient(135deg, ${withAlpha(l.color || '#888', 0.3)}, ${withAlpha(l.color || '#888', 0.08)})` }}>
                   <b>{l.name}</b>
                   <div class="rings">
-                    {[['listen', '🎧'], ['read', '📖']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak']).map(([k, ico]) => (
+                    {[['listen', 'PODCAST'], ['read', 'READING']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak']).map(([k, ico]) => (
                       <div key={k} class="col" style="align-items:center;gap:2px">
-                        <Ring size={58} progress={l[k + 'Progress'] ?? 0} color={l.color || '#888'} stops={l.gradient ? l.gradient.split(',') : null} ringStyle={p.ringStyle || 'CLASSIC'} icon={ico} />
+                        <Ring size={58} progress={l[k + 'Progress'] ?? 0} color={l.color || '#888'} stops={l.gradient ? l.gradient.split(',') : null} ringStyle={p.ringStyle || 'CLASSIC'} icon={<TypeIcon type={ico} size={18} />} />
                         {l[k + 'Goal'] != null && <span class="tiny">{l[k + 'Today'] ?? 0}/{l[k + 'Goal']}m</span>}
                         {l[k + 'Streak'] && <span class="tiny streak"><Flame />{l[k + 'Streak'].current} · 🏆{l[k + 'Streak'].record}</span>}
                       </div>

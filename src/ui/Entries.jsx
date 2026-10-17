@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'preact/hooks'
 import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, ANKI } from '../store.js'
-import { durationOf, typeLabel, typeIcon } from '../model/rules.js'
+import { durationOf, typeLabel } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
-import { Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, LanguageChip, Seg, toast } from './common.jsx'
+import { Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, LanguageChip, Seg, toast } from './common.jsx'
 import { Stats } from './Stats.jsx'
 
 export function EntryRow({ entry, now, onClick, selected, onLongPress }) {
@@ -55,7 +55,7 @@ export function EntryDetails({ id, onClose }) {
   return (
     <Dialog title={entry.mediaTitle || typeLabel(entry.contentType)} onClose={onClose}>
       <div class="col" style="gap:10px">
-        <div class="row"><span style="font-size:20px">{typeIcon(entry.contentType)}</span><span>{typeLabel(entry.contentType)}</span>{entry.contentType !== ANKI && <LanguageChip profile={profile} />}</div>
+        <div class="row"><TypeIcon type={entry.contentType} size={22} color={profile?.colorHex} /><span>{typeLabel(entry.contentType)}</span>{entry.contentType !== ANKI && <LanguageChip profile={profile} />}</div>
         <div class="muted small">
           {running ? `${formatHm(durationOf(entry, now))} so far · still tracking` : `${formatDateTime(entry.startTimeMillis)} – ${formatTime(entry.endTimeMillis)} · ${formatHm(durationOf(entry))}`}
         </div>

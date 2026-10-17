@@ -3,7 +3,7 @@ import { useStore, useNow, profileById } from '../store.js'
 import { RANGES, RANGE_LABEL, windowFor, barsFor, quickStats, heatmap, timeOfDay } from '../model/stats.js'
 import { epochDayStart, formatDate, formatHm, formatHoursShort } from '../model/time.js'
 import { withAlpha, languageFill } from '../model/theme.js'
-import { LanguageDot } from './common.jsx'
+import { LanguageDot, TypeLabel } from './common.jsx'
 
 const ZOOM_IN = { YEAR: 'MONTH', MONTH: 'DAY', WEEK: 'DAY', ALL: 'YEAR' }
 
@@ -102,7 +102,7 @@ export function Stats() {
                     <div style={{ width: `${(v.PODCAST / stats.total) * 100}%`, background: p?.colorHex }} title={`Listening ${formatHm(v.PODCAST)}`} />
                     <div style={{ width: `${(v.READING / stats.total) * 100}%`, background: withAlpha(p?.colorHex || '#888', 0.55) }} title={`Reading ${formatHm(v.READING)}`} />
                   </div>
-                  <div class="muted tiny" style="margin-top:3px">🎧 {formatHm(v.PODCAST)} · 📖 {formatHm(v.READING)}</div>
+                  <div class="muted tiny row" style="margin-top:3px;gap:10px"><TypeLabel type="PODCAST" size={13}>{formatHm(v.PODCAST)}</TypeLabel><TypeLabel type="READING" size={13}>{formatHm(v.READING)}</TypeLabel></div>
                 </div>
               )
             })}

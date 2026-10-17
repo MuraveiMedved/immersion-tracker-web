@@ -3,11 +3,11 @@ import {
   useStore, useNow, startManualEntry, stopRunningEntry, pauseRunningEntry, resumePaused, dismissPaused, deleteRunningEntry,
   editRunningElapsed, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
 } from '../store.js'
-import { computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAYS, GOLDEN_DAILY_MILLIS, typeIcon, typeLabel } from '../model/rules.js'
+import { computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAYS, GOLDEN_DAILY_MILLIS, typeLabel } from '../model/rules.js'
 import { dayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, toast } from './common.jsx'
+import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, TypeIcon, TypeLabel, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
 
@@ -192,7 +192,7 @@ function GoalCard({ profile, now, running, light, onOpen, onStart }) {
         <div class="row"><span class="name grow" style={{ color: nameColor }}>Anki</span></div>
         <div class="rings">
           <button class="ring-stat" onClick={() => onStart(ANKI)}>
-            <Ring progress={0} color={ringColor} ringStyle={s.settings.ringStyle} icon={<span style={{ color: iconColor }}>🗂️</span>} active={isActive(ANKI)} light={light} />
+            <Ring progress={0} color={ringColor} ringStyle={s.settings.ringStyle} icon={<TypeIcon type={ANKI} size={30} color={iconColor} />} active={isActive(ANKI)} light={light} />
             <span class="val">{formatHm(today)}</span>
             <span class="lbl">Today · no goal</span>
           </button>
@@ -215,7 +215,7 @@ function GoalCard({ profile, now, running, light, onOpen, onStart }) {
           const streak = computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)
           return (
             <button key={type} class="ring-stat" onClick={() => onStart(type)} title={`Add ${label.toLowerCase()}`}>
-              <Ring progress={ms / goalMs} color={ringColor} stops={stops} ringStyle={s.settings.ringStyle} icon={<span style={{ color: iconColor }}>{typeIcon(type)}</span>} active={isActive(type)} light={light} />
+              <Ring progress={ms / goalMs} color={ringColor} stops={stops} ringStyle={s.settings.ringStyle} icon={<TypeIcon type={type} size={30} color={iconColor} />} active={isActive(type)} light={light} />
               <span class="val">{formatHm(ms)} / {formatHm(goalMs)}</span>
               <span class="lbl row" style="gap:6px">{label}
                 {streak.current > 0 && <span class="streak"><Flame />{streak.current}</span>}
@@ -246,8 +246,8 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
     </>}>
       <div class="col" style="gap:14px">
         <div class="row">
-          <button class="btn tonal grow" onClick={() => onAdd(PODCAST)}>🎧 Add listening</button>
-          <button class="btn tonal grow" onClick={() => onAdd(READING)}>📖 Add reading</button>
+          <button class="btn tonal grow" onClick={() => onAdd(PODCAST)}><TypeLabel type={PODCAST}>Add listening</TypeLabel></button>
+          <button class="btn tonal grow" onClick={() => onAdd(READING)}><TypeLabel type={READING}>Add reading</TypeLabel></button>
         </div>
         <div class="row">
           <label class="field grow">Listening (minutes)<input class="input" inputMode="numeric" value={listen} onInput={(e) => setListen(e.currentTarget.value.replace(/\D/g, ''))} /></label>
@@ -347,7 +347,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
               const prof = p.type === ANKI ? anki : profileById(p.profileId)
               return (
                 <div key={i} class="entry" onClick={() => usePreset(p)} style={{ borderColor: prof ? withAlpha(prof.colorHex, 0.5) : undefined, background: prof ? withAlpha(prof.colorHex, 0.12) : undefined }}>
-                  <span>{typeIcon(p.type)}</span>
+                  <TypeIcon type={p.type} size={20} color={prof?.colorHex} />
                   <div class="grow">
                     <div class="title ellipsis">{p.title || `Manual ${typeLabel(p.type).toLowerCase()} session`}</div>
                     {p.type !== ANKI && <LanguageChip profile={prof} />}
@@ -368,8 +368,8 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
         <div class="col">
           <div style="font-weight:600">Type</div>
           <div class="chips">
-            {[[PODCAST, '🎧 Listening'], [READING, '📖 Reading'], [ANKI, '🗂️ Anki']].map(([t, l]) => (
-              <button key={t} class={`chip ${type === t ? 'on' : ''}`} onClick={() => setType(t)}>{l}</button>
+            {[[PODCAST, 'Listening'], [READING, 'Reading'], [ANKI, 'Anki']].map(([t, l]) => (
+              <button key={t} class={`chip ${type === t ? 'on' : ''}`} onClick={() => setType(t)}><TypeIcon type={t} size={16} />{l}</button>
             ))}
           </div>
         </div>
