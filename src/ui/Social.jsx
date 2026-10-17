@@ -40,7 +40,7 @@ export function Social() {
   return (
     <>
       {/* You - your profile, from the corner, like the phone. */}
-      <div class="row" style="align-items:center"><h1 class="page-title grow">Social</h1><MyAvatar onClick={() => setMe(true)} /></div>
+      <div class="row" style="align-items:center;margin-bottom:16px"><h1 class="page-title grow" style="margin:0">Social</h1><MyAvatar onClick={() => setMe(true)} /></div>
       <Seg options={[['race', 'Race'], ['friends', 'Friends']]} value={tab} onChange={setTab} />
       <div style="margin-top:12px">{tab === 'race' ? <Race onEditName={() => setSetup(true)} onOpenMe={() => setMe(true)} /> : <Friends />}</div>
       {me && <MyProfileSheet onClose={() => setMe(false)} />}
@@ -146,7 +146,7 @@ function Race({ onEditName, onOpenMe }) {
       {/* Finished races keep their own area below everything still in play, each collapsed. */}
       {done.length > 0 && <>
         <div class="row" style="gap:6px;margin-top:24px"><Icon name="emoji_events" size={18} color="var(--tertiary)" /><span class="title-small">Completed races</span></div>
-        {done.map((e) => <RaceCard key={e.id} event={e} now={now} completed />)}
+        {done.map((e) => <RaceCard key={e.id} event={e} now={now} completed onOpenMe={onOpenMe} />)}
       </>}
       {create && <CreateRaceDialog onClose={() => setCreate(false)} />}
       {join && <JoinDialog onClose={() => setJoin(false)} />}
@@ -365,6 +365,8 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
     try { return x.timeZone && new Date(new Date(now).toLocaleString('en-US', { timeZone: x.timeZone })).getTime() !== new Date(new Date(now).toLocaleString('en-US')).getTime() } catch { return false }
   })
   const outlook = raceOutlook(event, me, now)
+  // You open your own profile (to see and edit it), the same sheet as Social's corner picture.
+  const openPerson = (st) => (st.userId === me && onOpenMe ? onOpenMe() : setPerson(st))
   const dialogs = <>
     {person && <PersonSheet event={event} standing={event.standings.find((x) => x.userId === person.userId) || person} now={now} onClose={() => setPerson(null)} onOpenMe={onOpenMe && (() => { setPerson(null); onOpenMe() })} />}
     {edit && <EditRaceDialog event={event} onClose={() => setEdit(false)} />}
@@ -394,7 +396,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
           </div>
         )}
         {expanded && <>
-          <Standings event={event} now={now} isLive={false} view="total" onPerson={setPerson} />
+          <Standings event={event} now={now} isLive={false} view="total" onPerson={openPerson} />
           <RaceCharts event={event} now={now} />
           {waiting.length > 0 && <div class="muted" style="font-size:11px;margin-top:10px">Still waiting for final totals from: {waiting.join(', ')}</div>}
         </>}
@@ -424,7 +426,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
           </div>
         )}
         {canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
-        <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={setPerson} />
+        <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} />
         {started && <RaceCharts event={event} now={now} />}
         {outlook && <OutlookNote o={outlook} event={event} />}
       </>}
@@ -1108,16 +1110,20 @@ function Friends() {
   )
 }
 
-/** Your picture in Social's corner: your emoji (or initial) on your banner colour, like the phone's
- *  MyProfileAvatar. */
+/** Your picture in Social's corner - the same one friends see: your animal on display (in its
+ *  rarity's ring) if you chose that, else your emoji (or initial) on your banner colour, like the
+ *  phone's MyProfileAvatar. */
 function MyAvatar({ onClick }) {
   const s = useStore()
+  const catalog = useCatalog()
   const stops = (s.friends.banner || '').split(',').filter(Boolean)
   const fill = stops.length ? `linear-gradient(135deg, ${(stops.length === 1 ? [stops[0], stops[0]] : stops).join(', ')})` : 'linear-gradient(135deg, var(--primary), var(--tertiary))'
   const emoji = (s.race.emoji || '').trim()
+  const animal = s.friends.avatar !== 'emoji' && s.zoo.trophyId && catalog ? catalog.find((a) => a.id === s.zoo.trophyId) : null
   return (
-    <button class="my-avatar" title="Your profile" style={{ background: fill, fontSize: emoji ? 22 : 18 }} onClick={onClick}>
-      {emoji || (s.race.name || '🙂').slice(0, 1).toUpperCase()}
+    <button class="my-avatar" title="Your profile" onClick={onClick}
+      style={animal ? { background: 'var(--c-high)', boxShadow: `0 0 0 2px ${RARITY_COLOR[animal.rarity]}` } : { background: fill, fontSize: emoji ? 22 : 18 }}>
+      {animal ? <AnimalPhoto animal={animal} /> : emoji || (s.race.name || '🙂').slice(0, 1).toUpperCase()}
     </button>
   )
 }
