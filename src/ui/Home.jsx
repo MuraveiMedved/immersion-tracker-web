@@ -64,7 +64,7 @@ export function Home({ nav }) {
       <div class="home-head">
         <div class="title-col">
           <Title mode={s.settings.titleStyleMode} active={activeProfile} light={light} />
-          <div class="version">web 🌐</div>
+          <div class="version">web ⚡</div>
         </div>
         <div class="side">
           <button class="icon-btn" title="Start a manual session" onClick={() => setManual({})}><Icon name="add" /></button>
