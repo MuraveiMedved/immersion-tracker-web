@@ -10,7 +10,7 @@ import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
-import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName } from './timers.js'
+import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions } from './timers.js'
 import { ICONS } from './icons.js'
 
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
@@ -124,6 +124,8 @@ export function Home({ nav }) {
         ? <p class="muted" style="margin:12px 0">Nothing tracked yet. Start a session and it'll show up here.</p>
         : <div class="list">{recent.map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => setDetails(e.id)} />)}</div>}
 
+      <StartAgain now={now} running={running} light={light} />
+
       {manual && <ManualSessionDialog initialType={manual.type} initialProfileId={manual.profileId} onClose={() => setManual(null)} />}
       {goalCard != null && profileById(goalCard) && <GoalEditDialog profile={profileById(goalCard)} onClose={() => setGoalCard(null)}
         onAdd={(type) => { setGoalCard(null); setManual({ type, profileId: goalCard }) }} onSettings={() => { setGoalCard(null); nav('settings', { language: goalCard }) }} />}
@@ -191,6 +193,55 @@ function IdleBanner({ onOther }) {
       </button>
       <button class="btn text" onClick={onOther}><Icon name="add" size={18} />Other</button>
     </div>
+  )
+}
+
+/** "Start again", in the empty column to the right of Home on wide screens: the last four
+ *  different listening and reading sessions, each one click from running again with the same
+ *  title and language - the web can't log anything by itself, so repeating a session should cost
+ *  nothing. The one running now is marked, and a click on it stops it. */
+function StartAgain({ now, running, light }) {
+  const s = useStore()
+  const groups = useMemo(() => [[PODCAST, 'Listening'], [READING, 'Reading']]
+    .map(([type, label]) => ({ type, label, items: recentSessions(type) }))
+    .filter((g) => g.items.length), [s.entries])
+  if (!groups.length) return null
+  const ago = (ms) => {
+    const d = Math.floor((dayStart(now) - dayStart(ms)) / 86400000)
+    return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : d < 7 ? `${d} days ago` : formatDate(ms)
+  }
+  return (
+    <aside class="start-again" aria-label="Start again">
+      <div class="sa-head">
+        <Icon name="restore" size={20} />
+        <span>Start again</span>
+      </div>
+      {groups.map((g) => (
+        <section key={g.type} class="sa-group">
+          <div class="sa-group-title"><TypeIcon type={g.type} size={18} />{g.label}</div>
+          {g.items.map((e) => {
+            const profile = profileById(e.languageProfileId)
+            const color = profile?.colorHex || UNRESOLVED_GRAY
+            const ink = light ? deepened(color, 0.42) : color
+            const live = running.find((r) => r.contentType === g.type && r.languageProfileId === e.languageProfileId && r.mediaTitle === e.mediaTitle)
+            return (
+              <button key={e.id} class={`sa-item ${live ? 'live' : ''}`}
+                style={{ '--sa-color': color, '--sa-fill': profile ? languageFill(profile, 180) : color }}
+                title={live ? 'Running now - click to stop' : `Start "${e.mediaTitle}" again`}
+                onClick={() => (live ? stopTimer(live) : startTimer(g.type, e.languageProfileId, e.mediaTitle))}>
+                <span class="sa-bar" />
+                <span class="grow" style="min-width:0">
+                  <span class="sa-title">{e.mediaTitle}</span>
+                  <span class="sa-meta"><b style={{ color: ink }}>{profile?.name || 'Uncategorized'}</b> · {live ? `running ${formatClock(durationOf(live, now))}` : ago(e.startTimeMillis)}</span>
+                </span>
+                <span class="sa-go"><Icon name={live ? 'stop' : 'play_arrow'} size={20} /></span>
+              </button>
+            )
+          })}
+        </section>
+      ))}
+      <p class="sa-tip"><Icon name="info" size={16} />Click any session to start a new timer with the same title and language. Press Space to resume the last one.</p>
+    </aside>
   )
 }
 

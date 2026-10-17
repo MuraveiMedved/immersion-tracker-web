@@ -14,19 +14,31 @@ export function sessionName(type, languageProfileId) {
   return `${profileById(languageProfileId)?.name || 'Uncategorized'} ${KIND[type] || 'music'}`
 }
 
-/** The title a quick start uses: the last one used for this language and type, or the default. */
-export function lastTitleFor(type, languageProfileId) {
-  let best = null
-  for (const e of getState().entries) {
-    if (e.contentType !== type || e.languageProfileId !== languageProfileId || !e.mediaTitle) continue
-    if (!best || e.startTimeMillis > best.startTimeMillis) best = e
+/** The title a fresh session gets - "Manual Japanese session", as the phone names one. Repeating
+ *  an earlier session (same title) is what the Start again list is for. */
+export function defaultTitle(languageProfileId) {
+  return `Manual ${profileById(languageProfileId)?.name || 'Uncategorized'} session`
+}
+
+/** The last few distinct sessions of [type] (by title + language), newest first - each one a
+ *  one-click way to start it again. */
+export function recentSessions(type, limit = 4) {
+  const seen = new Set()
+  const out = []
+  for (const e of [...getState().entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis)) {
+    if (e.contentType !== type || !e.mediaTitle) continue
+    const key = `${e.mediaTitle}|${e.languageProfileId}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(e)
+    if (out.length >= limit) break
   }
-  return best?.mediaTitle || `Manual ${profileById(languageProfileId)?.name || 'Uncategorized'} session`
+  return out
 }
 
 /** Starts a timer. If one of the same type was running it's closed (and said so); Undo takes the
  *  new one back and lets the old one run on. */
-export function startTimer(type, languageProfileId, title = lastTitleFor(type, languageProfileId)) {
+export function startTimer(type, languageProfileId, title = defaultTitle(languageProfileId)) {
   const replaced = runningEntry(type)
   const snapshot = replaced && { ...replaced }
   const id = startManualEntry(type, languageProfileId, title)
