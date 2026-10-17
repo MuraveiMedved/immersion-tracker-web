@@ -1,15 +1,16 @@
-import { useMemo, useState } from 'preact/hooks'
+import { useMemo, useRef, useState } from 'preact/hooks'
 import {
-  useStore, useNow, startManualEntry, stopRunningEntry, deleteRunningEntry,
+  useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
 } from '../store.js'
 import { computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAYS, GOLDEN_DAILY_MILLIS, typeLabel } from '../model/rules.js'
 import { dayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, StreakBadge, MomentumPill, toast } from './common.jsx'
+import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
+import { ICONS } from './icons.js'
 
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
 
@@ -268,8 +269,13 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
   )
 }
 
-/** "Add a session": copy a recent one, or pick type/language/title, then either log a length that
- *  already happened or (blank length) start a live timer. */
+/** "Add a session", laid out like the phone's StartManualEntryDialog: recent sessions to copy or
+ *  start, a band for type + language + title, a band for when and how long; Save logs a length
+ *  that already happened, Start (no length) runs a live timer. */
+const RECENT_SESSIONS_PREVIEW_COUNT = 3
+const MAX_RECENT_MANUAL_SESSIONS = 8
+const QUICK_DURATION_MINUTES = [15, 30, 45, 60, 90, 120]
+
 export function ManualSessionDialog({ initialType, initialProfileId, onClose }) {
   const s = useStore()
   const anki = s.profiles.find((p) => p.isAnki)
@@ -284,12 +290,13 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
   const [m, setM] = useState('')
   const [day, setDay] = useState(dayStart(Date.now()))
   const [picked, setPicked] = useState(null)
-  const [showAll, setShowAll] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const scroller = useRef(null)
   const today = dayStart(Date.now())
-  const yesterday = dayStart(addDays(Date.now(), -1))
   const millis = hmToMillis(h, m)
   const isPast = day < today
 
+  // Newest first, one per title + type + language, like HomeViewModel.recentManualSessions.
   const presets = useMemo(() => {
     const seen = new Set()
     const out = []
@@ -298,109 +305,190 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
       const key = `${e.mediaTitle}|${e.contentType}|${e.languageProfileId}`
       if (seen.has(key)) continue
       seen.add(key)
-      out.push({ title: e.mediaTitle, type: e.contentType, profileId: e.languageProfileId })
-      if (out.length >= 8) break
+      out.push({ key, title: e.mediaTitle, type: e.contentType, profileId: e.languageProfileId })
+      if (out.length >= MAX_RECENT_MANUAL_SESSIONS) break
     }
     return out
   }, [s.entries])
 
   const langFor = (t) => (t === ANKI ? anki?.id ?? null : profileId)
-  const canSubmit = (type === ANKI || profileId != null || allowUncategorized) && (!isPast || millis > 0)
+  const canSubmit = millis > 0 || !isPast
   const submit = () => {
     if (!canSubmit) return
+    const name = s.profiles.find((p) => p.id === profileId)?.name ?? 'Uncategorized'
+    const t = title.trim() || `Manual ${name} session`
     if (millis > 0) {
-      logCompletedManualEntry(type, langFor(type), title.trim(), millis, day)
+      logCompletedManualEntry(type, langFor(type), t, millis, day)
       toast(`${formatHm(millis)} logged`)
     } else {
-      startManualEntry(type, langFor(type), title.trim())
+      startManualEntry(type, langFor(type), t)
     }
     onClose()
   }
+  const scrollTo = (bottom) => requestAnimationFrame(() => {
+    const el = scroller.current
+    if (el) el.scrollTo({ top: bottom ? el.scrollHeight : 0, behavior: 'smooth' })
+  })
   const usePreset = (p) => {
     setPicked(p)
     setType(p.type)
-    if (p.type !== ANKI) setProfileId(p.profileId)
+    setProfileId(p.profileId)
     setTitle(p.title)
+    scrollTo(true)
   }
+  const pickType = (t) => { setType(t); setPicked(null) }
+  const pickLang = (id) => { setProfileId(id); setPicked(null) }
+  const saving = millis > 0 || isPast
+  const visible = expanded ? presets : presets.slice(0, RECENT_SESSIONS_PREVIEW_COUNT)
 
   return (
-    <Dialog title="Add a session" onClose={onClose} actions={<>
+    <Dialog title="Add a session" sheet={false} onClose={onClose} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
-      <button class="btn" disabled={!canSubmit} onClick={submit}>{millis > 0 ? 'Save' : 'Start'}</button>
+      <button class="btn" disabled={!canSubmit} onClick={submit}><Icon name={saving ? 'check' : 'play_arrow'} size={18} />{saving ? 'Save' : 'Start'}</button>
     </>}>
-      <div class="col" style="gap:16px">
-        {presets.length > 0 && !picked && (
-          <div class="col" style="gap:6px">
-            <div style="font-weight:600">Recent sessions</div>
-            <div class="muted small">Tap a session to copy it into the form below, or ▶ to start it right away.</div>
-            {(showAll ? presets : presets.slice(0, 3)).map((p, i) => {
-              const prof = p.type === ANKI ? anki : profileById(p.profileId)
+      <div ref={scroller} class="manual-body">
+        {presets.length > 0 && (
+          <div class="col" style="gap:4px">
+            <div class="label-large">Recent sessions</div>
+            <div class="muted small" style="padding-bottom:4px">Tap a session to copy it into the form below, or ▶ to start it right away.</div>
+            <div class="col" style="gap:8px">
+              {visible.map((p) => (
+                <RecentSessionRow key={p.key} preset={p} profile={profileById(p.profileId)} selected={picked?.key === p.key}
+                  onClick={() => usePreset(p)}
+                  onPlay={() => { startManualEntry(p.type, p.profileId, p.title); onClose() }} />
+              ))}
+            </div>
+            {presets.length > RECENT_SESSIONS_PREVIEW_COUNT && (
+              <button class="btn text show-more" onClick={() => setExpanded(!expanded)}>
+                {expanded ? 'Show less' : `Show ${presets.length - RECENT_SESSIONS_PREVIEW_COUNT} more`}
+                <Icon name={expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} size={18} />
+              </button>
+            )}
+          </div>
+        )}
+        {presets.length > 0 && <div class="hr" />}
+        <div class="section-band primary">
+          <div class="type-lang-row">
+            <TypeButton type={PODCAST} label="Listening" selected={type === PODCAST} onClick={() => pickType(PODCAST)} />
+            <TypeButton type={READING} label="Reading" selected={type === READING} onClick={() => pickType(READING)} />
+            {anki && <TypeButton type={ANKI} label="Anki" selected={type === ANKI} onClick={() => pickType(ANKI)} />}
+            {type !== ANKI && <span class="vdivider" />}
+            {type !== ANKI && languages.map((p) => (
+              <LanguageFilterChip key={p.id} profile={p} selected={profileId === p.id} onClick={() => pickLang(p.id)} />
+            ))}
+            {type !== ANKI && (allowUncategorized || languages.length === 0) && (
+              <button class={`chip ${profileId == null ? 'on' : ''}`} onClick={() => pickLang(null)}>{profileId == null && <Icon name="check" size={18} />}Uncategorized</button>
+            )}
+          </div>
+          <label class="field">Title (optional)<input class="input" value={title} onInput={(e) => { setTitle(e.currentTarget.value); setPicked(null) }} onKeyDown={(e) => e.key === 'Enter' && submit()} /></label>
+        </div>
+        <div class="section-band secondary">
+          {picked && <SelectedSessionBanner preset={picked} profile={profileById(picked.profileId)} onChange={() => scrollTo(false)} />}
+          <div class="label-large">When</div>
+          <DayChips today={today} selected={day} onSelect={setDay} />
+          <div class="label-large" style="padding-top:8px">How long</div>
+          <div class="chips">
+            {QUICK_DURATION_MINUTES.map((min) => {
+              const ms = min * 60000
+              const on = millis === ms
               return (
-                <div key={i} class="entry" onClick={() => usePreset(p)} style={{ borderColor: prof ? withAlpha(prof.colorHex, 0.5) : undefined, background: prof ? withAlpha(prof.colorHex, 0.12) : undefined }}>
-                  <TypeIcon type={p.type} size={20} color={prof?.colorHex} />
-                  <div class="grow">
-                    <div class="title ellipsis">{p.title || `Manual ${typeLabel(p.type).toLowerCase()} session`}</div>
-                    {p.type !== ANKI && <LanguageChip profile={prof} />}
-                  </div>
-                  <button class="icon-btn filled" title="Start now" onClick={(ev) => { ev.stopPropagation(); startManualEntry(p.type, p.type === ANKI ? anki?.id : p.profileId, p.title); onClose() }}>▶</button>
-                </div>
+                <button key={min} class={`chip ${on ? 'on' : ''}`} onClick={() => {
+                  if (on) { setH(''); setM('') } else { setH(min >= 60 ? String(Math.floor(min / 60)) : ''); setM(min % 60 === 0 && min >= 60 ? '' : String(min % 60)) }
+                }}>{on && <Icon name="check" size={18} />}{formatHm(ms, true)}</button>
               )
             })}
-            {presets.length > 3 && <button class="btn text small" onClick={() => setShowAll(!showAll)}>{showAll ? 'Show less' : `Show ${presets.length - 3} more`}</button>}
           </div>
-        )}
-        {picked && (
-          <div class="notice row">
-            <span class="grow">Selected session: <b>{picked.title || typeLabel(picked.type)}</b></span>
-            <button class="btn text small" onClick={() => setPicked(null)}>Change</button>
-          </div>
-        )}
-        <div class="col">
-          <div style="font-weight:600">Type</div>
-          <div class="chips">
-            {[[PODCAST, 'Listening'], [READING, 'Reading'], [ANKI, 'Anki']].map(([t, l]) => (
-              <button key={t} class={`chip ${type === t ? 'on' : ''}`} onClick={() => setType(t)}><TypeIcon type={t} size={16} />{l}</button>
-            ))}
-          </div>
-        </div>
-        {type !== ANKI && (
-          <div class="col">
-            <div style="font-weight:600">Language</div>
-            <div class="chips">
-              {languages.map((p) => {
-                const on = profileId === p.id
-                return (
-                  <button key={p.id} class="chip" onClick={() => setProfileId(p.id)}
-                    style={on ? { background: languageFill(p), color: luminance(p.colorHex) > 0.45 ? '#111' : '#fff', borderColor: 'transparent' } : { borderColor: withAlpha(p.colorHex, 0.7) }}>
-                    {p.name}
-                  </button>
-                )
-              })}
-              {allowUncategorized && <button class={`chip ${profileId == null ? 'on' : ''}`} onClick={() => setProfileId(null)}>Uncategorized</button>}
-            </div>
-          </div>
-        )}
-        <label class="field">Title (optional)<input class="input" value={title} onInput={(e) => setTitle(e.currentTarget.value)} placeholder="What are you reading or watching?" onKeyDown={(e) => e.key === 'Enter' && submit()} /></label>
-        <div class="col">
-          <div style="font-weight:600">When</div>
-          <div class="chips">
-            <button class={`chip ${day === today ? 'on' : ''}`} onClick={() => setDay(today)}>Today</button>
-            <button class={`chip ${day === yesterday ? 'on' : ''}`} onClick={() => setDay(yesterday)}>Yesterday</button>
-            <label class={`chip ${day < yesterday ? 'on' : ''}`} style="position:relative">
-              {day < yesterday ? formatDate(day) : '📅 Other day'}
-              <input type="date" style="position:absolute;inset:0;opacity:0" max={new Date(today).toISOString().slice(0, 10)}
-                onChange={(e) => { const [y, mo, d] = e.currentTarget.value.split('-').map(Number); if (y) setDay(new Date(y, mo - 1, d).getTime()) }} />
-            </label>
-          </div>
-        </div>
-        <div class="col">
-          <div style="font-weight:600">How long</div>
           <DurationInput hours={h} minutes={m} onHours={setH} onMinutes={setM} />
-          <div class={`small ${isPast && millis <= 0 ? 'err' : 'muted'}`}>
-            {isPast && millis <= 0 ? 'Enter how long to log a past day' : millis > 0 ? `= ${formatHm(millis)}` : 'Leave blank to start a live timer instead'}
-          </div>
+          {millis > 0 && <div class="muted small">= {formatHm(millis)}</div>}
+          {millis === 0 && <div class={`small ${isPast ? 'err' : 'muted'}`}>{isPast ? 'Enter how long to log a past day' : 'Leave blank to start a live timer instead'}</div>}
         </div>
       </div>
     </Dialog>
+  )
+}
+
+const stopsOf = (p) => (p?.gradientColors ? p.gradientColors.split(',').map((x) => x.trim()).filter(Boolean) : null)
+const UNRESOLVED_GRAY = '#9E9EA8'
+
+/** A session's colours as the phone's RecentSessionRow draws them: [ink] for icons on this page,
+ *  [outline]/[fill] brushes for the row. */
+function sessionColors(profile, selected, alphaLight, alphaDark) {
+  const light = !isDarkFor(getState().settings.uiColorPreset)
+  const base = profile?.colorHex || UNRESOLVED_GRAY
+  const stops = stopsOf(profile) || [base, base]
+  const fillA = light ? alphaLight : alphaDark
+  const grad = (cs) => `linear-gradient(90deg, ${cs.join(', ')})`
+  const ink = light ? deepened(base, 0.42) : base
+  return {
+    light, ink,
+    fill: grad(stops.map((c) => withAlpha(c, fillA))),
+    outline: grad(stops.map((c) => withAlpha(c, selected || light ? 1 : 0.6))),
+    inkFill: grad((stopsOf(profile) || [base, base]).map((c) => (light ? deepened(c, 0.42) : c))),
+  }
+}
+
+/** One recent session: a pick mark, type icon + title, its language, and a square play button -
+ *  outlined and washed in that language's colour (thicker and stronger once picked). */
+function RecentSessionRow({ preset, profile, selected, onClick, onPlay }) {
+  const c = sessionColors(profile, selected, selected ? 0.3 : 0.14, selected ? 0.2 : 0.08)
+  return (
+    <div class="recent-session" onClick={onClick}
+      style={{ '--rs-fill': c.fill, '--rs-outline': c.outline, '--rs-w': selected ? '2px' : '1px' }}>
+      <span class="pick" title="Use this session"><GradientIcon name={selected ? 'check_circle' : 'radio_button_unchecked'} size={24} ink={c.ink} brush={stopsOf(profile) && c.inkFill} /></span>
+      <div class="grow" style="min-width:0">
+        <div class="row" style="gap:6px"><TypeIcon type={preset.type} size={16} /><span class="ellipsis rs-title">{preset.title}</span></div>
+        <div style="padding-top:4px"><LanguageChip profile={profile} filled={false} /></div>
+      </div>
+      <button class="square-btn" title="Start now" style={{ color: c.ink, background: withAlpha(c.ink, 0.16) }}
+        onClick={(ev) => { ev.stopPropagation(); onPlay() }}><Icon name="play_arrow" size={22} /></button>
+    </div>
+  )
+}
+
+/** The picked recent session, at the top of When / How long, with a way back up to pick another. */
+function SelectedSessionBanner({ preset, profile, onChange }) {
+  const c = sessionColors(profile, true, 0.3, 0.2)
+  return (
+    <div class="recent-session banner" style={{ '--rs-fill': c.fill, '--rs-outline': c.outline, '--rs-w': '2px' }}>
+      <GradientIcon name="check_circle" size={20} ink={c.ink} brush={stopsOf(profile) && c.inkFill} />
+      <div class="grow" style="min-width:0;padding-left:12px">
+        <div class="muted" style="font-size:11px;font-weight:500;letter-spacing:.5px">Selected session</div>
+        <div class="row" style="gap:6px"><TypeIcon type={preset.type} size={16} /><span class="ellipsis rs-title" style="font-weight:600">{preset.title}</span></div>
+        <div style="padding-top:4px"><LanguageChip profile={profile} filled={false} /></div>
+      </div>
+      <button class="btn text" onClick={onChange}>Change</button>
+    </div>
+  )
+}
+
+/** An icon painted with a gradient (the phone's GradientIcon) or a single colour. */
+function GradientIcon({ name, size, ink, brush }) {
+  if (!brush) return <Icon name={name} size={size} color={ink} />
+  return <span style={{ width: size, height: size, flex: 'none', display: 'inline-block', background: brush,
+    WebkitMask: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>${ICONS[name]}</svg>`)}") center / contain no-repeat`,
+    mask: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>${ICONS[name]}</svg>`)}") center / contain no-repeat` }} />
+}
+
+/** Icon-only content-type toggle (the phone's ContentTypeIconButton). */
+function TypeButton({ type, label, selected, onClick }) {
+  return <button class={`type-btn ${selected ? 'on' : ''}`} title={label} aria-label={label} aria-pressed={selected} onClick={onClick}><TypeIcon type={type} size={22} /></button>
+}
+
+/** Today, Yesterday, a chip for an older picked day, then a calendar button. */
+function DayChips({ today, selected, onSelect }) {
+  const recent = [today, dayStart(addDays(today, -1))]
+  const days = recent.includes(selected) ? recent : [...recent, selected]
+  const label = (d) => (d === today ? 'Today' : d === recent[1] ? 'Yesterday' : new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }))
+  const iso = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+  const input = useRef(null)
+  return (
+    <div class="chips" style="align-items:center">
+      {days.map((d) => <button key={d} class={`chip ${d === selected ? 'on' : ''}`} onClick={() => onSelect(d)}>{d === selected && <Icon name="check" size={18} />}{label(d)}</button>)}
+      <span style="position:relative;display:inline-grid">
+        <button class="icon-btn" style="width:40px;height:40px" title="Pick a date" onClick={() => { try { input.current.showPicker() } catch { input.current.click() } }}><Icon name="calendar_month" size={24} /></button>
+        <input ref={input} type="date" tabIndex={-1} style="position:absolute;inset:0;opacity:0;pointer-events:none" max={iso(today)} value={iso(selected)}
+          onChange={(e) => { const [y, mo, d] = e.currentTarget.value.split('-').map(Number); if (y) onSelect(new Date(y, mo - 1, d).getTime()) }} />
+      </span>
+    </div>
   )
 }

@@ -389,3 +389,29 @@ textarea.input { resize: vertical; }
 .heat-month.year { font-weight: 700; color: var(--on-surface); }
 .heat-week i, .heat-swatch { display: block; width: 11px; height: 11px; border-radius: 2px; background: color-mix(in srgb, var(--surface-variant) 40%, transparent); }
 .profile-card { border-radius: 20px; padding: 16px; background: var(--c); }
+
+/* Add a session (the phone's StartManualEntryDialog). */
+.manual-body { display: flex; flex-direction: column; gap: 16px; max-height: min(520px, calc(100dvh - 220px)); overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.manual-body .hr { height: 1px; background: var(--outline-variant); flex: none; }
+.section-band { display: flex; flex-direction: column; gap: 12px; border-radius: 16px; padding: 14px; flex: none; }
+.section-band.primary { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.section-band.secondary { background: color-mix(in srgb, var(--secondary) 10%, transparent); gap: 8px; }
+.type-lang-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.type-btn {
+  width: 44px; height: 44px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
+  background: var(--surface-variant); color: var(--on-surface-variant);
+  border: 1px solid color-mix(in srgb, var(--outline) 70%, transparent);
+}
+.type-btn.on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.vdivider { width: 1px; height: 28px; background: var(--outline-variant); flex: none; }
+.recent-session {
+  display: flex; align-items: center; border-radius: 14px; padding: 6px 12px 6px 0; cursor: pointer;
+  border: var(--rs-w) solid transparent;
+  /* fill over the page colour inside the border, so the outline gradient doesn't show through it */
+  background: var(--rs-fill) padding-box, linear-gradient(var(--bg), var(--bg)) padding-box, var(--rs-outline) border-box;
+}
+.recent-session.banner { padding: 8px 4px 8px 12px; cursor: default; }
+.recent-session .pick { width: 48px; height: 48px; display: inline-grid; place-items: center; flex: none; border-radius: 50%; }
+.recent-session .rs-title { font-size: 14px; line-height: 20px; }
+.square-btn { width: 44px; height: 44px; border-radius: 10px; border: 0; display: inline-grid; place-items: center; flex: none; margin-left: 8px; }
+.btn.text.show-more { align-self: flex-start; padding: 6px 4px; gap: 2px; min-height: 0; }
