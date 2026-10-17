@@ -14,7 +14,7 @@ const SCRIPTS = [
 ]
 
 /** Settings, in the phone's blocks: Appearance, Languages, Tracking, Race, Zoo, Backup, App.
- *  Appearance and Account & sync open as their own screens, as they do on the phone. */
+ *  Appearance and Your devices open as their own screens, as they do on the phone. */
 export function Settings({ params, nav }) {
   const s = useStore()
   const [view, setView] = useState(null) // null | 'appearance' | 'account'
@@ -40,7 +40,7 @@ export function Settings({ params, nav }) {
   }
 
   if (view === 'appearance') return <SubScreen title="Appearance" onBack={() => setView(null)}><Appearance /></SubScreen>
-  if (view === 'account') return <SubScreen title="Account & sync" onBack={() => setView(null)}><AccountSection /></SubScreen>
+  if (view === 'account') return <SubScreen title="Your devices" onBack={() => setView(null)}><AccountSection /></SubScreen>
 
   return (
     <>
@@ -63,6 +63,11 @@ export function Settings({ params, nav }) {
         ))}
       </Block>
 
+      {/* Everything about using this history on other devices, behind one row - as on the phone. */}
+      <Block title="Devices & sync">
+        <SettingRow icon="smartphone" title="Your devices" hint={s.sync.token ? 'Linked - syncing with your other devices' : 'Link your Android phone or other devices'} onClick={() => setView('account')} />
+      </Block>
+
       <Block title="Tracking">
         <SettingRow icon={<TypeIcon type="ANKI" size={22} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
           <Switch checked={s.settings.showAnkiOnHome} onChange={(v) => setSetting('showAnkiOnHome', v)} />
@@ -81,7 +86,6 @@ export function Settings({ params, nav }) {
             <button class="icon-btn filled" onClick={() => setSetting('entryThresholdSeconds', Math.min(600, s.settings.entryThresholdSeconds + 5))}>＋</button>
           </div>
         )}
-        <SettingRow icon="cloud" title="Account & sync" hint={s.sync.token ? 'Signed in - syncing with your other devices' : 'Use your history on several devices'} onClick={() => setView('account')} />
       </Block>
 
       <Block title="Race">
@@ -97,12 +101,12 @@ export function Settings({ params, nav }) {
       </Block>
 
       <Block title="Backup">
-        <div class="muted small" style="padding-bottom:4px">{s.sync.token ? 'Your data is also saved to your account. A downloaded file is an extra copy you keep yourself.' : 'Everything lives in this browser only. Download a backup now and then, or turn on Account & sync - clearing the browser\'s site data loses it otherwise.'}</div>
+        <div class="muted small" style="padding-bottom:4px">{s.sync.token ? 'Your data is also saved to your account. A downloaded file is an extra copy you keep yourself.' : 'Everything lives in this browser only. Download a backup now and then, or link it in Your devices - clearing the browser\'s site data loses it otherwise.'}</div>
         <SettingRow icon="file_download" title="Download a backup" hint={`${s.entries.length} entries, ${languages.length} languages, races, friends and Zoo`} onClick={exportBackup} />
         <SettingRow icon="restore" title="Restore…" hint="Replaces everything here with a web backup file." onClick={() => pickFile('.json,application/json', false, async ([f]) => {
           try { setRestore(await readJsonBackup(f)) } catch (err) { toast(err.message) }
         })} />
-        <SettingRow icon="smartphone" title="Import from the Android app" hint="Pick “Immersion Tracker backup.zip” from your phone's backup folder." onClick={() => pickFile('.zip,application/zip', false, async ([f]) => {
+        <SettingRow icon="smartphone" title="Import from the Android app" hint="A one-time copy from “Immersion Tracker backup.zip”. To keep the phone and web app in sync instead, use Your devices." onClick={() => pickFile('.zip,application/zip', false, async ([f]) => {
           try { setPhone({ loading: true }); setPhone(await readPhoneBackup(f)) } catch (err) { setPhone(null); toast(err.message || 'Couldn\'t read that backup') }
         })} />
         <SettingRow icon="file_upload" title="Import from Toggl Track" hint="Reports → Detailed → Export CSV (one year per file). Pick several at once." onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'toggl', files }))} />

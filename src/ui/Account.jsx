@@ -4,65 +4,196 @@ import { createAccount, joinAccount, linkCode, listDevices, unlinkDevice, signOu
 import { agoText } from '../model/time.js'
 import { Dialog, Confirm, SettingRow, Spinner, Icon, copyText, toast } from './common.jsx'
 
+const WEB_APP_URL = 'https://muraveimedved.github.io/immersion-tracker-web/'
+
 function useSyncStatus() {
   const [, setV] = useState(0)
   useEffect(() => onSyncStatus(() => setV((v) => v + 1)), [])
   return syncStatus
 }
 
-/** Settings > Account & sync. */
+/**
+ * Settings > Your devices - the phone's screen of the same name, with the same words, so the
+ * steps read the same on both devices.
+ *
+ * Not in an account yet: "Enter a code" (the history is already on the Android app or another
+ * browser - that device shows the code) or "Start here" (nothing anywhere yet - this browser
+ * starts the account). In one: sync status, "Add a device" with numbered steps and the code, what's
+ * signed in, the recovery key and signing out.
+ */
 export function AccountSection() {
+  const s = useStore()
+  const signed = !!s.sync.token
+  const [justMade, setJustMade] = useState(false)
+  return signed ? <SignedIn showCode={justMade} /> : <SignedOut onCreated={() => setJustMade(true)} />
+}
+
+function SignedOut({ onCreated }) {
+  const s = useStore()
+  const [url, setUrl] = useState(s.sync.url)
+  const [code, setCode] = useState('')
+  const [key, setKey] = useState('')
+  const [useKey, setUseKey] = useState(false)
+  const [busy, setBusy] = useState('')
+  const [error, setError] = useState('')
+  const needUrl = !DEFAULT_SYNC_URL && !url
+  const saveUrl = () => { if (url !== s.sync.url) update((st) => { st.sync.url = url }) }
+  const join = async () => {
+    setBusy('join'); setError('')
+    try {
+      saveUrl()
+      await joinAccount(useKey ? { key, url } : { code, url })
+      toast('Linked - your history is here and stays in sync')
+    } catch (err) { setError(err.message) }
+    setBusy('')
+  }
+  const create = async () => {
+    setBusy('create'); setError('')
+    try {
+      saveUrl()
+      await createAccount(url)
+      onCreated()
+      toast('Your account is ready')
+    } catch (err) { setError(err.message) }
+    setBusy('')
+  }
+  const canJoin = !needUrl && (useKey ? key.trim().length >= 32 : code.trim().length >= 6)
+  return (
+    <div class="col" style="gap:12px">
+      <p class="muted small" style="margin:4px 4px 0">Use your history on several devices - your Android phone, an iPhone, a laptop - and keep it in sync. Without this, everything stays in this browser only.</p>
+
+      <div class="block devices-card">
+        <div class="devices-head"><Icon name="smartphone" size={22} /><h3>Enter a code</h3></div>
+        <p class="muted small" style="margin-top:-4px">Your history is on the Android app or another browser? Link this one to it.</p>
+        {useKey ? (
+          <>
+            <p class="muted small">Paste your recovery key (on the Android app or another browser: Settings › Your devices › Recovery key).</p>
+            <input class="input" placeholder="Recovery key" value={key} onInput={(e) => setKey(e.currentTarget.value)} />
+          </>
+        ) : (
+          <ol class="steps">
+            <li>On that device, open <b>Settings › Your devices</b>.</li>
+            <li>On the Android app tap <b>Link the web app</b>. In another browser tap <b>Add a device</b>.</li>
+            <li>Type the code it shows:
+              <input class="input code-input" maxLength={8} placeholder="ABC123" value={code}
+                onInput={(e) => setCode(e.currentTarget.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                onKeyDown={(e) => e.key === 'Enter' && canJoin && join()} />
+            </li>
+          </ol>
+        )}
+        <div class="row">
+          <button class="btn text small" style="padding:0" onClick={() => setUseKey(!useKey)}>{useKey ? 'Use a code instead' : 'Use a recovery key instead'}</button>
+          <span class="spacer" />
+          <button class="btn" disabled={!canJoin || !!busy} onClick={join}>{busy === 'join' ? <Spinner /> : 'Link'}</button>
+        </div>
+      </div>
+
+      <div class="block devices-card">
+        <div class="devices-head"><Icon name="cloud" size={22} /><h3>New here? Start here</h3></div>
+        <p class="muted small">Saves everything in this browser to a new account. You can add your phone or other devices any time.</p>
+        <button class="btn tonal" disabled={needUrl || !!busy} onClick={create}>{busy === 'create' ? <><Spinner /> Saving your history…</> : 'Start here'}</button>
+      </div>
+
+      <ServerField value={url} onChange={setUrl} />
+      {error && <div class="err small" style="margin:0 4px">{error}</div>}
+    </div>
+  )
+}
+
+function SignedIn({ showCode }) {
   const s = useStore()
   const status = useSyncStatus()
   const now = useNow(30000)
-  const [dialog, setDialog] = useState(null)
+  const [showKey, setShowKey] = useState(false)
   const [confirmOut, setConfirmOut] = useState(false)
-  const signed = !!s.sync.token
-
   return (
-    <>
-      <div class="block" style="padding-top:12px">
-        {!signed ? (
-          <>
-            <div class="muted small" style="padding:10px 4px">
-              Save your history online and use it on several devices - an iPhone and a laptop, say. Without an account, everything stays in this browser only. (This is for the web app - the Android app doesn't use accounts; bring its history in with Import below.)
-            </div>
-            <SettingRow icon="cloud" title="Create an account" hint="Start here on your first device - no code needed. It saves what's on this device.">
-              <button class="btn small" onClick={() => setDialog('create')}>Create</button>
-            </SettingRow>
-            <SettingRow icon="smartphone" title="I already have one" hint="Get a code on a device that's already signed in - the web app (Settings › Account & sync › Add another device) or the Android app (Settings › Web account › Get a link code) - or use your recovery key.">
-              <button class="btn tonal small" onClick={() => setDialog('join')}>Sign in</button>
-            </SettingRow>
-          </>
-        ) : (
-          <>
-            <SettingRow icon={status.busy ? <Spinner /> : s.sync.error ? <Icon name="info" size={22} /> : <Icon name="check_circle" size={22} />} title={status.busy ? 'Syncing…' : s.sync.error ? 'Sync problem' : 'Synced'}
-              hint={s.sync.error || (s.sync.lastSync ? `Last synced ${agoText(s.sync.lastSync, now)}` : 'Not synced yet')}>
-              <button class="btn tonal small" disabled={status.busy} onClick={() => syncNow()}>Sync now</button>
-            </SettingRow>
-            <SettingRow icon="smartphone" title="Add another device" hint="Shows a code to type on the new device - good for 10 minutes.">
-              <button class="btn tonal small" onClick={() => setDialog('code')}>Get code</button>
-            </SettingRow>
-            <SettingRow icon="qr_code" title="Recovery key" hint="Signs in without another device. Keep it somewhere safe - anyone with it can see your data.">
-              <button class="btn tonal small" onClick={() => setDialog('key')}>Show</button>
-            </SettingRow>
-            <SettingRow icon="list" title="Devices" hint="Everything signed in to this account.">
-              <button class="btn tonal small" onClick={() => setDialog('devices')}>View</button>
-            </SettingRow>
-            <SettingRow icon="close" title="Sign out of this device" hint="Your data stays here; it just stops syncing.">
-              <button class="btn text danger small" onClick={() => setConfirmOut(true)}>Sign out</button>
-            </SettingRow>
-          </>
-        )}
+    <div class="col" style="gap:12px">
+      {showCode && <div class="banner-ok">Your account is ready. Now add your other devices with the code below.</div>}
+      <div class="block">
+        <SettingRow icon={status.busy ? <Spinner /> : s.sync.error ? <Icon name="info" size={22} /> : <Icon name="check_circle" size={22} />} title={status.busy ? 'Syncing…' : s.sync.error ? 'Sync problem' : 'Synced'}
+          hint={s.sync.error || (s.sync.lastSync ? `Last synced ${agoText(s.sync.lastSync, now)}` : 'Not synced yet')}>
+          <button class="btn tonal small" disabled={status.busy} onClick={() => syncNow()}>Sync now</button>
+        </SettingRow>
       </div>
-      {dialog === 'create' && <SignInDialog mode="create" onClose={() => setDialog(null)} />}
-      {dialog === 'join' && <SignInDialog mode="join" onClose={() => setDialog(null)} />}
-      {dialog === 'code' && <LinkCodeDialog onClose={() => setDialog(null)} />}
-      {dialog === 'key' && <RecoveryKeyDialog token={s.sync.token} onClose={() => setDialog(null)} />}
-      {dialog === 'devices' && <DevicesDialog onClose={() => setDialog(null)} />}
-      {confirmOut && <Confirm title="Sign out of this device?" text="Your data stays in this browser, but stops syncing. Sign in again with a code from another device or your recovery key."
+      <AddDevice autoStart={showCode} />
+      <DeviceList />
+      <div class="row" style="gap:8px">
+        <button class="btn tonal grow" onClick={() => setShowKey(true)}>Recovery key</button>
+        <button class="btn text danger grow" onClick={() => setConfirmOut(true)}>Sign out of this browser</button>
+      </div>
+      {showKey && <RecoveryKeyDialog token={s.sync.token} onClose={() => setShowKey(false)} />}
+      {confirmOut && <Confirm title="Stop syncing this browser?" text="Your data stays in this browser, but stops syncing with your other devices. You can link it again later with a code or your recovery key."
         confirmLabel="Sign out" danger onConfirm={() => signOut().then(() => toast('Signed out'))} onClose={() => setConfirmOut(false)} />}
-    </>
+    </div>
+  )
+}
+
+/** "Add a device": a code, with what to do with it on the other device. */
+function AddDevice({ autoStart }) {
+  const now = useNow(1000)
+  const [res, setRes] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const get = () => { setBusy(true); setError(''); linkCode().then(setRes, (e) => setError(e.message)).finally(() => setBusy(false)) }
+  // The screen switches to signed-in as soon as the account exists - a moment before it's known
+  // to be brand new - so this watches for that rather than only checking once.
+  useEffect(() => { if (autoStart && !res && !busy) get() }, [autoStart])
+  const left = res ? Math.max(0, res.expiresAt - now) : 0
+  return (
+    <div class="block devices-card">
+      <div class="devices-head"><Icon name="smartphone" size={22} /><h3>Add a device</h3></div>
+      {!res ? (
+        <>
+          <p class="muted small">Your Android phone, or this web app on another iPhone, iPad or computer.</p>
+          <button class="btn" disabled={busy} onClick={get}>{busy ? <Spinner /> : 'Get a code'}</button>
+        </>
+      ) : (
+        <ol class="steps">
+          <li>On the other device, open the Android app - or the web app:
+            <div class="row wrap" style="gap:8px;margin-top:6px">
+              <b style="color:var(--primary)">{WEB_APP_URL.replace('https://', '').replace(/\/$/, '')}</b>
+              <button class="btn text small" style="padding:0 6px" onClick={() => copyText(WEB_APP_URL, 'Link copied')}>Copy link</button>
+            </div>
+          </li>
+          <li>Go to <b>Settings › Your devices</b> and use <b>Enter a code</b>.</li>
+          <li>Type this code:
+            {left > 0 ? (
+              <div style="margin-top:6px">
+                <span class="code-pill" style="display:inline-block;font-size:28px;padding:10px 18px">{res.code}</span>
+                <div class="muted small" style="margin-top:6px">Expires in {Math.floor(left / 60000)}:{String(Math.floor((left % 60000) / 1000)).padStart(2, '0')}</div>
+              </div>
+            ) : <div style="margin-top:6px"><button class="btn tonal small" onClick={get}>New code</button></div>}
+          </li>
+        </ol>
+      )}
+      {error && <div class="err small">{error}</div>}
+    </div>
+  )
+}
+
+function DeviceList() {
+  const [list, setList] = useState(null)
+  const [error, setError] = useState('')
+  const load = () => listDevices().then((l) => { setList(l); setError('') }, (e) => setError(e.message))
+  useEffect(() => { load() }, [])
+  return (
+    <div class="block devices-card">
+      <div class="devices-head"><Icon name="list" size={22} /><h3>Signed in</h3></div>
+      {error ? <div class="err small">{error}</div> : !list ? <Spinner /> : (
+        <div class="list">
+          {list.map((d) => (
+            <div key={d.id} class="entry" style="cursor:default">
+              <Icon name={/· app$/.test(d.name) ? 'smartphone' : 'cloud'} size={20} color="var(--on-surface-variant)" />
+              <div class="grow">
+                <b>{d.thisDevice ? 'This browser' : d.name.replace(/ · app$/, '')}</b>
+                <div class="muted tiny">Last seen {agoText(d.lastSeen)}</div>
+              </div>
+              {!d.thisDevice && <button class="btn text danger small" onClick={() => unlinkDevice(d.id).then(load, (e) => setError(e.message))}>Sign out</button>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -76,79 +207,6 @@ function ServerField({ value, onChange }) {
   )
 }
 
-function SignInDialog({ mode, onClose }) {
-  const s = useStore()
-  const [url, setUrl] = useState(s.sync.url)
-  const [code, setCode] = useState('')
-  const [key, setKey] = useState('')
-  const [useKey, setUseKey] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const needUrl = !DEFAULT_SYNC_URL && !url
-  const go = async () => {
-    setBusy(true)
-    setError('')
-    try {
-      if (url !== s.sync.url) update((st) => { st.sync.url = url })
-      if (mode === 'create') await createAccount(url)
-      else await joinAccount(useKey ? { key, url } : { code, url })
-      toast(mode === 'create' ? 'Account created - your data is syncing' : 'Signed in - your data is syncing')
-      onClose()
-    } catch (err) {
-      setError(err.message)
-    }
-    setBusy(false)
-  }
-  const ready = !needUrl && (mode === 'create' || (useKey ? key.trim().length >= 32 : code.trim().length >= 6))
-  return (
-    <Dialog title={mode === 'create' ? 'Create an account' : 'Sign in'} onClose={busy ? undefined : onClose} actions={<>
-      <button class="btn text" disabled={busy} onClick={onClose}>Cancel</button>
-      <button class="btn" disabled={!ready || busy} onClick={go}>{busy ? <Spinner /> : mode === 'create' ? 'Create' : 'Sign in'}</button>
-    </>}>
-      <div class="col" style="gap:14px">
-        {mode === 'create' ? (
-          <p class="muted small" style="margin:0">Everything on this device - entries, languages, goals, Zoo, race name - is saved to your account. Afterwards, add your other devices with a code.</p>
-        ) : (
-          <>
-            <p class="muted small" style="margin:0">Your account's data comes to this device, and anything already here is added to it.{s.race.name ? ' Your race name and settings become the account\'s.' : ''}</p>
-            {useKey
-              ? <label class="field">Recovery key<input class="input" value={key} autoFocus onInput={(e) => setKey(e.currentTarget.value)} /></label>
-              : <label class="field">Code from a signed-in device: the web app (Settings › Account &amp; sync › Add another device) or the Android app (Settings › Web account).
-                <input class="input" style="text-transform:uppercase;letter-spacing:3px;font-weight:700" value={code} autoFocus onInput={(e) => setCode(e.currentTarget.value.toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && ready && go()} />
-              </label>}
-            <button class="btn text small" style="align-self:flex-start;padding:0" onClick={() => setUseKey(!useKey)}>{useKey ? 'Use a code instead' : 'Use a recovery key instead'}</button>
-          </>
-        )}
-        <ServerField value={url} onChange={setUrl} />
-        {error && <div class="err small">{error}</div>}
-      </div>
-    </Dialog>
-  )
-}
-
-function LinkCodeDialog({ onClose }) {
-  const now = useNow(1000)
-  const [res, setRes] = useState(null)
-  const [error, setError] = useState('')
-  const get = () => { setRes(null); setError(''); linkCode().then(setRes, (e) => setError(e.message)) }
-  useEffect(get, [])
-  const left = res ? Math.max(0, res.expiresAt - now) : 0
-  return (
-    <Dialog title="Add another device" onClose={onClose} sheet={false} actions={<>
-      {res && left === 0 && <button class="btn tonal" onClick={get}>New code</button>}
-      <button class="btn" onClick={onClose}>Done</button>
-    </>}>
-      <p class="muted small" style="margin-top:0">On the new device: in the web app (muraveimedved.github.io/immersion-tracker-web) open Settings → Account &amp; sync → I already have one; on an Android phone, Settings → Web account. Then type:</p>
-      {error ? <div class="err">{error}</div> : !res ? <Spinner /> : (
-        <div class="center">
-          <div class="code-pill" style="display:inline-block;font-size:28px;padding:10px 18px">{res.code}</div>
-          <div class="muted small" style="margin-top:8px">{left > 0 ? `Expires in ${Math.floor(left / 60000)}:${String(Math.floor((left % 60000) / 1000)).padStart(2, '0')}` : 'Expired'}</div>
-        </div>
-      )}
-    </Dialog>
-  )
-}
-
 function RecoveryKeyDialog({ token, onClose }) {
   return (
     <Dialog title="Recovery key" onClose={onClose} sheet={false} actions={<>
@@ -157,30 +215,6 @@ function RecoveryKeyDialog({ token, onClose }) {
     </>}>
       <p class="muted small" style="margin-top:0">If you lose every signed-in device (or clear this browser), this key gets your account back. Save it in a password manager. Anyone who has it can read and change your data.</p>
       <div class="input" style="word-break:break-all;font-family:ui-monospace,monospace;font-size:13px;height:auto">{token}</div>
-    </Dialog>
-  )
-}
-
-function DevicesDialog({ onClose }) {
-  const [list, setList] = useState(null)
-  const [error, setError] = useState('')
-  const load = () => listDevices().then(setList, (e) => setError(e.message))
-  useEffect(() => { load() }, [])
-  return (
-    <Dialog title="Devices" onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>Done</button>}>
-      {error ? <div class="err">{error}</div> : !list ? <Spinner /> : (
-        <div class="list">
-          {list.map((d) => (
-            <div key={d.id} class="entry" style="cursor:default">
-              <div class="grow">
-                <b>{d.name}</b>{d.thisDevice && <span class="muted small"> · this device</span>}
-                <div class="muted tiny">Last seen {agoText(d.lastSeen)}</div>
-              </div>
-              {!d.thisDevice && <button class="btn text danger small" onClick={() => unlinkDevice(d.id).then(load, (e) => setError(e.message))}>Sign out</button>}
-            </div>
-          ))}
-        </div>
-      )}
     </Dialog>
   )
 }

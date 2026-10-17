@@ -599,3 +599,15 @@ textarea.input { resize: vertical; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px; font-weight: 500; }
 .chart-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .chart-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* Settings > Your devices */
+.devices-card { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; padding-bottom: 16px; }
+.devices-card p { margin: 0; }
+.devices-head { display: flex; align-items: center; gap: 10px; color: var(--primary); }
+.devices-head h3 { color: var(--on-surface); font-size: 16px; line-height: 24px; font-weight: 600; }
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 12px; }
+.steps li { position: relative; padding-left: 36px; min-height: 24px; }
+.steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: -2px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--primary-container); color: var(--on-primary-container); }
+.code-input { margin-top: 8px; text-transform: uppercase; letter-spacing: 6px; font-weight: 700; font-size: 22px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; }
+.banner-ok { padding: 14px 16px; border-radius: 16px; background: var(--primary-container); color: var(--on-primary-container); }
