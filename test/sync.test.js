@@ -54,3 +54,18 @@ test('applying records adds, replaces, deletes and keeps one running session per
   assert.ok(s.race.userId) // other race fields kept
   assert.equal(s.zoo.eggs['box:1'], undefined)
 })
+
+test('an imported copy of the same session is matched up, not doubled', async () => {
+  const { dedupeAgainst } = await import('../src/model/sync.js')
+  const s = sample()
+  dedupeAgainst(s, [
+    { coll: 'profile', id: '900', deleted: false, data: { id: 900, name: ' japanese ', isAnki: false } },
+    { coll: 'entry', id: '901', deleted: false, data: { id: 901, startTimeMillis: 0, endTimeMillis: 10, contentType: 'PODCAST', languageProfileId: 900 } },
+  ])
+  applyRecords(s, [
+    { coll: 'profile', id: '900', deleted: false, data: { id: 900, name: 'Japanese', isAnki: false } },
+    { coll: 'entry', id: '901', deleted: false, data: { id: 901, startTimeMillis: 0, endTimeMillis: 10, contentType: 'PODCAST', languageProfileId: 900 } },
+  ])
+  assert.deepEqual(s.entries.map((e) => e.id), [901])
+  assert.deepEqual(s.profiles.filter((p) => !p.isAnki).map((p) => p.id), [900])
+})

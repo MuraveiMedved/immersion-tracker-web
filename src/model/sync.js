@@ -96,6 +96,53 @@ export function applyRecords(s, records) {
   }
 }
 
+/** What makes two records the same thing under different ids - a phone backup imported here
+ *  before the phone joined the account gives every session a second id. Same rules as the phone's
+ *  WebSyncCodec.naturalKey. */
+export function naturalKey(coll, id, d) {
+  if (!d) return null
+  switch (coll) {
+    case 'entry': return `${d.startTimeMillis}:${d.endTimeMillis ?? null}:${d.contentType}`
+    case 'profile': return d.isAnki ? 'anki' : String(d.name || '').trim().toLowerCase()
+    case 'opening': return `${d.animalId}:${d.atMillis}`
+    case 'grant': return `${d.rarity}:${d.atMillis}:${d.source}`
+    case 'tradeIn': return `${d.animalId}:${d.atMillis}`
+    default: return null
+  }
+}
+
+/** Drops this device's copies of incoming records that are the same thing under another id, and
+ *  points references at the incoming id - so they end up one record, not two. */
+export function dedupeAgainst(s, records) {
+  const cur = collect(s)
+  const index = {}
+  for (const [coll, map] of Object.entries(cur)) {
+    for (const [id, json] of map) {
+      const k = naturalKey(coll, id, JSON.parse(json))
+      if (k != null) (index[coll] ||= new Map()).set(k, id)
+    }
+  }
+  const profileMoves = new Map()
+  const openingMoves = new Map()
+  const grantMoves = new Map()
+  for (const r of records) {
+    if (r.deleted || !r.data || cur[r.coll]?.has(r.id)) continue
+    const twin = index[r.coll]?.get(naturalKey(r.coll, r.id, r.data))
+    if (twin == null || twin === r.id) continue
+    const list = LISTS[r.coll]?.(s)
+    if (!list) continue
+    SET_LIST[r.coll](s, list.filter((x) => String(x.id) !== twin))
+    if (r.coll === 'profile') profileMoves.set(Number(twin), Number(r.id))
+    if (r.coll === 'opening') openingMoves.set(Number(twin), Number(r.id))
+    if (r.coll === 'grant') grantMoves.set(Number(twin), Number(r.id))
+  }
+  for (const e of s.entries) if (profileMoves.has(e.languageProfileId)) e.languageProfileId = profileMoves.get(e.languageProfileId)
+  for (const t of s.zoo.tradeIns) {
+    if (openingMoves.has(t.openingId)) t.openingId = openingMoves.get(t.openingId)
+    if (grantMoves.has(t.grantId)) t.grantId = grantMoves.get(t.grantId)
+  }
+}
+
 /* ------------------------------------------------------------------------------------------------ */
 
 const listeners = new Set()
@@ -147,6 +194,7 @@ async function pullAll(token, cur) {
     })
     since = res.rev
     update((s) => {
+      dedupeAgainst(s, take)
       applyRecords(s, take)
       s.sync.sinceRev = since
     })
