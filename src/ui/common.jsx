@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { createPortal } from 'preact/compat'
 import { GRADIENTS, LANGUAGE_COLORS, LANGUAGE_COLORS_BRIGHT, languageFill, luminance, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { getState } from '../store.js'
+import { GOLDEN_DAYS } from '../model/rules.js'
 import { ICONS } from './icons.js'
 
 export function Dialog({ title, onClose, children, actions, wide, sheet = true }) {
@@ -240,7 +241,7 @@ export function StreakBadge({ streak }) {
 /** The phone's GoldenStreakPill: today's progress toward 1 hour as a thin gold ring round the
  *  flame (just the flame once today is done), then the days. */
 export function MomentumPill({ days, progress, onClick }) {
-  const lit = days >= 3
+  const lit = days >= GOLDEN_DAYS
   const p = Math.max(0, Math.min(1, progress))
   const r = 12.75, c = 2 * Math.PI * r
   return (
