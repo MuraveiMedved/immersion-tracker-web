@@ -82,6 +82,7 @@ function RaceSetup({ onDone, first }) {
 function Race({ onEditName }) {
   const s = useStore()
   const [addMenu, setAddMenu] = useState(false)
+  const [emptyMenu, setEmptyMenu] = useState(false)
   const status = useRaceStatus()
   const now = useNow(30000)
   const [create, setCreate] = useState(false)
@@ -108,8 +109,8 @@ function Race({ onEditName }) {
           <button class="icon-btn" title="Add a race" onClick={() => setAddMenu(!addMenu)}><Icon name="add" /></button>
           {addMenu && (
             <div class="menu" onMouseLeave={() => setAddMenu(false)}>
-              <button onClick={() => { setAddMenu(false); setCreate(true) }}><Icon name="add" size={20} />New event</button>
               <button onClick={() => { setAddMenu(false); setJoin(true) }}><Icon name="flag" size={20} />Join with a code</button>
+              <button onClick={() => { setAddMenu(false); setCreate(true) }}><Icon name="add" size={20} />New event</button>
             </div>
           )}
         </div>
@@ -122,7 +123,22 @@ function Race({ onEditName }) {
           <button class="btn text small" onClick={() => sync()}>Retry</button>
         </div>
       )}
-      {!running.length && <div class="empty">No races yet. Start one and share its code, or join a friend's with theirs.</div>}
+      {!running.length && (
+        <div class="empty-races">
+          <span class="flag-circle"><Icon name="flag" size={30} /></span>
+          <div class="muted">{done.length ? 'No races running right now. Start one and your friends will see it here.' : "No races yet. Start one and share its code, or join a friend's with theirs."}</div>
+          {/* The same choices as the header's +, right where someone with no race is looking. */}
+          <div style="position:relative">
+            <button class="btn tonal" onClick={() => setEmptyMenu(!emptyMenu)}><Icon name="add" size={18} />Add a race</button>
+            {emptyMenu && (
+              <div class="menu" style="left:0;right:auto" onMouseLeave={() => setEmptyMenu(false)}>
+                <button onClick={() => { setEmptyMenu(false); setJoin(true) }}><Icon name="flag" size={20} />Join with a code</button>
+                <button onClick={() => { setEmptyMenu(false); setCreate(true) }}><Icon name="add" size={20} />New event</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {running.map((e) => <RaceCard key={e.id} event={e} now={now} />)}
       {done.length > 0 && (
         <div class="section">

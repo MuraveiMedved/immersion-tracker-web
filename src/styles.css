@@ -415,3 +415,8 @@ textarea.input { resize: vertical; }
 .recent-session .rs-title { font-size: 14px; line-height: 20px; }
 .square-btn { width: 44px; height: 44px; border-radius: 10px; border: 0; display: inline-grid; place-items: center; flex: none; margin-left: 8px; }
 .btn.text.show-more { align-self: flex-start; padding: 6px 4px; gap: 2px; min-height: 0; }
+
+/* The phone's EmptyRaces: a flag, what's (not) happening, and a way to add a race. */
+.empty-races { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding: 28px 24px; }
+.empty-races .flag-circle { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.empty-races .btn { gap: 8px; }
