@@ -6,7 +6,6 @@ import {
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
 import { GOLDEN_DAYS } from '../model/rules.js'
-import { spreadApart } from '../model/layout.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf, epochDayStart } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill } from './common.jsx'
@@ -496,10 +495,10 @@ function OutlookNote({ o, event }) {
  * --------------------------------------------------------------------------------------------- */
 
 // Tall enough that racers close together don't sit on top of each other (was 160).
-const CHART_HEIGHT = 260
+const CHART_HEIGHT = 320
 const MONTH_LABEL_MIN_DAYS = 120
 /** The racer bubbles at the end of each line on the progress chart. */
-const BUBBLE_RADIUS = 13
+const BUBBLE_RADIUS = 12
 
 const JOIN_REACTION_PROGRESS = 0.04
 const OVERTAKE_REACTION_PROGRESS = 0.06
@@ -734,23 +733,11 @@ function ProgressChart({ event, now }) {
       // Emoji bubbles, whoever's ahead at this point drawn last (on top).
       const order = event.standings.map((x2) => x2.userId)
       const withE = visible.filter((l) => l.st.emoji).sort((a2, b2) => valueAt(a2, position) - valueAt(b2, position) || order.indexOf(b2.st.userId) - order.indexOf(a2.st.userId))
-      // Every bubble sits at the same x (the lines' tips), so racers close together would stack on
-      // top of each other - spread them apart vertically, just enough not to touch, and tie each
-      // one back to its line's real tip with a short leader.
-      const tipY = new Map(withE.map((l) => [l.st.userId, y(valueAt(l, position))]))
-      const placedY = spreadApart(withE.map((l) => ({ id: l.st.userId, y: tipY.get(l.st.userId) })), bubble * 2 + 3, bubble + 1, H - bubble - 1)
       for (const l of withE) {
         const a = arrival(l)
         const pop = a >= 1 ? 1 : 1 + 2.70158 * (a - 1) ** 3 + 1.70158 * (a - 1) ** 2
         if (pop <= 0) continue
-        const cx = x(position), cy = placedY.get(l.st.userId), ty = tipY.get(l.st.userId)
-        if (Math.abs(cy - ty) > 1.5) {
-          // Moved off its tip: a short leader back to the line, and a dot where the line ends.
-          ctx.strokeStyle = ctx.fillStyle = `rgba(${l.rgb},${0.8 * dimFor(l) * Math.min(1, pop)})`
-          ctx.lineWidth = 1.5
-          ctx.beginPath(); ctx.moveTo(cx, ty); ctx.lineTo(cx, cy + Math.sign(ty - cy) * bubble * 0.9); ctx.stroke()
-          ctx.beginPath(); ctx.arc(cx, ty, 2.5, 0, Math.PI * 2); ctx.fill()
-        }
+        const cx = x(position), cy = y(valueAt(l, position))
         const passing = reaction(l.st.userId, true), passed = reaction(l.st.userId, false)
         const dim = dimFor(l)
         if (spotlight > 0 && inSpot.has(l.st.userId)) {
