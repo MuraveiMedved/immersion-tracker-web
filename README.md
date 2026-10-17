@@ -23,3 +23,18 @@ Deploy: pushing to `main` on GitHub builds and publishes the site via
 `node test/fake-race-server.mjs` runs race-backend/Code.gs locally against an in-memory sheet
 (http://localhost:8799/exec) - set it as the race server link to try races without touching the
 real Sheet.
+
+## Phone <-> web sync check
+
+The Android app syncs with the same accounts (`app/.../data/websync/`). After changing what gets
+synced, on either side:
+
+1. `node test/fake-sync-server.mjs` (local copy of the sync script, port 8798).
+2. In `Tracker APP`: `WEBSYNC_LIVE=1 ./gradlew testDebugUnitTest --tests "*WebSyncLiveTest.step1*"` -
+   a phone makes an account and writes its recovery key to `/tmp/claude-501/websync-live-key.txt`.
+3. Web app (dev server, a fresh origin such as http://webtest.localhost:5199): in the console
+   `await __tracker.sync.joinAccount({ key: '<key>', url: 'http://localhost:8798/exec' })`, then add a
+   language "Korean", a session titled "Added in the web app", rename "Phone session 10" to
+   "Edited in the web app", hatch the Epic egg, and `await __tracker.sync.syncNow()`.
+4. `WEBSYNC_LIVE=1 ./gradlew testDebugUnitTest --tests "*WebSyncLiveTest.step2*"` - a phone with the
+   same history joins and checks it got all of that, without doubles.
