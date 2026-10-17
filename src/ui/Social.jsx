@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow, update, getState } from '../store.js'
 import {
   sync, createEvent, joinByCode, leaveEvent, endEvent, editEvent, deleteEventForEveryone, deleteCompleted, visibleEvents, raceOutlook,
@@ -490,7 +490,22 @@ function ProgressChart({ event, now }) {
     return () => clearTimeout(t)
   }, [replay])
 
-  const W = 600, H = 200, P = 6
+  // Drawn in a 600-wide viewBox; [k] turns screen px into its units, so the bubbles stay the
+  // phone's size (10px, a 13px emoji) however wide the chart is.
+  const svgRef = useRef(null)
+  const [pxWidth, setPxWidth] = useState(300)
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => el.clientWidth && setPxWidth(el.clientWidth))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const W = 600, H = 200
+  const k = W / Math.max(1, pxWidth)
+  const bubble = 10 * k
+  // Inset by a bubble, so one at either end sits centred on its line without spilling out.
+  const P = series.some((sr) => sr.st.emoji) ? bubble + 2 * k : 6
   const goal = event.goalHours * HOUR
   const maxY = Math.max(1, ...series.flatMap((x) => x.pts.slice(0, shownDays)), Math.min(goal, Math.max(...series.map((x) => x.st.millis)) * 1.1))
   const x = (i) => P + (days.length <= 1 ? 0 : (i / (days.length - 1)) * (W - 2 * P))
@@ -498,15 +513,28 @@ function ProgressChart({ event, now }) {
   return (
     <div>
       <div class="row" style="justify-content:flex-end;margin-top:-30px"><button class="btn text small" onClick={() => setReplay(replay == null ? 1 : null)}>{replay == null ? 'Replay' : 'Stop'}</button></div>
-      <svg viewBox={`0 0 ${W} ${H}`} style="width:100%;height:auto;margin-top:8px;overflow:visible">
+      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} style="width:100%;height:auto;margin-top:8px;overflow:visible">
         {goal <= maxY && <line x1={P} x2={W - P} y1={y(goal)} y2={y(goal)} stroke="var(--outline)" stroke-dasharray="6 6" />}
         {series.map((sr) => (
           <polyline key={sr.st.userId} fill="none" stroke={sr.color} stroke-width="3" stroke-linejoin="round" stroke-linecap="round"
             points={sr.pts.slice(0, shownDays).map((v, i) => `${x(i)},${y(v)}`).join(' ')} />
         ))}
-        {series.map((sr) => {
+        {/* Each person's emoji rides the end of their line in a bubble of their line's colour -
+            solid underneath, so a bubble on top covers the one below; the leader's on top.
+            Someone tracking right now breathes green. No emoji: a dot. */}
+        {[...series].reverse().map((sr) => {
           const i = Math.max(0, shownDays - 1)
-          return sr.st.emoji ? <text key={'e' + sr.st.userId} x={x(i)} y={y(sr.pts[i] || 0) - 6} font-size="16" text-anchor="middle">{sr.st.emoji}</text> : null
+          const cx = x(i), cy = y(sr.pts[i] || 0)
+          if (!sr.st.emoji) return <circle key={'e' + sr.st.userId} cx={cx} cy={cy} r={3.6 * k} fill={sr.color} />
+          return (
+            <g key={'e' + sr.st.userId}>
+              <circle cx={cx} cy={cy} r={bubble} fill="var(--bg)" />
+              {sr.st.active
+                ? <circle class="bubble-live" cx={cx} cy={cy} r={bubble} stroke-width={2 * k} />
+                : <circle cx={cx} cy={cy} r={bubble} fill={withAlpha(sr.color, 0.22)} stroke={sr.color} stroke-width={1.5 * k} />}
+              <text x={cx} y={cy} font-size={13 * k} text-anchor="middle" dominant-baseline="central">{sr.st.emoji}</text>
+            </g>
+          )
         })}
       </svg>
       <div class="row tiny muted"><span class="grow">{formatYmd(days[0])}</span>{goal <= maxY && <span>Goal {event.goalHours}h</span>}<span class="grow" style="text-align:right">{formatYmd(days[days.length - 1])}</span></div>

@@ -488,3 +488,7 @@ textarea.input { resize: vertical; }
 .day-bar { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; position: relative; min-width: 0; }
 .day-bar .stack { display: flex; flex-direction: column; border-radius: 3px 3px 0 0; overflow: hidden; }
 .day-bar .best-dot { position: absolute; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--on-surface); }
+
+/* A racer tracking right now: their graph bubble breathes green, like the phone's. */
+.bubble-live { stroke: #4CAF50; animation: bubblelive .9s ease-in-out infinite alternate; }
+@keyframes bubblelive { from { fill: rgba(76, 175, 80, .32); stroke-opacity: 1; } to { fill: rgba(76, 175, 80, .12); stroke-opacity: .35; } }
