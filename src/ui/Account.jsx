@@ -2,7 +2,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { useStore, useNow, update } from '../store.js'
 import { createAccount, joinAccount, linkCode, listDevices, unlinkDevice, signOut, syncNow, syncStatus, onSyncStatus, DEFAULT_SYNC_URL } from '../model/sync.js'
 import { agoText } from '../model/time.js'
-import { Dialog, Confirm, SettingRow, Spinner, copyText, toast } from './common.jsx'
+import { Dialog, Confirm, SettingRow, Spinner, Icon, copyText, toast } from './common.jsx'
 
 function useSyncStatus() {
   const [, setV] = useState(0)
@@ -21,36 +21,35 @@ export function AccountSection() {
 
   return (
     <>
-      <div class="section-title section"><h2>Account &amp; sync</h2></div>
-      <div class="card" style="padding:6px 12px">
+      <div class="block" style="padding-top:12px">
         {!signed ? (
           <>
             <div class="muted small" style="padding:10px 4px">
               Save your history online and use it on several devices - an iPhone and a laptop, say. Without an account, everything stays in this browser only. (This is for the web app - the Android app doesn't use accounts; bring its history in with Import below.)
             </div>
-            <SettingRow icon="☁️" title="Create an account" hint="Start here on your first device - no code needed. It saves what's on this device.">
+            <SettingRow icon="cloud" title="Create an account" hint="Start here on your first device - no code needed. It saves what's on this device.">
               <button class="btn small" onClick={() => setDialog('create')}>Create</button>
             </SettingRow>
-            <SettingRow icon="🔗" title="I already have one" hint="You made an account in the web app on another device - get a code there (Settings › Account & sync › Add another device), or use your recovery key.">
+            <SettingRow icon="smartphone" title="I already have one" hint="Get a code on a device that's already signed in - the web app (Settings › Account & sync › Add another device) or the Android app (Settings › Web account › Get a link code) - or use your recovery key.">
               <button class="btn tonal small" onClick={() => setDialog('join')}>Sign in</button>
             </SettingRow>
           </>
         ) : (
           <>
-            <SettingRow icon={status.busy ? <Spinner /> : s.sync.error ? '⚠️' : '✅'} title={status.busy ? 'Syncing…' : s.sync.error ? 'Sync problem' : 'Synced'}
+            <SettingRow icon={status.busy ? <Spinner /> : s.sync.error ? <Icon name="info" size={22} /> : <Icon name="check_circle" size={22} />} title={status.busy ? 'Syncing…' : s.sync.error ? 'Sync problem' : 'Synced'}
               hint={s.sync.error || (s.sync.lastSync ? `Last synced ${agoText(s.sync.lastSync, now)}` : 'Not synced yet')}>
               <button class="btn tonal small" disabled={status.busy} onClick={() => syncNow()}>Sync now</button>
             </SettingRow>
-            <SettingRow icon="📲" title="Add another device" hint="Shows a code to type on the new device - good for 10 minutes.">
+            <SettingRow icon="smartphone" title="Add another device" hint="Shows a code to type on the new device - good for 10 minutes.">
               <button class="btn tonal small" onClick={() => setDialog('code')}>Get code</button>
             </SettingRow>
-            <SettingRow icon="🔑" title="Recovery key" hint="Signs in without another device. Keep it somewhere safe - anyone with it can see your data.">
+            <SettingRow icon="qr_code" title="Recovery key" hint="Signs in without another device. Keep it somewhere safe - anyone with it can see your data.">
               <button class="btn tonal small" onClick={() => setDialog('key')}>Show</button>
             </SettingRow>
-            <SettingRow icon="💻" title="Devices" hint="Everything signed in to this account.">
+            <SettingRow icon="list" title="Devices" hint="Everything signed in to this account.">
               <button class="btn tonal small" onClick={() => setDialog('devices')}>View</button>
             </SettingRow>
-            <SettingRow icon="🚪" title="Sign out of this device" hint="Your data stays here; it just stops syncing.">
+            <SettingRow icon="close" title="Sign out of this device" hint="Your data stays here; it just stops syncing.">
               <button class="btn text danger small" onClick={() => setConfirmOut(true)}>Sign out</button>
             </SettingRow>
           </>
@@ -114,7 +113,7 @@ function SignInDialog({ mode, onClose }) {
             <p class="muted small" style="margin:0">Your account's data comes to this device, and anything already here is added to it.{s.race.name ? ' Your race name and settings become the account\'s.' : ''}</p>
             {useKey
               ? <label class="field">Recovery key<input class="input" value={key} autoFocus onInput={(e) => setKey(e.currentTarget.value)} /></label>
-              : <label class="field">Code shown on your other device's web app (Settings › Account &amp; sync › Add another device). Not a code from the Android app.
+              : <label class="field">Code from a signed-in device: the web app (Settings › Account &amp; sync › Add another device) or the Android app (Settings › Web account).
                 <input class="input" style="text-transform:uppercase;letter-spacing:3px;font-weight:700" value={code} autoFocus onInput={(e) => setCode(e.currentTarget.value.toUpperCase())} onKeyDown={(e) => e.key === 'Enter' && ready && go()} />
               </label>}
             <button class="btn text small" style="align-self:flex-start;padding:0" onClick={() => setUseKey(!useKey)}>{useKey ? 'Use a code instead' : 'Use a recovery key instead'}</button>
@@ -139,7 +138,7 @@ function LinkCodeDialog({ onClose }) {
       {res && left === 0 && <button class="btn tonal" onClick={get}>New code</button>}
       <button class="btn" onClick={onClose}>Done</button>
     </>}>
-      <p class="muted small" style="margin-top:0">On the new device, open the web app (muraveimedved.github.io/immersion-tracker-web) → Settings → Account &amp; sync → I already have one, and type:</p>
+      <p class="muted small" style="margin-top:0">On the new device: in the web app (muraveimedved.github.io/immersion-tracker-web) open Settings → Account &amp; sync → I already have one; on an Android phone, Settings → Web account. Then type:</p>
       {error ? <div class="err">{error}</div> : !res ? <Spinner /> : (
         <div class="center">
           <div class="code-pill" style="display:inline-block;font-size:28px;padding:10px 18px">{res.code}</div>

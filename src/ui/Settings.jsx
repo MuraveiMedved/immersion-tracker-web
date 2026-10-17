@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
-import { useStore, upsertProfile, deleteProfile, newProfile, setSetting, importEntries, replaceState, getState, PODCAST, READING, ANKI, LISTENING } from '../store.js'
-import { PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS } from '../model/theme.js'
+import { useStore, getState, upsertProfile, deleteProfile, newProfile, setSetting, importEntries, replaceState, PODCAST, READING, ANKI, LISTENING } from '../store.js'
+import { PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntries, exportBackup, readJsonBackup, readPhoneBackup } from '../model/imports.js'
 import { formatHm } from '../model/time.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
 import { AccountSection } from './Account.jsx'
-import { Dialog, Confirm, Switch, SettingRow, ColorPicker, LanguageChip, Spinner, TypeIcon, TypeLabel, toast } from './common.jsx'
+import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorPicker, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
 
 const SCRIPTS = [
   ['CYRILLIC_RUSSIAN', 'Russian', 'Cyrillic script'], ['CYRILLIC_UKRAINIAN', 'Ukrainian', 'і, ї, є, ґ'], ['JAPANESE_KANA', 'Japanese', 'hiragana / katakana'],
@@ -13,8 +13,11 @@ const SCRIPTS = [
   ['THAI_SCRIPT', 'Thai', 'Thai script'], ['LATIN_ENGLISH', 'English', 'plain Latin, no accents'],
 ]
 
+/** Settings, in the phone's blocks: Appearance, Languages, Tracking, Race, Zoo, Backup, App.
+ *  Appearance and Account & sync open as their own screens, as they do on the phone. */
 export function Settings({ params, nav }) {
   const s = useStore()
+  const [view, setView] = useState(null) // null | 'appearance' | 'account'
   const [editing, setEditing] = useState(null)
   const [importKind, setImportKind] = useState(null)
   const [phone, setPhone] = useState(null)
@@ -24,6 +27,7 @@ export function Settings({ params, nav }) {
   useEffect(() => {
     if (params?.addLanguage) setEditing('new')
     else if (params?.language != null) setEditing(params.language)
+    else if (params?.view) setView(params.view)
   }, [params])
 
   const pickFile = (accept, multiple, fn) => {
@@ -35,106 +39,123 @@ export function Settings({ params, nav }) {
     input.click()
   }
 
+  if (view === 'appearance') return <SubScreen title="Appearance" onBack={() => setView(null)}><Appearance /></SubScreen>
+  if (view === 'account') return <SubScreen title="Account & sync" onBack={() => setView(null)}><AccountSection /></SubScreen>
+
   return (
     <>
-      <h1 style="font-size:26px;margin-bottom:16px">Settings</h1>
+      <h1 class="page-title">Settings</h1>
 
-      <div class="section-title"><h2>Languages</h2><button class="btn tonal small" onClick={() => setEditing('new')}>＋ Add language</button></div>
-      <div class="card" style="padding:6px 12px">
-        {!languages.length && <div class="muted small" style="padding:10px 4px">No languages yet - tap + to add one.</div>}
-        {languages.map((p, i) => (
-          <SettingRow key={p.id} icon={<span class="dot" style={{ width: 22, height: 22, background: languageFill(p, 135) }} />} title={<span>{p.name}{p.isMain && <span class="muted small"> · main</span>}</span>}
-            hint={p.podcastGoalMinutes || p.readingGoalMinutes ? (
-              <span class="row" style="gap:10px">
-                {p.podcastGoalMinutes > 0 && <TypeLabel type="PODCAST" size={13}>{p.podcastGoalMinutes}m</TypeLabel>}
-                {p.readingGoalMinutes > 0 && <TypeLabel type="READING" size={13}>{p.readingGoalMinutes}m</TypeLabel>}
-              </span>
-            ) : 'No daily goal'}
-            onClick={() => setEditing(p.id)}>
-            <div class="row" style="gap:0">
-              <button class="icon-btn" title="Move up" disabled={i === 0} onClick={(e) => { e.stopPropagation(); swap(languages, i, i - 1) }}>↑</button>
-              <button class="icon-btn" title="Move down" disabled={i === languages.length - 1} onClick={(e) => { e.stopPropagation(); swap(languages, i, i + 1) }}>↓</button>
-            </div>
-          </SettingRow>
+      <Block title="Appearance">
+        <SettingRow icon="palette" title="Ring style, colors & display" onClick={() => setView('appearance')} />
+      </Block>
+
+      <Block title="Languages" action={<button class="icon-btn" title="Add language" style="margin-right:-8px" onClick={() => setEditing('new')}><Icon name="add" /></button>}>
+        {!languages.length && <div class="muted" style="padding:8px 0">No languages yet - tap + to add one.</div>}
+        {languages.map((p) => (
+          <div key={p.id} class="row clickable" style="padding:6px 0" onClick={() => setEditing(p.id)}>
+            <LanguageNameTile profile={p} />
+            <button class="icon-btn" title={p.isMain ? 'Main language' : 'Make this the main language'} onClick={(e) => { e.stopPropagation(); upsertProfile({ ...p, isMain: !p.isMain }) }}>
+              <CrownIcon color={p.isMain ? p.colorHex : 'color-mix(in srgb, var(--on-surface-variant) 35%, transparent)'} />
+            </button>
+            <Icon name="chevron_right" />
+          </div>
         ))}
-      </div>
+      </Block>
 
-      <AccountSection />
-
-      <div class="section-title section"><h2>Tracking</h2></div>
-      <div class="card" style="padding:6px 12px">
-        <SettingRow icon="📁" title="Uncategorized logs" hint="Allow sessions with no language and collect them in an Uncategorized folder on Home.">
+      <Block title="Tracking">
+        <SettingRow icon={<TypeIcon type="ANKI" size={22} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
+          <Switch checked={s.settings.showAnkiOnHome} onChange={(v) => setSetting('showAnkiOnHome', v)} />
+        </SettingRow>
+        <SettingRow icon="folder" title="Uncategorized logs" hint="Allow sessions with no language and collect them in an Uncategorized folder on Home.">
           <Switch checked={s.settings.logUncategorized} onChange={(v) => setSetting('logUncategorized', v)} />
         </SettingRow>
-        <SettingRow icon="⏱" title="Entry threshold" hint={`Don't save entries shorter than ${s.settings.entryThresholdSeconds} seconds.`}>
+        <SettingRow icon="timer" title="Entry threshold" hint={`Don't save entries shorter than ${s.settings.entryThresholdSeconds} seconds.`}>
           <Switch checked={s.settings.entryThresholdEnabled} onChange={(v) => setSetting('entryThresholdEnabled', v)} />
         </SettingRow>
         {s.settings.entryThresholdEnabled && (
-          <div class="row" style="padding:0 4px 12px 58px">
-            <span class="muted small grow">Minimum length</span>
+          <div class="row" style="padding:0 0 8px 54px">
+            <span class="muted grow">Minimum length</span>
             <button class="icon-btn filled" onClick={() => setSetting('entryThresholdSeconds', Math.max(5, s.settings.entryThresholdSeconds - 5))}>−</button>
             <b style="width:48px;text-align:center">{s.settings.entryThresholdSeconds}s</b>
             <button class="icon-btn filled" onClick={() => setSetting('entryThresholdSeconds', Math.min(600, s.settings.entryThresholdSeconds + 5))}>＋</button>
           </div>
         )}
-        <SettingRow icon={<TypeIcon type="ANKI" size={20} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
-          <Switch checked={s.settings.showAnkiOnHome} onChange={(v) => setSetting('showAnkiOnHome', v)} />
-        </SettingRow>
-        <div class="muted tiny" style="padding:8px 4px 10px">On the web, sessions are started and stopped by hand (or logged afterwards) - a browser can't see what other apps are playing, so automatic tracking stays on the Android app.</div>
-      </div>
+        <SettingRow icon="cloud" title="Account & sync" hint={s.sync.token ? 'Signed in - syncing with your other devices' : 'Use your history on several devices'} onClick={() => setView('account')} />
+      </Block>
 
-      <div class="section-title section"><h2>App</h2></div>
-      <div class="card" style="padding:6px 12px">
-        <SettingRow icon="🏁" title="Social tab" hint="Show races and friends as a tab.">
+      <Block title="Race">
+        <SettingRow icon="groups" title="Social tab" hint="Show races and friends as a tab in the bottom bar.">
           <Switch checked={s.settings.showRaceTab} onChange={(v) => setSetting('showRaceTab', v)} />
         </SettingRow>
-        <SettingRow icon="🦊" title="Zoo tab" hint="Collect animal cards with your immersion hours.">
+      </Block>
+
+      <Block title="Zoo">
+        <SettingRow icon="pets" title="Zoo tab" hint="Collect animal cards with your immersion hours.">
           <Switch checked={s.settings.showZooTab} onChange={(v) => setSetting('showZooTab', v)} />
         </SettingRow>
-      </div>
+      </Block>
 
-      <Appearance />
+      <Block title="Backup">
+        <div class="muted small" style="padding-bottom:4px">{s.sync.token ? 'Your data is also saved to your account. A downloaded file is an extra copy you keep yourself.' : 'Everything lives in this browser only. Download a backup now and then, or turn on Account & sync - clearing the browser\'s site data loses it otherwise.'}</div>
+        <SettingRow icon="file_download" title="Download a backup" hint={`${s.entries.length} entries, ${languages.length} languages, races, friends and Zoo`} onClick={exportBackup} />
+        <SettingRow icon="restore" title="Restore…" hint="Replaces everything here with a web backup file." onClick={() => pickFile('.json,application/json', false, async ([f]) => {
+          try { setRestore(await readJsonBackup(f)) } catch (err) { toast(err.message) }
+        })} />
+        <SettingRow icon="smartphone" title="Import from the Android app" hint="Pick “Immersion Tracker backup.zip” from your phone's backup folder." onClick={() => pickFile('.zip,application/zip', false, async ([f]) => {
+          try { setPhone({ loading: true }); setPhone(await readPhoneBackup(f)) } catch (err) { setPhone(null); toast(err.message || 'Couldn\'t read that backup') }
+        })} />
+        <SettingRow icon="file_upload" title="Import from Toggl Track" hint="Reports → Detailed → Export CSV (one year per file). Pick several at once." onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'toggl', files }))} />
+        <SettingRow icon="file_upload" title="Import from PolyLogger" hint="The CSV PolyLogger exports." onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'polylogger', files }))} />
+      </Block>
 
-      <div class="section-title section"><h2>Import</h2></div>
-      <div class="card" style="padding:6px 12px">
-        <SettingRow icon="📱" title="From the Android app" hint="Pick “Immersion Tracker backup.zip” from your phone's backup folder (Settings › Backup on the phone).">
-          <button class="btn tonal small" onClick={() => pickFile('.zip,application/zip', false, async ([f]) => {
-            try { setPhone({ loading: true }); setPhone(await readPhoneBackup(f)) } catch (err) { setPhone(null); toast(err.message || 'Couldn\'t read that backup') }
-          })}>Choose…</button>
-        </SettingRow>
-        <SettingRow icon="⏲" title="Import from Toggl Track" hint="Reports → Detailed → Export CSV (one year per file). Pick several at once.">
-          <button class="btn tonal small" onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'toggl', files }))}>Choose…</button>
-        </SettingRow>
-        <SettingRow icon="🗒" title="Import from PolyLogger" hint="The CSV PolyLogger exports (Activity, Language, Activity Type, Time, Date).">
-          <button class="btn tonal small" onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'polylogger', files }))}>Choose…</button>
-        </SettingRow>
-      </div>
-
-      <div class="section-title section"><h2>Backup</h2></div>
-      <div class="card" style="padding:6px 12px">
-        <div class="muted small" style="padding:10px 4px">{s.sync.token ? 'Your data is also saved to your account. A downloaded file is an extra copy you keep yourself.' : 'Everything lives in this browser only. Download a backup now and then, or create an account above - clearing the browser\'s site data, or a private window, loses it otherwise.'}</div>
-        <SettingRow icon="💾" title="Download a backup" hint={`${s.entries.length} entries, ${languages.length} languages, races, friends and Zoo`}>
-          <button class="btn tonal small" onClick={exportBackup}>Download</button>
-        </SettingRow>
-        <SettingRow icon="♻️" title="Restore…" hint="Replaces everything here with a web backup file.">
-          <button class="btn tonal small" onClick={() => pickFile('.json,application/json', false, async ([f]) => {
-            try { setRestore(await readJsonBackup(f)) } catch (err) { toast(err.message) }
-          })}>Choose…</button>
-        </SettingRow>
-      </div>
-
-      <div class="section-title section"><h2>About</h2></div>
-      <div class="card small muted">
-        <p style="margin-top:0"><b style="color:var(--on-surface)">Immersion Tracker for the web.</b> Works in any modern browser and offline once opened.</p>
-        <p><b style="color:var(--on-surface)">iPhone / iPad:</b> open this page in Safari → Share → <i>Add to Home Screen</i>. <b style="color:var(--on-surface)">Mac / PC:</b> in Chrome or Edge use the install icon in the address bar (Safari on Mac: File → Add to Dock).</p>
-        <p style="margin-bottom:0">Races and friends use the same server as the phone app, so you can race and befriend Android users.</p>
-      </div>
+      <Block title="App">
+        <SettingRow icon="info" title="Immersion Tracker for the web" hint="Works in any modern browser, and offline once opened. Races and friends are shared with the Android app." />
+        <div class="muted small" style="padding:4px 0 4px 54px">
+          <b>iPhone / iPad:</b> Safari → Share → Add to Home Screen. <b>Mac / PC:</b> Chrome or Edge → install icon in the address bar (Safari on Mac: File → Add to Dock). On the web, sessions are started and stopped by hand - a browser can't see what other apps are playing.
+        </div>
+      </Block>
 
       {editing != null && <LanguageEdit id={editing} onClose={() => setEditing(null)} />}
       {importKind && <ImportDialog kind={importKind.kind} files={importKind.files} onClose={() => setImportKind(null)} />}
       {phone && <PhoneImportDialog data={phone} onClose={() => setPhone(null)} />}
       {restore && <Confirm title="Restore this backup?" text="Everything in this browser will be replaced with the backup." confirmLabel="Restore" danger onConfirm={() => { replaceState(restore); toast('Backup restored') }} onClose={() => setRestore(null)} />}
     </>
+  )
+}
+
+/** A screen opened from Settings, with the phone's back-arrow header. */
+function SubScreen({ title, onBack, children }) {
+  return (
+    <>
+      <div class="row" style="margin:0 0 12px -12px">
+        <button class="icon-btn" title="Back" onClick={onBack}><Icon name="arrow_back" /></button>
+        <h1>{title}</h1>
+      </div>
+      {children}
+    </>
+  )
+}
+
+/** The phone's LanguageNameTile: the name on a soft tint of the language with its outline. */
+function LanguageNameTile({ profile }) {
+  const light = !isDarkFor(getState().settings.uiColorPreset)
+  const stops = profile.gradientColors ? profile.gradientColors.split(',') : null
+  return (
+    <div class="grow lang-tile" style={{
+      background: stops ? `linear-gradient(90deg, ${stops.map((c) => withAlpha(c, light ? 0.16 : 0.22)).join(', ')})` : withAlpha(profile.colorHex, light ? 0.16 : 0.22),
+      borderColor: light ? profile.colorHex : withAlpha(profile.colorHex, 0.6),
+      color: light ? deepened(profile.colorHex, 0.42) : undefined,
+    }}>{profile.name}</div>
+  )
+}
+
+/** The phone's crown - marks the main language. */
+function CrownIcon({ color }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={color} aria-hidden="true">
+      <path d="M3 7.5l4.5 4 4.5-7 4.5 7 4.5-4-2 11H5l-2-11zM5 20h14v1.6H5z" />
+    </svg>
   )
 }
 
@@ -205,8 +226,10 @@ function LanguageEdit({ id, onClose }) {
   )
 }
 
+/** Appearance, as the phone's Cosmetics screen: Display / UI Color / Ring Style tabs. */
 function Appearance() {
   const s = useStore()
+  const [tab, setTab] = useState('ui')
   const main = s.profiles.find((p) => p.isMain && !p.isAnki) || s.profiles.find((p) => !p.isAnki)
   const color = main?.colorHex || '#2A9D8F'
   const stops = main?.gradientColors ? main.gradientColors.split(',') : null
@@ -216,40 +239,46 @@ function Appearance() {
   )
   return (
     <>
-      <div class="section-title section"><h2>Appearance</h2></div>
-      <div class="card col" style="gap:16px">
-        <div>
-          <div style="font-weight:600;margin-bottom:4px">UI Color</div>
-          <div class="muted small" style="margin-bottom:10px">Pick how dark or light the app itself looks - applies everywhere.</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px">
+      <Seg options={[['display', 'Display'], ['ui', 'UI Color'], ['ring', 'Ring Style']]} value={tab} onChange={setTab} />
+      {tab === 'display' && (
+        <Block>
+          <div class="col" style="gap:16px;padding-top:10px">
+            <div><h2 style="margin-bottom:8px">"Immersion Tracker" title style</h2>{pick('titleStyleMode', [['DEFAULT', 'Default'], ['GRADIENT', 'Gradient'], ['CURRENT_LANGUAGE', 'Language color'], ['THEME_COLOR', 'Theme color']])}</div>
+            <div><h2 style="margin-bottom:8px">Goal card background</h2>{pick('goalCardStyleMode', [['LANGUAGE_COLOR', 'Language color'], ['GREY_TINT', 'Grey tint']])}</div>
+            <div><h2 style="margin-bottom:8px">Entry language label</h2>{pick('entryLabelStyle', [['ICON', 'Icons'], ['CHIP', 'Colored label'], ['DOT', 'Colored dot']])}</div>
+          </div>
+        </Block>
+      )}
+      {tab === 'ui' && (
+        <>
+          <p class="muted" style="margin:16px 0 12px">Pick how dark or light the app itself looks - applies everywhere, not just here.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px">
             {PRESETS.map((p) => {
               const v = schemeFor(p, isLightPreset(p) ? false : dark !== false)
               const on = s.settings.uiColorPreset === p
               return (
-                <button key={p} onClick={() => setSetting('uiColorPreset', p)} style={{ background: v['--bg'], color: v['--on-surface'], border: `2px solid ${on ? v['--primary'] : v['--outline-variant']}`, borderRadius: 14, padding: '10px 8px', textAlign: 'left' }}>
-                  <div style={{ height: 22, borderRadius: 7, background: v['--c-high'], marginBottom: 6, display: 'flex', alignItems: 'center', padding: '0 6px' }}><span class="dot" style={{ background: v['--primary'] }} /></div>
-                  <div style="font-size:12px;font-weight:650">{presetLabel(p)}</div>
+                <button key={p} onClick={() => setSetting('uiColorPreset', p)} style={{ background: v['--bg'], color: v['--on-surface'], border: `2px solid ${on ? v['--primary'] : v['--outline-variant']}`, borderRadius: 16, padding: '10px 8px', textAlign: 'left' }}>
+                  <div style={{ height: 24, borderRadius: 8, background: v['--c-high'], marginBottom: 6, display: 'flex', alignItems: 'center', padding: '0 6px' }}><span class="dot" style={{ background: v['--primary'] }} /></div>
+                  <div style="font-size:12px;font-weight:600">{presetLabel(p)}</div>
                 </button>
               )
             })}
           </div>
-        </div>
-        <div>
-          <div style="font-weight:600;margin-bottom:4px">Ring Style</div>
-          <div class="muted small" style="margin-bottom:10px">How your goal rings look, both in progress and once complete.</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px">
+        </>
+      )}
+      {tab === 'ring' && (
+        <>
+          <p class="muted" style="margin:16px 0 12px">Pick how your goal rings look, both in progress and once complete.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px">
             {RING_STYLES.map((r) => (
-              <button key={r} onClick={() => setSetting('ringStyle', r)} class="col" style={{ alignItems: 'center', background: 'var(--c-high)', border: `2px solid ${s.settings.ringStyle === r ? 'var(--primary)' : 'transparent'}`, borderRadius: 14, padding: 8, gap: 4 }}>
-                <div class="row" style="gap:2px"><Ring progress={0.62} color={color} stops={stops} ringStyle={r} size={44} /><Ring progress={1} color={color} stops={stops} ringStyle={r} size={44} /></div>
-                <span class="small" style="font-weight:600">{RING_LABEL[r]}</span>
+              <button key={r} onClick={() => setSetting('ringStyle', r)} class="col" style={{ alignItems: 'center', background: 'var(--block)', border: `2px solid ${s.settings.ringStyle === r ? 'var(--primary)' : 'var(--block-line)'}`, borderRadius: 16, padding: 10, gap: 6 }}>
+                <div class="row" style="gap:4px"><Ring progress={0.62} color={color} stops={stops} ringStyle={r} size={44} /><Ring progress={1} color={color} stops={stops} ringStyle={r} size={44} /></div>
+                <span class="label-large">{RING_LABEL[r]}</span>
               </button>
             ))}
           </div>
-        </div>
-        <div><div style="font-weight:600;margin-bottom:8px">"Immersion Tracker" title style</div>{pick('titleStyleMode', [['DEFAULT', 'Default'], ['GRADIENT', 'Gradient'], ['CURRENT_LANGUAGE', 'Language color'], ['THEME_COLOR', 'Theme color']])}</div>
-        <div><div style="font-weight:600;margin-bottom:8px">Goal card background</div>{pick('goalCardStyleMode', [['LANGUAGE_COLOR', 'Language color'], ['GREY_TINT', 'Grey tint']])}</div>
-        <div><div style="font-weight:600;margin-bottom:8px">Entry language label</div>{pick('entryLabelStyle', [['ICON', 'Icons'], ['CHIP', 'Colored label'], ['DOT', 'Colored dot']])}</div>
-      </div>
+        </>
+      )}
     </>
   )
 }

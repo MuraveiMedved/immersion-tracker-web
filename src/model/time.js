@@ -55,12 +55,14 @@ export function addDays(ms, days) {
   return d.getTime()
 }
 
-/** "1h 05m" style, matching the phone's formatHm. */
-export function formatHm(ms) {
+/** "1h 24m" / "45m" - the phone's formatDurationCompact. [dropZeroMinutes] makes a whole number of
+ *  hours "2h" (goals). */
+export function formatHm(ms, dropZeroMinutes = false) {
   const total = Math.max(0, Math.floor(ms / MINUTE))
   const h = Math.floor(total / 60)
   const m = total % 60
-  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`
+  if (h > 0 && m === 0 && dropZeroMinutes) return `${h}h`
+  if (h > 0) return `${h}h ${m}m`
   return `${m}m`
 }
 

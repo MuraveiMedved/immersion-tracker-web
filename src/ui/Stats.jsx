@@ -3,7 +3,7 @@ import { useStore, useNow, profileById } from '../store.js'
 import { RANGES, RANGE_LABEL, windowFor, barsFor, quickStats, heatmap, timeOfDay } from '../model/stats.js'
 import { epochDayStart, formatDate, formatHm, formatHoursShort } from '../model/time.js'
 import { withAlpha, languageFill } from '../model/theme.js'
-import { LanguageDot, TypeLabel } from './common.jsx'
+import { LanguageDot, LanguageFilterChip, TypeLabel, Icon } from './common.jsx'
 
 const ZOOM_IN = { YEAR: 'MONTH', MONTH: 'DAY', WEEK: 'DAY', ALL: 'YEAR' }
 
@@ -37,72 +37,62 @@ export function Stats() {
     setOffset(fresh(next))
   }
 
+  const longest = stats.streak > 0 && stats.streak >= stats.longest
   return (
-    <div style="margin-top:14px">
-      <div class="chips scroll">
-        {RANGES.map((r) => <button key={r} class={`chip ${range === r ? 'on' : ''}`} onClick={() => { setRange(r); setOffset(0) }}>{RANGE_LABEL[r]}</button>)}
+    <div style="margin-top:4px;padding-top:12px">
+      <div class="chips scroll" style="gap:6px">
+        {RANGES.map((r) => <button key={r} class={`pill-toggle ${range === r ? 'on' : ''}`} onClick={() => { setRange(r); setOffset(0) }}>{RANGE_LABEL[r]}</button>)}
       </div>
       {languages.length > 1 && (
-        <div class="chips scroll" style="margin-top:8px">
-          {languages.map((p) => (
-            <button key={p.id} class={`chip ${hidden.has(p.id) ? '' : 'on'}`} onClick={() => setHidden((prev) => { const n = new Set(prev); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })}>
-              <LanguageDot profile={p} />{p.name}
-            </button>
-          ))}
+        <div class="chips scroll" style="margin-top:12px">
+          {languages.map((p) => <LanguageFilterChip key={p.id} profile={p} selected={!hidden.has(p.id)} onClick={() => setHidden((prev) => { const n = new Set(prev); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })} />)}
+        </div>
+      )}
+      <div class="row" style="margin-top:8px">
+        <button class="icon-btn" title="Previous" style={range === 'ALL' ? 'visibility:hidden' : ''} onClick={() => setOffset(offset + 1)}><Icon name="chevron_right" style={{ transform: 'scaleX(-1)' }} /></button>
+        <h2 class="grow center">{win.label}</h2>
+        <button class="icon-btn" title="Next" style={range === 'ALL' || offset === 0 ? 'visibility:hidden' : ''} onClick={() => setOffset(Math.max(0, offset - 1))}><Icon name="chevron_right" /></button>
+      </div>
+      <div class="quick-stats">
+        <div class="qtile"><b>{formatHm(stats.total)}</b><span>Total</span></div>
+        {range !== 'DAY' && <div class="qtile"><b>{formatHm(stats.dailyAvg)}</b><span>Daily avg</span></div>}
+        {range !== 'DAY' && <div class="qtile"><b>{stats.best ? formatHm(stats.best.ms) : '0m'}</b><span>Best day</span></div>}
+        <div class="qtile"><b>{longest ? stats.longest : stats.streak}d</b><span>{longest ? 'Longest streak' : 'Streak'}</span></div>
+      </div>
+      {hidden.size === languages.length && languages.length ? <div class="empty">No languages selected.</div> : (
+        <div style="margin-top:20px">
+          <div class="muted small center">{hover != null ? `${win.buckets[hover][2]}: ${formatHm([...bars[hover].values()].reduce((a, c) => a + c, 0))}` : '\u00a0'}</div>
+          <div class="chart" onMouseLeave={() => setHover(null)}>
+            {bars.map((b, i) => (
+              <div key={i} class="bar-col" title={`${win.buckets[i][2]}: ${formatHm([...b.values()].reduce((a, c) => a + c, 0))}`} onMouseEnter={() => setHover(i)} onClick={() => zoomTo(i)}>
+                {order.filter((id) => b.get(id)).map((id) => {
+                  const p = profileById(id)
+                  return <div key={id} class="seg-part" style={{ height: `${(b.get(id) / max) * 100}%`, background: languageFill(p, 0), border: `1px solid ${withAlpha(p.colorHex, 0.9)}` }} />
+                })}
+              </div>
+            ))}
+          </div>
+          <div class="chart-labels">{win.buckets.map((b, i) => <span key={i}>{range === 'MONTH' ? (i % 5 === 0 || i === win.buckets.length - 1 ? b[2] : '') : range === 'DAY' ? (i % 3 === 0 ? b[2] : '') : b[2]}</span>)}</div>
+          {stats.total === 0
+            ? <div class="center muted" style="margin-top:6px">Nothing tracked in this window yet.</div>
+            : ZOOM_IN[range] && <div class="center muted small" style="margin-top:4px">Tap a bar to zoom in</div>}
         </div>
       )}
 
-      <div class="card section">
-        <div class="row">
-          {range !== 'ALL' && <button class="icon-btn" title="Previous" onClick={() => setOffset(offset + 1)}>‹</button>}
-          <div class="grow center" style="font-weight:650">{win.label}</div>
-          {range !== 'ALL' && <button class="icon-btn" title="Next" disabled={offset === 0} style={offset === 0 ? 'opacity:.3' : ''} onClick={() => setOffset(Math.max(0, offset - 1))}>›</button>}
-        </div>
-        <div class="center muted small">Total: {formatHm(stats.total)}{hover != null ? ` · ${win.buckets[hover][2]}: ${formatHm([...bars[hover].values()].reduce((a, c) => a + c, 0))}` : ''}</div>
-        {hidden.size === languages.length && languages.length ? <div class="empty">No languages selected.</div> : (
-          <>
-            <div class="chart" onMouseLeave={() => setHover(null)}>
-              {bars.map((b, i) => {
-                const total = [...b.values()].reduce((a, c) => a + c, 0)
-                return (
-                  <div key={i} class="bar" title={`${win.buckets[i][2]}: ${formatHm(total)}`} onMouseEnter={() => setHover(i)} onClick={() => zoomTo(i)}>
-                    {order.filter((id) => b.get(id)).map((id) => {
-                      const p = profileById(id)
-                      return <div key={id} class="seg-part" style={{ height: `${(b.get(id) / max) * 100}%`, background: languageFill(p, 0), border: `1px solid ${withAlpha(p.colorHex, 0.9)}` }} />
-                    })}
-                  </div>
-                )
-              })}
-            </div>
-            <div class="chart-labels">{win.buckets.map((b, i) => <span key={i}>{range === 'MONTH' ? (i % 5 === 0 || i === win.buckets.length - 1 ? b[2] : '') : range === 'DAY' ? (i % 3 === 0 ? b[2] : '') : b[2]}</span>)}</div>
-            {stats.total === 0 && <div class="center muted small" style="margin-top:6px">Nothing tracked in this window yet.</div>}
-            {ZOOM_IN[range] && <div class="center muted tiny" style="margin-top:6px">Tap a bar to zoom in</div>}
-          </>
-        )}
-      </div>
-
-      <div class="stat-tiles section">
-        <div class="tile"><div class="k">Total</div><div class="v">{formatHoursShort(stats.total)}</div></div>
-        <div class="tile"><div class="k">Daily avg</div><div class="v">{formatHm(stats.dailyAvg)}</div></div>
-        <div class="tile"><div class="k">Best day</div><div class="v">{stats.best ? formatHm(stats.best.ms) : '–'}</div>{stats.best && <div class="k">{formatDate(epochDayStart(stats.best.day))}</div>}</div>
-        <div class="tile"><div class="k">Streak</div><div class="v">🔥 {stats.streak}d</div></div>
-        <div class="tile"><div class="k">Longest streak</div><div class="v">{stats.longest}d</div></div>
-      </div>
-
       {stats.byLang.size > 0 && (
-        <div class="card section">
-          <h3 style="margin-bottom:10px">By language</h3>
+        <div style="margin-top:20px">
+          <h2 style="margin-bottom:10px">By language</h2>
           <div class="col" style="gap:12px">
             {[...stats.byLang].sort((a, b) => b[1].total - a[1].total).map(([id, v]) => {
               const p = profileById(id)
               return (
                 <div key={id}>
-                  <div class="row small"><LanguageDot profile={p} /><b class="grow">{p?.name || '?'}</b><span>{formatHm(v.total)} · {Math.round((v.total / stats.total) * 100)}%</span></div>
-                  <div class="progress" style="margin-top:6px">
-                    <div style={{ width: `${(v.PODCAST / stats.total) * 100}%`, background: p?.colorHex }} title={`Listening ${formatHm(v.PODCAST)}`} />
-                    <div style={{ width: `${(v.READING / stats.total) * 100}%`, background: withAlpha(p?.colorHex || '#888', 0.55) }} title={`Reading ${formatHm(v.READING)}`} />
+                  <div class="row"><LanguageDot profile={p} /><span class="grow label-large">{p?.name || '?'}</span><span class="label-large muted">{formatHm(v.total)} · {Math.round((v.total / stats.total) * 100)}%</span></div>
+                  <div class="progress" style="margin-top:6px;height:8px">
+                    <div style={{ width: `${(v.PODCAST / stats.total) * 100}%`, background: p?.colorHex }} />
+                    <div style={{ width: `${(v.READING / stats.total) * 100}%`, background: withAlpha(p?.colorHex || '#888', 0.55) }} />
                   </div>
-                  <div class="muted tiny row" style="margin-top:3px;gap:10px"><TypeLabel type="PODCAST" size={13}>{formatHm(v.PODCAST)}</TypeLabel><TypeLabel type="READING" size={13}>{formatHm(v.READING)}</TypeLabel></div>
+                  <div class="muted small row" style="margin-top:4px;gap:10px"><TypeLabel type="PODCAST" size={13}>{formatHm(v.PODCAST)}</TypeLabel><TypeLabel type="READING" size={13}>{formatHm(v.READING)}</TypeLabel></div>
                 </div>
               )
             })}
@@ -110,9 +100,9 @@ export function Stats() {
         </div>
       )}
 
-      <div class="card section">
-        <h3>Heatmap</h3>
-        <div class="muted tiny" style="margin-bottom:10px">12 months to {formatDate(now)} · each day in its top language</div>
+      <div style="margin-top:24px">
+        <h2>Heatmap</h2>
+        <div class="muted small" style="margin-bottom:10px">12 months to {formatDate(now)}</div>
         <div class="heat" ref={heatRef}>
           {heat.cells.map((c) => {
             const p = c.top != null ? profileById(c.top) : null
@@ -122,9 +112,9 @@ export function Stats() {
         </div>
       </div>
 
-      <div class="card section">
-        <h3>Time of day</h3>
-        <div class="muted tiny" style="margin-bottom:10px">When you immerse, across all your history. Hours are shown in the time zone each session happened in.</div>
+      <div style="margin-top:24px">
+        <h2>Time of day</h2>
+        <div class="muted small" style="margin-bottom:10px">When you immerse, across all your history. Hours are shown in the time zone each session happened in.</div>
         <div class="tod">{tod.map((v, h) => <div key={h} title={`${h}:00 · ${Math.round(v * 100)}%`} style={{ height: `${(v / Math.max(0.0001, ...tod)) * 100}%` }} />)}</div>
         <div class="chart-labels">{tod.map((_, h) => <span key={h}>{h % 6 === 0 ? `${h}` : ''}</span>)}</div>
       </div>

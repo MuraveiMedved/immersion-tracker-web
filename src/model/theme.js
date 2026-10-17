@@ -178,3 +178,15 @@ export function languageFill(profile, angle = 90) {
   const stops = gradientStops(profile)
   return stops && stops.length > 1 ? `linear-gradient(${angle}deg, ${stops.join(', ')})` : profile?.colorHex || '#888'
 }
+
+/** The phone's dimGradientColorsFor: a language colour taken down to a card background - its hue,
+ *  scaled saturation, and very low value on dark themes (or very high, toward white, on light). */
+export function dimColor(hex, satScale = 0.6, valScale = 0.18, towardWhite = false, minSat = 0.5) {
+  const [h, s0, v0] = rgbToHsv(hexToRgb(hex))
+  const v = towardWhite ? 1 - (1 - v0) * valScale : v0 * valScale
+  let s
+  if (s0 < 0.08) s = s0 * satScale
+  else if (towardWhite) s = Math.max(s0 * satScale * 0.4, 0.1)
+  else s = Math.max(s0 * satScale, minSat)
+  return rgbToHex(hsvToRgb([h, Math.min(1, s), Math.max(0, Math.min(1, v))]))
+}

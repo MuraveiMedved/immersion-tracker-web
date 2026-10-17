@@ -7,7 +7,7 @@ import {
 } from '../model/race.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor } from '../model/theme.js'
-import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel } from './common.jsx'
+import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon } from './common.jsx'
 import { Ring } from './Ring.jsx'
 import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'
@@ -37,12 +37,9 @@ export function Social() {
   if (!raceConfigured() || setup) return <RaceSetup onDone={() => setSetup(false)} first={!raceConfigured()} />
   return (
     <>
-      <div class="row" style="margin-bottom:14px">
-        <h1 class="grow" style="font-size:26px">Social</h1>
-        <button class="chip" onClick={() => setSetup(true)}>{s.race.emoji || '🙂'} {s.race.name}</button>
-      </div>
+      <h1 class="page-title">Social</h1>
       <Seg options={[['race', 'Race'], ['friends', 'Friends']]} value={tab} onChange={setTab} />
-      {tab === 'race' ? <Race /> : <Friends />}
+      <div style="margin-top:12px">{tab === 'race' ? <Race onEditName={() => setSetup(true)} /> : <Friends />}</div>
     </>
   )
 }
@@ -82,8 +79,9 @@ function RaceSetup({ onDone, first }) {
  * Race
  * --------------------------------------------------------------------------------------------- */
 
-function Race() {
+function Race({ onEditName }) {
   const s = useStore()
+  const [addMenu, setAddMenu] = useState(false)
   const status = useRaceStatus()
   const now = useNow(30000)
   const [create, setCreate] = useState(false)
@@ -100,12 +98,23 @@ function Race() {
 
   return (
     <div style="margin-top:14px">
-      <div class="row wrap">
-        <span class="muted small grow">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)}` : 'Not updated yet'}</span>
-        <button class="btn tonal small" onClick={() => sync()}>↻ Refresh</button>
-        <button class="btn tonal small" onClick={() => setJoin(true)}>Join with a code</button>
-        <button class="btn small" onClick={() => setCreate(true)}>＋ New race</button>
-        <button class="icon-btn" title="Race settings" onClick={() => setSettings(true)}>⚙</button>
+      {/* The phone's header: who you race as (tap to change), how fresh the standings are, then add / settings. */}
+      <div class="row" style="margin-right:-12px">
+        <div class="grow clickable" onClick={onEditName}>
+          <div class="title-medium">Racing as {s.race.emoji ? `${s.race.emoji} ` : ''}{s.race.name}</div>
+          <div class="muted small">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)} · tap to change name` : 'Tap to change name'}</div>
+        </div>
+        <div style="position:relative">
+          <button class="icon-btn" title="Add a race" onClick={() => setAddMenu(!addMenu)}><Icon name="add" /></button>
+          {addMenu && (
+            <div class="menu" onMouseLeave={() => setAddMenu(false)}>
+              <button onClick={() => { setAddMenu(false); setCreate(true) }}><Icon name="add" size={20} />New event</button>
+              <button onClick={() => { setAddMenu(false); setJoin(true) }}><Icon name="flag" size={20} />Join with a code</button>
+            </div>
+          )}
+        </div>
+        <button class="icon-btn" title="Refresh" onClick={() => sync()}><Icon name="refresh" /></button>
+        <button class="icon-btn" title="Race settings" onClick={() => setSettings(true)}><Icon name="settings" /></button>
       </div>
       {status.error && (
         <div class="notice section">

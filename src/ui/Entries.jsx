@@ -1,28 +1,32 @@
 import { useMemo, useState } from 'preact/hooks'
-import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, ANKI } from '../store.js'
+import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI } from '../store.js'
 import { durationOf, typeLabel } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
-import { Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, LanguageChip, Seg, toast } from './common.jsx'
+import { Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, Seg, toast } from './common.jsx'
 import { Stats } from './Stats.jsx'
 
+/** The phone's EntryRow: the language's mark (by the "Entry language label" setting), the title and
+ *  artist, and a grey pill with the duration. */
 export function EntryRow({ entry, now, onClick, selected, onLongPress }) {
   const profile = profileById(entry.languageProfileId)
+  const style = getState().settings.entryLabelStyle
   const running = entry.endTimeMillis == null
   let pressTimer = null
   const down = () => { if (onLongPress) pressTimer = setTimeout(() => { pressTimer = null; onLongPress() }, 450) }
   const up = () => clearTimeout(pressTimer)
+  const title = entry.mediaTitle || (entry.isManual ? `Manual ${typeLabel(entry.contentType).toLowerCase()} session` : typeLabel(entry.contentType))
   return (
     <div class={`entry ${selected ? 'sel' : ''}`} onClick={onClick} onPointerDown={down} onPointerUp={up} onPointerLeave={up}
       onContextMenu={onLongPress ? (e) => { e.preventDefault(); onLongPress() } : undefined}>
-      <TypeBadge type={entry.contentType} profile={profile} />
+      {selected ? <Icon name="check_circle" size={18} color="var(--primary)" />
+        : profile && style === 'CHIP' ? <LanguageChip profile={profile} />
+          : style === 'ICON' ? <TypeBadge type={entry.contentType} profile={profile} />
+            : <span class="dot" style={{ background: profile?.colorHex || '#BFBFCC' }} />}
       <div class="grow">
-        <div class="title ellipsis">{entry.mediaTitle || (entry.isManual ? `Manual ${typeLabel(entry.contentType).toLowerCase()} session` : typeLabel(entry.contentType))}</div>
-        <div class="row small muted" style="gap:8px">
-          {entry.contentType !== ANKI && <EntryLabel profile={profile} type={entry.contentType} />}
-          <span>{running ? `${formatTime(entry.startTimeMillis)} · now` : `${formatTime(entry.startTimeMillis)} – ${formatTime(entry.endTimeMillis)}`}</span>
-        </div>
+        <div class="title ellipsis">{title}</div>
+        {entry.mediaArtist && <div class="small muted ellipsis">{entry.mediaArtist}</div>}
       </div>
-      <div class="dur" style={running ? 'color:#3ddc84' : ''}>{formatHm(durationOf(entry, now))}</div>
+      <div class="dur">{running ? `${formatHm(durationOf(entry, now))} · now` : formatHm(durationOf(entry, now))}</div>
     </div>
   )
 }
@@ -32,11 +36,13 @@ export function UncategorizedFolder({ entries, now, onOpen }) {
   const [confirm, setConfirm] = useState(false)
   return (
     <div class="folder">
-      <div class="row">
-        <button class="btn text grow" style="justify-content:flex-start;padding:0" onClick={() => setOpen(!open)}>📁 Uncategorized ({entries.length}) {open ? '▴' : '▾'}</button>
-        <button class="icon-btn" title="Delete all uncategorized entries" onClick={() => setConfirm(true)}>🗑</button>
+      <div class="folder-head" onClick={() => setOpen(!open)}>
+        <Icon name="folder" size={20} color="var(--on-surface-variant)" />
+        <span class="grow body-large">Uncategorized ({entries.length})</span>
+        <button class="icon-btn muted" title="Delete all uncategorized entries" onClick={(e) => { e.stopPropagation(); setConfirm(true) }}><Icon name="delete" size={20} /></button>
+        <span class="muted"><Icon name={open ? 'expand_less' : 'expand_more'} /></span>
       </div>
-      {open && <div class="list" style="margin-top:8px">{entries.slice(0, 50).map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => onOpen(e.id)} />)}</div>}
+      {open && <div class="list" style="margin:0 20px">{entries.slice(0, 50).map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => onOpen(e.id)} />)}</div>}
       {confirm && <Confirm title="Delete all uncategorized entries?" text="This deletes everything in this folder, with no language assigned. This can't be undone." confirmLabel="Delete all" danger onConfirm={deleteAllUncategorized} onClose={() => setConfirm(false)} />}
     </div>
   )
@@ -120,18 +126,20 @@ function TitleEdit({ entry, onClose }) {
 
 const PAGE = 120
 
+/** Entries, like the phone: Stats / All entries in a pill switcher (a selection bar stands in for it
+ *  while rows are picked); All entries is the uncategorized folder, then each day. */
 export function Entries({ params }) {
   const s = useStore()
   const now = useNow(1000)
-  const [tab, setTab] = useState(params?.tab || 'entries')
+  const [tab, setTab] = useState(params?.tab || 'stats')
   const [limit, setLimit] = useState(PAGE)
   const [selected, setSelected] = useState(new Set())
   const [details, setDetails] = useState(null)
   const [confirm, setConfirm] = useState(false)
-  const [filter, setFilter] = useState('all')
 
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])
-  const shown = sorted.filter((e) => filter === 'all' || (filter === 'none' ? e.languageProfileId == null : e.languageProfileId === filter)).slice(0, limit)
+  const uncategorized = s.settings.logUncategorized ? sorted.filter((e) => e.languageProfileId == null) : []
+  const shown = sorted.filter((e) => e.languageProfileId != null).slice(0, limit)
   const groups = []
   for (const e of shown) {
     const d = dayStart(e.startTimeMillis)
@@ -140,40 +148,31 @@ export function Entries({ params }) {
   }
   const selecting = selected.size > 0
   const toggle = (id) => setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
-  const languages = s.profiles.filter((p) => !p.isAnki)
 
   return (
     <>
-      <div class="row" style="margin-bottom:14px">
-        <h1 class="grow" style="font-size:26px">{tab === 'stats' ? 'Stats' : 'Entries'}</h1>
-      </div>
-      <Seg options={[['entries', 'Entries'], ['stats', 'Stats']]} value={tab} onChange={setTab} />
-      {tab === 'stats' ? <Stats /> : (
-        <>
-          <div class="chips scroll" style="margin-top:14px">
-            <button class={`chip ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>All</button>
-            {languages.map((p) => <button key={p.id} class={`chip ${filter === p.id ? 'on' : ''}`} onClick={() => setFilter(p.id)}><span class="dot" style={{ background: p.colorHex }} />{p.name}</button>)}
-            <button class={`chip ${filter === 'none' ? 'on' : ''}`} onClick={() => setFilter('none')}>Uncategorized</button>
-          </div>
-          {selecting && (
-            <div class="banner" style="position:sticky;top:8px;z-index:5;margin-top:12px">
-              <b class="grow">{selected.size} selected</b>
-              <button class="btn text small" onClick={() => setSelected(new Set())}>Cancel</button>
-              <button class="btn danger small" onClick={() => setConfirm(true)}>Delete</button>
-            </div>
-          )}
-          {!groups.length && <div class="empty">No entries yet.</div>}
-          {groups.map((g) => {
+      <h1 class="page-title">Entries</h1>
+      {selecting ? (
+        <div class="sel-bar">
+          <button class="icon-btn" title="Cancel" onClick={() => setSelected(new Set())}><Icon name="close" /></button>
+          <b class="grow">{selected.size} selected</b>
+          <button class="icon-btn" title="Delete" onClick={() => setConfirm(true)}><Icon name="delete" /></button>
+        </div>
+      ) : <Seg options={[['stats', 'Stats'], ['entries', 'All entries']]} value={tab} onChange={setTab} />}
+      {tab === 'stats' && !selecting ? <Stats /> : (
+        <div style="margin-top:12px">
+          {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} />}
+          {uncategorized.length > 0 && groups.length > 0 && <div class="divider" style="margin:12px 0" />}
+          {!groups.length && !uncategorized.length && <div class="empty">No entries yet.</div>}
+          {groups.map((g, i) => {
             const ids = g.entries.map((e) => e.id)
             const allSel = ids.every((id) => selected.has(id))
-            const total = g.entries.filter((e) => e.languageProfileId != null && (e.contentType === 'PODCAST' || e.contentType === 'READING')).reduce((t, e) => t + durationOf(e, now), 0)
             return (
               <div key={g.day}>
-                <div class="day-head">
-                  <span class="grow">{dayLabel(g.day, now)}</span>
-                  {selecting
-                    ? <button class="btn text small" onClick={() => setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => (allSel ? n.delete(id) : n.add(id))); return n })}>{allSel ? 'Deselect all from this day' : 'Select all from this day'}</button>
-                    : <span>{formatHm(total)}</span>}
+                {i > 0 && <div class="divider" style="margin:12px 0" />}
+                <div class="row clickable" style="padding:4px 0" onClick={selecting ? () => setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => (allSel ? n.delete(id) : n.add(id))); return n }) : undefined}>
+                  {selecting && <Icon name={allSel ? 'check_circle' : 'expand_more'} size={18} color={allSel ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
+                  <h2>{dayLabel(g.day, now)}</h2>
                 </div>
                 <div class="list">
                   {g.entries.map((e) => (
@@ -185,8 +184,7 @@ export function Entries({ params }) {
             )
           })}
           {sorted.length > limit && <div class="center" style="margin-top:16px"><button class="btn tonal" onClick={() => setLimit(limit + PAGE)}>Load more</button></div>}
-          {!selecting && groups.length > 0 && <p class="muted tiny center" style="margin-top:16px">Long-press (or right-click) an entry to select several.</p>}
-        </>
+        </div>
       )}
       {details != null && <EntryDetails id={details} onClose={() => setDetails(null)} />}
       {confirm && <Confirm title={`Delete ${selected.size} ${selected.size === 1 ? 'entry' : 'entries'}?`} text="This can't be undone." confirmLabel="Delete" danger
@@ -194,4 +192,3 @@ export function Entries({ params }) {
     </>
   )
 }
-

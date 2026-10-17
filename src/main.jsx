@@ -22,6 +22,15 @@ const TABS = [
   ['settings', 'settings', 'Settings'],
 ]
 
+/** Like the phone's bar: a wash of whatever language is being tracked (listening, then music, then
+ *  reading), over the plain surface. */
+function navTint(s) {
+  const order = ['PODCAST', 'LISTENING', 'READING']
+  const running = order.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).find((e) => e && e.languageProfileId != null)
+  const color = running && s.profiles.find((p) => p.id === running.languageProfileId)?.colorHex
+  return color ? { '--nav-bg': `color-mix(in srgb, ${color} 22%, var(--surface))` } : undefined
+}
+
 function App() {
   const s = useStore()
   const [route, setRoute] = useState(() => ({ tab: location.hash.slice(1) || 'home', params: null }))
@@ -46,9 +55,9 @@ function App() {
   const tab = tabs.some(([t]) => t === route.tab) ? route.tab : 'home'
   return (
     <div class="shell">
-      <nav class="nav">
+      <nav class="nav" style={navTint(s)}>
         {tabs.map(([t, ico, label]) => (
-          <button key={t} class={tab === t ? 'on' : ''} onClick={() => nav(t)}><span class="ico"><NavIcon name={ico} /></span>{label}</button>
+          <button key={t} class={tab === t ? 'on' : ''} onClick={() => nav(t)} title={label} aria-label={label}><NavIcon name={ico} /></button>
         ))}
       </nav>
       <main class="page">

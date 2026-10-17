@@ -49,53 +49,52 @@ export function Zoo() {
 
   const z = useMemo(() => zooState(s, now), [s, now])
   const golden = useMemo(() => isGolden(s.entries, now), [s.entries, Math.floor(now / 60000)])
+  const [trade, setTrade] = useState(null) // {from, picks: []} - a trade-up being picked
   if (!catalog) return <div class="empty"><Spinner /></div>
   const found = everFound(s)
-  const held = Object.keys(z.copies).length
+  const rarityOfId = (id) => catalog.find((a) => a.id === id)?.rarity
+  const heldOfTier = (r) => Object.entries(z.copies).filter(([id]) => rarityOfId(id) === r).reduce((t, [, l]) => t + l.length, 0)
+  // Like the phone: a tier shows only once there's a coloured egg to hatch or enough to trade up.
+  const tierRows = RARITIES.map((r) => ({ r, eggs: z.coloured[r], canTrade: !!nextRarity(r) && heldOfTier(r) >= TRADE_UP_COUNT })).filter((t) => t.eggs > 0 || t.canTrade)
+  const ready = z.boxesReady > 0
 
   return (
     <>
-      <div class="row" style="margin-bottom:14px">
-        <h1 class="grow" style="font-size:26px">Zoo</h1>
-        <span class="muted small">{held} in your zoo · {found.size}/{catalog.length} found</span>
-      </div>
-      <Seg options={[['eggs', 'Eggs'], ['collection', `Collection · ${held}`]]} value={tab} onChange={setTab} />
+      <h1 class="page-title">Zoo</h1>
+      <Seg options={[['eggs', 'Eggs'], ['collection', 'Collection']]} value={tab} onChange={(t) => { setTab(t); if (t === 'eggs') setTrade(null) }} />
       {tab === 'eggs' ? (
         <>
-          <div class="card section center">
-            <div class="egg-stage">
-              <Egg rarity="BOX" wobble={z.boxesReady > 0} onClick={() => setOdds(true)} />
+          <div class="egg-card center">
+            <div class="egg-stage" onClick={() => setOdds(true)}>
+              <div class="egg-glow" style={{ opacity: ready ? 1 : 0.3 }} />
+              <Egg rarity="BOX" wobble={ready} />
             </div>
-            <div style="font-weight:700;font-size:18px;margin-top:6px">{z.boxesReady > 0 ? `${z.boxesReady} egg${z.boxesReady === 1 ? '' : 's'} ready to hatch` : 'No egg ready yet'}</div>
-            <div class="muted small" style="margin:4px 0 12px">Tap the egg to see its hatch rates</div>
-            <div class="progress" style="height:10px;max-width:360px;margin:0 auto"><div style={{ width: `${z.boxProgress * 100}%`, background: 'linear-gradient(90deg,#ffb300,#ff4fd8)' }} /></div>
-            <div class="muted small" style="margin-top:6px">{z.timeToNextBox} of immersion to the next egg · one every {HOURS_PER_BOX} hours</div>
-            {golden && <div class="small" style="margin-top:8px;color:var(--gold);font-weight:650">🔥 Momentum is gold = {FOIL_CHANCE_PERCENT}% chance of a foil card</div>}
-            {z.boxesReady > 0 && <button class="btn" style="margin-top:14px;min-width:200px" onClick={() => setHatching('BOX')}>Hatch an egg</button>}
+            <div class="title-medium" style="margin-top:4px">{ready ? `${z.boxesReady} egg${z.boxesReady === 1 ? '' : 's'} ready to hatch` : 'No egg ready yet'}</div>
+            <div class="bar" style="margin-top:12px"><div style={{ width: `${z.boxProgress * 100}%` }} /></div>
+            <div class="muted small" style="margin-top:6px">{z.timeToNextBox} remaining</div>
+            {golden && <div class="small" style="margin-top:6px;color:var(--gold);font-weight:650">Momentum is gold = {FOIL_CHANCE_PERCENT}% chance of a foil card</div>}
+            <div style="margin-top:14px;min-height:48px;display:grid;place-items:center">
+              {ready
+                ? <button class="glow-pill" onClick={() => setHatching('BOX')}>Hatch an egg</button>
+                : <span class="muted small">Tap the egg to see its hatch rates</span>}
+            </div>
           </div>
-
-          <div class="section-title section"><h2>Coloured eggs &amp; trade-ups</h2></div>
-          <div class="card">
-            {RARITIES.some((r) => z.coloured[r] > 0) ? (
-              <div class="row wrap" style="gap:16px;justify-content:center">
-                {RARITIES.filter((r) => z.coloured[r] > 0).map((r) => (
-                  <div key={r} class="col" style="align-items:center">
-                    <Egg rarity={r} small wobble />
-                    <b class="small">{RARITY_LABEL[r]} ×{z.coloured[r]}</b>
-                    <button class="btn small" onClick={() => setHatching(r)}>Hatch</button>
-                  </div>
-                ))}
+          {tierRows.map(({ r, eggs, canTrade }) => (
+            <div key={r} class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
+              <Egg rarity={r} small wobble={eggs > 0} />
+              <div class="grow">
+                <div class="title-medium">{RARITY_LABEL[r]} egg{eggs > 1 ? ` ×${eggs}` : ''}</div>
+                <div class="muted small">{eggs > 0 ? `Hatches a ${RARITY_LABEL[r]} animal` : `Trade ${TRADE_UP_COUNT} for a ${RARITY_LABEL[nextRarity(r)]} egg`}</div>
               </div>
-            ) : (
-              <p class="muted small" style="margin:0">Trade {TRADE_UP_COUNT} animals of one tier for an egg of the next colour - start from the Collection tab.</p>
-            )}
-            <button class="btn tonal block" style="margin-top:12px" onClick={() => setTab('collection')}>Trade up…</button>
-          </div>
+              {eggs > 0 && <button class="btn small" onClick={() => setHatching(r)}>Hatch</button>}
+              {canTrade && <button class="btn tonal small" onClick={() => { setTab('collection'); setTrade({ from: r, picks: [] }) }}>Trade up</button>}
+            </div>
+          ))}
         </>
       ) : (
-        <Collection catalog={catalog} copies={z.copies} found={found} trophyId={s.zoo.trophyId} />
+        <Collection catalog={catalog} copies={z.copies} found={found} trophyId={s.zoo.trophyId} trade={trade} setTrade={setTrade} />
       )}
-      {odds && <OddsDialog catalog={catalog} found={found} onClose={() => setOdds(false)} />}
+      {odds && <OddsDialog onClose={() => setOdds(false)} />}
       {hatching && <HatchDialog kind={hatching} onClose={() => setHatching(null)} />}
     </>
   )
@@ -111,23 +110,15 @@ export function Egg({ rarity, wobble, shake, small, onClick }) {
   )
 }
 
-function OddsDialog({ catalog, found, onClose }) {
-  const tiers = [...LOOT_BOX_ODDS.map(([t, p]) => [t, p]), ['GREEN', 100 - LOOT_BOX_ODDS.reduce((a, [, p]) => a + p, 0)]]
+function OddsDialog({ onClose }) {
+  const tiers = [...LOOT_BOX_ODDS, ['GREEN', 100 - LOOT_BOX_ODDS.reduce((a, [, p]) => a + p, 0)]]
   return (
     <Dialog title="Egg hatch rates" onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>OK</button>}>
-      <p class="muted small" style="margin-top:0">You earn an egg every {HOURS_PER_BOX} hours of immersion. Every animal in a tier is equally likely.</p>
+      <p class="muted small" style="margin-top:0">You earn an egg every {HOURS_PER_BOX} hours of immersion.</p>
       <div class="col">
-        {tiers.map(([t, p]) => {
-          const pool = catalog.filter((a) => a.rarity === t)
-          const have = pool.filter((a) => found.has(a.id)).length
-          return (
-            <div key={t} class="row">
-              <RarityBadge rarity={t} />
-              <b class="grow" style="margin-left:6px">{p}%</b>
-              <span class="muted small">{have}/{pool.length} found · {pool.length ? (p / pool.length).toFixed(2) : 0}% each</span>
-            </div>
-          )
-        })}
+        {tiers.map(([t, p]) => (
+          <div key={t} class="row"><RarityBadge rarity={t} /><span class="grow" /><b>{p}%</b></div>
+        ))}
       </div>
     </Dialog>
   )
@@ -225,74 +216,73 @@ export function AnimalCardView({ animal, cert, glow, compact }) {
   )
 }
 
-function Collection({ catalog, copies, found, trophyId }) {
-  const [filter, setFilter] = useState('owned')
-  const [tier, setTier] = useState(null)
+/** Only animals found so far (no silhouettes of the rest), rarest first - like the phone. A
+ *  long-press (or right-click) on one starts a trade-up of its tier. */
+function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   const [open, setOpen] = useState(null)
-  const [trade, setTrade] = useState(null) // {from, picks: []}
+  const held = Object.keys(copies).length
   const list = catalog
-    .filter((a) => !tier || a.rarity === tier)
-    .filter((a) => filter === 'all' || copies[a.id])
-    .sort((a, b) => RARITIES.indexOf(b.rarity) - RARITIES.indexOf(a.rarity) || a.name.localeCompare(b.name))
+    .filter((a) => found.has(a.id))
+    .filter((a) => !trade || a.rarity === trade.from)
+    .sort((a, b) => RARITIES.indexOf(b.rarity) - RARITIES.indexOf(a.rarity) || a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
 
+  const startTrade = (a) => {
+    if (nextRarity(a.rarity) && copies[a.id]) setTrade({ from: a.rarity, picks: [a.id] })
+  }
   const pick = (a) => {
     if (!trade) { setOpen(a); return }
     if (a.rarity !== trade.from || !copies[a.id]) return
-    const usedOf = trade.picks.filter((x) => x === a.id).length
-    if (usedOf < copies[a.id].length && trade.picks.length < TRADE_UP_COUNT) setTrade({ ...trade, picks: [...trade.picks, a.id] })
+    const n = trade.picks.filter((x) => x === a.id).length
+    if (n < copies[a.id].length && trade.picks.length < TRADE_UP_COUNT) setTrade({ ...trade, picks: [...trade.picks, a.id] })
     else setTrade({ ...trade, picks: trade.picks.filter((x) => x !== a.id) })
   }
   const doTrade = () => {
     const to = tradeUp(trade.from, trade.picks)
-    if (to) toast(`+1 ${RARITY_LABEL[to]} egg - hatch it from the Eggs tab`)
-    else toast('Couldn\'t trade those')
+    if (to) toast(`+1 ${RARITY_LABEL[to]} egg`)
+    else toast("Couldn't trade those")
     setTrade(null)
   }
 
   return (
     <>
-      <div class="chips scroll" style="margin-top:14px">
-        <button class={`chip ${filter === 'owned' ? 'on' : ''}`} onClick={() => setFilter('owned')}>Owned</button>
-        <button class={`chip ${filter === 'all' ? 'on' : ''}`} onClick={() => setFilter('all')}>All</button>
-        <span style="width:8px" />
-        {RARITIES.map((r) => <button key={r} class={`chip ${tier === r ? 'on' : ''}`} onClick={() => setTier(tier === r ? null : r)}><span class="dot" style={{ background: RARITY_COLOR[r] }} />{RARITY_LABEL[r]}</button>)}
-      </div>
-      {trade ? (
-        <div class="banner" style="position:sticky;top:8px;z-index:5;margin-top:12px">
-          <div class="grow"><b>{trade.picks.length} / {TRADE_UP_COUNT} {RARITY_LABEL[trade.from]} picked</b><div class="muted small">→ {RARITY_LABEL[nextRarity(trade.from)]} egg · duplicates count</div></div>
-          <button class="btn text small" onClick={() => setTrade(null)}>Cancel</button>
-          <button class="btn small" disabled={trade.picks.length !== TRADE_UP_COUNT} onClick={doTrade}>Trade</button>
-        </div>
-      ) : (
-        <div class="chips" style="margin-top:12px">
-          {RARITIES.filter((r) => nextRarity(r)).map((r) => {
-            const n = Object.entries(copies).filter(([id]) => catalog.find((a) => a.id === id)?.rarity === r).reduce((t, [, l]) => t + l.length, 0)
-            return <button key={r} class="chip" disabled={n < TRADE_UP_COUNT} style={n < TRADE_UP_COUNT ? 'opacity:.45' : ''} onClick={() => { setTier(r); setFilter('owned'); setTrade({ from: r, picks: [] }) }}>Trade up {RARITY_LABEL[r]} ({n})</button>
-          })}
-        </div>
-      )}
-      {!list.length ? <div class="empty">{filter === 'owned' && !Object.keys(copies).length ? 'No animals yet - hatch an egg to find your first.' : 'None of these yet.'}</div> : (
-        <div class="zoo-grid section">
+      <div class="section-header">Collection · {held}</div>
+      {!list.length ? <div class="empty">{!held ? 'No animals yet - hatch an egg to find your first.' : 'None of these yet.'}</div> : (
+        <div class="zoo-grid">
           {list.map((a) => {
             const have = copies[a.id]?.length || 0
-            const locked = !have
             const picks = trade ? trade.picks.filter((x) => x === a.id).length : 0
             const foil = copies[a.id]?.some((c) => c.cert?.foil)
+            let timer = null
             return (
-              <div key={a.id} class={`tile-animal ${locked ? 'locked' : ''} ${picks ? 'picked' : ''}`} style={{ borderColor: locked ? 'transparent' : RARITY_COLOR[a.rarity] }} onClick={() => (locked && !found.has(a.id) ? null : pick(a))}>
+              <div key={a.id} class={`tile-animal ${!have ? 'gone' : ''} ${picks ? 'picked' : ''}`} style={{ borderColor: RARITY_COLOR[a.rarity] }}
+                onClick={() => pick(a)}
+                onContextMenu={(e) => { e.preventDefault(); if (!trade) startTrade(a) }}
+                onPointerDown={() => { if (!trade) timer = setTimeout(() => startTrade(a), 500) }}
+                onPointerUp={() => clearTimeout(timer)} onPointerLeave={() => clearTimeout(timer)}>
                 <AnimalPhoto animal={a} />
                 {foil && <div class="foil-sheen" />}
                 {have > 1 && <span class="count">×{have}</span>}
-                {picks > 0 && <span class="count" style="left:5px;right:auto;background:var(--primary);color:var(--on-primary)">{picks}</span>}
-                {a.id === trophyId && <span class="count" style="left:5px;right:auto">🏆</span>}
-                <div class="cap">{locked && !found.has(a.id) ? '???' : a.name}</div>
+                {picks > 0 && <span class="count pick">{picks}</span>}
+                {a.id === trophyId && <span class="count pick">🏆</span>}
+                <div class="cap">{a.name}</div>
               </div>
             )
           })}
         </div>
       )}
+      {!trade && held > 0 && <p class="muted tiny center" style="margin-top:14px">Long-press an animal to trade {TRADE_UP_COUNT} of its tier up for an egg of the next colour.</p>}
+      {trade && (
+        <div class="trade-bar" style={{ borderColor: RARITY_COLOR[nextRarity(trade.from)] }}>
+          <b>{trade.picks.length} / {TRADE_UP_COUNT} {RARITY_LABEL[trade.from]} picked → {RARITY_LABEL[nextRarity(trade.from)]} egg</b>
+          <div class="bar" style="margin-top:8px"><div style={{ width: `${(trade.picks.length / TRADE_UP_COUNT) * 100}%`, background: RARITY_COLOR[trade.from] }} /></div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn tonal grow" onClick={() => setTrade(null)}>Cancel</button>
+            <button class="btn grow" disabled={trade.picks.length !== TRADE_UP_COUNT} onClick={doTrade}>Trade</button>
+          </div>
+        </div>
+      )}
       {open && <AnimalDialog animal={open} copies={copies[open.id] || []} trophyId={trophyId} onClose={() => setOpen(null)}
-        onTrade={() => { setOpen(null); setTier(open.rarity); setFilter('owned'); setTrade({ from: open.rarity, picks: [open.id] }) }} />}
+        onTrade={() => { setOpen(null); startTrade(open) }} />}
     </>
   )
 }
