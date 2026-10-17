@@ -96,6 +96,37 @@ export function DayPicker({ selected, today, logged, onPick, onClose }) {
   )
 }
 
+const drawableEmoji = new Map()
+/** [emoji] as this browser can actually draw it. A joined emoji (🐻‍❄️ is 🐻 + an invisible joiner +
+ *  ❄️) comes out as its separate pieces - "🐻❄️" - where the device's emoji font is older than the
+ *  emoji itself; then just its first piece is shown, which reads far better than the pieces in a
+ *  row. Told apart by width: drawn as one glyph it's about as wide as its first piece alone. */
+export function displayEmoji(emoji) {
+  const e = (emoji || '').trim()
+  if (!e) return e
+  let shown = drawableEmoji.get(e)
+  if (shown != null) return shown
+  shown = e
+  const points = [...e]
+  if (points.length > 1 && /‍/.test(e)) {
+    try {
+      const ctx = document.createElement('canvas').getContext('2d')
+      ctx.font = '32px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif'
+      const first = points[0] + (points[1] === '️' ? '️' : '')
+      if (ctx.measureText(e).width > ctx.measureText(first).width * 1.4) shown = first
+    } catch { /* no canvas - show it as it is */ }
+  }
+  drawableEmoji.set(e, shown)
+  return shown
+}
+
+/** The first whole emoji (grapheme) in [text] - so joined emoji like 🐻‍❄️ or 🧑‍🚀 aren't cut in half. */
+export function firstGrapheme(text) {
+  const t = (text || '').trim()
+  if (!t) return ''
+  try { return new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(t)[Symbol.iterator]().next().value?.segment || '' } catch { return [...t].slice(0, 2).join('') }
+}
+
 export function Confirm({ title, text, confirmLabel = 'OK', danger, onConfirm, onClose }) {
   return (
     <Dialog title={title} onClose={onClose} sheet={false} actions={<>

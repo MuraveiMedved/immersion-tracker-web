@@ -8,7 +8,7 @@ import {
 import { GOLDEN_DAYS } from '../model/rules.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf, epochDayStart } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
-import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill } from './common.jsx'
+import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill, displayEmoji, firstGrapheme } from './common.jsx'
 import { Ring } from './Ring.jsx'
 import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'
@@ -68,7 +68,7 @@ function RaceSetup({ onDone, first }) {
         <div style="font-weight:600">Your emoji</div>
         <div class="muted small">Shown next to your name and on the progress chart, for everyone in your races. Optional.</div>
         <div class="swatches">{EMOJIS.map((e) => <button key={e} class={`swatch ${emoji === e ? 'on' : ''}`} style="background:var(--c-high);font-size:18px" onClick={() => setEmoji(emoji === e ? '' : e)}>{e}</button>)}</div>
-        <input class="input" style="max-width:200px" placeholder="Or type any emoji" value={EMOJIS.includes(emoji) ? '' : emoji} onInput={(e) => setEmoji([...e.currentTarget.value].slice(0, 2).join(''))} />
+        <input class="input" style="max-width:200px" placeholder="Or type any emoji" value={EMOJIS.includes(emoji) ? '' : emoji} onInput={(e) => setEmoji(firstGrapheme(e.currentTarget.value))} />
       </div>
       <details><summary class="muted small clickable">Race server link</summary>
         <input class="input" style="margin-top:8px" placeholder={DEFAULT_RACE_URL} value={url} onInput={(e) => setUrl(e.currentTarget.value)} />
@@ -105,7 +105,7 @@ function Race({ onEditName, onOpenMe }) {
       {/* The phone's header: who you race as (tap to change), how fresh the standings are, then add / settings. */}
       <div class="row" style="margin-right:-12px">
         <div class="grow clickable" style="min-width:0" onClick={onEditName}>
-          <div class="title-medium ellipsis">Racing as {s.race.emoji ? `${s.race.emoji} ` : ''}{s.race.name}</div>
+          <div class="title-medium ellipsis">Racing as {s.race.emoji ? `${displayEmoji(s.race.emoji)} ` : ''}{s.race.name}</div>
           <div class="muted ellipsis" style="font-size:11px">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)} · tap to change name` : 'Tap to change name'}</div>
         </div>
         <div style="position:relative">
@@ -186,7 +186,7 @@ const STALE_REPORT_MS = HOUR
 
 /** "12", "3.4" or "0.2" - whole percents once they're big enough to read, one decimal below. */
 const percentText = (ms, goal) => { const p = goal > 0 ? (ms * 100) / goal : 0; return p >= 10 ? String(Math.floor(p)) : p.toFixed(1) }
-const withEmoji = (emoji, name) => (emoji ? `${emoji} ${name}` : name)
+const withEmoji = (emoji, name) => (emoji ? `${displayEmoji(emoji)} ${name}` : name)
 const factDate = (ms, withTime) => {
   const d = new Date(ms)
   return d.toLocaleString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric', ...(withTime ? { hour: 'numeric', minute: '2-digit' } : {}) })
@@ -460,7 +460,7 @@ function Avatar({ standing, profile, size = 34 }) {
   const s = getState()
   const catalog = useCatalog()
   const prof = profile || (s.race.profiles?.[standing?.userId] ? readProfile(s.race.profiles[standing.userId]) : null)
-  const emoji = (standing?.emoji || prof?.emoji || '').trim()
+  const emoji = displayEmoji(standing?.emoji || prof?.emoji || '')
   const animal = prof && prof.avatar !== 'emoji' && prof.trophy && catalog ? catalog.find((a) => a.id === prof.trophy) : null
   return (
     <div class="avatar" style={{ width: size, height: size, fontSize: size * 0.5, border: animal ? `2px solid ${RARITY_COLOR[animal.rarity]}` : undefined }}>
@@ -499,6 +499,35 @@ const CHART_HEIGHT = 320
 const MONTH_LABEL_MIN_DAYS = 120
 /** The racer bubbles at the end of each line on the progress chart. */
 const BUBBLE_RADIUS = 12
+
+const EMOJI_FONT = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif'
+const inkCenters = new Map()
+/** Where an emoji's visible pixels are centred, relative to its left/baseline drawing point, as a
+ *  fraction of the font size - found once per emoji by drawing it big off-screen and scanning
+ *  for ink, since every platform's emoji font reports different (often wrong) metrics. */
+function emojiInkCenter(emoji) {
+  let c = inkCenters.get(emoji)
+  if (c) return c
+  c = { x: 0.5, y: -0.35 }
+  try {
+    const size = 96, pad = 48, W = size + pad * 2
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = W
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    ctx.font = `${size}px ${EMOJI_FONT}`
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'
+    ctx.fillStyle = '#000'
+    ctx.fillText(emoji, pad, pad + size)
+    const d = ctx.getImageData(0, 0, W, W).data
+    let x0 = W, x1 = -1, y0 = W, y1 = -1
+    for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+      if (d[(y * W + x) * 4 + 3] > 24) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y }
+    }
+    if (x1 >= 0) c = { x: ((x0 + x1 + 1) / 2 - pad) / size, y: ((y0 + y1 + 1) / 2 - pad - size) / size }
+  } catch { /* no canvas - keep the estimate */ }
+  inkCenters.set(emoji, c)
+  return c
+}
 
 const JOIN_REACTION_PROGRESS = 0.04
 const OVERTAKE_REACTION_PROGRESS = 0.06
@@ -756,13 +785,15 @@ function ProgressChart({ event, now }) {
           ctx.fillStyle = `rgba(${l.rgb},${0.22 * dim})`; ctx.fill()
           ctx.strokeStyle = `rgba(${l.rgb},${dim})`; ctx.lineWidth = 1.5; ctx.stroke()
         }
-        ctx.font = `${Math.round(bubble * 1.2)}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`
+        ctx.font = `${Math.round(bubble * 1.2)}px ${EMOJI_FONT}`
         ctx.fillStyle = '#000' // opaque, or the colour emoji comes out faded
-        // Centred on the glyph's own ink, not the font's line box - 'middle' sat emoji visibly high
-        // (and a little off sideways) on some platforms.
+        // Centred on the emoji's own drawn pixels (see emojiInkCenter), not the font's metrics,
+        // which put emoji off-centre by different amounts on different platforms.
         ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'
-        const m = ctx.measureText(l.st.emoji)
-        ctx.fillText(l.st.emoji, (m.actualBoundingBoxLeft - m.actualBoundingBoxRight) / 2, (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2)
+        const shown = displayEmoji(l.st.emoji)
+        const ink = emojiInkCenter(shown)
+        const fontPx = Math.round(bubble * 1.2)
+        ctx.fillText(shown, -ink.x * fontPx, -ink.y * fontPx)
         ctx.restore()
       }
       if (replaying) {
@@ -1139,7 +1170,7 @@ function MyAvatar({ onClick }) {
   const catalog = useCatalog()
   const stops = (s.friends.banner || '').split(',').filter(Boolean)
   const fill = stops.length ? `linear-gradient(135deg, ${(stops.length === 1 ? [stops[0], stops[0]] : stops).join(', ')})` : 'linear-gradient(135deg, var(--primary), var(--tertiary))'
-  const emoji = (s.race.emoji || '').trim()
+  const emoji = displayEmoji(s.race.emoji)
   const animal = s.friends.avatar !== 'emoji' && s.zoo.trophyId && catalog ? catalog.find((a) => a.id === s.zoo.trophyId) : null
   return (
     <button class="my-avatar" title="Your profile" onClick={onClick}
@@ -1216,7 +1247,7 @@ function MyProfileSheet({ onClose }) {
           onKeyDown={(e) => e.key === 'Enter' && changed && setF((st) => { st.race.name = name.trim() })} /></label>
         {changed && <button class="btn text" style="margin-top:18px" onClick={() => setF((st) => { st.race.name = name.trim() })}>Save</button>}
       </div>
-      <Fold id="emoji" title="Emoji" value={<span style="font-size:22px">{s.race.emoji || '—'}</span>} />
+      <Fold id="emoji" title="Emoji" value={<span style="font-size:22px">{displayEmoji(s.race.emoji) || '—'}</span>} />
       {open === 'emoji' && <div class="swatches" style="padding:4px 4px 8px">{EMOJIS.map((e) => <button key={e} class={`swatch ${s.race.emoji === e ? 'on' : ''}`} style="background:var(--c-high);font-size:18px" onClick={() => setF((st) => { st.race.emoji = st.race.emoji === e ? '' : e })}>{e}</button>)}</div>}
       <Fold id="banner" title="Banner" value={<span class="banner-swatch" style={{ background: bannerStops.length ? `linear-gradient(90deg, ${(bannerStops.length === 1 ? [bannerStops[0], bannerStops[0]] : bannerStops).join(', ')})` : 'linear-gradient(90deg, var(--primary), var(--tertiary))' }} />} />
       {open === 'banner' && <>
@@ -1237,7 +1268,7 @@ function MyProfileSheet({ onClose }) {
       <div class="title-medium" style="font-weight:600;margin:16px 4px 6px">Your picture</div>
       <div class="row" style="gap:10px">
         <button class={`avatar-choice ${s.friends.avatar === 'emoji' ? 'on' : ''}`} onClick={() => setF((st) => { st.friends.avatar = 'emoji' })}>
-          <span class="pp-emoji" style="width:40px;height:40px;background:var(--surface-variant);font-size:20px">{s.race.emoji || (s.race.name || '🙂').slice(0, 1).toUpperCase()}</span>Emoji
+          <span class="pp-emoji" style="width:40px;height:40px;background:var(--surface-variant);font-size:20px">{displayEmoji(s.race.emoji) || (s.race.name || '🙂').slice(0, 1).toUpperCase()}</span>Emoji
         </button>
         <button class={`avatar-choice ${s.friends.avatar !== 'emoji' ? 'on' : ''}`} onClick={() => setF((st) => { st.friends.avatar = '' })}>
           {onDisplay ? <span class="pp-animal" style={{ width: 40, height: 40, borderRadius: 10, borderColor: RARITY_COLOR[onDisplay.rarity] }}><AnimalPhoto animal={onDisplay} /></span> : <span class="pp-emoji" style="width:40px;height:40px;border-radius:10px;background:var(--surface-variant);font-size:20px">🦒</span>}Animal on display
@@ -1432,7 +1463,7 @@ function ProfilePicture({ p, color, size = 48 }) {
   const catalog = useCatalog()
   const animal = p.avatar !== 'emoji' && p.trophy && catalog ? catalog.find((a) => a.id === p.trophy) : null
   if (animal) return <div class="pp-animal" style={{ width: size, height: size, borderColor: RARITY_COLOR[animal.rarity] }}><AnimalPhoto animal={animal} /></div>
-  return <div class="pp-emoji" style={{ width: size, height: size, background: color ? withAlpha(color, 0.3) : 'color-mix(in srgb, var(--primary) 30%, transparent)' }}>{(p.emoji || '').trim() || (p.name || '?').slice(0, 1).toUpperCase()}</div>
+  return <div class="pp-emoji" style={{ width: size, height: size, background: color ? withAlpha(color, 0.3) : 'color-mix(in srgb, var(--primary) 30%, transparent)' }}>{displayEmoji(p.emoji) || (p.name || '?').slice(0, 1).toUpperCase()}</div>
 }
 
 function RecordTile({ label, value }) {
