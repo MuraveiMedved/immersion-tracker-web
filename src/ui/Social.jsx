@@ -34,12 +34,15 @@ export function Social() {
   const s = useStore()
   const [tab, setTab] = useState('race')
   const [setup, setSetup] = useState(false)
+  const [me, setMe] = useState(false)
   if (!raceConfigured() || setup) return <RaceSetup onDone={() => setSetup(false)} first={!raceConfigured()} />
   return (
     <>
-      <h1 class="page-title">Social</h1>
+      {/* You - your profile, from the corner, like the phone. */}
+      <div class="row" style="align-items:center"><h1 class="page-title grow">Social</h1><MyAvatar onClick={() => setMe(true)} /></div>
       <Seg options={[['race', 'Race'], ['friends', 'Friends']]} value={tab} onChange={setTab} />
-      <div style="margin-top:12px">{tab === 'race' ? <Race onEditName={() => setSetup(true)} /> : <Friends />}</div>
+      <div style="margin-top:12px">{tab === 'race' ? <Race onEditName={() => setSetup(true)} onOpenMe={() => setMe(true)} /> : <Friends />}</div>
+      {me && <MyProfileSheet onClose={() => setMe(false)} />}
     </>
   )
 }
@@ -79,7 +82,7 @@ function RaceSetup({ onDone, first }) {
  * Race
  * --------------------------------------------------------------------------------------------- */
 
-function Race({ onEditName }) {
+function Race({ onEditName, onOpenMe }) {
   const s = useStore()
   const [addMenu, setAddMenu] = useState(false)
   const [emptyMenu, setEmptyMenu] = useState(false)
@@ -138,7 +141,7 @@ function Race({ onEditName }) {
           </div>
         </div>
       )}
-      {running.map((e) => <RaceCard key={e.id} event={e} now={now} />)}
+      {running.map((e) => <RaceCard key={e.id} event={e} now={now} onOpenMe={onOpenMe} />)}
       {/* Finished races keep their own area below everything still in play, each collapsed. */}
       {done.length > 0 && <>
         <div class="row" style="gap:6px;margin-top:24px"><Icon name="emoji_events" size={18} color="var(--tertiary)" /><span class="title-small">Completed races</span></div>
@@ -173,6 +176,10 @@ function remaining(ms) {
   return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
+/** How long a racer's green tag is trusted without a fresh report (tracking reports every 5 min),
+ *  so a tag from an app that stopped without saying goes rather than lingering. */
+const ACTIVE_SHOW_MS = 12 * 60 * 1000
+const isLiveAt = (st, now) => !!st.active && (!st.updatedAt || now - st.updatedAt < ACTIVE_SHOW_MS)
 const GOLD = '#E8B93E', SILVER = '#B9C0CC', BRONZE = '#CB8D5E', LIVE_GREEN = '#4CAF50', TODAY_GREEN = '#43A047'
 const STALE_REPORT_MS = HOUR
 
@@ -258,7 +265,7 @@ function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayM
         <div class="row" style="gap:0;align-items:center">
           <div class="row grow" style="gap:8px;min-width:0">
             <span class="st-name ellipsis" style={{ fontWeight: isMe ? 600 : 500 }}>{withEmoji(st.emoji, st.name)}</span>
-            {st.active ? <LiveBadge kind={st.activeKind} /> : isLive && !isMe && st.updatedAt > 0 && since >= STALE_REPORT_MS && <StaleBadge since={since} />}
+            {isLiveAt(st, now) ? <LiveBadge kind={st.activeKind} /> : isLive && !isMe && st.updatedAt > 0 && since >= STALE_REPORT_MS && <StaleBadge since={since} />}
           </div>
           <div class="st-figure">
             <div class="v" style={figure == null ? { color: 'var(--on-surface-variant)' } : {}}>{figure != null ? formatHm(figure) : '–'}</div>
@@ -334,10 +341,10 @@ function withMyLive(event, me, entries, now) {
   const live = now >= event.startMillis && !(event.endMillis != null && now >= event.endMillis)
   if (!live || !event.standings.some((x) => x.userId === me)) return event
   const running = runningForRace(entries)
-  return { ...event, standings: event.standings.map((x) => (x.userId === me ? { ...x, active: !!running, activeKind: activeKindOf(running) } : x)) }
+  return { ...event, standings: event.standings.map((x) => (x.userId === me ? { ...x, active: !!running, activeKind: activeKindOf(running), updatedAt: now } : x)) }
 }
 
-function RaceCard({ event: raw, now: tickNow, completed }) {
+function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
   const s = useStore()
   const me = s.race.userId
   // Ticks every 30s for countdowns; your own live tag follows the store straight away.
@@ -358,7 +365,7 @@ function RaceCard({ event: raw, now: tickNow, completed }) {
   })
   const outlook = raceOutlook(event, me, now)
   const dialogs = <>
-    {person && <PersonSheet event={event} standing={event.standings.find((x) => x.userId === person.userId) || person} now={now} onClose={() => setPerson(null)} />}
+    {person && <PersonSheet event={event} standing={event.standings.find((x) => x.userId === person.userId) || person} now={now} onClose={() => setPerson(null)} onOpenMe={onOpenMe && (() => { setPerson(null); onOpenMe() })} />}
     {edit && <EditRaceDialog event={event} onClose={() => setEdit(false)} />}
     {confirm === 'leave' && <Confirm title="Leave this race?" text={`You'll be removed from the standings of "${event.name}". You can join again while it's still running.`} confirmLabel="Leave" danger onConfirm={() => leaveEvent(event.id)} onClose={() => setConfirm(null)} />}
     {confirm === 'end' && <Confirm title="End this event?" text={`"${event.name}" will stop counting time for everyone, the standings will be locked, and it will move to Completed races.`} confirmLabel="End event" danger onConfirm={() => endEvent(event.id)} onClose={() => setConfirm(null)} />}
@@ -541,7 +548,7 @@ function ProgressChart({ event, now }) {
           return (
             <g key={'e' + sr.st.userId}>
               <circle cx={cx} cy={cy} r={bubble} fill="var(--bg)" />
-              {sr.st.active
+              {isLiveAt(sr.st, now)
                 ? <circle class="bubble-live" cx={cx} cy={cy} r={bubble} stroke-width={2 * k} />
                 : <circle cx={cx} cy={cy} r={bubble} fill={withAlpha(sr.color, 0.22)} stroke={sr.color} stroke-width={1.5 * k} />}
               <text x={cx} y={cy} font-size={13 * k} text-anchor="middle" dominant-baseline="central">{sr.st.emoji}</text>
@@ -558,7 +565,7 @@ function ProgressChart({ event, now }) {
 /** Everything about one person in one race, like the phone's PersonSheet: who and where they
  *  stand, their total against the goal, against you, being friends, their profile, how it splits,
  *  the numbers, and a bar per day. */
-function PersonSheet({ event, standing: st, now, onClose }) {
+function PersonSheet({ event, standing: st, now, onClose, onOpenMe }) {
   const s = useStore()
   const me = s.race.userId
   const isMe = st.userId === me
@@ -587,7 +594,7 @@ function PersonSheet({ event, standing: st, now, onClose }) {
       if (theirs !== mineT) localTime = new Date(now).toLocaleString(undefined, { timeZone: st.timeZone, weekday: 'short', hour: 'numeric', minute: '2-digit' })
     }
   } catch { /* unknown zone */ }
-  const report = st.active ? null : !live && st.final ? 'Final total' : st.updatedAt > 0 ? `Last reported ${agoText(st.updatedAt, now)}` : null
+  const report = isLiveAt(st, now) ? null : !live && st.final ? 'Final total' : st.updatedAt > 0 ? `Last reported ${agoText(st.updatedAt, now)}` : null
   const friendAction = async (fn, ok) => {
     setBusy(true)
     try { await fn(); toast(ok) } catch (err) { toast(errorText(err) || 'Couldn\'t send the friend request') } finally { setBusy(false) }
@@ -598,7 +605,7 @@ function PersonSheet({ event, standing: st, now, onClose }) {
       <div class="row" style="gap:12px">
         <RankMedal rank={rank} />
         <div class="grow" style="min-width:0">
-          <div class="row" style="gap:8px"><span class="title-large ellipsis">{withEmoji(st.emoji, st.name)}</span>{st.active && <LiveBadge kind={st.activeKind} />}</div>
+          <div class="row" style="gap:8px"><span class="title-large ellipsis">{withEmoji(st.emoji, st.name)}</span>{isLiveAt(st, now) && <LiveBadge kind={st.activeKind} />}</div>
           <div class="muted small">{ordinal(rank)} of {event.standings.length} in {event.name}</div>
         </div>
       </div>
@@ -611,6 +618,8 @@ function PersonSheet({ event, standing: st, now, onClose }) {
           {diff > 0 ? `${formatHm(diff)} ahead of you` : diff < 0 ? `${formatHm(-diff)} behind you` : 'Tied with you'}
         </div>
       )}
+      {/* Your own: everything about your profile is one tap away. */}
+      {isMe && onOpenMe && <div class="row" style="margin-top:12px"><button class="btn outline" onClick={onOpenMe}><Icon name="edit" size={18} />Edit my profile</button></div>}
       {!isMe && (
         <div class="row" style="margin-top:12px">
           {isFriend ? <span class="label-large" style="color:var(--primary)">Friends</span>
@@ -826,14 +835,6 @@ function Friends() {
 
   return (
     <div style="margin-top:14px">
-      <div class="card row">
-        <div class="grow clickable" onClick={() => s.friends.code && copyText(s.friends.code, 'Friend code copied')}>
-          <div class="muted small">Your friend code · tap to copy</div>
-          <div class="code-pill" style="display:inline-block;margin-top:4px;font-size:18px">{s.friends.code || '······'}</div>
-        </div>
-        <button class="btn tonal small" disabled={!s.friends.code} onClick={() => share(`Add me as a friend in Immersion Tracker (Social → Friends): ${s.friends.code}`)}>Share code</button>
-        {busy && <Spinner />}
-      </div>
       {error && <div class="notice section">{error} <button class="btn text small" onClick={() => run(refreshFriends)}>Retry</button></div>}
 
       <div class="card section">
@@ -869,67 +870,133 @@ function Friends() {
       <div class="section">
         <div class="section-title"><h2>Friends · {friends.length}</h2></div>
         {!friends.length ? <div class="card muted small">No friends yet - add someone by their code, or tap them in a race.</div> : (
-          <div class="list">{friends.map((p) => (
-            <div key={p.userId} class="entry" onClick={() => setOpen(p)} style={p.banner ? { borderLeft: `6px solid ${p.banner.split(',')[0]}` } : undefined}>
-              <Avatar profile={p} size={40} />
-              <div class="grow">
-                <div class="row" style="gap:6px"><b>{p.emoji} {p.name}</b>{p.goldenDays >= 3 && <span class="momentum gold" style="height:22px;padding:0 8px;font-size:11px"><Flame gold /> {p.goldenDays}d</span>}</div>
-                <div class="muted tiny">{p.updatedAt ? `Updated ${agoText(p.updatedAt)}` : ''}{p.zooFound != null ? ` · ${p.zooFound} in their zoo` : ''}</div>
-              </div>
-              <div class="row" style="gap:2px">{p.languages.slice(0, 3).map((l, i) => <Ring key={i} size={30} progress={Math.max(l.listenProgress ?? 0, l.readProgress ?? 0)} color={l.color || '#888'} ringStyle="CLASSIC" />)}</div>
-            </div>
-          ))}</div>
+          <div class="col" style="gap:8px">{friends.map((p) => (
+            <FriendRow key={p.userId} p={p} onClick={() => setOpen(p)} />          ))}</div>
         )}
       </div>
 
-      <ProfileSettings onPreview={() => setMine(true)} />
       {open && <ProfileDialog profile={open} onClose={() => setOpen(null)} onRemove={() => setRemove(open)} />}
-      {mine && <ProfileDialog profile={readProfile({ userId: s.race.userId, name: s.race.name, emoji: s.race.emoji, color: s.race.chartColor, code: s.friends.code, updatedAt: Date.now(), profile: buildProfileBody() })} onClose={() => setMine(false)} />}
       {remove && <Confirm title={`Remove ${remove.name} as a friend?`} confirmLabel="Remove friend" danger onConfirm={() => { setOpen(null); run(() => removeFriend(remove.userId)) }} onClose={() => setRemove(null)} />}
     </div>
   )
 }
 
-function ProfileSettings({ onPreview }) {
+/** Your picture in Social's corner: your emoji (or initial) on your banner colour, like the phone's
+ *  MyProfileAvatar. */
+function MyAvatar({ onClick }) {
   const s = useStore()
-  const share = s.friends.share
-  const set = (k, v) => update((st) => { st.friends.share[k] = v })
-  const push = () => refreshFriends().catch(() => {})
+  const stops = (s.friends.banner || '').split(',').filter(Boolean)
+  const fill = stops.length ? `linear-gradient(135deg, ${(stops.length === 1 ? [stops[0], stops[0]] : stops).join(', ')})` : 'linear-gradient(135deg, var(--primary), var(--tertiary))'
+  const emoji = (s.race.emoji || '').trim()
   return (
-    <div class="section">
-      <div class="section-title"><h2>Your profile</h2><button class="btn text small" onClick={onPreview}>Preview my profile</button></div>
-      <div class="card" style="padding:6px 12px">
-        <div class="muted small" style="padding:10px 4px 4px">Your friends - and anyone in a race with you - see these on your profile.</div>
-        {[['trophy', 'Trophy animal'], ['zoo', 'Animal collection'], ['rings', "Today's rings"], ['goals', 'Daily goals'], ['streaks', 'Streaks'], ['records', 'Records']].map(([k, l]) => (
-          <SettingRow key={k} title={l}><Switch checked={share[k]} onChange={(v) => { set(k, v); push() }} /></SettingRow>
-        ))}
-        <div style="padding:10px 4px">
-          <div style="font-weight:600;margin-bottom:8px">Your picture in friends' lists</div>
-          <div class="chips">
-            <button class={`chip ${s.friends.avatar === 'emoji' ? 'on' : ''}`} onClick={() => { update((st) => { st.friends.avatar = 'emoji' }); push() }}>Race emoji</button>
-            <button class={`chip ${s.friends.avatar !== 'emoji' ? 'on' : ''}`} onClick={() => { update((st) => { st.friends.avatar = '' }); push() }}>Animal on display</button>
-          </div>
-          {s.friends.avatar !== 'emoji' && !s.zoo.trophyId && <div class="muted tiny" style="margin-top:6px">Put an animal on display in your Zoo (and share it) to use it - until then friends see your emoji.</div>}
-        </div>
-        <div style="padding:10px 4px">
-          <div style="font-weight:600;margin-bottom:8px">Your banner colour</div>
-          <div class="swatches">
-            <button class={`chip ${!s.friends.banner ? 'on' : ''}`} onClick={() => { update((st) => { st.friends.banner = '' }); push() }}>None</button>
-            {[...LANGUAGE_COLORS_BRIGHT.map((c) => [c]), ...GRADIENTS.slice(0, 10)].map((g) => {
-              const v = g.join(',')
-              return <button key={v} class={`swatch ${s.friends.banner === v ? 'on' : ''}`} style={{ background: g.length > 1 ? `linear-gradient(135deg, ${g.join(', ')})` : g[0] }} onClick={() => { update((st) => { st.friends.banner = v }); push() }} />
-            })}
-          </div>
-        </div>
-        <div style="padding:10px 4px">
-          <div style="font-weight:600;margin-bottom:8px">Profile background</div>
-          <div class="chips scroll">
-            <button class={`chip ${!s.friends.background ? 'on' : ''}`} onClick={() => { update((st) => { st.friends.background = '' }); push() }}>None</button>
-            {PRESETS.map((p) => <button key={p} class={`chip ${s.friends.background === 'theme:' + p ? 'on' : ''}`} onClick={() => { update((st) => { st.friends.background = 'theme:' + p }); push() }}>{presetLabel(p)}</button>)}
-          </div>
-        </div>
+    <button class="my-avatar" title="Your profile" style={{ background: fill, fontSize: emoji ? 22 : 18 }} onClick={onClick}>
+      {emoji || (s.race.name || '🙂').slice(0, 1).toUpperCase()}
+    </button>
+  )
+}
+
+/** A friend in the list, like the phone's FriendRow: a soft wash of their banner colour with a
+ *  matching outline, their picture, name (and golden Momentum), animal on display and when they
+ *  last updated. */
+function FriendRow({ p, onClick }) {
+  const catalog = useCatalog()
+  const light = !isDarkFor(getState().settings.uiColorPreset)
+  const cols = (p.banner || p.color || '').split(',').map((c) => c.trim()).filter((c) => /^#[0-9a-f]{6}$/i.test(c))
+  const cs = cols.length ? (cols.length === 1 ? [cols[0], cols[0]] : cols) : ['#6FA8C9', '#6FA8C9']
+  const trophy = p.trophy && catalog?.find((a) => a.id === p.trophy)
+  const fill = `linear-gradient(90deg, ${cs.map((c) => withAlpha(c, light ? 0.16 : 0.12)).join(', ')})`
+  const edge = `linear-gradient(90deg, ${cs.map((c) => withAlpha(c, light ? 1 : 0.6)).join(', ')})`
+  return (
+    <div class="friend-row" onClick={onClick} style={{ background: `${fill} padding-box, linear-gradient(var(--bg), var(--bg)) padding-box, ${edge} border-box` }}>
+      <ProfilePicture p={p} color={cs[0]} />
+      <div class="grow" style="min-width:0;padding-left:12px">
+        <div class="row" style="gap:8px"><span class="title-medium ellipsis" style="font-weight:600">{p.name}</span>{p.goldenDays >= 3 && <MomentumPill days={p.goldenDays} progress={1} />}</div>
+        <div class="muted ellipsis" style="font-size:12px">{[trophy?.name, p.updatedAt ? agoText(p.updatedAt) : null].filter(Boolean).join(' · ')}</div>
       </div>
+      <Icon name="chevron_right" color={cs[0]} />
     </div>
+  )
+}
+
+/** Your own profile, like the phone's profile screen: your code, your profile as friends see it,
+ *  then everything about it - name, emoji, banner, background, picture and what you share. */
+function MyProfileSheet({ onClose }) {
+  const s = useStore()
+  const light = !isDarkFor(s.settings.uiColorPreset)
+  const [name, setName] = useState(s.race.name)
+  const [open, setOpen] = useState(null) // 'emoji' | 'banner' | 'background'
+  const share = s.friends.share
+  const push = () => { refreshFriends().catch(() => {}); sync() }
+  const setF = (fn) => { update(fn); push() }
+  const me = readProfile({ userId: s.race.userId, name: s.race.name, emoji: s.race.emoji, color: s.race.chartColor, code: s.friends.code, updatedAt: Date.now(), profile: buildProfileBody() })
+  const catalog = useCatalog()
+  const onDisplay = s.zoo.trophyId && catalog?.find((a) => a.id === s.zoo.trophyId)
+  const changed = name.trim() && name.trim() !== s.race.name
+  const swatchesFor = (current, onPick) => (
+    <div class="swatches" style="padding:4px 4px 8px">
+      {[...LANGUAGE_COLORS_BRIGHT.map((c) => [c]), ...GRADIENTS].map((g) => {
+        const v = g.join(',')
+        return <button key={v} class={`swatch ${current === v ? 'on' : ''}`} style={{ background: g.length > 1 ? `linear-gradient(135deg, ${g.join(', ')})` : g[0] }} onClick={() => onPick(v)} />
+      })}
+    </div>
+  )
+  const Fold = ({ id, title, value }) => (
+    <button class="fold-row" onClick={() => setOpen(open === id ? null : id)}>
+      <span class="title-medium grow" style="font-weight:600;text-align:left">{title}</span>{value}<Icon name={open === id ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} />
+    </button>
+  )
+  const bannerStops = (s.friends.banner || '').split(',').filter(Boolean)
+  return (
+    <Dialog title="Your profile" onClose={onClose} actions={<button class="btn" onClick={onClose}>Done</button>}>
+      <div class="card row" style="margin:0 0 12px">
+        <div class="grow clickable" onClick={() => s.friends.code && copyText(s.friends.code, 'Friend code copied')}>
+          <div class="muted small">Your friend code · tap to copy</div>
+          <div style="font-family:ui-monospace,monospace;font-size:28px;font-weight:900;letter-spacing:4px">{s.friends.code || '······'}</div>
+        </div>
+        <button class="icon-btn" title="Share code" disabled={!s.friends.code} onClick={() => share(`Add me as a friend in Immersion Tracker (Social → Friends): ${s.friends.code}`)}><Icon name="share" /></button>
+      </div>
+      <ProfileFrame p={me}><ProfileBanner p={me} light={light} /><ProfileSections p={me} /></ProfileFrame>
+
+      <div class="row" style="margin-top:16px;gap:8px">
+        <label class="field grow">Name<input class="input" value={name} maxLength={24} onInput={(e) => setName(e.currentTarget.value)}
+          onKeyDown={(e) => e.key === 'Enter' && changed && setF((st) => { st.race.name = name.trim() })} /></label>
+        {changed && <button class="btn text" style="margin-top:18px" onClick={() => setF((st) => { st.race.name = name.trim() })}>Save</button>}
+      </div>
+      <Fold id="emoji" title="Emoji" value={<span style="font-size:22px">{s.race.emoji || '—'}</span>} />
+      {open === 'emoji' && <div class="swatches" style="padding:4px 4px 8px">{EMOJIS.map((e) => <button key={e} class={`swatch ${s.race.emoji === e ? 'on' : ''}`} style="background:var(--c-high);font-size:18px" onClick={() => setF((st) => { st.race.emoji = st.race.emoji === e ? '' : e })}>{e}</button>)}</div>}
+      <Fold id="banner" title="Banner" value={<span class="banner-swatch" style={{ background: bannerStops.length ? `linear-gradient(90deg, ${(bannerStops.length === 1 ? [bannerStops[0], bannerStops[0]] : bannerStops).join(', ')})` : 'linear-gradient(90deg, var(--primary), var(--tertiary))' }} />} />
+      {open === 'banner' && <>
+        <div style="padding:4px"><button class={`chip ${!s.friends.banner ? 'on' : ''}`} onClick={() => setF((st) => { st.friends.banner = '' })}>None</button></div>
+        {swatchesFor(s.friends.banner, (v) => setF((st) => { st.friends.banner = v }))}
+      </>}
+      <Fold id="background" title="Profile background" value={<span class="banner-swatch" style={{ background: s.friends.background?.startsWith('theme:') ? schemeFor(s.friends.background.slice(6), isDarkFor(s.friends.background.slice(6)))['--bg'] : s.friends.background ? `linear-gradient(90deg, ${s.friends.background.split(',').join(', ')})` : 'var(--surface-variant)' }} />} />
+      {open === 'background' && <>
+        <div class="label-large" style="margin:4px">Themes</div>
+        <div class="chips scroll" style="padding:4px">
+          <button class={`chip ${!s.friends.background ? 'on' : ''}`} onClick={() => setF((st) => { st.friends.background = '' })}>None</button>
+          {PRESETS.map((pr) => <button key={pr} class={`chip ${s.friends.background === 'theme:' + pr ? 'on' : ''}`} onClick={() => setF((st) => { st.friends.background = 'theme:' + pr })}>{presetLabel(pr)}</button>)}
+        </div>
+        <div class="label-large" style="margin:10px 4px 4px">Colours</div>
+        {swatchesFor(s.friends.background, (v) => setF((st) => { st.friends.background = v }))}
+      </>}
+
+      <div class="title-medium" style="font-weight:600;margin:16px 4px 6px">Your picture</div>
+      <div class="row" style="gap:10px">
+        <button class={`avatar-choice ${s.friends.avatar === 'emoji' ? 'on' : ''}`} onClick={() => setF((st) => { st.friends.avatar = 'emoji' })}>
+          <span class="pp-emoji" style="width:40px;height:40px;background:var(--surface-variant);font-size:20px">{s.race.emoji || (s.race.name || '🙂').slice(0, 1).toUpperCase()}</span>Emoji
+        </button>
+        <button class={`avatar-choice ${s.friends.avatar !== 'emoji' ? 'on' : ''}`} onClick={() => setF((st) => { st.friends.avatar = '' })}>
+          {onDisplay ? <span class="pp-animal" style={{ width: 40, height: 40, borderRadius: 10, borderColor: RARITY_COLOR[onDisplay.rarity] }}><AnimalPhoto animal={onDisplay} /></span> : <span class="pp-emoji" style="width:40px;height:40px;border-radius:10px;background:var(--surface-variant);font-size:20px">🦒</span>}Animal on display
+        </button>
+      </div>
+      {s.friends.avatar !== 'emoji' && !s.zoo.trophyId && <div class="muted small" style="margin:6px 4px">Put an animal on display in your Zoo to use it - until then friends see your emoji.</div>}
+
+      <div class="title-medium" style="font-weight:600;margin:16px 4px 2px">What you share</div>
+      <div class="muted small" style="margin:0 4px 6px">Your friends - and anyone in a race with you - see these on your profile.</div>
+      {[['trophy', 'Trophy animal'], ['zoo', 'Animal collection'], ['rings', "Today's rings"], ['goals', 'Daily goals'], ['streaks', 'Streaks'], ['records', 'Records']].map(([k, l]) => (
+        <SettingRow key={k} title={l}><Switch checked={share[k]} onChange={(v) => setF((st) => { st.friends.share[k] = v })} /></SettingRow>
+      ))}
+    </Dialog>
   )
 }
 

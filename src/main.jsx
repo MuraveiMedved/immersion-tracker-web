@@ -3,7 +3,7 @@ import { useEffect, useState } from 'preact/hooks'
 import './styles.css'
 import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
 import { applyTheme } from './model/theme.js'
-import { sync, shouldReport, raceConfigured, runningForRace } from './model/race.js'
+import { sync, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
 import { ensureBase, recordEarnedEggs } from './model/zoo.js'
 import * as syncModule from './model/sync.js'
 import { Home } from './ui/Home.jsx'
@@ -84,13 +84,20 @@ function startBackgroundWork() {
     const r = runningForRace(getState().entries)
     return r ? `${r.id}:${r.contentType}` : ''
   }
+  // A start or stop that doesn't get through (offline for a moment) is tried again soon -
+  // otherwise everyone keeps seeing the old green tag.
+  const reportWithRetry = async (tries) => {
+    if (!shouldReport()) return
+    await sync()
+    if (raceStatus.error && tries > 0) reportTimer = setTimeout(() => reportWithRetry(tries - 1), 30000)
+  }
   const checkRunning = () => {
     const key = runningKey()
     if (key === lastRunning) return false
     lastRunning = key
     lastSync = Date.now()
     clearTimeout(reportTimer)
-    reportTimer = setTimeout(() => shouldReport() && sync(), 1500)
+    reportTimer = setTimeout(() => reportWithRetry(4), 1500)
     return true
   }
   lastRunning = runningKey()
@@ -101,7 +108,7 @@ function startBackgroundWork() {
     const now = Date.now()
     if (checkRunning()) {
       // reported above
-    } else if (shouldReport() && now - lastSync > (running ? 10 : 30) * 60 * 1000) {
+    } else if (shouldReport() && now - lastSync > (running ? 5 : 30) * 60 * 1000) {
       lastSync = now
       sync()
     }
