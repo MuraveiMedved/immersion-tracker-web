@@ -335,9 +335,6 @@ textarea.input { resize: vertical; }
 .animal-card { border-radius: 24px; overflow: hidden; border: 2px solid; background: var(--block); }
 .animal-card .photo { aspect-ratio: 4 / 3; background: var(--surface-variant); position: relative; overflow: hidden; }
 .animal-card .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.foil-sheen { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .55;
-  background: linear-gradient(115deg, transparent 20%, rgba(255,120,220,.55) 35%, rgba(120,220,255,.55) 45%, rgba(255,255,160,.5) 55%, transparent 70%);
-  background-size: 250% 250%; animation: sheen 4s linear infinite; }
 @keyframes sheen { from { background-position: 100% 0 } to { background-position: -150% 0 } }
 .glow-pop { box-shadow: 0 0 40px var(--glow, rgba(255,255,255,.3)); }
 .cert { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -492,3 +489,101 @@ textarea.input { resize: vertical; }
 /* A racer tracking right now: their graph bubble breathes green, like the phone's. */
 .bubble-live { stroke: #4CAF50; animation: bubblelive .9s ease-in-out infinite alternate; }
 @keyframes bubblelive { from { fill: rgba(76, 175, 80, .32); stroke-opacity: 1; } to { fill: rgba(76, 175, 80, .12); stroke-opacity: .35; } }
+
+/* ---- Trading cards (the phone's AnimalCard / RarityGlowDialog) ---- */
+.shimmer { background-size: 200% 100%; animation: shimmer 12s linear infinite; }
+.foil-border { background-size: 200% 100%; animation: shimmer 6s linear infinite; }
+@keyframes shimmer { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+.acard-wrap { position: relative; --cut: 54px; }
+.acard-wrap.legendary { filter: drop-shadow(0 0 12px rgba(255, 194, 26, .75)); }
+.acard-frame { border-radius: 24px; }
+.acard { position: relative; border-radius: 22px; overflow: hidden; background: var(--c-high); }
+.mythic .acard-frame { border-radius: 24px 24px 0 0; clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut))); }
+.mythic .acard { border-radius: 21px 21px 0 0; --c2: calc(var(--cut) - 1.8px); clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--c2)), calc(100% - var(--c2)) 100%, var(--c2) 100%, 0 calc(100% - var(--c2))); }
+.mythic-corner { position: absolute; bottom: 0; width: 48px; height: 48px; }
+.mythic-corner.left { left: 0; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+.mythic-corner.right { right: 0; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.acard .photo { position: relative; aspect-ratio: 4 / 3; background: var(--surface-variant); overflow: hidden; }
+.acard .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-rule { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--p), var(--s), transparent); }
+.rarity-pill { position: absolute; top: 12px; left: 12px; padding: 3px 10px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+.corner-chips { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
+.corner-chips span { background: rgba(0, 0, 0, .55); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.acard-body { padding: 14px 18px 16px; }
+.acard-name { font-size: 22px; line-height: 28px; font-weight: 700; }
+.acard-sci { font-size: 14px; font-style: italic; color: var(--on-surface-variant); }
+.acard-blurb { font-size: 12px; color: var(--on-surface-variant); margin-top: 2px; }
+.acard-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.acard-stats > div { border-radius: 12px; padding: 8px; min-width: 0; }
+.acard-stats .k { font-size: 9px; letter-spacing: .6px; text-transform: uppercase; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acard-stats .v { font-size: 14px; font-weight: 700; }
+.acard-fact { display: flex; gap: 8px; margin-top: 14px; font-size: 14px; }
+.acard-cert { margin-top: 14px; border-radius: 12px; border: 1px solid transparent; padding: 10px 12px; }
+.acard-cert .k { font-size: 9px; letter-spacing: .8px; text-transform: uppercase; color: var(--on-surface-variant); }
+.acard-cert .lang { display: inline-block; margin-top: 6px; color: #fff; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+.acard-status { display: inline-block; margin-top: 12px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+.acard-credit { margin-top: 12px; font-size: 11px; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); }
+.acard-credit a { color: inherit; }
+/* A foil's holographic finish: a pearly wash and fine drifting stripes, glints flaring over the card. */
+.foil-sheen { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: normal; opacity: 1;
+  background: linear-gradient(135deg, #9FF7EE1f, #B3D9FF1f, #D7C2FF1f, #FFC2EC1f, #FFE9A81f, #C4FFD21f, #9FF7EE1f), repeating-linear-gradient(45deg, #9FF7EE24 0px 13px, transparent 13px 26px, #B3D9FF24 26px 39px, transparent 39px 52px, #D7C2FF24 52px 65px, transparent 65px 78px, #FFC2EC24 78px 91px, transparent 91px 104px, #FFE9A824 104px 117px, transparent 117px 130px, #C4FFD224 130px 143px, transparent 143px 156px);
+  background-size: 100% 100%, auto; animation: foildrift 9s linear infinite; }
+@keyframes foildrift { from { background-position: 0 0, 0 0; } to { background-position: 0 0, 220.62px 0; } }
+.foil-glint { position: absolute; transform: translate(-50%, -50%) scale(0); opacity: 0; pointer-events: none; animation: glint 3.6s linear infinite; }
+@keyframes glint { 0% { transform: translate(-50%, -50%) scale(0); opacity: 0; } 14% { transform: translate(-50%, -50%) scale(.55); opacity: .55; }
+  25% { transform: translate(-50%, -50%) scale(1); opacity: 1; } 36% { transform: translate(-50%, -50%) scale(.55); opacity: .55; } 50%, 100% { transform: translate(-50%, -50%) scale(0); opacity: 0; } }
+/* The glowing stage a card is shown on. */
+.card-stage { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: flex; overflow-y: auto; padding: 16px 22px calc(24px + env(safe-area-inset-bottom)); }
+.card-stage-inner { position: relative; width: 100%; max-width: 420px; margin: auto; }
+.glow-pools { position: absolute; inset: -60px -40px; pointer-events: none; animation: breathe 1.8s ease-in-out infinite alternate; }
+.glow-pools.rainbow { animation: breathe 1.8s ease-in-out infinite alternate, huedrift 12s linear infinite; }
+.glow-pools i { position: absolute; width: 95%; aspect-ratio: 1; border-radius: 50%; }
+.glow-pools i.a { top: 0; left: 30%; transform: translateX(-50%); background: radial-gradient(closest-side, color-mix(in srgb, var(--p) 60%, transparent), transparent); animation: drifta 5s ease-in-out infinite alternate; }
+.glow-pools i.b { bottom: 0; left: 70%; transform: translateX(-50%); background: radial-gradient(closest-side, color-mix(in srgb, var(--s) 50%, transparent), transparent); animation: driftb 5s ease-in-out infinite alternate; }
+@keyframes breathe { from { opacity: .55; } to { opacity: 1; } }
+@keyframes huedrift { to { filter: hue-rotate(360deg); } }
+@keyframes drifta { to { left: 50%; } }
+@keyframes driftb { to { left: 50%; } }
+/* The float: a slow bob, a little sway and a degree of tilt, each on its own rhythm. */
+.float-bob { animation: bob 3.2s ease-in-out infinite alternate; }
+.float-sway { animation: sway 5.3s ease-in-out infinite alternate; }
+.float-tilt { animation: tilt 4.1s ease-in-out infinite alternate; will-change: transform; }
+@keyframes bob { from { transform: translateY(-3px); } to { transform: translateY(3px); } }
+@keyframes sway { from { transform: translateX(-1px); } to { transform: translateX(1px); } }
+@keyframes tilt { from { transform: rotate(-.4deg); } to { transform: rotate(.4deg); } }
+.glow-pill-soft { height: 48px; flex: none; width: 100%; border-radius: 999px; border: 1px solid transparent; color: var(--on-surface); font-size: 14px; font-weight: 600; padding: 0 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage-row > .glow-pill-soft { flex: 1; width: auto; min-width: 0; }
+.glow-pill-soft:disabled { opacity: .5; }
+.stage-row { display: flex; gap: 10px; }
+.stage-note { text-align: center; color: #fff; }
+
+/* Eggs, hatching, trade-ups and the odds popup (the phone's Egg / CrateOpenDialog / TradeUpCelebration / odds dialogs). */
+.wobble { animation: wobble 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
+.egg-glow { background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 50%, transparent), transparent); }
+.zoo-panel { border-radius: 28px; border: 2px solid transparent; padding: 22px; background-origin: border-box; background-clip: padding-box, border-box; }
+.zoo-panel.center { text-align: center; display: flex; flex-direction: column; align-items: center; }
+.rarity-pill-inline { display: inline-block; flex: none; text-align: center; padding: 3px 10px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+.odds-row { display: flex; align-items: center; padding: 4px 0; }
+.odds-row b { font-size: 14px; min-width: 40px; text-align: right; }
+.odds-track { flex: 1; height: 10px; margin: 0 10px; border-radius: 999px; background: var(--surface-variant); overflow: hidden; }
+.odds-track > div { height: 100%; border-radius: 999px; }
+.foil-hint { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--c-highest); font-size: 12px; }
+.glow-pill-soft.solid { border: 0; color: #fff; font-weight: 700; }
+.crate-stage { display: flex; flex-direction: column; align-items: center; cursor: pointer; user-select: none; -webkit-user-select: none; }
+.crate-box { position: relative; width: 260px; height: 260px; display: grid; place-items: center; }
+.crate-box > * { grid-area: 1 / 1; }
+.sunburst { width: 100%; height: 100%; pointer-events: none; }
+.sunburst-spin { transform-origin: 50px 50px; animation: spin18 18s linear infinite; }
+@keyframes spin18 { to { transform: rotate(360deg); } }
+.crate-glow { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--p) 55%, transparent), transparent); }
+.reveal-pop { animation: revealpop .7s cubic-bezier(.34, 1.56, .64, 1) both; }
+@keyframes revealpop { from { transform: scale(.4); opacity: 0; } 35% { opacity: 1; } to { transform: scale(1); opacity: 1; } }
+.reveal-burst { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.reveal-burst .sunburst { width: 100%; height: auto; aspect-ratio: 1; }
+.reveal-banner { margin-bottom: 12px; padding: 6px 18px; border-radius: 999px; color: #fff; font-size: 16px; font-weight: 900; letter-spacing: 2px; white-space: pre; box-shadow: 0 0 24px color-mix(in srgb, var(--p) 70%, transparent); }
+.trade-stage { position: relative; width: 220px; height: 220px; margin-top: 12px; display: grid; place-items: center; }
+.trade-stage > * { grid-area: 1 / 1; }
+.trade-glow { width: 220px; height: 220px; border-radius: 50%; }
+.spark { border-radius: 50%; }
+.trade-tile { width: 52px; height: 52px; border-radius: 14px; overflow: hidden; border: 2px solid; }
+.trade-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }

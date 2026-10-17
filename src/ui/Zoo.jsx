@@ -6,7 +6,8 @@ import {
 } from '../model/zoo.js'
 import { isGolden } from '../model/rules.js'
 import { formatDate } from '../model/time.js'
-import { Dialog, Seg, toast, Spinner } from './common.jsx'
+import { Dialog, Seg, toast, Spinner, Flame } from './common.jsx'
+import { createPortal } from 'preact/compat'
 
 export const RARITY_GRADIENT = {
   GREEN: 'linear-gradient(135deg, #2e7d32, #66bb6a)',
@@ -67,7 +68,7 @@ export function Zoo() {
           <div class="egg-card center">
             <div class="egg-stage" onClick={() => setOdds(true)}>
               <div class="egg-glow" style={{ opacity: ready ? 1 : 0.3 }} />
-              <Egg rarity="BOX" wobble={ready} />
+              <div class={ready ? 'wobble' : ''}><Egg rarity="BOX" width={84} glow={ready ? 20 : 4} style={{ opacity: ready ? 1 : 0.45 }} /></div>
             </div>
             <div class="title-medium" style="margin-top:4px">{ready ? `${z.boxesReady} egg${z.boxesReady === 1 ? '' : 's'} ready to hatch` : 'No egg ready yet'}</div>
             <div class="bar" style="margin-top:12px"><div style={{ width: `${z.boxProgress * 100}%` }} /></div>
@@ -81,7 +82,7 @@ export function Zoo() {
           </div>
           {tierRows.map(({ r, eggs, canTrade }) => (
             <div key={r} class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
-              <Egg rarity={r} small wobble={eggs > 0} />
+              <div class={eggs > 0 ? 'wobble' : ''}><Egg rarity={r} width={44} glow={eggs > 0 ? 12 : 0} /></div>
               <div class="grow">
                 <div class="title-medium">{RARITY_LABEL[r]} egg{eggs > 1 ? ` ×${eggs}` : ''}</div>
                 <div class="muted small">{eggs > 0 ? `Hatches a ${RARITY_LABEL[r]} animal` : `Trade ${TRADE_UP_COUNT} for a ${RARITY_LABEL[nextRarity(r)]} egg`}</div>
@@ -100,119 +101,367 @@ export function Zoo() {
   )
 }
 
-export function Egg({ rarity, wobble, shake, small, onClick }) {
-  const size = small ? 0.5 : 1
-  const specks = useMemo(() => Array.from({ length: 9 }, (_, i) => ({ l: 15 + ((i * 37) % 70), t: 12 + ((i * 53) % 70), r: 6 + ((i * 7) % 10) })), [])
+/** The phone's egg (Egg.kt), drawn as an SVG: narrower at the top, filled with the rarity's
+ *  colours (the theme's for an ordinary egg), shaded toward the bottom with a highlight up top and
+ *  a few speckles. [crack] (0..1) draws a zigzag crack across it from the left. */
+export function Egg({ rarity, width = 84, crack = 0, style, onClick, glow = 0 }) {
+  const w = 100, h = 125
+  const id = useMemo(() => `egg${Math.random().toString(36).slice(2, 8)}`, [])
+  const stops = rarity === 'RAINBOW' ? RAINBOW : (LOOK[rarity] || LOOK.BOX)
+  const pts = [[0.08, 0.55], [0.24, 0.47], [0.38, 0.58], [0.52, 0.46], [0.66, 0.57], [0.8, 0.47], [0.92, 0.54]]
+  const shown = (pts.length - 1) * Math.min(1, Math.max(0, crack))
+  let crackPath = ''
+  pts.forEach(([x, y], i) => {
+    if (i > shown + 1) return
+    if (i === 0) { crackPath += `M${x * w} ${y * h}`; return }
+    const f = Math.min(1, Math.max(0, shown - (i - 1)))
+    const [px, py] = pts[i - 1]
+    crackPath += ` L${(px + (x - px) * f) * w} ${(py + (y - py) * f) * h}`
+  })
+  const shape = `M${w / 2} 0 C${w * 0.92} 0 ${w} ${h * 0.52} ${w} ${h * 0.64} C${w} ${h * 0.88} ${w * 0.78} ${h} ${w / 2} ${h} C${w * 0.22} ${h} 0 ${h * 0.88} 0 ${h * 0.64} C0 ${h * 0.52} ${w * 0.08} 0 ${w / 2} 0Z`
   return (
-    <div class={`egg ${shake ? 'shake' : wobble ? 'wobble' : ''}`} onClick={onClick} style={{ width: 120 * size, height: 150 * size, background: RARITY_GRADIENT[rarity] }}>
-      {specks.map((sp, i) => <span key={i} class="speck" style={{ left: `${sp.l}%`, top: `${sp.t}%`, width: sp.r * size, height: sp.r * size, background: rarity === 'BOX' ? 'rgba(150,110,60,.35)' : 'rgba(255,255,255,.35)' }} />)}
-    </div>
+    <svg viewBox={`0 0 ${w} ${h}`} width={width} height={width * 1.25} onClick={onClick} class="egg-svg"
+      style={{ overflow: 'visible', filter: glow ? `drop-shadow(0 ${glow / 3}px ${glow}px color-mix(in srgb, ${stops[0]} 70%, transparent))` : undefined, ...style }}>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">{stops.map((c, i) => <stop key={i} offset={stops.length === 1 ? 0 : i / (stops.length - 1)} style={{ stopColor: c }} />)}</linearGradient>
+        <linearGradient id={id + 's'} x1="0" y1="0" x2="0" y2="1"><stop offset="0.45" stop-color="#000" stop-opacity="0" /><stop offset="1" stop-color="#000" stop-opacity=".18" /></linearGradient>
+      </defs>
+      <path d={shape} fill={`url(#${id})`} />
+      <path d={shape} fill={`url(#${id}s)`} />
+      <ellipse cx={w * 0.35} cy={h * 0.22} rx={w * 0.11} ry={h * 0.1} fill="#fff" fill-opacity=".35" />
+      {[[0.66, 0.38, 0.045], [0.3, 0.58, 0.035], [0.6, 0.74, 0.05], [0.42, 0.86, 0.03]].map(([x, y, r], i) => <circle key={i} cx={x * w} cy={y * h} r={r * w} fill="#fff" fill-opacity=".32" />)}
+      {crack > 0.01 && <path d={crackPath} fill="none" stroke="#000" stroke-opacity=".45" stroke-width={w * 0.035} stroke-linecap="round" stroke-linejoin="round" />}
+    </svg>
   )
 }
 
+/** A rarity's pill, in its colours (the phone's RarityPill). */
+function RarityPillInline({ rarity, width }) {
+  return <span class={`rarity-pill-inline ${rarity === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(rarity), width }}>{RARITY_LABEL[rarity]}</span>
+}
+
+/** "Egg hatch rates", like the phone's LootBoxOddsDialog: each tier's chance as a bar in its
+ *  colours (never how many animals a tier holds), and the golden flame's foil chance. */
 function OddsDialog({ onClose }) {
-  const tiers = [...LOOT_BOX_ODDS, ['GREEN', 100 - LOOT_BOX_ODDS.reduce((a, [, p]) => a + p, 0)]]
+  const set = Object.fromEntries(LOOT_BOX_ODDS)
+  const rest = 100 - LOOT_BOX_ODDS.reduce((a, [, p]) => a + p, 0)
+  const pct = (v) => (v >= 10 || v === Math.floor(v) ? `${Math.round(v)}%` : `${v.toFixed(1)}%`)
   return (
-    <Dialog title="Egg hatch rates" onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>OK</button>}>
-      <p class="muted small" style="margin-top:0">You earn an egg every {HOURS_PER_BOX} hours of immersion.</p>
-      <div class="col">
-        {tiers.map(([t, p]) => (
-          <div key={t} class="row"><RarityBadge rarity={t} /><span class="grow" /><b>{p}%</b></div>
-        ))}
+    <CardStage rarity="BOX" onClose={onClose}>
+      <div class="zoo-panel" style={{ backgroundImage: 'linear-gradient(var(--c-high), var(--c-high)), linear-gradient(135deg, var(--primary), var(--tertiary))' }}>
+        <div class="title-large" style="font-weight:700">Egg hatch rates</div>
+        <div class="muted" style="font-size:12px;margin:2px 0 10px">You earn an egg every {HOURS_PER_BOX} hours of immersion.</div>
+        {[...RARITIES].reverse().map((t) => {
+          const c = set[t] ?? rest
+          return (
+            <div key={t} class="odds-row">
+              <RarityPillInline rarity={t} width={96} />
+              <div class="odds-track"><div class={t === 'RAINBOW' ? 'shimmer' : ''} style={{ width: `${c}%`, backgroundImage: rarityBrush(t) }} /></div>
+              <b>{pct(c)}</b>
+            </div>
+          )
+        })}
+        <div class="foil-hint"><Flame gold size={18} /><span>= {FOIL_CHANCE_PERCENT}% chance of a foil card</span></div>
+        <div class="stage-row" style="margin-top:20px"><GlowPill rarity="BOX" solid onClick={onClose}>Close</GlowPill></div>
       </div>
-    </Dialog>
+    </CardStage>
   )
 }
 
+/** Soft rays turning slowly behind something, in the look's colours. */
+function Sunburst({ rarity, scale = 1, alpha = 0.35 }) {
+  const [p, s2] = rarity === 'RAINBOW' ? [RAINBOW[0], RAINBOW[3]] : (LOOK[rarity] || LOOK.BOX)
+  const rays = Array.from({ length: 14 }, (_, i) => {
+    const a0 = (i * 2 * Math.PI) / 14, a1 = a0 + (Math.PI / 14) * 0.7
+    return `M50 50 L${50 + 50 * Math.cos(a0)} ${50 + 50 * Math.sin(a0)} L${50 + 50 * Math.cos(a1)} ${50 + 50 * Math.sin(a1)}Z`
+  })
+  return (
+    <svg viewBox="0 0 100 100" class="sunburst" style={{ transform: `scale(${scale})` }}>
+      <defs>
+        <radialGradient id="sb-a"><stop offset="0" style={{ stopColor: p, stopOpacity: alpha }} /><stop offset="1" style={{ stopColor: p, stopOpacity: 0 }} /></radialGradient>
+        <radialGradient id="sb-b"><stop offset="0" style={{ stopColor: s2, stopOpacity: alpha }} /><stop offset="1" style={{ stopColor: s2, stopOpacity: 0 }} /></radialGradient>
+      </defs>
+      <g class="sunburst-spin">{rays.map((d, i) => <path key={i} d={d} fill={`url(#sb-${i % 2 ? 'b' : 'a'})`} />)}</g>
+    </svg>
+  )
+}
+
+/** Hatching, like the phone's CrateOpenDialog: the egg wobbles until tapped (anywhere), then shakes
+ *  harder and cracks as its glow swells over a second, and the card springs out over a slowly
+ *  turning sunburst with "NEW!" or how many you now have (and FOIL!). */
 function HatchDialog({ kind, onClose }) {
   const s = useStore()
-  const [phase, setPhase] = useState('idle') // idle -> cracking -> done
+  const [round, setRound] = useState(0)
+  const [charge, setCharge] = useState(0)
+  const [tapped, setTapped] = useState(false)
   const [result, setResult] = useState(null)
-  const [img, setImg] = useState(false)
+  const [revealed, setRevealed] = useState(false)
+  const [t, setT] = useState(0)
   const z = zooState(s)
   const left = kind === 'BOX' ? z.boxesReady : z.coloured[kind]
 
-  const crack = async () => {
-    if (phase !== 'idle') return
-    setPhase('cracking')
-    const [r] = await Promise.all([kind === 'BOX' ? hatchLootEgg() : hatchColouredEgg(kind), new Promise((res) => setTimeout(res, 1000))])
-    if (!r) { toast('No egg to hatch'); onClose(); return }
-    if (r.animal.image) await new Promise((res) => { const im = new Image(); im.onload = im.onerror = res; im.src = r.animal.image })
-    setImg(true)
-    setResult(r)
-    setPhase('done')
-  }
-  const again = () => { setResult(null); setImg(false); setPhase('idle') }
+  // The shake's own clock, and the charge building over a second once tapped.
+  useEffect(() => {
+    if (revealed) return
+    let raf, start = null
+    const step = (now) => {
+      setT(now)
+      if (tapped) {
+        if (start == null) start = now
+        setCharge(Math.min(1, (now - start) / 1000))
+      }
+      raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [tapped, revealed, round])
 
+  const tap = async () => {
+    if (tapped) return
+    setTapped(true)
+    const r = await (kind === 'BOX' ? hatchLootEgg() : hatchColouredEgg(kind))
+    if (!r) { toast('No egg to hatch'); onClose(); return }
+    // The card never shows before its photo: it's fetched while the egg shakes (at most 3 s).
+    if (r.animal.image) await Promise.race([new Promise((res) => { const im = new Image(); im.onload = im.onerror = res; im.src = r.animal.image }), new Promise((res) => setTimeout(res, 3000))])
+    setResult(r)
+  }
+  useEffect(() => { if (result && charge >= 1) setRevealed(true) }, [result, charge])
+  const again = () => { setResult(null); setRevealed(false); setTapped(false); setCharge(0); setRound(round + 1) }
+
+  const shake = Math.sin((t / 140) * 2 * Math.PI) * (2 + 14 * charge * charge)
+  const look = revealed ? result.animal.rarity : kind
+  const onDisplay = revealed && s.zoo.trophyId === result.animal.id
+  if (!revealed) {
+    return (
+      <CardStage rarity={look} onClose={tap}>
+        <div class="crate-stage" onClick={tap}>
+          <div class="crate-box">
+            <Sunburst rarity={look} scale={0.6 + 0.6 * charge} alpha={0.25 + 0.5 * charge} />
+            <div class="crate-glow" style={{ transform: `scale(${0.7 + 0.5 * charge})`, opacity: 0.4 + charge, '--p': (LOOK[look] || LOOK.BOX)[0] }} />
+            <Egg rarity={kind} width={108} crack={(charge - 0.35) / 0.65} glow={10 + 30 * charge}
+              style={{ transform: `rotate(${shake}deg) scale(${1 + 0.08 * charge})`, position: 'relative' }} />
+          </div>
+          <div class="title-large" style="color:#fff;font-weight:700">{kind === 'BOX' ? 'Egg' : `${RARITY_LABEL[kind]} egg`}</div>
+          <div style="color:rgba(255,255,255,.75);font-size:12px;margin-top:4px">Tap to hatch</div>
+        </div>
+      </CardStage>
+    )
+  }
+  const r = result.animal.rarity
   return (
-    <Dialog onClose={phase === 'cracking' ? undefined : onClose} sheet={false}>
-      {phase !== 'done' ? (
-        <div class="center" style="padding:20px 0">
-          <div class="egg-stage"><Egg rarity={kind} wobble={phase === 'idle'} shake={phase === 'cracking'} onClick={crack} /></div>
-          <div style="font-weight:700;margin-top:10px">{kind === 'BOX' ? 'Egg' : `${RARITY_LABEL[kind]} egg`}</div>
-          <div class="muted small">{phase === 'idle' ? 'Tap to hatch' : 'Hatching…'}</div>
-        </div>
-      ) : (
-        <div class="col" style="gap:12px">
-          <AnimalCardView animal={result.animal} cert={result.cert} glow />
-          <div class="center" style="font-weight:800;font-size:18px">
-            {result.cert?.foil && <span style="color:var(--gold)">FOIL! </span>}
-            {result.copies === 1 ? <span style={{ color: RARITY_COLOR[result.animal.rarity] }}>NEW!</span> : `You now have ×${result.copies}`}
+    <CardStage rarity={r} onClose={onClose}>
+      <div class="reveal-pop">
+        <Floaty>
+          <div style="position:relative">
+            <div class="reveal-burst"><Sunburst rarity={r} scale={1.25} /></div>
+            <div class="col" style="align-items:center;position:relative">
+              <span class={`reveal-banner ${r === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(r), '--p': (LOOK[r] || LOOK.GREEN)[0] }}>
+                {result.copies === 1 ? 'NEW!' : `You now have ×${result.copies}`}{result.cert?.foil ? '  ✦ FOIL!' : ''}
+              </span>
+              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} onDisplay={onDisplay} /></div>
+            </div>
           </div>
-          <div class="dialog-actions" style="margin-top:0">
-            {left > 0 && <button class="btn tonal" onClick={again}>Hatch another ({left})</button>}
-            <button class="btn" onClick={onClose}>Nice!</button>
+        </Floaty>
+      </div>
+      <div class="stage-row">
+        {!onDisplay && <GlowPill rarity={r} onClick={() => { setTrophy(result.animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
+        <GlowPill rarity={r} onClick={onClose}>Nice!</GlowPill>
+      </div>
+      {left > 0 && <GlowPill rarity={r} onClick={again}>Hatch another ({left})</GlowPill>}
+    </CardStage>
+  )
+}
+
+/** A trade-up played out, like the phone's TradeUpCelebration: the animals given up turn on a ring,
+ *  glide into the middle and fade as the glow swells, then an egg of the next colour pops out in a
+ *  burst of sparks. */
+function TradeUpCelebration({ from, to, given, onOpenNow, onClose }) {
+  const [ms, setMs] = useState(0)
+  useEffect(() => {
+    let raf, start = null
+    const step = (now) => { if (start == null) start = now; setMs(now - start); if (now - start < 16000) raf = requestAnimationFrame(step) }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
+  const clamp01 = (x) => Math.max(0, Math.min(1, x))
+  const merge = ease(clamp01((ms - 350) / 1100))
+  const after = ms - 1450
+  const burst = after > 0 ? ease(clamp01(after / 900)) : 0
+  const spring = (x) => (x <= 0 ? 0 : 1 - Math.exp(-6 * x) * Math.cos(9 * x))
+  const keyPop = after > 0 ? spring(after / 1000) : 0
+  const textIn = clamp01((after - 250) / 400)
+  const done = merge >= 1
+  const turn = (ms / 14000) * 360
+  const [fp] = LOOK[from], [tp, ts] = to === 'RAINBOW' ? [RAINBOW[0], RAINBOW[3]] : LOOK[to]
+  const swell = 0.35 + 0.65 * merge
+  return (
+    <CardStage rarity={to} onClose={() => done && onClose()}>
+      <div class="zoo-panel center" style={{ backgroundImage: `linear-gradient(var(--c-high), var(--c-high)), ${done ? rarityBrush(to) : rarityBrush(from)}`, padding: 24 }}>
+        <div class="title-large" style="font-weight:700">Trade up to {RARITY_LABEL[to]}</div>
+        <div class="trade-stage">
+          <div class="trade-glow" style={{ transform: `scale(${swell})`, background: `radial-gradient(closest-side, color-mix(in srgb, ${done ? tp : fp} ${55 * swell}%, transparent), transparent)` }} />
+          {burst > 0.01 && burst < 0.99 && Array.from({ length: 16 }, (_, i) => {
+            const a = (i * 2 * Math.PI) / 16, r = 220 * (0.15 + 0.35 * burst), d = 2 * (7 * (1 - burst) + 2) / 2
+            return <span key={i} class="spark" style={{ width: d, height: d, background: i % 2 ? ts : tp, opacity: 1 - burst, transform: `translate(${r * Math.cos(a)}px, ${r * Math.sin(a)}px)` }} />
+          })}
+          {!done && given.map((animal, i) => {
+            const ang = ((turn + (i * 360) / given.length) * Math.PI) / 180, rad = 80 * (1 - merge)
+            return (
+              <div key={i} class="trade-tile" style={{ transform: `translate(${rad * Math.cos(ang)}px, ${rad * Math.sin(ang)}px) scale(${1 - 0.6 * merge})`, opacity: 1 - merge * merge, borderColor: fp, boxShadow: `0 4px 14px color-mix(in srgb, ${fp} 60%, transparent)` }}>
+                <AnimalPhoto animal={animal} />
+              </div>
+            )
+          })}
+          {keyPop > 0 && <div style={{ position: 'absolute', transform: `scale(${0.4 + 0.6 * keyPop}) rotate(${-20 + 20 * keyPop}deg)` }}><Egg rarity={to} width={76} glow={24} /></div>}
+        </div>
+        <div style={{ opacity: textIn, width: '100%' }}>
+          <div style="font-size:24px;font-weight:700">+1 {RARITY_LABEL[to]} egg</div>
+          <div class="muted" style="margin-top:4px">Hatches a {RARITY_LABEL[to]} animal</div>
+          <div class="stage-row" style="margin-top:20px">
+            <GlowPill rarity="NEUTRAL" solid disabled={!done} onClick={onClose}>Nice!</GlowPill>
+            <GlowPill rarity={to} solid disabled={!done} onClick={onOpenNow}>Hatch it now</GlowPill>
           </div>
         </div>
-      )}
-      {img && null}
-    </Dialog>
+      </div>
+    </CardStage>
   )
 }
 
 /** The big card: photo (with foil sheen), name, rarity, facts and the birth certificate. */
-export function AnimalCardView({ animal, cert, glow, compact }) {
-  const color = RARITY_COLOR[animal.rarity]
+/* ------------------------------------------------------------------------------------------------
+ * The trading card and the glowing stage it's shown on - a port of the phone's AnimalCard.kt and
+ * RarityStyle.kt: rarity colours (Mythic's pearly shimmer sliding along), a Mythic's cut corners and
+ * corner ornaments, a Legendary's gold halo, a foil's holographic sheen, glints and pearly border,
+ * and the slow weightless float.
+ * --------------------------------------------------------------------------------------------- */
+
+const LOOK = { GREEN: ['#3FBF5F', '#B4F06A'], BLUE: ['#3D8BFF', '#45D4FF'], PURPLE: ['#A64DFF', '#FF5CD6'], ORANGE: ['#FF8A00', '#FFD23F'], RAINBOW: ['#5CF2E6', '#E58CFF'], BOX: ['var(--primary)', 'var(--tertiary)'], NEUTRAL: ['#9AA3AD', '#D9DEE3'] }
+const RAINBOW = ['#5CF2E6', '#6FC8FF', '#A98BFF', '#E58CFF', '#FF8FCB', '#FFD86B', '#9DF5B5']
+const FOIL = ['#9FF7EE', '#B3D9FF', '#D7C2FF', '#FFC2EC', '#FFE9A8', '#C4FFD2']
+const hexA = (c, a) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent)`
+/** What borders, pills and keys are painted with: the rarity's two colours, or for a Mythic a
+ *  band of its shimmer sliding along (the .shimmer class moves it). */
+export const rarityBrush = (rarity) => (rarity === 'RAINBOW'
+  ? `linear-gradient(115deg, ${[...RAINBOW, ...RAINBOW, RAINBOW[0]].join(', ')})`
+  : `linear-gradient(135deg, ${(LOOK[rarity] || LOOK.BOX)[0]}, ${(LOOK[rarity] || LOOK.BOX)[1]})`)
+const FOIL_BORDER = `linear-gradient(115deg, ${[...FOIL, ...FOIL, FOIL[0]].join(', ')})`
+const STATUS_COLOR = [['extinct', '#B45CFF'], ['critically', '#E53935'], ['endangered', '#FF7A1A'], ['vulnerable', '#E6B800'], ['near threatened', '#9CC23A'], ['least concern', '#3FAF5F']]
+const statusColor = (st) => (STATUS_COLOR.find(([k]) => st.toLowerCase().includes(k)) || [null, '#8A939C'])[1]
+
+/** A small seeded random, so each animal's foil glints sit in their own places. */
+function seeded(str) {
+  let h = 2166136261
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619)
+  return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296 }
+}
+
+function FoilGlints({ seed }) {
+  const glints = useMemo(() => {
+    const r = seeded(seed)
+    return Array.from({ length: 6 }, () => ({ x: 8 + r() * 84, y: 5 + r() * 90, offset: r(), scale: 0.6 + r() * 0.6 }))
+  }, [seed])
+  return glints.map((g, i) => (
+    <svg key={i} class="foil-glint" viewBox="-12 -12 24 24" style={{ left: `${g.x}%`, top: `${g.y}%`, width: 26 * g.scale, height: 26 * g.scale, animationDelay: `${-g.offset * 3.6}s` }}>
+      <circle r="11" fill="url(#glint-halo)" />
+      <path d="M0 -11 Q0 0 11 0 Q0 0 0 11 Q0 0 -11 0 Q0 0 0 -11Z" fill="#fff" />
+      <circle r="2" fill="#fff" />
+    </svg>
+  ))
+}
+
+/** The full trading card: photo (rarity pill, chips), names, Wikipedia's one-liner, stats, the
+ *  fun fact, its birth certificate, conservation status and the photo credit. */
+export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false }) {
+  const [p, s2] = LOOK[animal.rarity] || LOOK.GREEN
+  const mythic = animal.rarity === 'RAINBOW'
+  const foil = !!cert?.foil
+  const hasCert = cert && (cert.hourMark != null || cert.languageName)
   return (
-    <div class={`animal-card ${glow ? 'glow-pop' : ''}`} style={{ borderColor: color, '--glow': color + '88' }}>
-      <div class="photo">
-        <AnimalPhoto animal={animal} />
-        {cert?.foil && <div class="foil-sheen" />}
-      </div>
-      <div style="padding:14px">
-        <div class="row" style="align-items:flex-start">
-          <div class="grow">
-            <div style="font-weight:750;font-size:18px">{animal.name}</div>
-            <div class="muted small" style="font-style:italic">{animal.scientific}</div>
+    <div class={`acard-wrap ${animal.rarity === 'ORANGE' ? 'legendary' : ''} ${mythic ? 'mythic' : ''}`} style={{ '--p': p, '--s': s2 }}>
+      <div class={`acard-frame ${mythic ? 'shimmer' : ''} ${foil ? 'foil-border' : ''}`}
+        style={{ backgroundImage: foil ? FOIL_BORDER : rarityBrush(animal.rarity), padding: mythic || foil ? 3 : 2 }}>
+        <div class="acard">
+          <div class="photo">
+            <AnimalPhoto animal={animal} />
+            {foil && <div class="foil-sheen" />}
+            <div class="photo-rule" />
+            <span class={`rarity-pill ${mythic ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(animal.rarity) }}>{RARITY_LABEL[animal.rarity]}</span>
+            <div class="corner-chips">
+              {foil && <span>✦ Foil</span>}
+              {onDisplay && <span>🏆</span>}
+              {timesFound > 1 && <span>×{timesFound}</span>}
+            </div>
           </div>
-          <RarityBadge rarity={animal.rarity} />
-        </div>
-        {cert && (cert.hourMark != null || cert.foil) && (
-          <div class="cert" style="margin-top:10px">
-            {cert.foil && <span style="background:linear-gradient(90deg,#ffd1f5,#c7f0ff,#fff7b0);color:#333">FOIL</span>}
-            {cert.hourMark != null && <span>Hour {cert.hourMark}</span>}
-            {cert.languageName && <span style={{ background: (cert.languageColor || '#888') + '33', color: cert.languageColor || undefined }}>{cert.languageName}-born</span>}
-            {cert.mediaTitle && <span title="Hatched during">🎬 {cert.mediaTitle}</span>}
-          </div>
-        )}
-        {!compact && (
-          <>
-            {animal.blurb && <div class="muted small" style="margin-top:10px">{animal.blurb}</div>}
-            {animal.fact && <p style="margin:8px 0">{animal.fact}</p>}
+          <div class="acard-body" style={{ paddingBottom: mythic ? 26 : 16 }}>
+            <div class="acard-name">{animal.name}</div>
+            {animal.scientific && <div class="acard-sci">{animal.scientific}</div>}
+            {animal.blurb && <div class="acard-blurb">{animal.blurb}</div>}
             {animal.stats?.length > 0 && (
-              <div class="col" style="gap:4px;margin-top:6px">
-                {animal.stats.map((st) => <div key={st.label} class="row small"><span class="muted" style="width:110px;flex:none">{st.label}</span><span>{st.value}</span></div>)}
-                {animal.status && <div class="row small"><span class="muted" style="width:110px;flex:none">Status</span><span>{animal.status}</span></div>}
+              <div class="acard-stats">
+                {animal.stats.slice(0, 3).map((st) => <div key={st.label} style={{ background: hexA(p, 0.12) }}><div class="k">{st.label}</div><div class="v">{st.value}</div></div>)}
               </div>
             )}
-            <div class="row tiny muted" style="margin-top:10px">
-              <span class="grow ellipsis">{animal.credit && `Photo: ${animal.credit}`}</span>
-              {animal.url && <a href={animal.url} target="_blank" rel="noopener">Wikipedia</a>}
+            {animal.fact && <div class="acard-fact"><span style={{ color: p }}>✦</span><span>{animal.fact}</span></div>}
+            {hasCert && (
+              <div class="acard-cert" style={{ background: `linear-gradient(${hexA(p, 0.08)}, ${hexA(p, 0.08)}) padding-box, linear-gradient(var(--c-high), var(--c-high)) padding-box, ${rarityBrush(animal.rarity)} border-box` }}>
+                <div class="row"><span class="k grow">Birth certificate</span>{cert.hourMark != null && <b style={{ color: p }}>Hour {cert.hourMark.toLocaleString()}</b>}</div>
+                {cert.languageName && <span class="lang" style={{ background: cert.languageColor || p }}>Born to {cert.languageName}</span>}
+              </div>
+            )}
+            {animal.status && <span class="acard-status" style={{ color: statusColor(animal.status), background: hexA(statusColor(animal.status), 0.14) }}>{animal.status}</span>}
+            <div class="acard-credit" style={mythic ? { textAlign: 'center', padding: '12px 30px 0' } : {}}>
+              {animal.credit && `Photo: ${animal.credit} · `}
+              {animal.url ? <a href={animal.url} target="_blank" rel="noopener">Wikipedia</a> : 'Wikipedia'}
             </div>
-          </>
-        )}
+          </div>
+          {foil && <FoilGlints seed={animal.id} />}
+        </div>
       </div>
+      {/* A Mythic's corner pieces, tucked into the corners its shape cuts away. */}
+      {mythic && <><span class="mythic-corner left shimmer" style={{ backgroundImage: rarityBrush('RAINBOW') }} /><span class="mythic-corner right shimmer" style={{ backgroundImage: rarityBrush('RAINBOW') }} /></>}
     </div>
+  )
+}
+
+/** A card on its own glowing stage, like the phone's RarityGlowDialog: full screen, two breathing
+ *  pools of the rarity's colours behind it (drifting through every colour for a Mythic), the card
+ *  floating, and whatever goes under it. A tap outside closes. */
+export function CardStage({ rarity, onClose, children }) {
+  const [p, s2] = LOOK[rarity] || LOOK.GREEN
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose?.()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return createPortal(
+    <div class="card-stage" onClick={(e) => e.target === e.currentTarget && onClose?.()}>
+      <svg width="0" height="0" style="position:absolute"><defs><radialGradient id="glint-halo"><stop offset="0" stop-color="#fff" stop-opacity=".5" /><stop offset="1" stop-color="#fff" stop-opacity="0" /></radialGradient></defs></svg>
+      <div class="card-stage-inner">
+        <div class={`glow-pools ${rarity === 'RAINBOW' ? 'rainbow' : ''}`} style={{ '--p': p, '--s': s2 }}><i class="a" /><i class="b" /></div>
+        <div class="col" style="gap:14px;position:relative">{children}</div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+/** The card itself, floating: a slow bob, a little sway and a degree of tilt, each on its own rhythm. */
+export function Floaty({ children }) {
+  return <div class="float-bob"><div class="float-sway"><div class="float-tilt">{children}</div></div></div>
+}
+
+/** The quiet pill buttons under a card: the card's surface, lightly washed and outlined in the rarity. */
+export function GlowPill({ rarity, onClick, children, disabled, solid }) {
+  const [p] = LOOK[rarity] || LOOK.GREEN
+  if (solid) {
+    return <button class={`glow-pill-soft solid ${rarity === 'RAINBOW' ? 'shimmer' : ''}`} disabled={disabled} onClick={onClick} style={{ backgroundImage: disabled ? 'linear-gradient(rgba(128,128,128,.35), rgba(128,128,128,.25))' : rarityBrush(rarity) }}>{children}</button>
+  }
+  return (
+    <button class={`glow-pill-soft ${rarity === 'RAINBOW' ? 'shimmer-border' : ''}`} disabled={disabled} onClick={onClick}
+      style={{ background: `linear-gradient(${hexA(p, 0.16)}, ${hexA(p, 0.16)}) padding-box, linear-gradient(var(--c-high), var(--c-high)) padding-box, ${rarityBrush(rarity)} border-box` }}>
+      {children}
+    </button>
   )
 }
 
@@ -236,9 +485,12 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
     if (n < copies[a.id].length && trade.picks.length < TRADE_UP_COUNT) setTrade({ ...trade, picks: [...trade.picks, a.id] })
     else setTrade({ ...trade, picks: trade.picks.filter((x) => x !== a.id) })
   }
+  const [celebrate, setCelebrate] = useState(null)
+  const [hatchNow, setHatchNow] = useState(null)
   const doTrade = () => {
+    const given = trade.picks.map((id) => catalog.find((a) => a.id === id)).filter(Boolean)
     const to = tradeUp(trade.from, trade.picks)
-    if (to) toast(`+1 ${RARITY_LABEL[to]} egg`)
+    if (to) setCelebrate({ from: trade.from, to, given })
     else toast("Couldn't trade those")
     setTrade(null)
   }
@@ -246,6 +498,7 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   return (
     <>
       <div class="section-header">Collection · {held}</div>
+      {!trade && held > 0 && <div class="muted" style="font-size:12px;margin:-4px 0 10px">Long-press to trade up</div>}
       {!list.length ? <div class="empty">{!held ? 'No animals yet - hatch an egg to find your first.' : 'None of these yet.'}</div> : (
         <div class="zoo-grid">
           {list.map((a) => {
@@ -270,7 +523,7 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
           })}
         </div>
       )}
-      {!trade && held > 0 && <p class="muted tiny center" style="margin-top:14px">Long-press an animal to trade {TRADE_UP_COUNT} of its tier up for an egg of the next colour.</p>}
+
       {trade && (
         <div class="trade-bar" style={{ borderColor: RARITY_COLOR[nextRarity(trade.from)] }}>
           <b>{trade.picks.length} / {TRADE_UP_COUNT} {RARITY_LABEL[trade.from]} picked → {RARITY_LABEL[nextRarity(trade.from)]} egg</b>
@@ -281,6 +534,8 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
           </div>
         </div>
       )}
+      {celebrate && <TradeUpCelebration {...celebrate} onClose={() => setCelebrate(null)} onOpenNow={() => { setHatchNow(celebrate.to); setCelebrate(null) }} />}
+      {hatchNow && <HatchDialog kind={hatchNow} onClose={() => setHatchNow(null)} />}
       {open && <AnimalDialog animal={open} copies={copies[open.id] || []} trophyId={trophyId} onClose={() => setOpen(null)}
         onTrade={() => { setOpen(null); startTrade(open) }} />}
     </>
@@ -290,26 +545,29 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
 function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
   const [i, setI] = useState(0)
   const copy = copies[i]
+  const r = animal.rarity
   return (
-    <Dialog onClose={onClose} actions={<>
-      {copies.length > 0 && nextRarity(animal.rarity) && <button class="btn text" onClick={onTrade}>Trade up</button>}
-      <span class="spacer" />
-      {copies.length > 0 && (trophyId === animal.id
-        ? <button class="btn tonal" onClick={() => setTrophy(null)}>Take off my profile</button>
-        : <button class="btn tonal" onClick={() => { setTrophy(animal.id); toast('On display on your profile') }}>Show on my profile</button>)}
-      <button class="btn" onClick={onClose}>Close</button>
-    </>}>
-      <AnimalCardView animal={animal} cert={copy?.cert} />
+    <CardStage rarity={r} onClose={onClose}>
+      <Floaty><AnimalCardView animal={animal} cert={copy?.cert} timesFound={copies.length} onDisplay={trophyId === animal.id} /></Floaty>
       {copies.length > 1 && (
-        <div class="chips" style="margin-top:12px">
+        <div class="chips" style="justify-content:center">
           {copies.map((c, n) => (
-            <button key={c.id} class={`chip ${n === i ? 'on' : ''}`} onClick={() => setI(n)}>
-              Copy {n + 1}{c.cert?.foil ? ' · foil' : ''}{carriesCertificate(animal.rarity) && c.cert?.hourMark != null ? ` · h${c.cert.hourMark}` : ''}
+            <button key={c.id} class={`chip ${n === i ? 'on' : ''}`} style="background:var(--c-high)" onClick={() => setI(n)}>
+              Copy {n + 1}{c.cert?.foil ? ' · foil' : ''}{carriesCertificate(r) && c.cert?.hourMark != null ? ` · h${c.cert.hourMark}` : ''}
             </button>
           ))}
         </div>
       )}
-      {copy && <div class="muted tiny" style="margin-top:8px">Hatched {formatDate(copy.atMillis, { year: 'numeric', month: 'short', day: 'numeric' })}</div>}
-    </Dialog>
+      {copy && <div class="stage-note small" style="opacity:.75">Hatched {formatDate(copy.atMillis, { year: 'numeric', month: 'short', day: 'numeric' })}</div>}
+      {copies.length > 0 && (
+        <div class="stage-row">
+          {trophyId === animal.id
+            ? <GlowPill rarity={r} onClick={() => setTrophy(null)}>Take off my profile</GlowPill>
+            : <GlowPill rarity={r} onClick={() => { setTrophy(animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
+          {nextRarity(r) && <GlowPill rarity={r} onClick={onTrade}>Trade up</GlowPill>}
+        </div>
+      )}
+      <GlowPill rarity={r} onClick={onClose}>Close</GlowPill>
+    </CardStage>
   )
 }

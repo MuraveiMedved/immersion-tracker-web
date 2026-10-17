@@ -9,7 +9,7 @@ import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ym
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill } from './common.jsx'
 import { Ring } from './Ring.jsx'
-import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge } from './Zoo.jsx'
+import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'
 
 const EMOJIS = ['🦊', '🐼', '🐯', '🦁', '🐸', '🐙', '🦉', '🐧', '🐢', '🦄', '🐝', '🦋', '🐳', '🦖', '🐲', '🌸', '⭐', '🔥', '⚡', '🍀', '🍣', '☕', '🎧', '📚']
@@ -1082,9 +1082,10 @@ function ProfileSections({ p }) {
       )}
       {p.updatedAt > 0 && <div class="muted" style="font-size:11px;font-weight:500;letter-spacing:.5px">Updated {agoText(p.updatedAt)}</div>}
       {open && (
-        <Dialog onClose={() => setOpen(null)} sheet={false} actions={<button class="btn" onClick={() => setOpen(null)}>Close</button>}>
-          <AnimalCardView animal={open} cert={cert(open.id)} />
-        </Dialog>
+        <CardStage rarity={open.rarity} onClose={() => setOpen(null)}>
+          <Floaty><AnimalCardView animal={open} cert={cert(open.id)} timesFound={p.zoo?.[open.id] || 1} /></Floaty>
+          <GlowPill rarity={open.rarity} onClick={() => setOpen(null)}>Close</GlowPill>
+        </CardStage>
       )}
     </div>
   )
