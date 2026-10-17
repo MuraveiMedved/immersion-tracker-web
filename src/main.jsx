@@ -11,14 +11,15 @@ import { Entries } from './ui/Entries.jsx'
 import { Social } from './ui/Social.jsx'
 import { Zoo } from './ui/Zoo.jsx'
 import { Settings } from './ui/Settings.jsx'
-import { ToastHost } from './ui/common.jsx'
+import { ToastHost, NavIcon } from './ui/common.jsx'
 
+// Same icons as the phone's bottom bar.
 const TABS = [
-  ['home', '🏠', 'Home'],
-  ['entries', '📊', 'Entries'],
-  ['social', '🏁', 'Social'],
-  ['zoo', '🦊', 'Zoo'],
-  ['settings', '⚙️', 'Settings'],
+  ['home', 'home', 'Home'],
+  ['entries', 'list', 'Entries'],
+  ['social', 'groups', 'Social'],
+  ['zoo', 'pets', 'Zoo'],
+  ['settings', 'settings', 'Settings'],
 ]
 
 function App() {
@@ -47,7 +48,7 @@ function App() {
     <div class="shell">
       <nav class="nav">
         {tabs.map(([t, ico, label]) => (
-          <button key={t} class={tab === t ? 'on' : ''} onClick={() => nav(t)}><span class="ico">{ico}</span>{label}</button>
+          <button key={t} class={tab === t ? 'on' : ''} onClick={() => nav(t)}><span class="ico"><NavIcon name={ico} /></span>{label}</button>
         ))}
       </nav>
       <main class="page">
