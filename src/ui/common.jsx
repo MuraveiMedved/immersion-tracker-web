@@ -124,6 +124,7 @@ export function ToastHost() {
     <div class="toast">
       <span>{t.message}</span>
       {t.action && <button class="btn text small" onClick={() => { t.action.run(); setT(null) }}>{t.action.label}</button>}
+      <button class="toast-close" title="Dismiss" aria-label="Dismiss" onClick={() => setT(null)}><Icon name="close" size={18} /></button>
     </div>
   )
 }

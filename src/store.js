@@ -275,13 +275,17 @@ function addEntry(s, fields) {
   return entry
 }
 
-/** Starts a live timer (closing whatever of the same type was running). Returns the new entry's id. */
+/** Every content type a session can run under - only one session runs at a time, across all of them. */
+const ALL_TYPES = [PODCAST, READING, ANKI, LISTENING]
+
+/** Starts a live timer, closing whatever was running (of any type - one session at a time).
+ *  Returns the new entry's id. */
 export function startManualEntry(type, languageProfileId, title) {
   let id = null
   update((s) => {
     const now = Date.now()
     delete s.paused[type]
-    closeRunning(s, type, now)
+    for (const t of ALL_TYPES) closeRunning(s, t, now)
     id = addEntry(s, {
       startTimeMillis: now,
       contentType: type,
@@ -293,11 +297,12 @@ export function startManualEntry(type, languageProfileId, title) {
   return id
 }
 
-/** Undo for a stop or a discard: the session runs on from where it started, as if never stopped.
- *  Does nothing when something of the same type has started since. */
+/** Undo for a stop or a discard: the session runs on from where it started, as if never stopped -
+ *  closing anything started since, since only one session runs at a time. */
 export function reopenEntry(snapshot) {
   update((s) => {
-    if (s.entries.some((e) => e.endTimeMillis == null && e.contentType === snapshot.contentType)) return
+    const now = Date.now()
+    for (const t of ALL_TYPES) closeRunning(s, t, now)
     delete s.paused[snapshot.contentType]
     const e = s.entries.find((x) => x.id === snapshot.id)
     if (e) e.endTimeMillis = null
@@ -343,6 +348,14 @@ export function deleteRunningEntry(type) {
   update((s) => {
     delete s.paused[type]
     s.entries = s.entries.filter((e) => !(e.endTimeMillis == null && e.contentType === type))
+  })
+}
+
+/** Renames what's running for [type] (a quick start begins as "Manual Japanese session"). */
+export function editRunningTitle(type, title) {
+  update((s) => {
+    const r = s.entries.find((e) => e.endTimeMillis == null && e.contentType === type)
+    if (r) r.mediaTitle = title
   })
 }
 

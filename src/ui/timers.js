@@ -36,14 +36,15 @@ export function recentSessions(type, limit = 4) {
   return out
 }
 
-/** Starts a timer. If one of the same type was running it's closed (and said so); Undo takes the
- *  new one back and lets the old one run on. */
+/** Starts a timer. Whatever was running is closed first (and said so) - one session at a time;
+ *  Undo takes the new one back and lets the old one run on. */
 export function startTimer(type, languageProfileId, title = defaultTitle(languageProfileId)) {
-  const replaced = runningEntry(type)
+  // Only one session runs at a time, so whatever's running (of any type) is what this replaces.
+  const replaced = getState().entries.find((e) => e.endTimeMillis == null)
   const snapshot = replaced && { ...replaced }
   const id = startManualEntry(type, languageProfileId, title)
   const name = sessionName(type, languageProfileId)
-  const switched = snapshot && (snapshot.languageProfileId !== languageProfileId || snapshot.mediaTitle !== title)
+  const switched = snapshot && (snapshot.contentType !== type || snapshot.languageProfileId !== languageProfileId || snapshot.mediaTitle !== title)
   toast(switched ? `Switched to ${name}` : `${name[0].toUpperCase()}${name.slice(1)} started`, {
     label: 'Undo',
     run: () => { discardEntry(id); if (snapshot) reopenEntry(snapshot) },

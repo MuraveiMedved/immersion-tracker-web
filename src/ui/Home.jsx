@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
-  editRunningElapsed, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
+  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
 } from '../store.js'
 import { counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAYS, GOLDEN_DAILY_MILLIS, typeLabel } from '../model/rules.js'
 import { dayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
@@ -165,7 +165,7 @@ function NowTrackingBanner({ entry, now, light, mode }) {
       <div class="grow">
         <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} · {profile?.name || 'Uncategorized'} · {formatClock(durationOf(entry, now))}</div>
         {entry.mediaTitle && <div class="small ellipsis">{entry.mediaTitle}</div>}
-        <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>Manual · tap to edit time</div>
+        <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>Manual · tap to edit title or time</div>
       </div>
       <button class="stop" style={{ color: ink }} title="Stop and save (Space)" onClick={(ev) => { ev.stopPropagation(); stopTimer(entry) }}><span /></button>
       <button class="stop" style={{ color: ink }} title="Discard without counting its time" onClick={(ev) => { ev.stopPropagation(); discardTimer(entry) }}><Icon name="close" size={18} /></button>
@@ -257,14 +257,31 @@ export function TabTitle() {
 
 function EditElapsedDialog({ entry, onClose }) {
   const ms = durationOf(entry)
+  const [title, setTitle] = useState(entry.mediaTitle || '')
+  const titleInput = useRef(null)
+  // Title selected on open, so a quick start's "Manual Japanese session" is replaced by just typing.
+  useEffect(() => { titleInput.current?.focus(); titleInput.current?.select() }, [])
   const [h, setH] = useState(String(Math.floor(ms / HOUR)))
   const [m, setM] = useState(String(Math.floor((ms % HOUR) / 60000)))
+  const save = () => {
+    const t = title.trim()
+    if (t && t !== entry.mediaTitle) editRunningTitle(entry.contentType, t)
+    const next = hmToMillis(h, m)
+    // Only when the time was actually changed - otherwise saving a new title would knock off the
+    // seconds that have ticked by since the dialog opened.
+    if (next !== Math.floor(ms / 60000) * 60000) editRunningElapsed(entry.contentType, next)
+    onClose()
+  }
   return (
-    <Dialog title="Edit elapsed time" onClose={onClose} sheet={false} actions={<>
+    <Dialog title="Edit session" onClose={onClose} sheet={false} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
-      <button class="btn" onClick={() => { editRunningElapsed(entry.contentType, hmToMillis(h, m)); onClose() }}>Save</button>
+      <button class="btn" onClick={save}>Save</button>
     </>}>
-      <DurationInput hours={h} minutes={m} onHours={setH} onMinutes={setM} autoFocus />
+      <label class="field" style="margin-bottom:14px">Title
+        <input ref={titleInput} class="input" value={title} onInput={(e) => setTitle(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && save()} />
+      </label>
+      <div class="muted small" style="margin-bottom:6px">Time so far</div>
+      <DurationInput hours={h} minutes={m} onHours={setH} onMinutes={setM} />
       {/* Started late? Add the minutes you forgot in one tap. */}
       <div class="muted small" style="margin:14px 0 6px">Forgot to start it? Add time</div>
       <div class="chips">
