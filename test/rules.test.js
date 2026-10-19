@@ -29,9 +29,10 @@ test('Momentum: today counts only once it reaches 1h', () => {
   assert.equal(goldenStreakDays([entry(at(2026, 10, 13, 10), HOUR), entry(at(2026, 10, 14, 10), HOUR / 2), entry(at(2026, 10, 15, 10), HOUR)], now), 1)
   // Music and Anki don't count.
   assert.equal(goldenStreakDays([13, 14, 15].map((d) => entry(at(2026, 10, d, 10), 3 * HOUR, ANKI))), 0)
-  // Gold from five days.
-  assert.equal(isGolden(days.slice(1), now), false)
-  assert.equal(isGolden(days, now), true)
+  // Gold from ten days.
+  const ten = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((d) => entry(at(2026, 10, d, 10), HOUR))
+  assert.equal(isGolden(ten.slice(1), now), false)
+  assert.equal(isGolden(ten, now), true)
 })
 
 test('Momentum splits sessions across midnight', () => {

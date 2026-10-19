@@ -7,7 +7,7 @@ export const PODCAST = 'PODCAST' // spoken listening - "Listening" in the UI
 export const READING = 'READING'
 export const ANKI = 'ANKI'
 
-export const GOLDEN_DAYS = 5
+export const GOLDEN_DAYS = 10
 export const GOLDEN_DAILY_MILLIS = HOUR
 const MAX_GOLDEN_LOOKBACK_DAYS = 400
 
