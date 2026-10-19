@@ -529,9 +529,9 @@ textarea.input { resize: vertical; }
    colours turn through the spectrum, the band sways), a seamless loop that never stops. */
 .photo:has(> .foil-sheen) img, .tile-animal:has(> .foil-sheen) img { filter: saturate(1.22) contrast(1.1); }
 .foil-sheen { position: absolute; inset: 0; pointer-events: none; overflow: hidden;
-  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.18) 100%); }
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.09) 100%); }
 /* Facets: a diagonal rainbow, chopped into diamonds by two crossed sets of light and dark stripes. */
-.foil-sheen::before { content: ''; position: absolute; inset: 0; mix-blend-mode: screen; opacity: .5;
+.foil-sheen::before { content: ''; position: absolute; inset: 0; mix-blend-mode: screen; opacity: .25;
   background:
     repeating-linear-gradient(45deg, rgba(0,0,0,.3) 0 1px, transparent 1px 17px, rgba(0,0,0,.14) 17px 18px, transparent 18px 34px),
     repeating-linear-gradient(-45deg, rgba(0,0,0,.24) 0 1px, transparent 1px 17px, rgba(0,0,0,.1) 17px 18px, transparent 18px 34px),
@@ -541,7 +541,7 @@ textarea.input { resize: vertical; }
 @keyframes prism-drift { from { background-position: 0 0, 0 0, 0% 20%; } to { background-position: 0 0, 0 0, 100% 80%; } }
 @keyframes prism-hue { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
 /* The band: a soft stripe of spectrum, sliding across with the light. */
-.foil-sheen::after { content: ''; position: absolute; inset: 0; mix-blend-mode: color-dodge; opacity: .4;
+.foil-sheen::after { content: ''; position: absolute; inset: 0; mix-blend-mode: color-dodge; opacity: .2;
   background: linear-gradient(115deg, transparent 30%, hsl(0 80% 60%) 38%, hsl(55 85% 60%) 43%, hsl(130 75% 55%) 48%, hsl(190 85% 55%) 53%, hsl(250 80% 65%) 58%, hsl(310 75% 62%) 63%, transparent 71%)
     15% 0 / 240% 100% no-repeat;
   animation: prism-band 12s ease-in-out infinite alternate; }
