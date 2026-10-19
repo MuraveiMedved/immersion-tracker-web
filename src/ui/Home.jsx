@@ -4,7 +4,7 @@ import {
   editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
 } from '../store.js'
 import { counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAYS, GOLDEN_DAILY_MILLIS, typeLabel } from '../model/rules.js'
-import { dayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
+import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
@@ -27,7 +27,7 @@ export function Home({ nav }) {
   const light = !isDarkFor(s.settings.uiColorPreset)
 
   const running = RUNNING_ORDER.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).filter(Boolean)
-  const todayStart = dayStart(now)
+  const todayStart = goalDayStart(now) // goal days run from 4 AM
   const todayTotal = s.entries.reduce((t, e) => {
     if (e.startTimeMillis < todayStart || e.languageProfileId == null) return t
     if (e.contentType === LISTENING || e.contentType === ANKI) return t
@@ -302,7 +302,7 @@ function EditElapsedDialog({ entry, onClose }) {
  *  language colour; one ring per goal. [wide] puts the rings beside the name. */
 function GoalCard({ profile, now, running, light, wide, onOpen }) {
   const s = useStore()
-  const todayStart = dayStart(now)
+  const todayStart = goalDayStart(now) // goal days run from 4 AM
   const todayOf = (type) => s.entries.reduce((t, e) => (e.languageProfileId === profile.id && e.contentType === type && e.startTimeMillis >= todayStart ? t + durationOf(e, now) : t), 0)
   const isActive = (type) => running.some((e) => e.languageProfileId === profile.id && e.contentType === type)
   const active = isActive(PODCAST) || isActive(READING) || isActive(ANKI)

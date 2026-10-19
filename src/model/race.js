@@ -2,7 +2,7 @@
 // web app is just another racer: it reports its own totals, worked out from its own entries.
 import { getState, update } from '../store.js'
 import { ANKI, PODCAST, READING, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor } from './rules.js'
-import { DAY, HOUR, localZone, zonedParts, dayStart, ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
+import { DAY, HOUR, localZone, zonedParts, dayStart, goalDayStart, ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
 
 /** The owner's server, built into the phone app too (see Tracker APP/CLAUDE.md - temporary until
  *  a public release). */
@@ -407,8 +407,9 @@ export function buildProfileBody(now = Date.now()) {
   const s = getState()
   const share = s.friends.share
   const entries = s.entries
-  const today = ymdOf(now)
-  const todayStart = dayStart(now)
+  // Goal rings, streaks and "today" are goal days (from 4 AM), like Home.
+  const todayStart = goalDayStart(now)
+  const today = ymdOf(todayStart)
   const immersionByDay = new Map()
   let total = 0
   for (const e of entries) {

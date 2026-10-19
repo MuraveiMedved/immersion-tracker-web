@@ -2,6 +2,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, PODCAST, READING, ANKI, LISTENING } from '../src/model/rules.js'
+import { goalDayStart } from '../src/model/time.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate } from '../src/model/zoo.js'
 import { parsePolyLogger, parseToggl, csvRows, guessMapping } from '../src/model/imports.js'
@@ -134,4 +135,14 @@ test('time of day leaves out PolyLogger imports from the web and from the phone'
   const hours = timeOfDay(entries, null, at(2026, 3, 10)).get(1)
   assert.equal(hours[12], 0)
   assert.equal(hours[20], HOUR)
+})
+
+test('goal days run from 4 AM: a late night counts for the day before', () => {
+  // 2 AM on the 16th belongs to the 15th's goal day; 5 AM is the 16th's.
+  assert.equal(goalDayStart(at(2026, 10, 16, 2)), at(2026, 10, 15, 4))
+  assert.equal(goalDayStart(at(2026, 10, 16, 5)), at(2026, 10, 16, 4))
+  // 30 min at 11 PM on the 14th + 30 min at 1 AM on the 15th meet the 14th's 1 h goal, and at
+  // 3 AM on the 15th the 14th is still "today", so the streak is 1 with nothing more needed.
+  const list = [entry(at(2026, 10, 14, 23), HOUR / 2), entry(at(2026, 10, 15, 1), HOUR / 2)]
+  assert.equal(computeStreak(dailyTotalsFor(list, 1, PODCAST, at(2026, 10, 15, 3)), HOUR, at(2026, 10, 15, 3)).current, 1)
 })

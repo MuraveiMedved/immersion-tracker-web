@@ -1,6 +1,6 @@
 // What counts as immersion, goal streaks and Momentum (the golden streak) - ported one-to-one
 // from the phone's Immersion.kt and StreakCalculator.kt so both give the same numbers.
-import { epochDay, epochDayStart, dayStart, HOUR } from './time.js'
+import { epochDay, epochDayStart, goalDayStart, HOUR } from './time.js'
 
 export const LISTENING = 'LISTENING' // music
 export const PODCAST = 'PODCAST' // spoken listening - "Listening" in the UI
@@ -55,8 +55,8 @@ export function goldenTodayMillis(entries, now = Date.now()) {
   return dailyMillis(entries, now, 1).get(epochDay(now)) || 0
 }
 
-/** Goal streak from per-day totals keyed by local midnight. Any missed day breaks it; today not
- *  being met yet doesn't. */
+/** Goal streak from per-day totals keyed by goal day (see dailyTotalsFor). Any missed day breaks
+ *  it; today (the goal day, from 4 AM) not being met yet doesn't. */
 export function computeStreak(dailyTotals, goalMillis, now = Date.now()) {
   if (goalMillis <= 0) return { current: 0, record: 0 }
   const metDays = []
@@ -72,19 +72,19 @@ export function computeStreak(dailyTotals, goalMillis, now = Date.now()) {
     prev = d
   }
   let current = 0
-  let cursor = epochDay(now)
+  let cursor = epochDay(goalDayStart(now))
   if (!set.has(cursor)) cursor--
   while (set.has(cursor)) { current++; cursor-- }
   return { current, record }
 }
 
-/** Per-day totals (keyed by local midnight of the start day, like the phone) for one language and
- *  content type. */
+/** Per-goal-day totals (keyed by the 4 AM start of the goal day a session started in, like the
+ *  phone) for one language and content type. */
 export function dailyTotalsFor(entries, profileId, type, now = Date.now()) {
   const totals = new Map()
   for (const e of entries) {
     if (e.languageProfileId !== profileId || e.contentType !== type) continue
-    const d = dayStart(e.startTimeMillis)
+    const d = goalDayStart(e.startTimeMillis)
     totals.set(d, (totals.get(d) || 0) + durationOf(e, now))
   }
   return totals

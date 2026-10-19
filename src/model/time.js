@@ -15,6 +15,19 @@ export function dayStart(ms) {
   return d.getTime()
 }
 
+/** Goal days (rings, goal streaks) run from this local hour to the same hour the next day, so a
+ *  late night - immersion between midnight and 4 AM - still counts for the day before, and the
+ *  rings don't reset until 4 AM. The phone's StreakCalculator.GOAL_DAY_START_HOUR. */
+export const GOAL_DAY_START_HOUR = 4
+
+/** The start (local 4 AM) of the goal day [ms] falls in. */
+export function goalDayStart(ms) {
+  const d = new Date(ms)
+  if (d.getHours() < GOAL_DAY_START_HOUR) d.setDate(d.getDate() - 1)
+  d.setHours(GOAL_DAY_START_HOUR, 0, 0, 0)
+  return d.getTime()
+}
+
 /** The local calendar date of [ms] as an epoch-day number (days since 1970-01-01). */
 export function epochDay(ms) {
   const d = new Date(ms)

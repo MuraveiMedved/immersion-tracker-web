@@ -6,7 +6,7 @@ import {
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
 import { GOLDEN_DAYS } from '../model/rules.js'
-import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf, epochDayStart } from '../model/time.js'
+import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf, epochDayStart, goalDayStart } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Bolt, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill, displayEmoji, firstGrapheme } from './common.jsx'
 import { Ring } from './Ring.jsx'
@@ -1288,7 +1288,7 @@ function MyProfileSheet({ onClose }) {
 /** A profile's goals laid out like its owner's Home: the heading with their Momentum pill, then a
  *  goal card per language - two columns, an odd one out across the full width. */
 function ProfileTodayCard({ p }) {
-  const asOf = p.dayKey > 0 && p.dayKey !== ymdOf(Date.now())
+  const asOf = p.dayKey > 0 && p.dayKey !== ymdOf(goalDayStart(Date.now()))
   const has = (l, k) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || !!l[k + 'Streak']
   const cards = p.languages.filter((l) => has(l, 'listen') || has(l, 'read'))
   const odd = cards.length % 2 === 1 ? cards[cards.length - 1] : null
