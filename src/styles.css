@@ -584,6 +584,7 @@ textarea.input { resize: vertical; }
 .odds-row b { font-size: 14px; min-width: 40px; text-align: right; }
 .odds-track { flex: 1; height: 10px; margin: 0 10px; border-radius: 999px; background: var(--surface-variant); overflow: hidden; }
 .odds-track > div { height: 100%; border-radius: 999px; }
+.foil-example { width: min(280px, 80%); margin: 18px auto 4px; }
 .foil-hint { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; background: var(--c-highest); font-size: 12px; }
 .glow-pill-soft.solid { border: 0; color: #fff; font-weight: 700; }
 .crate-stage { display: flex; flex-direction: column; align-items: center; cursor: pointer; user-select: none; -webkit-user-select: none; }

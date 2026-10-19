@@ -10,6 +10,7 @@ import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
+import { useCatalog, AnimalCardView, Floaty } from './Zoo.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions } from './timers.js'
 import { ICONS } from './icons.js'
 
@@ -387,8 +388,28 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
   )
 }
 
+/** Shows [children] (a card) at its natural width, scaled down as a whole - like the phone's
+ *  FitToHeight - so it takes at most 40% of the window's height instead of wrapping taller. */
+function FitCard({ children }) {
+  const ref = useRef(null)
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    const fit = () => {
+      const h = ref.current?.offsetHeight
+      if (h) setScale(Math.min(1, (window.innerHeight * 0.4) / h))
+    }
+    fit()
+    const t = setTimeout(fit, 300) // again once the photo has loaded and the card has its real height
+    window.addEventListener('resize', fit)
+    return () => { clearTimeout(t); window.removeEventListener('resize', fit) }
+  }, [])
+  return <div class="foil-example" style={{ zoom: scale }}><div ref={ref}>{children}</div></div>
+}
+
 function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
   const gold = days >= GOLDEN_DAYS
+  // An example of what gold can bring: a foil Fennec fox, as on the phone.
+  const fennec = useCatalog()?.find((a) => a.id === 'fennec_fox')
   const pct = Math.min(1, todayMillis / GOLDEN_DAILY_MILLIS)
   return (
     <Dialog title={`Momentum · ${days}d`} onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>OK</button>}>
@@ -400,6 +421,7 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
       <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, #c99a2e, #ffd76a)' }} /></div>
       <p class="muted small" style="margin:14px 0 4px">1+ hour a day, {GOLDEN_DAYS} days in a row → gold. Every language counts together; music and Anki don't.</p>
       <p class="muted small" style="margin:0">Gold = {FOIL_CHANCE_PERCENT}% foil chance on eggs earned.</p>
+      {fennec && <FitCard><Floaty><AnimalCardView animal={fennec} cert={{ foil: true }} /></Floaty></FitCard>}
     </Dialog>
   )
 }
