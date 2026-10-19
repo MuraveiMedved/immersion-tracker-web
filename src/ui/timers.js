@@ -1,7 +1,7 @@
 // Every start / stop / switch / discard of a live timer goes through here, so each one is a single
 // tap with an Undo in its toast instead of a confirm dialog - timers get started and stopped many
 // times a day, and a mis-tap should cost one more tap, not a trip into the entry list.
-import { getState, startManualEntry, stopRunningEntry, deleteRunningEntry, reopenEntry, discardEntry, profileById, runningEntry, PODCAST, READING, ANKI } from '../store.js'
+import { getState, startManualEntry, stopRunningEntry, deleteRunningEntry, reopenEntry, discardEntry, profileById, runningEntry, WEB_APP, PODCAST, READING, ANKI } from '../store.js'
 import { durationOf } from '../model/rules.js'
 import { formatHm } from '../model/time.js'
 import { toast } from './common.jsx'
@@ -76,11 +76,12 @@ export function toggleTimer(type, languageProfileId) {
   else startTimer(type, languageProfileId)
 }
 
-/** The most recent session that can be resumed in one tap (manual or not), when nothing's running. */
+/** The most recent web-app session that can be resumed in one tap, when nothing's running. Sessions
+ *  synced from the phone are skipped - the Resume bar only offers what was tracked here. */
 export function lastSession() {
   let best = null
   for (const e of getState().entries) {
-    if (e.endTimeMillis == null || (e.contentType !== PODCAST && e.contentType !== READING && e.contentType !== ANKI)) continue
+    if (e.endTimeMillis == null || e.appPackage !== WEB_APP || (e.contentType !== PODCAST && e.contentType !== READING && e.contentType !== ANKI)) continue
     if (!best || e.endTimeMillis > best.endTimeMillis) best = e
   }
   return best

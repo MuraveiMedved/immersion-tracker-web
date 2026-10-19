@@ -8,6 +8,9 @@ const DB_NAME = 'immersion-tracker'
 const STORE = 'kv'
 const KEY = 'state'
 export const MANUAL_APP = 'manual'
+/** appPackage of every session made in the web app, so they can be told apart from the phone's
+ *  synced ones (the phone shows it as the session's source). */
+export const WEB_APP = 'web'
 export const ANKI_COLOR = '#2E7DD7'
 /** The one Anki profile has the same id on every device, so synced devices share it. */
 export const ANKI_ID = 1
@@ -263,7 +266,7 @@ function addEntry(s, fields) {
     endTimeMillis: null,
     mediaTitle: '',
     mediaArtist: '',
-    appPackage: MANUAL_APP,
+    appPackage: WEB_APP,
     languageProfileId: null,
     contentType: PODCAST,
     detectionReason: null,
