@@ -6,21 +6,20 @@ import { TypeIcon } from './common.jsx'
 // still-tracking animations and the one-off "goal reached" burst - drawn on a canvas. Sizes are in
 // CSS px, which stand in for the phone's dp.
 
-export const RING_STYLES = ['CLASSIC', 'GRADIENT', 'SEGMENTED', 'DOTTED', 'HELIX', 'NEON', 'LIQUID', 'BUBBLES']
-export const RING_LABEL = { CLASSIC: 'Classic', GRADIENT: 'Lazer', SEGMENTED: 'Ticks', DOTTED: 'Trail', HELIX: 'Helix', NEON: 'Neon', LIQUID: 'Liquid', BUBBLES: 'Bubbles' }
+export const RING_STYLES = ['CLASSIC', 'GRADIENT', 'SEGMENTED', 'DOTTED', 'NEON', 'LIQUID', 'BUBBLES']
+export const RING_LABEL = { CLASSIC: 'Classic', GRADIENT: 'Lazer', SEGMENTED: 'Ticks', DOTTED: 'Trail', NEON: 'Neon', LIQUID: 'Liquid', BUBBLES: 'Bubbles' }
 
 const TAU = Math.PI * 2
 const SHIMMER_STOP_COUNT = 48
 const SHIMMER_BAND_HALF_WIDTH = 0.12
 const LIGHT_TRACK_ALPHA = 0.28
-const HELIX_DISC_FRACTION = 0.66
 const DARK_THEME_SHADOW_ALPHA = 0.3
 const LIGHT_THEME_SHADOW_ALPHA = 0.14
 // Room around the ring for its shadow, aura, growing ticks and the burst (the phone's 1.6x canvas).
 const PAD = 0.3
 
-const IN_PROGRESS_MS = { CLASSIC: 1300, GRADIENT: 1300, NEON: 1800, LIQUID: 2600, BUBBLES: 3500, HELIX: 4800, SEGMENTED: 3800, DOTTED: 3800 }
-const COMPLETED_MS = { GRADIENT: 9000, HELIX: 4800, BUBBLES: 3800, SEGMENTED: 3800, DOTTED: 3800 }
+const IN_PROGRESS_MS = { CLASSIC: 1300, GRADIENT: 1300, NEON: 1800, LIQUID: 2600, BUBBLES: 3500, SEGMENTED: 3800, DOTTED: 3800 }
+const COMPLETED_MS = { GRADIENT: 9000, BUBBLES: 3800, SEGMENTED: 3800, DOTTED: 3800 }
 const COMPLETED_MOTION_MILLIS = 2800
 const GLOW_MS = 550
 
@@ -318,12 +317,6 @@ function drawInProgress(ctx, p, progress, g, phase) {
       }
       return
     }
-    case 'HELIX': {
-      glowArc(sw * 0.25, light ? LIGHT_TRACK_ALPHA : 0.16)
-      if (progress <= 0) return
-      drawHelix(ctx, { cx: c, cy: c, radius: r, sweepDeg: sweep, amplitude: sw * 0.8, strandWidth: sw * 0.42, twists: 5, color, stops, phase, strength: g, taperEnds: true, light })
-      return
-    }
     case 'NEON': {
       glowArc(sw * 0.8, light ? 0.24 : 0.12)
       if (progress <= 0) return
@@ -372,69 +365,6 @@ function drawInProgress(ctx, p, progress, g, phase) {
     }
   }
 }
-
-/* ---------------------------------------------------------------------------------------------- */
-/* Helix (shared by the in-progress and completed rings)                                          */
-
-function drawHelix(ctx, { cx, cy, radius, sweepDeg, amplitude, strandWidth, twists, color, stops, phase, strength, taperEnds, light }) {
-  const segments = Math.max(4, Math.floor((sweepDeg / 360) * 240))
-  const rungSpacing = 360 / (twists * 5)
-  const strandColor = (strand, f) => {
-    const base = stops ? sampleGradient(stops, f) : color
-    return strand > 0 ? base : lerpC(base, WHITE, light ? 0.2 : 0.32)
-  }
-  const pointAt = (deg, strand, off) => {
-    const a = (deg / 360) * TAU * twists - off
-    const r = radius + strand * amplitude * Math.sin(a)
-    const t = rad(-90 + deg)
-    return [[cx + Math.cos(t) * r, cy + Math.sin(t) * r], strand * Math.cos(a)]
-  }
-  const taperAt = (deg) => (taperEnds ? 0.35 + 0.65 * clamp(Math.min(deg, sweepDeg - deg) / 10) : 1)
-  const shade = (base, depth) => (light
-    ? (depth >= 0 ? base : lerpC(base, WHITE, 0.45 * -depth))
-    : (depth >= 0 ? lerpC(base, WHITE, 0.3 * depth) : lerpC(base, BLACK, 0.62 * -depth)))
-
-  const layer = (off, live, alpha) => {
-    if (alpha <= 0.001) return
-    const pieces = []
-    for (const strand of [1, -1]) {
-      let prev = null
-      for (let j = 0; j <= segments; j++) {
-        const deg = (sweepDeg * j) / segments
-        const [pt, depth] = pointAt(deg, strand, off)
-        if (prev) {
-          const front = (depth + 1) / 2
-          pieces.push([depth, prev, pt, strandWidth * (0.32 + 0.68 * front) * taperAt(deg), css(shade(strandColor(strand, deg / 360), depth), alpha * (0.28 + 0.72 * front))])
-        }
-        prev = pt
-      }
-    }
-    let k = 0
-    for (let deg = rungSpacing / 2; deg < sweepDeg; deg += rungSpacing, k++) {
-      const [ap, ad] = pointAt(deg, 1, off)
-      const [bp, bd] = pointAt(deg, -1, off)
-      const mid = [(ap[0] + bp[0]) / 2, (ap[1] + bp[1]) / 2]
-      let flash = 0
-      if (live && k % 3 === 0) {
-        const t = (phase + ((k * 0.618) % 1)) % 1
-        flash = Math.pow(Math.sin(t * Math.PI), 8)
-      }
-      const rw = strandWidth * (0.36 + 0.2 * flash) * taperAt(deg)
-      for (const [end, endDepth, strand] of [[ap, ad, 1], [bp, bd, -1]]) {
-        const depth = endDepth * 0.5
-        const col = lerpC(shade(strandColor(strand, deg / 360), depth), WHITE, 0.85 * flash)
-        pieces.push([depth - 0.0002, mid, end, rw, css(col, alpha * (0.55 + 0.4 * flash))])
-      }
-    }
-    pieces.sort((x, y) => x[0] - y[0])
-    for (const [, from, to, w, st] of pieces) line(ctx, from, to, w, st)
-  }
-  layer(0, false, 1 - strength)
-  layer(phase * TAU, true, strength)
-}
-
-/* ---------------------------------------------------------------------------------------------- */
-/* Completed                                                                                      */
 
 const NEON_FLICKER_WINDOWS = [[0.08, 0.12, 0.8], [0.14, 0.17, 0.55], [0.52, 0.58, 0.7], [0.81, 0.83, 0.5]]
 const neonDip = (local) => Math.max(...NEON_FLICKER_WINDOWS.map(([s, e, depth]) => (local >= s && local <= e ? depth * Math.sin(((local - s) / (e - s)) * Math.PI) : 0)))
@@ -511,8 +441,8 @@ function drawCompleted(ctx, p, g, phase, burstT) {
     }
   }
 
-  // Soft contact shadow (Helix's disc is only the middle two-thirds).
-  const shadowScale = style === 'HELIX' ? HELIX_DISC_FRACTION : 1
+  // Soft contact shadow.
+  const shadowScale = 1
   const sy = c + full * 0.1 * shadowScale, sr = full * 1.18 * shadowScale
   const shadow = ctx.createRadialGradient(c, sy, 0, c, sy, sr)
   const sa = light ? LIGHT_THEME_SHADOW_ALPHA : DARK_THEME_SHADOW_ALPHA
@@ -557,11 +487,6 @@ function drawCompletedBody(ctx, p, c, full, g, phase) {
       ctx.restore()
       const ow = full * 0.075
       strokeCircle(ctx, c, c, full - ow / 2, ow, '#fff')
-      return
-    }
-    case 'HELIX': {
-      premiumDisc(ctx, c, c, full * HELIX_DISC_FRACTION, color, discBrush)
-      drawHelix(ctx, { cx: c, cy: c, radius: full * 0.84, sweepDeg: 360, amplitude: full * 0.11, strandWidth: full * 0.065, twists: 6, color, stops, phase, strength: g, taperEnds: false, light })
       return
     }
     case 'NEON': {
