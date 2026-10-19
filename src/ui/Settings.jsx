@@ -302,7 +302,7 @@ function Appearance() {
           {RING_STYLES.map((r) => (
             <button key={r} class={`cos-tile ${s.settings.ringStyle === r ? 'on' : ''}`} onClick={() => setSetting('ringStyle', r)}>
               <div class="row" style="gap:16px">
-                <Ring progress={0.65} color={color} stops={stops} ringStyle={r} size={52} iconType="PODCAST" iconColor={light ? '#000' : '#fff'} active light={light} />
+                <PreviewRing ringStyle={r} color={color} stops={stops} light={light} />
                 <Ring progress={1} color={color} stops={stops} ringStyle={r} size={52} iconType="PODCAST" active light={light} />
               </div>
               <span class="label-large">{RING_LABEL[r]}</span>
@@ -312,6 +312,24 @@ function Appearance() {
       )}
     </>
   )
+}
+
+/** A style tile's in-progress preview: 65%, or for Moon and Flower a loop through every stage - up
+ *  to nearly full, a short hold, then straight back to the start (which they fade through rather
+ *  than running backwards), as on the phone. */
+function PreviewRing({ ringStyle, color, stops, light }) {
+  const looping = ringStyle === 'MOON' || ringStyle === 'FLOWER'
+  const [p, setP] = useState(looping ? 0.02 : 0.65)
+  useEffect(() => {
+    if (!looping) return
+    const start = performance.now()
+    const id = setInterval(() => {
+      const t = ((performance.now() - start) % 8500) / 7000
+      setP(t >= 1 ? 0.98 : 0.02 + 0.96 * t)
+    }, 50)
+    return () => clearInterval(id)
+  }, [looping])
+  return <Ring progress={p} color={color} stops={stops} ringStyle={ringStyle} size={52} iconType="PODCAST" iconColor={light ? '#000' : '#fff'} active light={light} />
 }
 
 /** One Display setting as a card of side-by-side tiles, each with a small live preview. */

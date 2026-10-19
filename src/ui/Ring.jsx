@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'preact/hooks'
 import { hexToRgb } from '../model/theme.js'
 import { TypeIcon } from './common.jsx'
+import { GoalObjectRing, OBJECT_STYLES } from './GoalObjects.jsx'
 
 // A port of the phone's RingProgress.kt - every style's in-progress fill, its completed disc, the
 // still-tracking animations and the one-off "goal reached" burst - drawn on a canvas. Sizes are in
 // CSS px, which stand in for the phone's dp.
 
-export const RING_STYLES = ['CLASSIC', 'GRADIENT', 'SEGMENTED', 'DOTTED', 'NEON', 'LIQUID', 'BUBBLES']
-export const RING_LABEL = { CLASSIC: 'Classic', GRADIENT: 'Lazer', SEGMENTED: 'Ticks', DOTTED: 'Trail', NEON: 'Neon', LIQUID: 'Liquid', BUBBLES: 'Bubbles' }
+export const RING_STYLES = ['CLASSIC', 'GRADIENT', 'SEGMENTED', 'DOTTED', 'NEON', 'LIQUID', 'BUBBLES', 'MOON', 'FLOWER']
+export const RING_LABEL = { CLASSIC: 'Classic', GRADIENT: 'Lazer', SEGMENTED: 'Ticks', DOTTED: 'Trail', NEON: 'Neon', LIQUID: 'Liquid', BUBBLES: 'Bubbles', MOON: 'Moon', FLOWER: 'Flower' }
 
 const TAU = Math.PI * 2
 const SHIMMER_STOP_COUNT = 48
@@ -129,7 +130,13 @@ function shimmerBrush(ctx, cx, cy, target, colorAt) {
  * ([iconType], tinted [iconColor]; white once complete) in the middle. [active] plays the style's
  * still-tracking animation.
  */
-export function Ring({ progress, color, stops, ringStyle = 'CLASSIC', size = 64, iconType, iconColor = '#fff', icon, active = false, light = false }) {
+export function Ring(props) {
+  // Moon and Flower aren't rings at all - see GoalObjects.jsx. A separate component each, so
+  // switching styles never mixes up their state.
+  return OBJECT_STYLES.includes(props.ringStyle) ? <GoalObjectRing {...props} /> : <ArcRing {...props} />
+}
+
+function ArcRing({ progress, color, stops, ringStyle = 'CLASSIC', size = 64, iconType, iconColor = '#fff', icon, active = false, light = false }) {
   const ref = useRef(null)
   const anim = useRef(null)
   const target = Math.max(0, Math.min(1, progress || 0))
