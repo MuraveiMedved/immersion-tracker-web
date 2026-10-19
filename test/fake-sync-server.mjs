@@ -10,6 +10,7 @@ const code = readFileSync(new URL('../sync-backend/Code.gs', import.meta.url), '
 const sheets = new Map()
 const files = new Map()
 const props = new Map()
+const cache = new Map()
 
 function makeSheet() {
   const rows = []
@@ -39,7 +40,8 @@ const context = vm.createContext({
   SpreadsheetApp: { getActiveSpreadsheet: () => ({ getSheetByName: (n) => sheets.get(n) || null, insertSheet: (n) => { const s = makeSheet(); sheets.set(n, s); return s } }) },
   LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
   ContentService: { MimeType: { JSON: 'json' }, createTextOutput: (t) => ({ text: t, setMimeType() { return this } }) },
-  PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props.get(k) ?? null, setProperty: (k, v) => props.set(k, v) }) },
+  PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props.get(k) ?? null, setProperty: (k, v) => props.set(k, String(v)), deleteProperty: (k) => props.delete(k) }) },
+  CacheService: { getScriptCache: () => ({ get: (k) => cache.get(k) ?? null, put: (k, v) => cache.set(k, String(v)), remove: (k) => cache.delete(k) }) },
   DriveApp: {
     createFolder: () => ({ getId: () => 'folder', createFile: (name, content) => makeFile(randomUUID(), content) }),
     getFolderById: () => ({ createFile: (name, content) => makeFile(randomUUID(), content) }),

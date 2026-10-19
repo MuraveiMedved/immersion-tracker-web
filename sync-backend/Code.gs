@@ -13,11 +13,17 @@
  * revision number; a pull returns everything after the revision a device last saw. Deletes are kept
  * as tombstones so they reach every device.
  *
- * Actions (POST, JSON body): ping, create, push, pull, linkCode, linkClaim, devices, unlink.
+ * Actions (POST, JSON body): ping, create, push, pull, sync, linkCode, linkClaim, devices, unlink.
  * See SETUP.md for deploying.
+ *
+ * Speed (v2): every call used to queue for one script-wide lock and read the whole account file
+ * from Drive. Now a pull takes no lock (a push replaces the file in one write, so a pull sees it
+ * whole, before or after); an account's latest revision is kept in script properties, so a device
+ * that's up to date is answered without opening the file; 'sync' is a push and the first pull page
+ * in one call; and which account a token belongs to is cached rather than looked up in the Sheet.
  */
 
-var SYNC_VERSION = 1;
+var SYNC_VERSION = 2;
 var ACCOUNTS_SHEET = 'Accounts';
 var ACCOUNT_HEADERS = ['accountId', 'fileId', 'name', 'createdAt', 'lastSeen'];
 var DEVICES_SHEET = 'Devices';
@@ -31,6 +37,10 @@ var LINK_CODE_MILLIS = 10 * 60 * 1000;
 var MAX_RECORD_CHARS = 30000;
 var MAX_PUSH = 3000;
 var PULL_PAGE = 4000;
+/** A device's "last seen" (Settings > Your devices) is noted at most this often. */
+var SEEN_EVERY_MILLIS = 10 * 60 * 1000;
+/** How long a token -> account lookup is cached (CacheService's longest). */
+var DEVICE_CACHE_SECONDS = 6 * 60 * 60;
 
 function doGet() {
   return json_({ ok: true, service: 'immersion-tracker-sync', version: SYNC_VERSION });
@@ -42,12 +52,14 @@ function doPost(e) {
     var req = JSON.parse(e.postData.contents);
     var now = Date.now();
     if (req.action === 'ping') return json_({ ok: true, version: SYNC_VERSION });
+    // Only reads, so it doesn't queue behind another device's push.
+    if (req.action === 'pull') return json_(pull_(req, now));
     lock = LockService.getScriptLock();
     lock.waitLock(25000);
     switch (req.action) {
       case 'create': return json_(create_(req, now));
       case 'push': return json_(push_(req, now));
-      case 'pull': return json_(pull_(req, now));
+      case 'sync': return json_(sync_(req, now));
       case 'linkCode': return json_(linkCode_(req, now));
       case 'linkClaim': return json_(linkClaim_(req, now));
       case 'devices': return json_(devices_(req, now));
@@ -112,20 +124,39 @@ function writeDoc_(fileId, doc) {
   DriveApp.getFileById(fileId).setContent(JSON.stringify(doc));
 }
 
-/** The device row for req.token (and its account), or throws. Notes the device was just seen. */
+/** The device for req.token - {accountId, fileId, tokenHash} - or throws. Notes it was just seen
+ *  (in script properties, not the Sheet: a pull holds no lock, and a row can move while it runs). */
 function device_(token, now) {
   token = String(token || '');
   if (token.length < 32) throw new Error('This device isn\'t signed in');
   var h = hash_(token);
-  var sheet = sheet_(DEVICES_SHEET, DEVICE_HEADERS);
-  var rows = rows_(sheet);
-  for (var i = 0; i < rows.length; i++) {
-    if (String(rows[i][0]) === h) {
-      sheet.getRange(i + 2, 5).setValue(now);
-      return { accountId: String(rows[i][1]), row: i + 2, tokenHash: h };
+  var cache = CacheService.getScriptCache();
+  var cached = cache.get('dev:' + h);
+  var device = cached ? JSON.parse(cached) : null;
+  if (!device) {
+    var rows = rows_(sheet_(DEVICES_SHEET, DEVICE_HEADERS));
+    for (var i = 0; i < rows.length && !device; i++) {
+      if (String(rows[i][0]) === h) device = { accountId: String(rows[i][1]), fileId: account_(String(rows[i][1])).fileId, tokenHash: h, seen: 0 };
     }
+    if (!device) throw new Error('This device was signed out - sign in again with a code or your recovery key');
   }
-  throw new Error('This device was signed out - sign in again with a code or your recovery key');
+  if (now - device.seen >= SEEN_EVERY_MILLIS) {
+    PropertiesService.getScriptProperties().setProperty('seen:' + h, String(now));
+    device.seen = now;
+    cache.put('dev:' + h, JSON.stringify(device), DEVICE_CACHE_SECONDS);
+  }
+  return device;
+}
+
+function forgetDevice_(tokenHash) {
+  CacheService.getScriptCache().remove('dev:' + tokenHash);
+  PropertiesService.getScriptProperties().deleteProperty('seen:' + tokenHash);
+}
+
+/** The account's latest revision, or null if not noted yet (an account last pushed to before v2). */
+function savedRev_(accountId) {
+  var v = PropertiesService.getScriptProperties().getProperty('rev:' + accountId);
+  return v == null ? null : Number(v);
 }
 
 function account_(accountId) {
@@ -146,6 +177,7 @@ function create_(req, now) {
   var accountId = Utilities.getUuid();
   var file = folder_().createFile(accountId + '.json', JSON.stringify({ rev: 0, records: {} }), 'application/json');
   sheet_(ACCOUNTS_SHEET, ACCOUNT_HEADERS).appendRow([accountId, file.getId(), String(req.name || '').slice(0, 40), now, now]);
+  PropertiesService.getScriptProperties().setProperty('rev:' + accountId, '0');
   var token = addDevice_(accountId, req.deviceName, now);
   return { ok: true, version: SYNC_VERSION, accountId: accountId, token: token };
 }
@@ -162,13 +194,8 @@ function cleanRecord_(r) {
   return { coll: r.coll, id: id, updatedAt: updatedAt, deleted: deleted, data: data };
 }
 
-/** Merges the device's changed records, newest edit winning. Replies with the new revision; the
- *  device then pulls whatever it hasn't seen. */
-function push_(req, now) {
-  var device = device_(req.token, now);
-  var account = account_(device.accountId);
-  var doc = readDoc_(account.fileId);
-  var changes = Array.isArray(req.changes) ? req.changes.slice(0, MAX_PUSH) : [];
+/** Merges [changes] into [doc], newest edit winning; returns how many were taken. */
+function merge_(doc, changes, now) {
   var accepted = 0;
   changes.forEach(function (raw) {
     var r = cleanRecord_(raw);
@@ -184,17 +211,22 @@ function push_(req, now) {
     doc.records[key] = r;
     accepted++;
   });
-  if (accepted) writeDoc_(account.fileId, doc);
-  sheet_(ACCOUNTS_SHEET, ACCOUNT_HEADERS).getRange(account.row, 5).setValue(now);
-  return { ok: true, version: SYNC_VERSION, rev: doc.rev, accepted: accepted, taken: changes.length };
+  return accepted;
 }
 
-/** Every record changed after req.sinceRev, oldest first, a page at a time. */
-function pull_(req, now) {
-  var device = device_(req.token, now);
-  var account = account_(device.accountId);
-  var doc = readDoc_(account.fileId);
-  var since = Number(req.sinceRev) || 0;
+/** Merges the device's records into its account (under the lock). The file is written before the
+ *  revision is noted, so a pull that sees the new revision always finds the file that has it. */
+function pushInto_(device, req, now) {
+  var doc = readDoc_(device.fileId);
+  var changes = Array.isArray(req.changes) ? req.changes.slice(0, MAX_PUSH) : [];
+  var accepted = merge_(doc, changes, now);
+  if (accepted) writeDoc_(device.fileId, doc);
+  if (accepted || savedRev_(device.accountId) !== doc.rev) PropertiesService.getScriptProperties().setProperty('rev:' + device.accountId, String(doc.rev));
+  return { doc: doc, accepted: accepted, taken: changes.length };
+}
+
+/** One page of the records in [doc] changed after [since], oldest first. */
+function page_(doc, since, accountId) {
   var out = [];
   Object.keys(doc.records).forEach(function (key) {
     var r = doc.records[key];
@@ -203,7 +235,36 @@ function pull_(req, now) {
   out.sort(function (a, b) { return a.rev - b.rev; });
   var more = out.length > PULL_PAGE;
   if (more) out = out.slice(0, PULL_PAGE);
-  return { ok: true, version: SYNC_VERSION, rev: more ? out[out.length - 1].rev : doc.rev, more: more, records: out, accountId: device.accountId };
+  return { ok: true, version: SYNC_VERSION, rev: more ? out[out.length - 1].rev : doc.rev, more: more, records: out, accountId: accountId };
+}
+
+/** Merges the device's changed records. Replies with the new revision; the device then pulls
+ *  whatever it hasn't seen (or uses 'sync', which does both). */
+function push_(req, now) {
+  var device = device_(req.token, now);
+  var result = pushInto_(device, req, now);
+  return { ok: true, version: SYNC_VERSION, rev: result.doc.rev, accepted: result.accepted, taken: result.taken };
+}
+
+/** A push and the first page of what the device hasn't seen (its own records included), from one
+ *  read of the file. If 'more' is set, the device carries on with 'pull'. */
+function sync_(req, now) {
+  var device = device_(req.token, now);
+  var result = pushInto_(device, req, now);
+  var reply = page_(result.doc, Number(req.sinceRev) || 0, device.accountId);
+  reply.accepted = result.accepted;
+  reply.taken = result.taken;
+  return reply;
+}
+
+/** Every record changed after req.sinceRev, oldest first, a page at a time. Takes no lock; a device
+ *  already up to date gets its answer without the file being opened. */
+function pull_(req, now) {
+  var device = device_(req.token, now);
+  var since = Number(req.sinceRev) || 0;
+  var rev = savedRev_(device.accountId);
+  if (rev != null && since >= rev) return { ok: true, version: SYNC_VERSION, rev: since, more: false, records: [], accountId: device.accountId };
+  return page_(readDoc_(device.fileId), since, device.accountId);
 }
 
 function linkCode_(req, now) {
@@ -242,10 +303,12 @@ function linkClaim_(req, now) {
 
 function devices_(req, now) {
   var device = device_(req.token, now);
+  var props = PropertiesService.getScriptProperties();
   var list = rows_(sheet_(DEVICES_SHEET, DEVICE_HEADERS))
     .filter(function (row) { return String(row[1]) === device.accountId; })
     .map(function (row) {
-      return { id: String(row[0]).slice(0, 10), name: String(row[2] || 'Device'), lastSeen: Number(row[4]) || 0, thisDevice: String(row[0]) === device.tokenHash };
+      var seen = Number(props.getProperty('seen:' + String(row[0]))) || 0;
+      return { id: String(row[0]).slice(0, 10), name: String(row[2] || 'Device'), lastSeen: Math.max(Number(row[4]) || 0, seen), thisDevice: String(row[0]) === device.tokenHash };
     });
   return { ok: true, version: SYNC_VERSION, devices: list };
 }
@@ -257,7 +320,10 @@ function unlink_(req, now) {
   var sheet = sheet_(DEVICES_SHEET, DEVICE_HEADERS);
   var rows = rows_(sheet);
   for (var i = rows.length - 1; i >= 0; i--) {
-    if (String(rows[i][1]) === device.accountId && String(rows[i][0]).slice(0, 10) === target) sheet.deleteRow(i + 2);
+    if (String(rows[i][1]) === device.accountId && String(rows[i][0]).slice(0, 10) === target) {
+      sheet.deleteRow(i + 2);
+      forgetDevice_(String(rows[i][0]));
+    }
   }
   return { ok: true, version: SYNC_VERSION };
 }

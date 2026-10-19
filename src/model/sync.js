@@ -184,11 +184,13 @@ const deviceName = () => {
 }
 
 /** Pulls every page after this device's last revision and applies it. [cur] is what was pushed
- *  from (records edited locally since are left for the next round). */
-async function pullAll(token, cur) {
+ *  from (records edited locally since are left for the next round). [first] is a page already
+ *  fetched (the reply to a 'sync'). */
+async function pullAll(token, cur, first = null) {
   let since = getState().sync.sinceRev || 0
   for (;;) {
-    const res = await call({ action: 'pull', token, sinceRev: since })
+    const res = first || await call({ action: 'pull', token, sinceRev: since })
+    first = null
     const now = collect(getState())
     const take = res.records.filter((r) => {
       const local = now[r.coll]?.get(r.id)
@@ -211,6 +213,9 @@ async function pullAll(token, cur) {
     if (!res.more) break
   }
 }
+
+// Set once a server without 'sync' (one deployed before it) has said so - then push, then pull.
+let noCombined = false
 
 let running = null
 /** One full round: push local changes, pull the rest. Runs one at a time. */
@@ -249,16 +254,27 @@ async function round() {
   if (deletes > 20 && deletes > known / 2) {
     throw new Error(`Sync paused: ${deletes} records are missing on this device. Sign out and back in here to get your data back from the account.`)
   }
+  // The last chunk goes as a 'sync', whose reply is also the first pull page - one call, not two.
+  let first = null
   for (let i = 0; i < changes.length; i += PUSH_CHUNK) {
     const chunk = changes.slice(i, i + PUSH_CHUNK)
-    await call({ action: 'push', token, changes: chunk })
+    const last = i + PUSH_CHUNK >= changes.length
+    if (last && !noCombined) {
+      try {
+        first = await call({ action: 'sync', token, changes: chunk, sinceRev: getState().sync.sinceRev || 0 })
+      } catch (err) {
+        if (!/Unknown action/.test(err.message)) throw err
+        noCombined = true
+      }
+    }
+    if (!first) await call({ action: 'push', token, changes: chunk })
     for (const c of chunk) {
       const m = (snapshot[c.coll] ||= {})
       if (c.deleted) delete m[c.id]
       else m[c.id] = cur[c.coll].get(c.id)
     }
   }
-  await pullAll(token, cur)
+  await pullAll(token, cur, first)
   await saveSnapshot()
 }
 
