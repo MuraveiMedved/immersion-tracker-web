@@ -9,19 +9,6 @@ import { formatDate } from '../model/time.js'
 import { Dialog, Seg, toast, Spinner, Bolt } from './common.jsx'
 import { createPortal } from 'preact/compat'
 
-// Foil cards catch the light as the pointer moves (or the phone tilts, where the browser shares
-// it): one listener for the whole page, feeding --foil-x / --foil-y (0..1) to every foil's CSS.
-if (typeof window !== 'undefined' && !window.__foilLight) {
-  window.__foilLight = true
-  const set = (x, y) => {
-    const s = document.documentElement.style
-    s.setProperty('--foil-x', Math.max(0, Math.min(1, x)).toFixed(3))
-    s.setProperty('--foil-y', Math.max(0, Math.min(1, y)).toFixed(3))
-  }
-  window.addEventListener('pointermove', (e) => set(e.clientX / innerWidth, e.clientY / innerHeight), { passive: true })
-  window.addEventListener('deviceorientation', (e) => { if (e.gamma != null) set(0.5 + e.gamma / 60, 0.5 + ((e.beta ?? 45) - 45) / 60) }, { passive: true })
-}
-
 export const RARITY_GRADIENT = {
   GREEN: 'linear-gradient(135deg, #2e7d32, #66bb6a)',
   BLUE: 'linear-gradient(135deg, #1e4fd8, #4fa3ff)',
