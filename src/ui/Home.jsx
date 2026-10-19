@@ -392,7 +392,7 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
   const pct = Math.min(1, todayMillis / GOLDEN_DAILY_MILLIS)
   return (
     <Dialog title={`Momentum · ${days}d`} onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>OK</button>}>
-      <div class="center" style="font-size:54px;margin:4px 0 10px"><Bolt gold={gold} muted={!gold} size={44} /></div>
+      <div class="center" style="font-size:54px;margin:4px 0 10px"><Bolt gold={gold} muted={!gold} /></div>
       <p style="margin:0 0 12px;font-weight:650;text-align:center">
         {gold ? 'Your momentum is gold' : `${GOLDEN_DAYS - Math.min(days, GOLDEN_DAYS)} more day${GOLDEN_DAYS - days === 1 ? '' : 's'} to gold`}
       </p>

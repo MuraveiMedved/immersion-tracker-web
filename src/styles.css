@@ -232,9 +232,10 @@ textarea.input { resize: vertical; }
 .momentum { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 2px 4px; border-radius: 999px; }
 .momentum .days { font-size: 12px; font-weight: 700; color: var(--on-surface-variant); }
 .momentum.gold .days { color: var(--gold); }
-.bolt { display: inline-block; vertical-align: middle; flex: none; }
-.bolt.gold { filter: drop-shadow(0 0 3px rgba(255, 194, 26, .45)); }
-.bolt.muted { opacity: .55; }
+.bolt { display: inline-block; flex: none; }
+/* Every platform draws ⚡ in its own yellow: tint it to gold, then glow. */
+.bolt.gold { filter: sepia(1) saturate(2.6) hue-rotate(-8deg) brightness(1.08) drop-shadow(0 0 .25em rgba(255, 194, 26, .9)) drop-shadow(0 0 .5em rgba(255, 194, 26, .45)); }
+.bolt.muted { filter: grayscale(1); opacity: .55; }
 /* Now tracking: the language's dimmed colour, an outline, a dot, and stop / discard. */
 .now-banner {
   display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 12px 16px; border-radius: 16px;

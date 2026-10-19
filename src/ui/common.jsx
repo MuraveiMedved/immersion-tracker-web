@@ -296,23 +296,11 @@ export function ColorPicker({ colorHex, gradientColors, onChange }) {
   )
 }
 
-/** The Momentum lightning bolt (the phone's GoldenBolt/MutedBolt): gold with a soft glow when
- *  Momentum is lit, grey and faded below that. [size] is the font size it stands in for. */
-export function Bolt({ gold = false, muted = false, size = 16 }) {
-  const s = Math.round(size * 1.3)
-  const id = gold ? 'bolt-gold' : 'bolt-grey'
-  const stops = gold ? ['#FFF0A0', '#FFC21A', '#E38700'] : ['#D6D6D6', '#A8A8A8', '#7C7C7C']
-  return (
-    <svg class={`bolt ${gold ? 'gold' : ''} ${muted ? 'muted' : ''}`} width={s} height={s} viewBox="0 0 100 100" aria-hidden="true">
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color={stops[0]} /><stop offset=".5" stop-color={stops[1]} /><stop offset="1" stop-color={stops[2]} />
-        </linearGradient>
-      </defs>
-      <path d="M58 2 L16 58 L44 58 L32 98 L86 38 L57 38 L74 2 Z" fill={`url(#${id})`} stroke={gold ? 'rgba(154,84,0,.6)' : 'rgba(85,85,85,.5)'} stroke-width="4.5" stroke-linejoin="round" />
-      <path d="M57 9 L26 52" stroke="rgba(255,255,255,.55)" stroke-width="3.5" stroke-linecap="round" />
-    </svg>
-  )
+/** The Momentum ⚡ (the phone's GoldenBolt/MutedBolt): colour-corrected to gold with a soft gold
+ *  glow when Momentum is lit, grey and faded below that. */
+export function Bolt({ gold = false, muted = false, size }) {
+  const style = { fontSize: size ? `${size}px` : undefined, lineHeight: 1 }
+  return <span class={`bolt ${gold ? 'gold' : ''} ${muted ? 'muted' : ''}`} style={style}>⚡</span>
 }
 
 export function Spinner() { return <span class="spin" /> }
