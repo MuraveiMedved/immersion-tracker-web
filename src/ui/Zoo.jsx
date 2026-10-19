@@ -356,6 +356,104 @@ function seeded(str) {
   return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296 }
 }
 
+/* ------------------------------------------------------------------------------------------------ */
+/* Foil - a port of the phone's foilSheen (AnimalCard.kt): a 9-column grid of triangular facets,
+   each throwing its own rainbow colour (screened over the photo), faint facet edges, a spectrum
+   band (overlay) and a soft vignette, with the photo itself a little punchier (CSS). The phone
+   drives it by tilt; here a slow, constant loop stands in for the tilt, through the same formulas. */
+
+const PRISM_COLUMNS = 9
+const FOIL_LOOP_MS = 12000
+const foilDrawers = new Set()
+let foilFrame = 0
+let foilLast = 0
+function foilTick(t) {
+  foilFrame = 0
+  if (!foilDrawers.size) return
+  if (t - foilLast >= 33) { // ~30 fps is plenty for a slow shimmer
+    foilLast = t
+    const turn = ((t % FOIL_LOOP_MS) / FOIL_LOOP_MS) * Math.PI * 2
+    const tilt = { x: 0.6 * Math.sin(turn), y: 0.4 * Math.cos(turn) }
+    foilDrawers.forEach((draw) => draw(tilt))
+  }
+  foilFrame = requestAnimationFrame(foilTick)
+}
+function addFoilDrawer(draw) {
+  foilDrawers.add(draw)
+  if (!foilFrame) foilFrame = requestAnimationFrame(foilTick)
+  return () => foilDrawers.delete(draw)
+}
+const SPECTRUM = [0, 50, 110, 180, 230, 290, 340]
+const hsv = (h, s, v, a) => {
+  const f = (n) => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)) }
+  return `rgba(${Math.round(f(5) * 255)},${Math.round(f(3) * 255)},${Math.round(f(1) * 255)},${a})`
+}
+
+export function FoilSheen({ seed = '' }) {
+  const facetsRef = useRef(null)
+  const bandRef = useRef(null)
+  useEffect(() => {
+    const facetsCanvas = facetsRef.current
+    const bandCanvas = bandRef.current
+    if (!facetsCanvas || !bandCanvas) return
+    const rand = seeded(String(seed) + ':prism')
+    const seeds = Array.from({ length: PRISM_COLUMNS * 40 * 2 }, rand)
+    let w = 0, h = 0, dpr = 1, facets = []
+    const layout = () => {
+      const box = facetsCanvas.parentElement.getBoundingClientRect()
+      dpr = Math.min(2, window.devicePixelRatio || 1)
+      w = box.width; h = box.height
+      for (const c of [facetsCanvas, bandCanvas]) { c.width = Math.max(1, Math.round(w * dpr)); c.height = Math.max(1, Math.round(h * dpr)) }
+      const cell = w / PRISM_COLUMNS
+      const rows = Math.ceil(h / cell)
+      facets = []
+      for (let row = 0; row < rows; row++) for (let col = 0; col < PRISM_COLUMNS; col++) {
+        const x0 = col * cell, y0 = row * cell, flip = (row + col) % 2 === 0
+        const a = flip ? [[x0, y0], [x0 + cell, y0], [x0, y0 + cell]] : [[x0, y0], [x0 + cell, y0], [x0 + cell, y0 + cell]]
+        const b = flip ? [[x0 + cell, y0], [x0 + cell, y0 + cell], [x0, y0 + cell]] : [[x0, y0], [x0 + cell, y0 + cell], [x0, y0 + cell]]
+        for (const tri of [a, b]) facets.push({ tri, at: { x: (tri[0][0] + tri[1][0] + tri[2][0]) / 3 / w, y: (tri[0][1] + tri[1][1] + tri[2][1]) / 3 / h } })
+      }
+    }
+    const draw = (tilt) => {
+      if (!w) return
+      const fc = facetsCanvas.getContext('2d')
+      fc.setTransform(dpr, 0, 0, dpr, 0, 0)
+      fc.clearRect(0, 0, w, h)
+      facets.forEach(({ tri, at }, i) => {
+        const sd = seeds[i % seeds.length]
+        const hue = (((at.x * 220 + at.y * 140 + sd * 70 + tilt.x * 260 - tilt.y * 180) % 360) + 360) % 360
+        const c = Math.max(0, Math.cos(sd * 6.28 + tilt.x * 4 + tilt.y * 3 + (at.x - at.y) * 2))
+        fc.beginPath(); fc.moveTo(tri[0][0], tri[0][1]); fc.lineTo(tri[1][0], tri[1][1]); fc.lineTo(tri[2][0], tri[2][1]); fc.closePath()
+        fc.fillStyle = hsv(hue, 0.55, 1, 0.04 + 0.128 * c * c)
+        fc.fill()
+        if (i % 2 === 0) { fc.strokeStyle = 'rgba(255,255,255,.028)'; fc.lineWidth = 0.6; fc.stroke() }
+      })
+      const bc = bandCanvas.getContext('2d')
+      bc.setTransform(dpr, 0, 0, dpr, 0, 0)
+      bc.clearRect(0, 0, w, h)
+      const along = 0.3 + 0.35 * tilt.x - 0.25 * tilt.y
+      const ox = w * (along - 0.5), oy = h * (along - 0.5)
+      const g = bc.createLinearGradient(ox + w * 0.25, oy + h * 0.25, ox + w * 0.75, oy + h * 0.75)
+      g.addColorStop(0, 'rgba(0,0,0,0)')
+      SPECTRUM.forEach((hue, k) => g.addColorStop((k + 1) / (SPECTRUM.length + 1), hsv(hue, 0.6, 1, 0.064)))
+      g.addColorStop(1, 'rgba(0,0,0,0)')
+      bc.fillStyle = g
+      bc.fillRect(0, 0, w, h)
+    }
+    layout()
+    const ro = new ResizeObserver(layout)
+    ro.observe(facetsCanvas.parentElement)
+    const remove = addFoilDrawer(draw)
+    return () => { ro.disconnect(); remove() }
+  }, [seed])
+  return (
+    <div class="foil-sheen">
+      <canvas ref={facetsRef} class="foil-facets" />
+      <canvas ref={bandRef} class="foil-band" />
+    </div>
+  )
+}
+
 function FoilGlints({ seed }) {
   const glints = useMemo(() => {
     const r = seeded(seed)
@@ -459,7 +557,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
         <div class="acard" style={inner}>
           <div class="photo">
             <AnimalPhoto animal={animal} />
-            {foil && <div class="foil-sheen" />}
+            {foil && <FoilSheen seed={animal.id} />}
             <div class="photo-rule" />
             <span class={`rarity-pill ${mythic ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(animal.rarity) }}>{RARITY_LABEL[animal.rarity]}</span>
             <div class="corner-chips">
@@ -588,7 +686,7 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
                 onPointerDown={() => { if (!trade) timer = setTimeout(() => startTrade(a), 500) }}
                 onPointerUp={() => clearTimeout(timer)} onPointerLeave={() => clearTimeout(timer)}>
                 <AnimalPhoto animal={a} />
-                {foil && <div class="foil-sheen" />}
+                {foil && <FoilSheen seed={a.id} />}
                 {have > 1 && <span class="count">×{have}</span>}
                 {picks > 0 && <span class="count pick">{picks}</span>}
                 {a.id === trophyId && <span class="count pick">🏆</span>}

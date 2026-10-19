@@ -10,7 +10,7 @@ import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ym
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Bolt, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill, displayEmoji, firstGrapheme } from './common.jsx'
 import { Ring } from './Ring.jsx'
-import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill } from './Zoo.jsx'
+import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill, FoilSheen } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'
 
 const EMOJIS = ['🦊', '🐼', '🐯', '🦁', '🐸', '🐙', '🦉', '🐧', '🐢', '🦄', '🐝', '🦋', '🐳', '🦖', '🐲', '🌸', '⭐', '🔥', '⚡', '🍀', '🍣', '☕', '🎧', '📚']
@@ -1413,7 +1413,7 @@ function ProfileSections({ p }) {
           <div class="profile-zoo">
             {(all ? zoo : zoo.slice(0, 12)).map(([a, n]) => (
               <button key={a.id} class="tile-animal" style={{ borderColor: RARITY_COLOR[a.rarity] }} title={a.name} onClick={() => setOpen(a)}>
-                <AnimalPhoto animal={a} />{cert(a.id)?.foil && <div class="foil-sheen" />}{n > 1 && <span class="count">×{n}</span>}
+                <AnimalPhoto animal={a} />{cert(a.id)?.foil && <FoilSheen seed={a.id} />}{n > 1 && <span class="count">×{n}</span>}
               </button>
             ))}
           </div>
