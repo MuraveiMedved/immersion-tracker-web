@@ -228,11 +228,13 @@ textarea.input { resize: vertical; }
 .home-head .today-total { font-size: 16px; line-height: 24px; font-weight: 600; margin-right: 12px; }
 .today-row { display: flex; align-items: center; gap: 4px; margin: 16px -8px 0 0; }
 .today-row h2 { flex: 1; }
-/* The Momentum pill: today's progress ring round the flame, and the days. */
+/* The Momentum pill: today's progress ring round the bolt, and the days. */
 .momentum { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 2px 4px; border-radius: 999px; }
 .momentum .days { font-size: 12px; font-weight: 700; color: var(--on-surface-variant); }
 .momentum.gold .days { color: var(--gold); }
-.flame.muted { filter: grayscale(1) opacity(.55); }
+.bolt { display: inline-block; vertical-align: middle; flex: none; }
+.bolt.gold { filter: drop-shadow(0 0 3px rgba(255, 194, 26, .45)); }
+.bolt.muted { opacity: .55; }
 /* Now tracking: the language's dimmed colour, an outline, a dot, and stop / discard. */
 .now-banner {
   display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 12px 16px; border-radius: 16px;

@@ -8,7 +8,7 @@ import {
 import { GOLDEN_DAYS } from '../model/rules.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf, epochDayStart } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
-import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Flame, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill, displayEmoji, firstGrapheme } from './common.jsx'
+import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Bolt, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill, displayEmoji, firstGrapheme } from './common.jsx'
 import { Ring } from './Ring.jsx'
 import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'

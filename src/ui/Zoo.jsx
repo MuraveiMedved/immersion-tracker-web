@@ -6,7 +6,7 @@ import {
 } from '../model/zoo.js'
 import { isGolden } from '../model/rules.js'
 import { formatDate } from '../model/time.js'
-import { Dialog, Seg, toast, Spinner, Flame } from './common.jsx'
+import { Dialog, Seg, toast, Spinner, Bolt } from './common.jsx'
 import { createPortal } from 'preact/compat'
 
 export const RARITY_GRADIENT = {
@@ -141,7 +141,7 @@ function RarityPillInline({ rarity, width }) {
 }
 
 /** "Egg hatch rates", like the phone's LootBoxOddsDialog: each tier's chance as a bar in its
- *  colours (never how many animals a tier holds), and the golden flame's foil chance. */
+ *  colours (never how many animals a tier holds), and Momentum's foil chance. */
 function OddsDialog({ onClose }) {
   const set = Object.fromEntries(LOOT_BOX_ODDS)
   const rest = 100 - LOOT_BOX_ODDS.reduce((a, [, p]) => a + p, 0)
@@ -161,7 +161,7 @@ function OddsDialog({ onClose }) {
             </div>
           )
         })}
-        <div class="foil-hint"><Flame gold size={18} /><span>= {FOIL_CHANCE_PERCENT}% chance of a foil card</span></div>
+        <div class="foil-hint"><Bolt gold size={18} /><span>= {FOIL_CHANCE_PERCENT}% chance of a foil card</span></div>
         <div class="stage-row" style="margin-top:20px"><GlowPill rarity="BOX" solid onClick={onClose}>Close</GlowPill></div>
       </div>
     </CardStage>

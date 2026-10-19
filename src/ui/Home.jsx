@@ -7,7 +7,7 @@ import { counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, go
 import { dayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Flame, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
+import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions } from './timers.js'
@@ -392,9 +392,9 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
   const pct = Math.min(1, todayMillis / GOLDEN_DAILY_MILLIS)
   return (
     <Dialog title={`Momentum · ${days}d`} onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>OK</button>}>
-      <div class="center" style="font-size:54px;margin:4px 0 10px"><Flame gold={gold} muted={!gold} /></div>
+      <div class="center" style="font-size:54px;margin:4px 0 10px"><Bolt gold={gold} muted={!gold} size={44} /></div>
       <p style="margin:0 0 12px;font-weight:650;text-align:center">
-        {gold ? 'Your flame is gold' : `${GOLDEN_DAYS - Math.min(days, GOLDEN_DAYS)} more day${GOLDEN_DAYS - days === 1 ? '' : 's'} to gold`}
+        {gold ? 'Your momentum is gold' : `${GOLDEN_DAYS - Math.min(days, GOLDEN_DAYS)} more day${GOLDEN_DAYS - days === 1 ? '' : 's'} to gold`}
       </p>
       <div class="small muted" style="margin-bottom:6px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}{immersing ? ' · counting now' : ''}</div>
       <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, #c99a2e, #ffd76a)' }} /></div>

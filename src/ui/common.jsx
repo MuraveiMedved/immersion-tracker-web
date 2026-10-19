@@ -296,11 +296,23 @@ export function ColorPicker({ colorHex, gradientColors, onChange }) {
   )
 }
 
-/** The 🔥 - gold (colour-corrected, still) when Momentum is lit, greyed below that. */
-export function Flame({ gold = false, muted = false, size }) {
-  const style = { fontSize: size ? `${size}px` : undefined, lineHeight: 1 }
-  if (gold) style.filter = 'sepia(1) saturate(3) hue-rotate(-10deg) brightness(1.1)'
-  return <span class={`flame ${muted ? 'muted' : ''}`} style={style}>🔥</span>
+/** The Momentum lightning bolt (the phone's GoldenBolt/MutedBolt): gold with a soft glow when
+ *  Momentum is lit, grey and faded below that. [size] is the font size it stands in for. */
+export function Bolt({ gold = false, muted = false, size = 16 }) {
+  const s = Math.round(size * 1.3)
+  const id = gold ? 'bolt-gold' : 'bolt-grey'
+  const stops = gold ? ['#FFF0A0', '#FFC21A', '#E38700'] : ['#D6D6D6', '#A8A8A8', '#7C7C7C']
+  return (
+    <svg class={`bolt ${gold ? 'gold' : ''} ${muted ? 'muted' : ''}`} width={s} height={s} viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color={stops[0]} /><stop offset=".5" stop-color={stops[1]} /><stop offset="1" stop-color={stops[2]} />
+        </linearGradient>
+      </defs>
+      <path d="M58 2 L16 58 L44 58 L32 98 L86 38 L57 38 L74 2 Z" fill={`url(#${id})`} stroke={gold ? 'rgba(154,84,0,.6)' : 'rgba(85,85,85,.5)'} stroke-width="4.5" stroke-linejoin="round" />
+      <path d="M57 9 L26 52" stroke="rgba(255,255,255,.55)" stroke-width="3.5" stroke-linecap="round" />
+    </svg>
+  )
 }
 
 export function Spinner() { return <span class="spin" /> }
@@ -341,7 +353,7 @@ export function StreakBadge({ streak }) {
 }
 
 /** The phone's GoldenStreakPill: today's progress toward 1 hour as a thin gold ring round the
- *  flame (just the flame once today is done), then the days. */
+ *  bolt (just the bolt once today is done), then the days. */
 export function MomentumPill({ days, progress, onClick }) {
   const lit = days >= GOLDEN_DAYS
   const p = Math.max(0, Math.min(1, progress))
@@ -355,7 +367,7 @@ export function MomentumPill({ days, progress, onClick }) {
             {p > 0 && <circle cx="14" cy="14" r={r} fill="none" stroke={lit ? 'rgba(255,194,26,.75)' : 'rgba(255,194,26,.52)'} stroke-width="2.5" stroke-linecap="round" stroke-dasharray={`${c * p} ${c}`} />}
           </svg>
         )}
-        <Flame gold={lit} muted={!lit} size={12} />
+        <Bolt gold={lit} muted={!lit} size={12} />
       </span>
       <span class="days">{days}d</span>
     </button>
