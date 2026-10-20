@@ -443,9 +443,9 @@ export function FoilSheen({ seed = '' }) {
         const hue = (((at.x * 220 + at.y * 140 + sd * 70 + tilt.x * 260 - tilt.y * 180) % 360) + 360) % 360
         const c = Math.max(0, Math.cos(sd * 6.28 + tilt.x * 4 + tilt.y * 3 + (at.x - at.y) * 2))
         fc.beginPath(); fc.moveTo(tri[0][0], tri[0][1]); fc.lineTo(tri[1][0], tri[1][1]); fc.lineTo(tri[2][0], tri[2][1]); fc.closePath()
-        fc.fillStyle = hsv(hue, 0.55, 1, 0.04 + 0.128 * c * c)
+        fc.fillStyle = hsv(hue, 0.55, 1, 0.05 + 0.16 * c * c)
         fc.fill()
-        if (i % 2 === 0) { fc.strokeStyle = 'rgba(255,255,255,.028)'; fc.lineWidth = 0.6; fc.stroke() }
+        if (i % 2 === 0) { fc.strokeStyle = 'rgba(255,255,255,.035)'; fc.lineWidth = 0.6; fc.stroke() }
       })
       const bc = bandCanvas.getContext('2d')
       bc.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -454,7 +454,7 @@ export function FoilSheen({ seed = '' }) {
       const ox = w * (along - 0.5), oy = h * (along - 0.5)
       const g = bc.createLinearGradient(ox + w * 0.25, oy + h * 0.25, ox + w * 0.75, oy + h * 0.75)
       g.addColorStop(0, 'rgba(0,0,0,0)')
-      SPECTRUM.forEach((hue, k) => g.addColorStop((k + 1) / (SPECTRUM.length + 1), hsv(hue, 0.6, 1, 0.064)))
+      SPECTRUM.forEach((hue, k) => g.addColorStop((k + 1) / (SPECTRUM.length + 1), hsv(hue, 0.6, 1, 0.08)))
       g.addColorStop(1, 'rgba(0,0,0,0)')
       bc.fillStyle = g
       bc.fillRect(0, 0, w, h)
