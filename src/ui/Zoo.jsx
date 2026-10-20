@@ -8,6 +8,7 @@ import { goldenStreakDays, momentumTier } from '../model/rules.js'
 import { formatDate } from '../model/time.js'
 import { Dialog, Seg, toast, Spinner, Bolt, MomentumTierTable } from './common.jsx'
 import { createPortal } from 'preact/compat'
+import { HoloCelebration } from './Sprints.jsx'
 
 export const RARITY_GRADIENT = {
   GREEN: 'linear-gradient(135deg, #2e7d32, #66bb6a)',
@@ -265,6 +266,8 @@ function HatchDialog({ kind, onClose }) {
   const r = result.animal.rarity
   return (
     <CardStage rarity={r} onClose={onClose}>
+      {/* A holo copy gets the same celebration wherever it comes from (Sprints.jsx HoloCelebration). */}
+      {result.cert?.foil ? <HoloCelebration result={result} bannerPrefix={result.copies === 1 ? 'NEW!' : `You now have ×${result.copies}`} /> : (
       <div class="reveal-pop">
         <Floaty>
           <div style="position:relative">
@@ -278,6 +281,7 @@ function HatchDialog({ kind, onClose }) {
           </div>
         </Floaty>
       </div>
+      )}
       <div class="stage-row">
         {!onDisplay && <GlowPill rarity={r} onClick={() => { setTrophy(result.animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
         <GlowPill rarity={r} onClick={onClose}>Nice!</GlowPill>

@@ -176,8 +176,9 @@ const CELEBRATION_MS = 2600
 
 /** The phone's HoloCelebration: a flash and three prism rings racing out, holo shards bursting and
  *  tumbling down, rainbow rays turning behind, the card flipping round from its prism back, the
- *  "✦ HOLO! ✦" banner popping in and the Momentum tier that gave it the chance. */
-export function HoloCelebration({ result }) {
+ *  "✦ HOLO! ✦" banner popping in and the Momentum tier that gave it the chance. Played for every
+ *  holo card received: egg hatches (Zoo.jsx HatchDialog) and Weekly/Monthly rewards (PrizeReveal). */
+export function HoloCelebration({ result, bannerPrefix }) {
   const canvas = useRef(null)
   useEffect(() => {
     const c = canvas.current
@@ -258,7 +259,7 @@ export function HoloCelebration({ result }) {
     <div class="holo-celebration">
       <canvas ref={canvas} class="holo-canvas" />
       <div class="col" style="align-items:center;position:relative">
-        <span class="reveal-banner holo-banner">✦ HOLO! ✦</span>
+        <span class="reveal-banner holo-banner">{bannerPrefix ? `${bannerPrefix}  ` : ''}✦ HOLO! ✦</span>
         <div class="holo-flip">
           <div class="front"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} /></div>
           <div class="back" />
