@@ -313,7 +313,7 @@ function RaceBarLegend({ event, colors }) {
   if (!kinds.length) return null
   return (
     <div class="row race-legend">
-      {kinds.map(([type, label, color]) => <span key={type} class="row" style="gap:3px"><span class="swatch" style={{ background: color }} /><TypeIcon type={type} size={14} color={color} />{label}</span>)}
+      {kinds.map(([type, label, color]) => <span key={type} class="row" style="gap:3px"><TypeIcon type={type} size={14} color={color} />{label}</span>)}
     </div>
   )
 }
