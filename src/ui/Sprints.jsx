@@ -11,8 +11,6 @@ import { sprintsFor, prizesWaiting, sprintEndMillis } from '../model/sprints.js'
 import { toast, Icon } from './common.jsx'
 import { AnimalCardView, CardStage, Floaty, GlowPill, rarityBrush } from './Zoo.jsx'
 
-const SHOWN = 4
-
 /** This person's Weekly and Monthly in `event`, and the rewards waiting to be collected. */
 export function useSprints(event, now) {
   const s = useStore()
@@ -43,18 +41,17 @@ export function useCollect() {
   return { collect, dialog }
 }
 
-/** The Challenges tab: your own Weekly and Monthly (nobody else's), newest first - rewards to
- *  collect on top - each with its dates, time left and progress toward its cap. */
+/** The Challenges tab: your own Weekly and Monthly (nobody else's), each with its dates, time left,
+ *  progress toward its cap and a "+1 card" badge over each reward - no explaining text (the user
+ *  wants it visually self-explanatory). Earlier periods fold away under "Previous (N)" - except
+ *  one with a reward still to collect, which never hides. */
 export function SprintsPanel({ event, now, data, onCollect }) {
-  const [all, setAll] = useState(false)
+  const [showPrevious, setShowPrevious] = useState(false)
   const { sprints, taken } = data
   const waits = (sp) => (sp.earned.some((m) => !taken.has(m.prizeKey)) ? 1 : 0)
-  const ordered = [...sprints].sort((a, b) => waits(b) - waits(a))
-  return (
-    <div class="col" style="gap:10px;margin-top:10px">
-      <div class="muted" style="font-size:11px;margin:0 4px">Just you: Weekly pays a Common at 37.5 h and a Rare at 50 h, Monthly a Rare at 150 h and an Epic at 200 h - when it ends. Momentum can make them Holo.</div>
-      {!sprints.length && <div class="muted small" style="padding:4px">These start with the race.</div>}
-      {(all ? ordered : ordered.slice(0, SHOWN)).map((sp) => {
+  const shown = sprints.filter((sp) => sp.current || waits(sp)).sort((x, y) => waits(y) - waits(x))
+  const previous = sprints.filter((sp) => !sp.current && !waits(sp))
+  const row = (sp) => {
         const top = sp.milestones[sp.milestones.length - 1].rarity
         const color = RARITY_COLOR[top]
         const waiting = sp.earned.filter((m) => !taken.has(m.prizeKey))
@@ -86,13 +83,19 @@ export function SprintsPanel({ event, now, data, onCollect }) {
               ))}
             </div>
             <div class="muted" style="font-size:11px;margin-top:6px">{formatHm(Math.min(sp.myMillis, sp.capMillis))} of {sp.capHours} h</div>
-            {sp.ended && (waiting.length
-              ? <button class="sprint-claim" style={{ backgroundImage: rarityBrush(waiting[0].rarity) }} onClick={() => onCollect(waiting[0])}>Collect your {RARITY_LABEL[waiting[0].rarity]}</button>
-              : <div style={{ color: sp.earned.length ? color : 'var(--on-surface-variant)', fontSize: '12px', fontWeight: 600, marginTop: '8px' }}>{sp.earned.length ? 'Rewards collected ✓' : 'No rewards this time'}</div>)}
+            {waiting.length > 0 && <button class="sprint-claim" style={{ backgroundImage: rarityBrush(waiting[0].rarity) }} onClick={() => onCollect(waiting[0])}>Collect your {RARITY_LABEL[waiting[0].rarity]}</button>}
           </div>
         )
-      })}
-      {sprints.length > SHOWN && <button class="btn text" style="align-self:center" onClick={() => setAll(!all)}>{all ? 'Show fewer' : 'Show older'}</button>}
+  }
+  return (
+    <div class="col" style="gap:10px;margin-top:10px">
+      {shown.map(row)}
+      {previous.length > 0 && (
+        <button class="sprint-previous" onClick={() => setShowPrevious(!showPrevious)}>
+          <span class="grow">Previous ({previous.length})</span><Icon name={showPrevious ? 'expand_less' : 'expand_more'} size={20} />
+        </button>
+      )}
+      {showPrevious && previous.map(row)}
     </div>
   )
 }
