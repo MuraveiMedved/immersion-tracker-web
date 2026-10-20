@@ -478,8 +478,8 @@ textarea.input { resize: vertical; }
 .standings-switch { display: flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface) 6%, transparent); margin-top: 10px; }
 .standings-switch button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 4px 0; font-size: 13px; font-weight: 600; color: var(--on-surface-variant); }
 .standings-switch button.on { background: var(--secondary-container); color: var(--on-surface); }
-.standing-row { display: flex; align-items: center; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--outline-variant); cursor: pointer; }
-.standing-row.me { border: 2.5px solid color-mix(in srgb, var(--primary) 80%, transparent); background: color-mix(in srgb, var(--primary) 10%, transparent); padding: 6.5px 8.5px; }
+.standing-row { display: flex; align-items: center; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--outline-variant); cursor: pointer; background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.standing-row.me { border: 2.5px solid color-mix(in srgb, var(--primary) 80%, transparent); background: color-mix(in srgb, var(--primary) 14%, transparent); padding: 6.5px 8.5px; }
 .standing-row .st-name { font-size: 16px; line-height: 24px; min-width: 0; }
 .st-figure { text-align: right; padding-left: 8px; flex: none; }
 .st-figure .v { font-size: 16px; font-weight: 500; line-height: 22px; }
