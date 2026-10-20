@@ -8,7 +8,7 @@ import { formatHm, formatYmd } from '../model/time.js'
 import { momentumTier } from '../model/rules.js'
 import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, setTrophy, takenPrizes } from '../model/zoo.js'
 import { sprintsFor, prizesWaiting, sprintEndMillis } from '../model/sprints.js'
-import { toast } from './common.jsx'
+import { toast, Icon } from './common.jsx'
 import { AnimalCardView, CardStage, Floaty, GlowPill, rarityBrush } from './Zoo.jsx'
 
 const SHOWN = 4
@@ -70,6 +70,16 @@ export function SprintsPanel({ event, now, data, onCollect }) {
             </div>
             <div class="sprint-bar">
               <div class="track"><div class="fill" style={{ width: `${fraction * 100}%`, background: `linear-gradient(90deg, ${RARITY_COLOR[sp.milestones[0].rarity]}, ${color})` }} /></div>
+              {sp.milestones.map((m, i) => {
+                const last = i === sp.milestones.length - 1
+                const share = m.millis / sp.capMillis
+                return (
+                  <span key={'b' + m.rarity} class={`sprint-badge ${taken.has(m.prizeKey) ? 'done' : ''}`} title={`+1 ${RARITY_LABEL[m.rarity]} animal card`}
+                    style={{ ...(last ? { right: 0 } : { left: `calc((100% - 18px) * ${share} + 9px - 17px)` }), '--c': RARITY_COLOR[m.rarity] }}>
+                    {taken.has(m.prizeKey) ? '✓' : '+1'}<i class="sprint-card"><Icon name="pets" size={7} color={RARITY_COLOR[m.rarity]} /></i>
+                  </span>
+                )
+              })}
               {sp.milestones.map((m) => (
                 <span key={m.rarity} class={`mark ${m.reached ? 'on' : ''}`} title={`${RARITY_LABEL[m.rarity]} at ${m.millis / 3600000} h`}
                   style={{ left: `calc((100% - 18px) * ${m.millis / sp.capMillis})`, '--c': RARITY_COLOR[m.rarity] }} />
