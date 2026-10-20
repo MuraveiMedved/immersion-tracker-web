@@ -351,10 +351,8 @@ export function visibleEvents(s, now = Date.now()) {
 }
 
 /* ------------------------------------------------------------------------------------------------
- * Outlook: where I stand and what it'd take (RaceMath.raceOutlook).
+ * Outlook: my place and the gaps either side of me (RaceMath.raceOutlook).
  * --------------------------------------------------------------------------------------------- */
-
-const MIN_ELAPSED_FOR_PACE = 12 * HOUR
 
 export function raceOutlook(event, myUserId, now = Date.now()) {
   if (!(now >= event.startMillis && !ended(event, now))) return null
@@ -362,37 +360,11 @@ export function raceOutlook(event, myUserId, now = Date.now()) {
   const i = standings.findIndex((x) => x.userId === myUserId)
   if (i === -1) return null
   const me = standings[i]
-  const goal = event.goalHours * HOUR
   const ahead = standings[i - 1] || null
   const behind = standings[i + 1] || null
-  const leader = i >= 2 ? standings[0] : null
-  const elapsed = now - event.startMillis
-  const hasPace = elapsed >= MIN_ELAPSED_FOR_PACE
-  const rate = (x) => x.millis / elapsed
-  function neededToBeat(chaser, target) {
-    if (!hasPace) return null
-    const tr = rate(target)
-    const targetFinish = tr > 0 && target.millis < goal ? now + (goal - target.millis) / tr : null
-    const end = event.endMillis
-    const reachesGoal = targetFinish != null && (end == null || targetFinish < end)
-    let needTotal, by
-    if (reachesGoal) { needTotal = goal; by = targetFinish } else if (end != null) { needTotal = Math.min(goal, target.millis + tr * (end - now)); by = end } else return null
-    const windowMs = by - now
-    if (windowMs < HOUR) return null
-    return { perDay: (Math.max(0, needTotal - chaser.millis) / windowMs) * DAY, reachesGoal }
-  }
-  const needed = i > 0 ? neededToBeat(me, standings[0]) : null
-  let projectedGoal = null, projectedAtEnd = null
-  if (hasPace && rate(me) > 0) {
-    const myFinish = now + Math.max(0, goal - me.millis) / rate(me)
-    if (event.endMillis == null || myFinish <= event.endMillis) projectedGoal = myFinish
-    else projectedAtEnd = me.millis + rate(me) * (event.endMillis - now)
-  }
   return {
     rank: i + 1, participants: standings.length, ahead, gapToAhead: ahead ? ahead.millis - me.millis : 0,
-    behind, leadOverBehind: behind ? me.millis - behind.millis : 0, leader, gapToLeader: leader ? leader.millis - me.millis : 0,
-    neededPerDay: needed?.perDay ?? null, neededReachesGoal: needed?.reachesGoal ?? false,
-    myPerDay: hasPace ? rate(me) * DAY : null, projectedGoal, projectedAtEnd, goalHours: event.goalHours,
+    behind, leadOverBehind: behind ? me.millis - behind.millis : 0,
   }
 }
 

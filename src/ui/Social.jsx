@@ -380,8 +380,6 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
   const [edit, setEdit] = useState(false)
   const [view, setView] = useState('total')
   const [expanded, setExpanded] = useState(false)
-  // The split numbers under each bar and the outlook tips - read now and then, scrolled past otherwise.
-  const [details, setDetails] = useState(false)
   const started = now >= event.startMillis
   const joined = event.standings.some((x) => x.userId === me)
   const isCreator = event.createdBy === me
@@ -454,9 +452,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
           </div>
         )}
         {canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
-        <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} showSplit={details} />
-        {outlook && <button class="btn text details-toggle" onClick={() => setDetails(!details)}>{details ? 'Hide outlook' : 'Outlook'}<Icon name={details ? 'expand_less' : 'expand_more'} size={18} /></button>}
-        {details && outlook && <OutlookTips o={outlook} event={event} />}
+        <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} />
         {started && <RaceCharts event={event} now={now} />}
       </>}
       {!joined ? <button class="btn" style="width:100%;margin-top:14px" onClick={() => sync({ joinEventId: event.id })}>Join</button> : <>
@@ -499,7 +495,7 @@ function Avatar({ standing, profile, size = 34 }) {
 }
 
 /** "Where do I stand": my place and the gap to whoever's next, as a compact strip at the top of a
- *  race's card. The rest of the outlook is [OutlookTips], behind the card's details toggle. */
+ *  race's card. */
 function OutlookSummary({ o }) {
   const gap = o.participants < 2 ? 'Nobody else has joined yet'
     : o.ahead ? (o.gapToAhead === 0 ? `Tied with ${o.ahead.name}` : `${formatHm(o.gapToAhead)} to pass ${o.ahead.name}`)
@@ -513,25 +509,6 @@ function OutlookSummary({ o }) {
       </div>
     </div>
   )
-}
-
-/** The rest of the outlook - gap to the leader, what it would take to win, your pace. */
-function OutlookTips({ o, event }) {
-  const lines = []
-  if (o.participants >= 2) {
-    if (o.leader) lines.push(`${formatHm(o.gapToLeader)} behind the leader, ${o.leader.name}`)
-    if (o.neededPerDay != null) {
-      lines.push(o.neededPerDay > DAY ? `Catching ${event.standings[0].name} at their current pace would take more than 24 hours a day`
-        : o.neededReachesGoal ? `To reach ${o.goalHours}h before ${event.standings[0].name}: ${formatHm(o.neededPerDay)} a day, if they keep their pace`
-          : `To finish ahead of ${event.standings[0].name}: ${formatHm(o.neededPerDay)} a day, if they keep their pace`)
-    }
-  }
-  if (o.myPerDay != null) {
-    lines.push(o.projectedGoal ? `Your pace: ${formatHm(o.myPerDay)} a day, reaching ${o.goalHours}h around ${formatDate(o.projectedGoal)}`
-      : o.projectedAtEnd ? `Your pace: ${formatHm(o.myPerDay)} a day, about ${formatHm(o.projectedAtEnd)} by the end` : `Your pace: ${formatHm(o.myPerDay)} a day`)
-  }
-  if (!lines.length) return null
-  return <div class="col small muted" style="gap:6px;margin-top:4px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb, var(--primary) 8%, transparent)">{lines.map((l, i) => <span key={i}>{l}</span>)}</div>
 }
 
 /* ------------------------------------------------------------------------------------------------
