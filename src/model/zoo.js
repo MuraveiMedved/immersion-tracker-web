@@ -313,15 +313,17 @@ export function setTrophy(id) {
   update((s) => { s.zoo.trophyId = id })
 }
 
-/** Race sprint prizes already taken, by prize key (sprints.js). */
+/** Race Weekly/Monthly rewards already collected, by prize key (sprints.js). */
 export const takenPrizes = (s) => new Set(s.zoo.openings.filter((o) => String(o.rarity).startsWith('SPRINT:')).map((o) => o.rarity))
 
-/** Takes a won sprint's prize (ZooRepository.claimSprintPrize): Momentum right now gives it the
- *  egg tiers' holo chance, and an Epic gets its birth certificate from now. Null if already taken. */
-export async function claimSprintPrize(key, animalId) {
-  await loadCatalog()
-  const animal = animalById(animalId)
-  if (!animal || takenPrizes(getState()).has(key)) return null
+/** Collects a Weekly/Monthly reward: a random animal of `rarity` (ZooRepository.claimSprintPrize).
+ *  Momentum right now gives it the egg tiers' holo chance, and an Epic gets its birth certificate
+ *  from now. Null if already collected. */
+export async function claimSprintPrize(key, rarity) {
+  const animals = await loadCatalog()
+  const pool = animals.filter((a) => a.rarity === rarity)
+  if (!pool.length || takenPrizes(getState()).has(key)) return null
+  const animal = pool[randomInt(pool.length)]
   const now = Date.now()
   let result = null
   update((st) => {

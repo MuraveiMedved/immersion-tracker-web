@@ -1,45 +1,42 @@
 // Run with: TZ=America/Chicago npm test - mirrors the phone's RaceSprintsTest.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { fnv1a, mulberry32, sprintChoices, sprintsFor } from '../src/model/sprints.js'
+import { sprintsFor } from '../src/model/sprints.js'
 
 const HOUR = 3_600_000
 const at = (y, m, d, h = 12) => new Date(y, m - 1, d, h).getTime()
-const pool = Array.from({ length: 40 }, (_, i) => 'animal_' + String(i).padStart(2, '0'))
-const standing = (id, daily, final = false) => ({ userId: id, name: id, daily: Object.fromEntries(Object.entries(daily).map(([k, v]) => [k, v])), final })
+const standing = (id, daily, final = false) => ({ userId: id, name: id, daily, final })
 const event = (standings, endMillis = null) => ({ id: 'race-1', startMillis: at(2026, 10, 7, 9), endMillis, standings })
 
-test('sprint choices match the phone', () => {
-  assert.equal(fnv1a('race-123:W20261019'), 689044659)
-  const r = mulberry32(42)
-  assert.deepEqual([r(), r(), r()], [2581720956, 1925393290, 3661312704])
-  assert.deepEqual(sprintChoices('race-123:W20261019', pool), ['animal_34', 'animal_16', 'animal_35', 'animal_15', 'animal_28'])
-  assert.deepEqual(sprintChoices('abc:M202610', [...pool].reverse()), ['animal_31', 'animal_29', 'animal_07', 'animal_10', 'animal_24'])
-})
-
-test('sprints: weeks and months cut to the race', () => {
-  const sprints = sprintsFor(event([standing('a', {}), standing('b', {})]), at(2026, 10, 20), () => pool)
+test('weekly/monthly: every week and month, cut to the race', () => {
+  const sprints = sprintsFor(event([standing('me', {})]), 'me', at(2026, 10, 20))
   assert.deepEqual(sprints.map((s) => s.key), ['W20261019', 'M202610', 'W20261012', 'W20261005'])
   const first = sprints.find((s) => s.key === 'W20261005')
   assert.equal(first.firstDay, 20261007)
   assert.equal(first.lastDay, 20261011)
-  assert.equal(sprints[0].current, true)
+  assert.ok(sprints[0].current && sprints[1].current && first.ended)
 })
 
-test('sprints: most immersion wins once the grace day passes', () => {
-  const e = event([standing('a', { 20261012: 3 * HOUR, 20261018: HOUR, 20261019: 9 * HOUR }), standing('b', { 20261013: 2 * HOUR, 20261014: 3 * HOUR })])
-  assert.equal(sprintsFor(e, at(2026, 10, 19), () => pool).find((s) => s.key === 'W20261012').decided, false)
-  const s = sprintsFor(e, at(2026, 10, 20), () => pool).find((x) => x.key === 'W20261012')
-  assert.equal(s.decided, true)
-  assert.deepEqual(s.winners, ['b'])
-  assert.equal(s.prizeKey, 'SPRINT:race-1:W20261012')
+test('weekly pays green at 37.5h and blue at 50h once it ends', () => {
+  const me = standing('me', { 20261012: 20 * HOUR, 20261013: 18 * HOUR, 20261019: 51 * HOUR })
+  const sprints = sprintsFor(event([me, standing('other', { 20261012: 99 * HOUR })]), 'me', at(2026, 10, 20))
+  const last = sprints.find((s) => s.key === 'W20261012')
+  assert.equal(last.myMillis, 38 * HOUR)
+  assert.deepEqual(last.earned.map((m) => m.rarity), ['GREEN'])
+  assert.equal(last.earned[0].prizeKey, 'SPRINT:race-1:W20261012:GREEN')
+  const now = sprints.find((s) => s.key === 'W20261019')
+  assert.ok(now.milestones.every((m) => m.reached))
+  assert.equal(now.earned.length, 0)
+  assert.deepEqual(now.milestones.map((m) => m.millis), [37.5 * HOUR, 50 * HOUR])
 })
 
-test('sprints: alone has no winner, ties share, finished race decides when final', () => {
-  assert.ok(sprintsFor(event([standing('a', { 20261008: HOUR })]), at(2026, 10, 20), () => pool).every((s) => !s.winners.length))
-  const tie = sprintsFor(event([standing('a', { 20261008: HOUR }), standing('b', { 20261009: HOUR })]), at(2026, 10, 20), () => pool)
-  assert.deepEqual(tie.find((s) => s.key === 'W20261005').winners.sort(), ['a', 'b'])
-  const done = sprintsFor(event([standing('a', { 20261008: HOUR }, true), standing('b', {}, true)], at(2026, 10, 9, 18)), at(2026, 10, 10), () => pool)
+test('monthly pays blue at 150h and purple at 200h; not in the race = none; race end cuts', () => {
+  const daily = Object.fromEntries(Array.from({ length: 31 }, (_, i) => [String(20261001 + i), 9 * HOUR]))
+  const oct = sprintsFor(event([standing('me', daily)]), 'me', at(2026, 11, 2)).find((s) => s.key === 'M202610')
+  assert.deepEqual(oct.earned.map((m) => m.rarity), ['BLUE', 'PURPLE'])
+  assert.equal(sprintsFor(event([standing('a', {})]), 'me', at(2026, 10, 20)).length, 0)
+  const done = sprintsFor(event([standing('me', { 20261008: 40 * HOUR })], at(2026, 10, 9, 18)), 'me', at(2026, 10, 9, 20))
   assert.deepEqual(done.map((s) => s.key), ['W20261005', 'M202610'])
-  assert.ok(done.every((s) => s.decided && s.winners.join() === 'a' && s.lastDay === 20261009))
+  assert.ok(done.every((s) => s.ended && !s.current && s.lastDay === 20261009))
+  assert.deepEqual(done[0].earned.map((m) => m.rarity), ['GREEN'])
 })

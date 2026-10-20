@@ -1,25 +1,24 @@
-// Race sprints on the web - the phone's ui/race/RaceSprintsPanel.kt and ui/zoo/SprintPrize.kt:
-// the Sprints tab of a race card, picking a won sprint's prize from its five animals, and the
-// reveal - a holo prize gets the celebration (prism burst, holo shards, the card flipping in).
+// Race Weekly/Monthly on the web - the phone's ui/race/RaceSprintsPanel.kt and ui/zoo/SprintPrize.kt:
+// the Challenges tab of a race card (only your own progress), collecting a reward (a random animal
+// of its colour) and the reveal - a holo one gets the celebration (prism burst, holo shards, the
+// card flipping in).
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useStore } from '../store.js'
 import { formatHm, formatYmd } from '../model/time.js'
 import { momentumTier } from '../model/rules.js'
-import { RARITY_COLOR, claimSprintPrize, setTrophy, takenPrizes } from '../model/zoo.js'
+import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, setTrophy, takenPrizes } from '../model/zoo.js'
 import { sprintsFor, prizesWaiting, sprintEndMillis } from '../model/sprints.js'
 import { toast } from './common.jsx'
-import { useCatalog, AnimalPhoto, AnimalCardView, CardStage, Floaty, GlowPill, rarityBrush } from './Zoo.jsx'
+import { AnimalCardView, CardStage, Floaty, GlowPill, rarityBrush } from './Zoo.jsx'
 
 const SHOWN = 4
 
-/** An event's sprints and which wait for this person to pick a prize. */
+/** This person's Weekly and Monthly in `event`, and the rewards waiting to be collected. */
 export function useSprints(event, now) {
   const s = useStore()
-  const catalog = useCatalog()
-  const me = s.race.userId
   const taken = takenPrizes(s)
-  const sprints = catalog ? sprintsFor(event, now, (rarity) => catalog.filter((a) => a.rarity === rarity).map((a) => a.id)) : []
-  return { sprints, taken, waiting: prizesWaiting(sprints, me, taken), me, catalog }
+  const sprints = sprintsFor(event, s.race.userId, now)
+  return { sprints, taken, waiting: prizesWaiting(sprints, taken) }
 }
 
 function left(ms) {
@@ -28,87 +27,67 @@ function left(ms) {
   return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m % 60}m` : `${m}m`
 }
 
-/** The Sprints tab: newest first (prizes still to pick on top), each with its dates, time left or
- *  who won, the five animals on offer and the top three. */
-export function SprintsPanel({ event, now, data, onChoose }) {
+/** Collects one reward and shows it. */
+export function useCollect() {
+  const [result, setResult] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const collect = async (m) => {
+    if (busy) return
+    setBusy(true)
+    const r = await claimSprintPrize(m.prizeKey, m.rarity)
+    setBusy(false)
+    if (!r) { toast('Already collected'); return }
+    setResult(r)
+  }
+  const dialog = result && <PrizeReveal result={result} onClose={() => setResult(null)} />
+  return { collect, dialog }
+}
+
+/** The Challenges tab: your own Weekly and Monthly (nobody else's), newest first - rewards to
+ *  collect on top - each with its dates, time left and progress toward its cap. */
+export function SprintsPanel({ event, now, data, onCollect }) {
   const [all, setAll] = useState(false)
-  const { sprints, taken, me, catalog } = data
-  const ordered = [...sprints].sort((a, b) => waitingRank(b) - waitingRank(a))
-  function waitingRank(sp) { return sp.decided && sp.winners.includes(me) && !taken.has(sp.prizeKey) ? 1 : 0 }
+  const { sprints, taken } = data
+  const waits = (sp) => (sp.earned.some((m) => !taken.has(m.prizeKey)) ? 1 : 0)
+  const ordered = [...sprints].sort((a, b) => waits(b) - waits(a))
   return (
     <div class="col" style="gap:10px;margin-top:10px">
-      <div class="muted" style="font-size:11px;margin:0 4px">Most immersion in a week wins a Rare, in a month an Epic - the winner picks one of the five. Momentum can make it Holo.</div>
-      {!sprints.length && <div class="muted small" style="padding:4px">Sprints start with the race.</div>}
+      <div class="muted" style="font-size:11px;margin:0 4px">Just you: Weekly pays a Common at 37.5 h and a Rare at 50 h, Monthly a Rare at 150 h and an Epic at 200 h - when it ends. Momentum can make them Holo.</div>
+      {!sprints.length && <div class="muted small" style="padding:4px">These start with the race.</div>}
       {(all ? ordered : ordered.slice(0, SHOWN)).map((sp) => {
-        const color = RARITY_COLOR[sp.rarity]
-        const iWon = sp.winners.includes(me)
-        const names = sp.totals.filter((t) => sp.winners.includes(t.standing.userId)).map((t) => t.standing.name).join(', ')
-        const status = sp.current ? `${left(sprintEndMillis(event, sp) - now)} left` : !sp.decided ? 'Deciding…' : iWon && sp.winners.length === 1 ? 'You won!' : names ? `${names} won` : 'No winner'
-        const top = sp.totals.filter((t) => t.millis > 0).slice(0, 3)
+        const top = sp.milestones[sp.milestones.length - 1].rarity
+        const color = RARITY_COLOR[top]
+        const waiting = sp.earned.filter((m) => !taken.has(m.prizeKey))
+        const fraction = Math.min(1, sp.myMillis / sp.capMillis)
         return (
           <div key={sp.key} class={`sprint-row ${sp.current ? 'current' : ''}`} style={{ '--p': color }}>
             <div class="row" style="gap:8px">
               <div class="grow" style="min-width:0">
-                <div style="font-weight:700;font-size:14px">{sp.kind === 'WEEKLY' ? 'Weekly sprint' : 'Monthly sprint'}</div>
+                <div style="font-weight:700;font-size:14px">{sp.kind === 'WEEKLY' ? 'Weekly' : 'Monthly'}</div>
                 <div class="muted" style="font-size:11px">{formatYmd(sp.firstDay)} – {formatYmd(sp.lastDay)}</div>
               </div>
-              <div class="ellipsis" style={{ fontSize: '12px', fontWeight: 600, color: sp.decided && iWon ? color : 'var(--on-surface-variant)', maxWidth: '50%' }}>{status}</div>
+              <div class="muted" style="font-size:12px;font-weight:600">{sp.current ? `${left(sprintEndMillis(event, sp) - now)} left` : 'Ended'}</div>
             </div>
-            <div class="row" style="gap:6px;margin-top:10px">
-              {sp.choices.map((id) => catalog?.find((a) => a.id === id)).filter(Boolean).map((a) => (
-                <div key={a.id} class="sprint-choice" title={a.name}><AnimalPhoto animal={a} /></div>
+            <div class="sprint-bar">
+              <div class="track"><div class="fill" style={{ width: `${fraction * 100}%`, background: `linear-gradient(90deg, ${RARITY_COLOR[sp.milestones[0].rarity]}, ${color})` }} /></div>
+              {sp.milestones.map((m) => (
+                <span key={m.rarity} class={`mark ${m.reached ? 'on' : ''}`} title={`${RARITY_LABEL[m.rarity]} at ${m.millis / 3600000} h`}
+                  style={{ left: `calc((100% - 18px) * ${m.millis / sp.capMillis})`, '--c': RARITY_COLOR[m.rarity] }} />
               ))}
             </div>
-            {top.length > 0 && <div class="muted" style="font-size:11px;margin-top:8px">{top.map((t, i) => `${i + 1}. ${t.standing.name} ${formatHm(t.millis)}`).join('   ')}</div>}
-            {sp.decided && iWon && (taken.has(sp.prizeKey)
-              ? <div style={{ color, fontSize: '12px', fontWeight: 600, marginTop: '8px' }}>Prize taken ✓</div>
-              : <button class="sprint-claim" style={{ backgroundImage: rarityBrush(sp.rarity) }} onClick={() => onChoose(sp)}>Choose your prize</button>)}
+            <div class="muted" style="font-size:11px;margin-top:6px">{formatHm(Math.min(sp.myMillis, sp.capMillis))} of {sp.capHours} h</div>
+            {sp.ended && (waiting.length
+              ? <button class="sprint-claim" style={{ backgroundImage: rarityBrush(waiting[0].rarity) }} onClick={() => onCollect(waiting[0])}>Collect your {RARITY_LABEL[waiting[0].rarity]}</button>
+              : <div style={{ color: sp.earned.length ? color : 'var(--on-surface-variant)', fontSize: '12px', fontWeight: 600, marginTop: '8px' }}>{sp.earned.length ? 'Rewards collected ✓' : 'No rewards this time'}</div>)}
           </div>
         )
       })}
-      {sprints.length > SHOWN && <button class="btn text" style="align-self:center" onClick={() => setAll(!all)}>{all ? 'Show fewer' : 'Show older sprints'}</button>}
+      {sprints.length > SHOWN && <button class="btn text" style="align-self:center" onClick={() => setAll(!all)}>{all ? 'Show fewer' : 'Show older'}</button>}
     </div>
   )
 }
 
-/** Picking a won sprint's prize, then the reveal. */
-export function SprintPrizeFlow({ sprint, onClose }) {
-  const catalog = useCatalog()
-  const [picked, setPicked] = useState(null)
-  const [busy, setBusy] = useState(false)
-  const [result, setResult] = useState(null)
-  if (result) return <PrizeReveal result={result} onClose={onClose} />
-  const choices = (catalog || []).length ? sprint.choices.map((id) => catalog.find((a) => a.id === id)).filter(Boolean) : []
-  const take = async () => {
-    if (!picked || busy) return
-    setBusy(true)
-    const r = await claimSprintPrize(sprint.prizeKey, picked.id)
-    setBusy(false)
-    if (!r) { toast('That prize was already taken'); onClose(); return }
-    setResult(r)
-  }
-  return (
-    <CardStage rarity={sprint.rarity} onClose={() => !busy && onClose()}>
-      <div class="col" style="align-items:center;text-align:center">
-        <div class="title-large" style="color:#fff;font-weight:900">You won the {sprint.kind === 'WEEKLY' ? 'weekly' : 'monthly'} sprint!</div>
-        <div style="color:rgba(255,255,255,.8);font-size:12px;margin:4px 0 6px">Pick one of the five for your zoo</div>
-      </div>
-      {picked && <div style="width:100%;max-width:300px;align-self:center"><AnimalCardView animal={picked} /></div>}
-      <div class="sprint-pick-grid">
-        {choices.map((a) => (
-          <div key={a.id} class={`tile-animal ${picked && picked.id !== a.id ? 'dim' : ''} ${picked?.id === a.id ? 'picked' : ''}`} style={{ borderColor: RARITY_COLOR[a.rarity] }}
-            onClick={() => setPicked(picked?.id === a.id ? null : a)}>
-            <AnimalPhoto animal={a} />
-            <div class="cap">{a.name}</div>
-          </div>
-        ))}
-      </div>
-      <GlowPill rarity={sprint.rarity} solid disabled={!picked || busy} onClick={take}>{picked ? `Take ${picked.name}` : 'Tap one to see it'}</GlowPill>
-    </CardStage>
-  )
-}
-
-/** A prize received: a holo one gets the celebration, a plain one springs in like a hatch. */
+/** A Weekly/Monthly reward received: a holo one gets the celebration, a plain one springs in like a hatch. */
 export function PrizeReveal({ result, onClose, onReplay }) {
   const s = useStore()
   const r = result.animal.rarity
@@ -121,7 +100,7 @@ export function PrizeReveal({ result, onClose, onReplay }) {
         <div class="reveal-pop">
           <Floaty>
             <div class="col" style="align-items:center">
-              <span class="reveal-banner" style={{ backgroundImage: rarityBrush(r), '--p': RARITY_COLOR[r] }}>PRIZE!</span>
+              <span class="reveal-banner" style={{ backgroundImage: rarityBrush(r), '--p': RARITY_COLOR[r] }}>REWARD!</span>
               <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} onDisplay={onDisplay} /></div>
             </div>
           </Floaty>

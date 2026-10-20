@@ -12,7 +12,7 @@ import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinn
 import { Ring } from './Ring.jsx'
 import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill, FoilSheen, rarityBrush } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'
-import { useSprints, SprintsPanel, SprintPrizeFlow } from './Sprints.jsx'
+import { useSprints, useCollect, SprintsPanel } from './Sprints.jsx'
 
 const EMOJIS = ['🦊', '🐼', '🐯', '🦁', '🐸', '🐙', '🦉', '🐧', '🐢', '🦄', '🐝', '🦋', '🐳', '🦖', '🐲', '🌸', '⭐', '🔥', '⚡', '🍀', '🍣', '☕', '🎧', '📚']
 const BAR_PALETTES = {
@@ -369,10 +369,10 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
   const [edit, setEdit] = useState(false)
   const [view, setView] = useState('total')
   const [expanded, setExpanded] = useState(false)
-  // Sprints: the race's weekly and monthly contests, as a third tab beside Total / Today.
+  // Challenges: your own Weekly and Monthly in the race, as a third tab beside Total / Today.
   const [onSprints, setOnSprints] = useState(false)
-  const [prizeSprint, setPrizeSprint] = useState(null)
   const sprintData = useSprints(event, now)
+  const { collect, dialog: rewardDialog } = useCollect()
   const started = now >= event.startMillis
   const joined = event.standings.some((x) => x.userId === me)
   const isCreator = event.createdBy === me
@@ -388,7 +388,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
     {confirm === 'leave' && <Confirm title="Leave this race?" text={`You'll be removed from the standings of "${event.name}". You can join again while it's still running.`} confirmLabel="Leave" danger onConfirm={() => leaveEvent(event.id)} onClose={() => setConfirm(null)} />}
     {confirm === 'end' && <Confirm title="End this event?" text={`"${event.name}" will stop counting time for everyone, the standings will be locked, and it will move to Completed races.`} confirmLabel="End event" danger onConfirm={() => endEvent(event.id)} onClose={() => setConfirm(null)} />}
     {confirm === 'delete' && <Confirm title="Delete this race?" text={`"${event.name}" will be removed from your history in this browser. Your friends keep their own copies.`} confirmLabel="Delete" danger onConfirm={() => deleteCompleted(event.id)} onClose={() => setConfirm(null)} />}
-    {prizeSprint && <SprintPrizeFlow sprint={prizeSprint} onClose={() => setPrizeSprint(null)} />}
+    {rewardDialog}
     {confirm === 'deleteAll' && <Confirm title="Delete this race for everyone?" text={`"${event.name}" and everyone's scores in it will be removed from the server.`} confirmLabel="Delete" danger onConfirm={() => deleteEventForEveryone(event.id)} onClose={() => setConfirm(null)} />}
   </>
 
@@ -411,17 +411,17 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
             <span>{formatHm(winner.millis)}</span>
           </div>
         )}
-        {/* A sprint prize still to pick stays one tap away, even with the results folded up. */}
+        {/* A Weekly/Monthly reward still to collect stays one tap away, even with the results folded up. */}
         {sprintData.waiting.length > 0 && !(expanded && onSprints) && (
-          <button class="sprint-claim" style={{ backgroundImage: rarityBrush(sprintData.waiting[0].rarity), marginTop: '12px' }} onClick={() => setPrizeSprint(sprintData.waiting[0])}>Sprint prize to pick</button>
+          <button class="sprint-claim" style={{ backgroundImage: rarityBrush(sprintData.waiting[0].rarity), marginTop: '12px' }} onClick={() => collect(sprintData.waiting[0])}>Collect your rewards</button>
         )}
         {expanded && sprintData.sprints.length > 0 && (
           <div class="standings-switch" style="margin-top:12px">
             <button class={!onSprints ? 'on' : ''} onClick={() => setOnSprints(false)}>Total</button>
-            <button class={onSprints ? 'on' : ''} onClick={() => setOnSprints(true)}>Sprints{sprintData.waiting.length > 0 && <span class="dot" />}</button>
+            <button class={onSprints ? 'on' : ''} onClick={() => setOnSprints(true)}>Challenges{sprintData.waiting.length > 0 && <span class="dot" />}</button>
           </div>
         )}
-        {expanded && onSprints && sprintData.sprints.length > 0 && <SprintsPanel event={event} now={now} data={sprintData} onChoose={setPrizeSprint} />}
+        {expanded && onSprints && sprintData.sprints.length > 0 && <SprintsPanel event={event} now={now} data={sprintData} onCollect={collect} />}
         {expanded && !(onSprints && sprintData.sprints.length > 0) && <>
           <Standings event={event} now={now} isLive={false} view="total" onPerson={openPerson} />
           <RaceCharts event={event} now={now} />
@@ -449,13 +449,13 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
         {countdown && <CardTag text={countdown} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
       </div>
       {!event.standings.length ? <div class="muted small" style="margin-top:12px">Nobody has joined yet.</div> : <>
-        {(canShowToday || started) && (
+        {(canShowToday || (started && joined)) && (
           <div class="standings-switch">
             {[['total', 'Total'], ['today', 'Today']].filter(([k]) => canShowToday || k === 'total').map(([k, l]) => <button key={k} class={!onSprints && view === k ? 'on' : ''} onClick={() => { setView(k); setOnSprints(false) }}>{l}</button>)}
-            {started && <button class={onSprints ? 'on' : ''} onClick={() => setOnSprints(true)}>Sprints{sprintData.waiting.length > 0 && <span class="dot" />}</button>}
+            {started && joined && <button class={onSprints ? 'on' : ''} onClick={() => setOnSprints(true)}>Challenges{sprintData.waiting.length > 0 && <span class="dot" />}</button>}
           </div>
         )}
-        {onSprints && started ? <SprintsPanel event={event} now={now} data={sprintData} onChoose={setPrizeSprint} /> : <>
+        {onSprints && started && joined ? <SprintsPanel event={event} now={now} data={sprintData} onCollect={collect} /> : <>
           {canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
           <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} />
           {started && <RaceCharts event={event} now={now} />}

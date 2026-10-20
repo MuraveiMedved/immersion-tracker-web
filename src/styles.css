@@ -794,13 +794,12 @@ textarea.input { resize: vertical; }
 .standings-switch button .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); margin-left: 5px; vertical-align: 1px; }
 .sprint-row { padding: 12px; border-radius: 16px; background: color-mix(in srgb, var(--p) 5%, transparent); border: 1px solid color-mix(in srgb, var(--p) 20%, transparent); }
 .sprint-row.current { background: color-mix(in srgb, var(--p) 10%, transparent); border-color: color-mix(in srgb, var(--p) 45%, transparent); }
-.sprint-choice { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--p); flex: none; }
 .sprint-claim { width: 100%; height: 40px; margin-top: 10px; border: 0; border-radius: 999px; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
-.sprint-pick-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
-.sprint-pick-grid .tile-animal { width: calc((100% - 16px) / 3); }
-.sprint-pick-grid .tile-animal { cursor: pointer; }
-.sprint-pick-grid .tile-animal.dim { opacity: .35; }
-.sprint-pick-grid .tile-animal.picked { border-width: 4px; }
+.sprint-bar { position: relative; height: 18px; margin-top: 12px; }
+.sprint-bar .track { position: absolute; left: 9px; right: 9px; top: 5px; height: 8px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+.sprint-bar .fill { height: 100%; border-radius: 999px; }
+.sprint-bar .mark { position: absolute; top: 0; width: 18px; height: 18px; margin-left: 0; border-radius: 50%; border: 2px solid var(--c); background: var(--c-high); box-sizing: border-box; }
+.sprint-bar .mark.on { background: var(--c); }
 .holo-celebration { position: relative; width: 100%; }
 .holo-canvas { position: absolute; left: -25%; top: -25%; width: 150%; height: 150%; pointer-events: none; }
 .holo-banner { background-image: linear-gradient(110deg, #5CF2E6, #6FC8FF, #A98BFF, #E58CFF, #FF8FCB, #FFD86B, #9DF5B5, #5CF2E6); background-size: 300% 100%; --p: #A98BFF; animation: holo-banner-in .5s cubic-bezier(.34, 1.56, .64, 1) 1.15s both, holo-banner-slide 2.4s ease-in-out 1.6s infinite alternate; }
