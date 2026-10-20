@@ -1395,7 +1395,7 @@ function ProfileSections({ p }) {
   const trophy = p.trophy && catalog?.find((a) => a.id === p.trophy)
   const cert = (id) => {
     const c = p.certs?.[id]
-    return c ? { hourMark: c[0] >= 0 ? c[0] : null, languageName: c[1] || null, languageColor: c[2] || null, mediaTitle: c[3] || null, foil: c[4] === 1 } : null
+    return c ? { hourMark: c[0] >= 0 ? c[0] : null, languageName: c[1] || null, languageColor: c[2] || null, mediaTitle: c[3] || null, foil: c[4] === 1, momentumDays: Number.isInteger(c[5]) && c[5] >= 0 ? c[5] : null } : null
   }
   const ORDER = ['RAINBOW', 'ORANGE', 'PURPLE', 'BLUE', 'GREEN']
   const zoo = p.zoo && catalog ? Object.entries(p.zoo).map(([id, n]) => [catalog.find((a) => a.id === id), n]).filter(([a]) => a)

@@ -236,6 +236,8 @@ textarea.input { resize: vertical; }
 .tier-silver { --tier: #C9D2DD; --tier-pale: #F4F7FA; --tier-ink: #D5DCE5; }
 .tier-gold { --tier: #FFC21A; --tier-pale: #FFE89A; --tier-ink: var(--gold); }
 .tier-diamond { --tier: #6FDCFF; --tier-pale: #D6F7FF; --tier-ink: #8FE6FF; }
+/* --tier-text: the bright shade on any theme - for the holo pill, which is always dark (momentumLook.text). */
+.tier-bronze { --tier-text: #EB9E64; } .tier-silver { --tier-text: #D5DCE5; } .tier-gold { --tier-text: #FFC233; } .tier-diamond { --tier-text: #8FE6FF; }
 :root[data-theme='light'] .tier-bronze { --tier-ink: #9A5420; }
 :root[data-theme='light'] .tier-silver { --tier-ink: #5E6875; }
 :root[data-theme='light'] .tier-diamond { --tier-ink: #0A7FA6; }
@@ -527,6 +529,7 @@ textarea.input { resize: vertical; }
 .corner-chips span, .holo-chip { background: rgba(0, 0, 0, .55); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
 .holo-chip { flex: none; white-space: nowrap; }
 .holo-chip.compact { font-size: 11px; padding: 2px 7px; margin-left: -3px; }
+.tier-row .holo-chip, .corner-chips .holo-tier { color: var(--tier-text); }
 .tier-row > * { white-space: nowrap; }
 .acard-body { padding: 14px 18px 16px; }
 .acard-name { font-size: 22px; line-height: 28px; font-weight: 700; }

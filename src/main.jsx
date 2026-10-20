@@ -4,7 +4,7 @@ import './styles.css'
 import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
 import { applyTheme } from './model/theme.js'
 import { sync, syncIfStale, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
-import { ensureBase, recordEarnedEggs } from './model/zoo.js'
+import { ensureBase, recordEarnedEggs, backfillHoloMomentum } from './model/zoo.js'
 import * as syncModule from './model/sync.js'
 import { Home, TabTitle } from './ui/Home.jsx'
 import { Entries } from './ui/Entries.jsx'
@@ -114,6 +114,7 @@ function startBackgroundWork() {
       sync()
     }
     if (s.zoo.base) recordEarnedEggs()
+    backfillHoloMomentum()
   }
   setInterval(tick, 20000)
   tick()

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow } from '../store.js'
 import {
-  loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound,
+  loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, backfillHoloMomentum, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound,
   RARITIES, RARITY_LABEL, RARITY_COLOR, HOURS_PER_BOX, TRADE_UP_COUNT, LOOT_BOX_ODDS, holoChancePercent, nextRarity, carriesCertificate,
 } from '../model/zoo.js'
 import { goldenStreakDays, momentumTier } from '../model/rules.js'
@@ -45,7 +45,7 @@ export function Zoo() {
   const [odds, setOdds] = useState(false)
 
   useEffect(() => { ensureBase() }, [])
-  useEffect(() => { recordEarnedEggs() }, [s.entries.length, Math.floor(now / 60000)])
+  useEffect(() => { recordEarnedEggs(); backfillHoloMomentum() }, [s.entries.length, Math.floor(now / 60000)])
 
   const z = useMemo(() => zooState(s, now), [s, now])
   const momentumDays = useMemo(() => goldenStreakDays(s.entries, now), [s.entries, Math.floor(now / 60000)])
@@ -558,6 +558,8 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
   const [p, s2] = LOOK[animal.rarity] || LOOK.GREEN
   const mythic = animal.rarity === 'RAINBOW'
   const foil = !!cert?.foil
+  // The holo pill wears the Momentum tier its egg was earned with (white when unknown).
+  const holoTier = foil && cert.momentumDays != null ? momentumTier(cert.momentumDays) : null
   const hasCert = cert && (cert.hourMark != null || cert.languageName)
   const wrapRef = useRef(null)
   const size = useSize(wrapRef)
@@ -576,7 +578,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
             <div class="photo-rule" />
             <span class={`rarity-pill ${mythic ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(animal.rarity) }}>{RARITY_LABEL[animal.rarity]}</span>
             <div class="corner-chips">
-              {foil && <span>✦ Holo</span>}
+              {foil && <span class={holoTier ? `holo-tier tier-${holoTier.id}` : ''}>✦ Holo</span>}
               {onDisplay && <span>🏆</span>}
               {timesFound > 1 && <span>×{timesFound}</span>}
             </div>

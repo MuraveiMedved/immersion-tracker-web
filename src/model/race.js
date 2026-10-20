@@ -452,6 +452,8 @@ function bestCertificates(s, held, share, trophy) {
     const c = list[0].cert
     if (c.hourMark == null && !c.foil) continue
     out[id] = [c.hourMark ?? -1, (c.languageName || '').slice(0, 24), c.languageColor || '', (c.mediaTitle || '').slice(0, 80), c.foil ? 1 : 0]
+    // Holo only, when known: the Momentum days its egg was earned with (FriendProfile zc[5]).
+    if (c.foil && c.momentumDays != null) out[id].push(c.momentumDays)
   }
   return out
 }

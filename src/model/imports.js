@@ -247,7 +247,7 @@ export async function readPhoneBackup(file) {
     }))
     // A session still running on the phone stays with the phone.
     s.entries = s.entries.filter((e) => e.endTimeMillis != null)
-    const cert = (o) => (o.certified ? { hourMark: o.hourMark ?? null, languageName: o.languageName ?? null, languageColor: o.languageColor ?? null, mediaTitle: o.mediaTitle ?? null, foil: !!o.foil } : null)
+    const cert = (o) => (o.certified ? { hourMark: o.hourMark ?? null, languageName: o.languageName ?? null, languageColor: o.languageColor ?? null, mediaTitle: o.mediaTitle ?? null, foil: !!o.foil, ...(o.momentumDays != null ? { momentumDays: o.momentumDays } : {}) } : null)
     s.zoo.openings = openings.map((o) => ({ id: o.id, rarity: o.rarity === 'GREY' ? 'GREEN' : o.rarity, animalId: o.animalId, atMillis: o.atMillis, upgradeKey: !!o.upgradeKey, cert: cert(o) }))
     let grantId = Math.max(0, ...grants.map((g) => g.id)) + 1
     s.zoo.grants = [

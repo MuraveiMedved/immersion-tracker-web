@@ -199,9 +199,41 @@ function momentumDaysOf(s, egg) {
 }
 
 function certify(s, egg, rarity) {
-  const foil = randomInt(100) < holoChancePercent(momentumDaysOf(s, egg))
-  if (!carriesCertificate(rarity)) return foil ? { foil: true } : null
-  return { hourMark: egg.hourMark, languageName: egg.languageName, languageColor: egg.languageColor, mediaTitle: egg.mediaTitle, foil }
+  const momentumDays = momentumDaysOf(s, egg)
+  const foil = randomInt(100) < holoChancePercent(momentumDays)
+  // momentumDays: its tier colours a holo card's pill (ZooCrateOpening.momentumDays).
+  if (!carriesCertificate(rarity)) return foil ? { foil: true, momentumDays } : null
+  return { hourMark: egg.hourMark, languageName: egg.languageName, languageColor: egg.languageColor, mediaTitle: egg.mediaTitle, foil, momentumDays }
+}
+
+/** Holo copies hatched before a copy kept its egg's Momentum get it once, from the egg they
+ *  hatched from: the Nth loot opening = "box:N", coloured ones in their tier's trade-up order
+ *  (ZooRepository.backfillHoloMomentum). One whose egg can't be found keeps the plain white pill. */
+export function backfillHoloMomentum() {
+  const s = getState()
+  const pending = s.zoo.openings.filter((o) => o.cert?.foil && o.cert.momentumDays == null)
+  if (!pending.length) return
+  const ordered = [...s.zoo.openings].sort((a, b) => a.atMillis - b.atMillis || a.id - b.id)
+  const found = []
+  for (const o of pending) {
+    let key = null
+    if (o.rarity === 'BOX') {
+      key = `box:${ordered.filter((x) => x.rarity === 'BOX').indexOf(o) + 1}`
+    } else {
+      const offset = ordered.filter((x) => x.rarity === o.rarity && !!x.upgradeKey === !!o.upgradeKey).indexOf(o)
+      const grant = s.zoo.grants.filter((g) => g.rarity === o.rarity && (g.source === 'trade') === !!o.upgradeKey).sort((a, b) => a.id - b.id)[offset]
+      if (grant) key = `grant:${grant.id}`
+    }
+    const egg = key && s.zoo.eggs[key]
+    if (egg) found.push([o.id, momentumDaysOf(s, egg)])
+  }
+  if (!found.length) return
+  update((st) => {
+    for (const [id, days] of found) {
+      const o = st.zoo.openings.find((x) => x.id === id)
+      if (o?.cert) o.cert = { ...o.cert, momentumDays: days }
+    }
+  })
 }
 
 /** Hatches the oldest egg from immersion. Returns {animal, copies, cert} or null. */
