@@ -184,12 +184,38 @@ export function SettingRow({ icon, title, hint, children, onClick }) {
   )
 }
 
-/** The phone's SettingsBlock: a rounded tinted block with a primary-coloured heading. */
-export function Block({ title, action, children }) {
+/** Which collapsible blocks are open, by title - kept while the app is open, like the phone. */
+const openBlocks = new Set()
+
+/** The phone's SettingsBlock: a rounded tinted block with a primary-coloured heading. A
+ *  [collapsible] one is instead a row of its own - its name over [summary] (what's inside), with
+ *  a chevron - that opens its rows in place, in the usual tinted block just beneath. */
+export function Block({ title, action, collapsible = false, summary, children }) {
+  const [open, setOpen] = useState(() => openBlocks.has(title))
+  if (!collapsible) {
+    return (
+      <div class="block">
+        {title && <div class="block-title"><span>{title}</span>{action}</div>}
+        {children}
+      </div>
+    )
+  }
+  const toggle = () => {
+    if (open) openBlocks.delete(title); else openBlocks.add(title)
+    setOpen(!open)
+  }
   return (
-    <div class="block">
-      {title && <div class="block-title"><span>{title}</span>{action}</div>}
-      {children}
+    <div class="fold">
+      <div class="fold-row" onClick={toggle}>
+        <div class="grow">
+          <div class="fold-title">{title}</div>
+          {summary && <div class="fold-summary">{summary}</div>}
+        </div>
+        {/* The row's own action (the "+") mustn't also open or close it. */}
+        {action && <span onClick={(e) => e.stopPropagation()}>{action}</span>}
+        <span class={`block-chev${open ? ' open' : ''}`}><Icon name="expand_more" /></span>
+      </div>
+      {open && <div class="block fold-body">{children}</div>}
     </div>
   )
 }

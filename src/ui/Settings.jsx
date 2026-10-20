@@ -46,11 +46,11 @@ export function Settings({ params, nav }) {
     <>
       <h1 class="page-title">Settings</h1>
 
-      <Block title="Appearance">
+      <Block collapsible title="Appearance" summary="Ring style, colors & display">
         <SettingRow icon="palette" title="Ring style, colors & display" onClick={() => setView('appearance')} />
       </Block>
 
-      <Block title="Languages" action={<button class="icon-btn" title="Add language" style="margin-right:-8px" onClick={() => setEditing('new')}><Icon name="add" /></button>}>
+      <Block collapsible title="Languages" summary={languages.map((p) => p.name).join(', ') || 'No languages yet'} action={<button class="icon-btn" title="Add language" style="margin-right:-8px" onClick={() => setEditing('new')}><Icon name="add" /></button>}>
         {!languages.length && <div class="muted" style="padding:8px 0">No languages yet - tap + to add one.</div>}
         {languages.map((p) => (
           <div key={p.id} class="row clickable" style="padding:6px 0" onClick={() => setEditing(p.id)}>
@@ -64,11 +64,11 @@ export function Settings({ params, nav }) {
       </Block>
 
       {/* Everything about using this history on other devices, behind one row - as on the phone. */}
-      <Block title="Devices & sync">
+      <Block collapsible title="Devices & sync" summary="Your devices">
         <SettingRow icon="smartphone" title="Your devices" hint={s.sync.token ? 'Linked - syncing with your other devices' : 'Link your Android phone or other devices'} onClick={() => setView('account')} />
       </Block>
 
-      <Block title="Tracking">
+      <Block collapsible title="Tracking" summary="Show Anki on Home, Uncategorized logs, Entry threshold">
         <SettingRow icon={<TypeIcon type="ANKI" size={22} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
           <Switch checked={s.settings.showAnkiOnHome} onChange={(v) => setSetting('showAnkiOnHome', v)} />
         </SettingRow>
@@ -88,19 +88,19 @@ export function Settings({ params, nav }) {
         )}
       </Block>
 
-      <Block title="Race">
+      <Block collapsible title="Race" summary="Social tab">
         <SettingRow icon="groups" title="Social tab" hint="Show races and friends as a tab in the bottom bar.">
           <Switch checked={s.settings.showRaceTab} onChange={(v) => setSetting('showRaceTab', v)} />
         </SettingRow>
       </Block>
 
-      <Block title="Zoo">
+      <Block collapsible title="Zoo" summary="Zoo tab">
         <SettingRow icon="pets" title="Zoo tab" hint="Collect animal cards with your immersion hours.">
           <Switch checked={s.settings.showZooTab} onChange={(v) => setSetting('showZooTab', v)} />
         </SettingRow>
       </Block>
 
-      <Block title="Backup">
+      <Block collapsible title="Backup" summary="Download, restore, import from Android, Toggl, PolyLogger">
         <div class="muted small" style="padding-bottom:4px">{s.sync.token ? 'Your data is also saved to your account. A downloaded file is an extra copy you keep yourself.' : 'Everything lives in this browser only. Download a backup now and then, or link it in Your devices - clearing the browser\'s site data loses it otherwise.'}</div>
         <SettingRow icon="file_download" title="Download a backup" hint={`${s.entries.length} entries, ${languages.length} languages, races, friends and Zoo`} onClick={exportBackup} />
         <SettingRow icon="restore" title="Restore…" hint="Replaces everything here with a web backup file." onClick={() => pickFile('.json,application/json', false, async ([f]) => {
@@ -113,7 +113,7 @@ export function Settings({ params, nav }) {
         <SettingRow icon="file_upload" title="Import from PolyLogger" hint="The CSV PolyLogger exports." onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'polylogger', files }))} />
       </Block>
 
-      <Block title="App">
+      <Block collapsible title="App" summary="About, installing the web app">
         <SettingRow icon="info" title="Immersion Tracker for the web" hint="Works in any modern browser, and offline once opened. Races and friends are shared with the Android app." />
         <div class="muted small" style="padding:4px 0 4px 54px">
           <b>iPhone / iPad:</b> Safari → Share → Add to Home Screen. <b>Mac / PC:</b> Chrome or Edge → install icon in the address bar (Safari on Mac: File → Add to Dock). On the web, sessions are started and stopped by hand - a browser can't see what other apps are playing.

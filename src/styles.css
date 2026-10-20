@@ -113,6 +113,15 @@ main.page {
 }
 .block-title { min-height: 44px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--primary); letter-spacing: .1px; }
 .block-title > span:first-child { flex: 1; }
+.fold { border-bottom: 1px solid color-mix(in srgb, var(--outline-variant, var(--block-line)) 50%, transparent); }
+.fold-row { display: flex; align-items: center; gap: 8px; padding: 12px 8px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; border-radius: 12px; }
+.fold-row:hover { background: color-mix(in srgb, var(--on-surface, currentColor) 5%, transparent); }
+.fold-title { font-size: 16px; font-weight: 500; }
+.fold-summary { font-size: 12px; color: var(--on-surface-variant); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fold-row .grow { min-width: 0; }
+.block.fold-body { margin: 0 0 10px; padding: 8px 16px; }
+.block-chev { display: flex; color: var(--on-surface-variant); transition: transform .2s ease; }
+.block-chev.open { transform: rotate(180deg); }
 .section { margin-top: 20px; }
 .section-title { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
 .section-title h2 { flex: 1; }
