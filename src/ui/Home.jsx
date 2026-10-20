@@ -395,7 +395,7 @@ function FitCard({ children }) {
   useEffect(() => {
     const fit = () => {
       const h = ref.current?.offsetHeight
-      if (h) setScale(Math.min(1, (window.innerHeight * 0.4) / h))
+      if (h) setScale(Math.min(1, (window.innerHeight * 0.62) / h)) // most of the screen - the dialog scrolls
     }
     fit()
     const t = setTimeout(fit, 300) // again once the photo has loaded and the card has its real height
