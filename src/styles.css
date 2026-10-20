@@ -524,7 +524,8 @@ textarea.input { resize: vertical; }
 .photo-rule { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--p), var(--s), transparent); }
 .rarity-pill { position: absolute; top: 12px; left: 12px; padding: 3px 10px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
 .corner-chips { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
-.corner-chips span { background: rgba(0, 0, 0, .55); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.corner-chips span, .holo-chip { background: rgba(0, 0, 0, .55); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.holo-chip { flex: none; white-space: nowrap; }
 .acard-body { padding: 14px 18px 16px; }
 .acard-name { font-size: 22px; line-height: 28px; font-weight: 700; }
 .acard-sci { font-size: 14px; font-style: italic; color: var(--on-surface-variant); }

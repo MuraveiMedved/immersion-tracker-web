@@ -172,7 +172,7 @@ function OddsDialog({ currentTier, onClose }) {
         <div class="foil-hint" style="display:block">
           {/* A small Preview beside the hint - the holo card opens on its own, so this stays the same size. */}
           <div class="row" style="align-items:center;gap:8px;margin:0 0 6px 4px">
-            <div class="small grow">Momentum gives eggs a holo chance</div>
+            <div class="small grow">Momentum gives eggs a Holo chance</div>
             <button class="chip-btn" onClick={() => setPreview(true)}>Preview</button>
           </div>
           <MomentumTierTable current={currentTier} topTierFirst />

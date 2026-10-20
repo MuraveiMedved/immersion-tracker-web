@@ -379,7 +379,7 @@ export function MomentumTierTable({ current, topTierFirst = false }) {
           <Bolt tier={t.id} size={15} />
           <span class="name">{t.name}</span>
           <span class="muted small">{t.minDays} days</span>
-          <b class="small">{t.holoPercent}% holo</b>
+          <b class="small">{t.holoPercent}%</b><span class="holo-chip">✦ Holo</span>
         </div>
       ))}
     </div>
