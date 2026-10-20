@@ -175,7 +175,7 @@ function OddsDialog({ currentTier, onClose }) {
             <div class="small grow">Momentum gives eggs a holo chance</div>
             <button class="chip-btn" onClick={() => setPreview(true)}>Preview</button>
           </div>
-          <MomentumTierTable current={currentTier} />
+          <MomentumTierTable current={currentTier} topTierFirst />
         </div>
         <div class="stage-row" style="margin-top:20px"><GlowPill rarity="BOX" solid onClick={onClose}>Close</GlowPill></div>
       </div>
