@@ -191,7 +191,7 @@ const openBlocks = new Set()
  *  [collapsible] one is instead a row of its own - its name over [summary] (what's inside), with
  *  a chevron - that opens its rows in place, in the usual tinted block just beneath. */
 // [onOpen]: a section that's just a way into its own screen - its row goes straight there, no dropdown.
-export function Block({ title, action, collapsible = false, summary, onOpen, children }) {
+export function Block({ title, action, collapsible = false, summary, onOpen, icon, children }) {
   const [open, setOpen] = useState(() => openBlocks.has(title))
   if (!collapsible) {
     return (
@@ -208,6 +208,7 @@ export function Block({ title, action, collapsible = false, summary, onOpen, chi
   return (
     <div class="fold">
       <div class="fold-row" onClick={onOpen || toggle}>
+        {icon && <div class="badge-ico" style="margin-right:6px">{typeof icon === 'string' ? <Icon name={icon} size={22} /> : icon}</div>}
         <div class="grow">
           <div class="fold-title">{title}</div>
           {summary && <div class="fold-summary">{summary}</div>}

@@ -188,7 +188,7 @@ textarea.input { resize: vertical; }
 .switch input:checked + span::after { left: 22px; top: 2px; width: 24px; height: 24px; background: var(--on-primary); }
 /* A settings row: tinted icon badge, title + hint, trailing control. */
 .setting { display: flex; align-items: center; gap: 14px; padding: 8px 0; }
-.setting .badge-ico {
+.setting .badge-ico, .fold-row .badge-ico {
   width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; font-size: 20px;
   background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary);
 }
