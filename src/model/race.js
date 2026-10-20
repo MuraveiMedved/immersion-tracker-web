@@ -258,6 +258,17 @@ async function request(body, activity, retry = false) {
 }
 
 /** Reports totals for every race this browser is in and fetches everyone's standings back. */
+/** sync(), unless the standings came back less than `minGap` ms ago - and one already under way is
+ *  shared, not repeated (RaceRepository.syncIfStale). Run the moment the app comes into focus, so
+ *  the race is already updating by the time Social is open; Social's own first refresh joins it. */
+let staleSync = null
+export function syncIfStale(minGap = 15000) {
+  if (staleSync) return staleSync
+  if (!raceConfigured() || Date.now() - (getState().race.lastSync || 0) < minGap) return Promise.resolve()
+  staleSync = sync().finally(() => { staleSync = null })
+  return staleSync
+}
+
 export async function sync({ joinEventId = null, followUp = true } = {}) {
   const s = getState()
   if (!raceConfigured()) return

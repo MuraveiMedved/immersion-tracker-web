@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow, update, getState } from '../store.js'
 import {
-  sync, createEvent, joinByCode, leaveEvent, endEvent, editEvent, deleteEventForEveryone, deleteCompleted, visibleEvents, raceOutlook,
+  sync, syncIfStale, createEvent, joinByCode, leaveEvent, endEvent, editEvent, deleteEventForEveryone, deleteCompleted, visibleEvents, raceOutlook,
   raceStatus, onRaceStatus, errorText, ordinal, localTodayKey, refreshFriends, addFriendByCode, addFriendById, respondFriend, removeFriend,
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
@@ -112,7 +112,7 @@ function Race({ onEditName, onOpenMe }) {
   const [join, setJoin] = useState(false)
   const [settings, setSettings] = useState(false)
   useEffect(() => {
-    sync()
+    syncIfStale() // joins the sync started as the app came into focus, if there is one
     const t = setInterval(() => document.visibilityState === 'visible' && sync(), 60000)
     return () => clearInterval(t)
   }, [])

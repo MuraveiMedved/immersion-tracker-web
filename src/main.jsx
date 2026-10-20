@@ -3,7 +3,7 @@ import { useEffect, useState } from 'preact/hooks'
 import './styles.css'
 import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
 import { applyTheme } from './model/theme.js'
-import { sync, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
+import { sync, syncIfStale, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
 import { ensureBase, recordEarnedEggs } from './model/zoo.js'
 import * as syncModule from './model/sync.js'
 import { Home, TabTitle } from './ui/Home.jsx'
@@ -131,7 +131,12 @@ loadState().then(() => {
   syncModule.startAutoSync()
 })
 
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush() })
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flush()
+  else syncIfStale() // back in focus: start the race updating now, not only once Social is open
+})
+window.addEventListener('focus', () => syncIfStale())
+syncIfStale()
 window.addEventListener('pagehide', () => flush())
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
