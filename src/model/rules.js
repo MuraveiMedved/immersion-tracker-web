@@ -51,6 +51,25 @@ export function goldenStreakDays(entries, now = Date.now()) {
 
 export const isGolden = (entries, now = Date.now()) => goldenStreakDays(entries, now) >= GOLDEN_DAYS
 
+/** Momentum's tiers (MomentumTier.kt): days in a row of an hour each, and the holo chance eggs
+ *  earned at that tier get. Bronze starts at GOLDEN_DAYS. */
+export const MOMENTUM_TIERS = [
+  { id: 'bronze', name: 'Bronze', minDays: 10, holoPercent: 10 },
+  { id: 'silver', name: 'Silver', minDays: 30, holoPercent: 20 },
+  { id: 'gold', name: 'Gold', minDays: 60, holoPercent: 30 },
+  { id: 'diamond', name: 'Diamond', minDays: 100, holoPercent: 40 },
+]
+
+/** The tier a run of `days` has reached - null below Bronze. */
+export function momentumTier(days) {
+  let tier = null
+  for (const t of MOMENTUM_TIERS) if (days >= t.minDays) tier = t
+  return tier
+}
+
+/** The tier after `tier` (Bronze after none), or null at Diamond. */
+export const nextMomentumTier = (tier) => (tier ? MOMENTUM_TIERS[MOMENTUM_TIERS.indexOf(tier) + 1] || null : MOMENTUM_TIERS[0])
+
 export function goldenTodayMillis(entries, now = Date.now()) {
   return dailyMillis(entries, now, 1).get(epochDay(now)) || 0
 }

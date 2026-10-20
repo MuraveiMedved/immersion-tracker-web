@@ -1,9 +1,10 @@
 // The Zoo, ported from ZooRepository / ZooRules / Certificates: an egg per 10 hours of immersion,
 // hatch odds Mythic 1% / Legendary 5% / Epic 10% / Rare 30% / else Common, 5-for-1 trade-ups into
-// a coloured egg of the next tier, birth certificates on Epic+ copies and a 25% foil chance on eggs
-// earned while Momentum was gold. Everything is an append-only log, like on the phone.
+// a coloured egg of the next tier, birth certificates on Epic+ copies and a holo chance on eggs
+// earned while Momentum is Bronze or better - 10/20/30/40% by tier. Everything is an append-only
+// log, like on the phone. (Holo is stored as `foil`, the same as the phone and older records.)
 import { getState, update, uid } from '../store.js'
-import { counts, immersionTotal, isGolden } from './rules.js'
+import { counts, immersionTotal, goldenStreakDays, momentumTier, GOLDEN_DAYS } from './rules.js'
 import { HOUR } from './time.js'
 import { myLiveRaceMillis, bestFirst } from './race.js'
 
@@ -12,7 +13,8 @@ export const RARITY_LABEL = { GREEN: 'Common', BLUE: 'Rare', PURPLE: 'Epic', ORA
 export const RARITY_COLOR = { GREEN: '#4CAF50', BLUE: '#3D8BFD', PURPLE: '#A855F7', ORANGE: '#FF9F1C', RAINBOW: '#FF4FD8' }
 export const HOURS_PER_BOX = 10
 export const TRADE_UP_COUNT = 5
-export const FOIL_CHANCE_PERCENT = 25
+/** The holo chance for an egg earned with `momentumDays` of Momentum (Certificates.holoChancePercent). */
+export const holoChancePercent = (momentumDays) => momentumTier(momentumDays)?.holoPercent ?? 0
 export const LOOT_BOX_ODDS = [['RAINBOW', 1], ['ORANGE', 5], ['PURPLE', 10], ['BLUE', 30]]
 const NATIVE_WINDOW_MILLIS = HOURS_PER_BOX * HOUR
 
@@ -169,7 +171,8 @@ function eggEarnedAt(s, n, now) {
 
 function snapshotEgg(s, earnedAt) {
   const c = computeCertificate(s.entries, s.profiles, earnedAt)
-  return { earnedAt, golden: isGolden(s.entries, earnedAt), ...c }
+  const momentumDays = goldenStreakDays(s.entries, earnedAt)
+  return { earnedAt, golden: momentumDays >= GOLDEN_DAYS, ...c, momentumDays }
 }
 
 /** Records every egg earned and not yet recorded, as of when its 10-hour mark was crossed - so
@@ -188,8 +191,15 @@ export function recordEarnedEggs() {
   })
 }
 
-function certify(egg, rarity) {
-  const foil = egg.golden && randomInt(100) < FOIL_CHANCE_PERCENT
+/** How much Momentum `egg` was earned with. Eggs recorded before tiers only noted whether it was
+ *  lit: those are read from history at the time - at least Bronze if lit (ZooRepository.momentumDaysOf). */
+function momentumDaysOf(s, egg) {
+  if (egg.momentumDays != null) return egg.momentumDays
+  return egg.golden ? Math.max(GOLDEN_DAYS, goldenStreakDays(s.entries, egg.earnedAt)) : 0
+}
+
+function certify(s, egg, rarity) {
+  const foil = randomInt(100) < holoChancePercent(momentumDaysOf(s, egg))
   if (!carriesCertificate(rarity)) return foil ? { foil: true } : null
   return { hourMark: egg.hourMark, languageName: egg.languageName, languageColor: egg.languageColor, mediaTitle: egg.mediaTitle, foil }
 }
@@ -209,7 +219,7 @@ export async function hatchLootEgg() {
   let result = null
   update((st) => {
     const egg = st.zoo.eggs[`box:${n}`] || (st.zoo.eggs[`box:${n}`] = snapshotEgg(st, eggEarnedAt(st, n, now)))
-    const cert = certify(egg, animal.rarity)
+    const cert = certify(st, egg, animal.rarity)
     st.zoo.openings.push({ id: uid(), rarity: 'BOX', animalId: animal.id, atMillis: now, upgradeKey: false, cert })
     result = { animal, cert, copies: st.zoo.openings.filter((o) => o.animalId === animal.id).length, fromBox: true }
   })
@@ -232,7 +242,7 @@ export async function hatchColouredEgg(rarity) {
     const key = `grant:${grant?.id ?? 'none'}`
     const egg = st.zoo.eggs[key] || snapshotEgg(st, grant?.atMillis ?? now)
     if (grant) st.zoo.eggs[key] = egg
-    const cert = certify(egg, animal.rarity)
+    const cert = certify(st, egg, animal.rarity)
     st.zoo.openings.push({ id: uid(), rarity, animalId: animal.id, atMillis: now, upgradeKey: true, cert })
     result = { animal, cert, copies: st.zoo.openings.filter((o) => o.animalId === animal.id).length, fromBox: false }
   })

@@ -31,18 +31,37 @@ function useRaceStatus() {
   return raceStatus
 }
 
+/** Social (RaceScreen.kt): the races, with Friends as a page of its own - opened from the button
+ *  beside your profile in the header (the Social tab's own icon, with friend requests waiting). */
 export function Social() {
   const s = useStore()
-  const [tab, setTab] = useState('race')
+  const [friends, setFriends] = useState(false)
   const [setup, setSetup] = useState(false)
   const [me, setMe] = useState(false)
   if (!raceConfigured() || setup) return <RaceSetup onDone={() => setSetup(false)} first={!raceConfigured()} />
+  if (friends) {
+    return (
+      <>
+        <div class="row" style="align-items:center;gap:4px;margin-bottom:16px">
+          <button class="icon-btn" title="Back" onClick={() => setFriends(false)}><Icon name="arrow_back" /></button>
+          <h1 class="page-title grow" style="margin:0">Friends</h1>
+        </div>
+        <Friends />
+      </>
+    )
+  }
+  const requests = s.friends.incoming.length
   return (
     <>
-      {/* You - your profile, from the corner, like the phone. */}
-      <div class="row" style="align-items:center;margin-bottom:16px"><h1 class="page-title grow" style="margin:0">Social</h1><MyAvatar onClick={() => setMe(true)} /></div>
-      <Seg options={[['race', 'Race'], ['friends', 'Friends']]} value={tab} onChange={setTab} />
-      <div style="margin-top:12px">{tab === 'race' ? <Race onEditName={() => setSetup(true)} onOpenMe={() => setMe(true)} /> : <Friends />}</div>
+      {/* Friends, then you - your profile, from the corner, like the phone. */}
+      <div class="row" style="align-items:center;gap:4px;margin-bottom:16px">
+        <h1 class="page-title grow" style="margin:0">Social</h1>
+        <button class="icon-btn badged" title="Friends" onClick={() => setFriends(true)}>
+          <Icon name="groups" />{requests > 0 && <span class="badge">{requests}</span>}
+        </button>
+        <MyAvatar onClick={() => setMe(true)} />
+      </div>
+      <Race onEditName={() => setSetup(true)} onOpenMe={() => setMe(true)} />
       {me && <MyProfileSheet onClose={() => setMe(false)} />}
     </>
   )

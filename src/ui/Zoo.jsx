@@ -2,11 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow } from '../store.js'
 import {
   loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound,
-  RARITIES, RARITY_LABEL, RARITY_COLOR, HOURS_PER_BOX, TRADE_UP_COUNT, FOIL_CHANCE_PERCENT, LOOT_BOX_ODDS, nextRarity, carriesCertificate,
+  RARITIES, RARITY_LABEL, RARITY_COLOR, HOURS_PER_BOX, TRADE_UP_COUNT, LOOT_BOX_ODDS, holoChancePercent, nextRarity, carriesCertificate,
 } from '../model/zoo.js'
-import { isGolden } from '../model/rules.js'
+import { goldenStreakDays, momentumTier } from '../model/rules.js'
 import { formatDate } from '../model/time.js'
-import { Dialog, Seg, toast, Spinner, Bolt } from './common.jsx'
+import { Dialog, Seg, toast, Spinner, Bolt, MomentumTierTable } from './common.jsx'
 import { createPortal } from 'preact/compat'
 
 export const RARITY_GRADIENT = {
@@ -41,7 +41,6 @@ export function Zoo() {
   const s = useStore()
   const now = useNow(15000)
   const catalog = useCatalog()
-  const [tab, setTab] = useState('eggs')
   const [hatching, setHatching] = useState(null) // 'BOX' or a rarity
   const [odds, setOdds] = useState(false)
 
@@ -49,7 +48,8 @@ export function Zoo() {
   useEffect(() => { recordEarnedEggs() }, [s.entries.length, Math.floor(now / 60000)])
 
   const z = useMemo(() => zooState(s, now), [s, now])
-  const golden = useMemo(() => isGolden(s.entries, now), [s.entries, Math.floor(now / 60000)])
+  const momentumDays = useMemo(() => goldenStreakDays(s.entries, now), [s.entries, Math.floor(now / 60000)])
+  const tier = momentumTier(momentumDays)
   const [trade, setTrade] = useState(null) // {from, picks: []} - a trade-up being picked
   if (!catalog) return <div class="empty"><Spinner /></div>
   const found = everFound(s)
@@ -62,40 +62,35 @@ export function Zoo() {
   return (
     <>
       <h1 class="page-title">Zoo</h1>
-      <Seg options={[['eggs', 'Eggs'], ['collection', 'Collection']]} value={tab} onChange={(t) => { setTab(t); if (t === 'eggs') setTrade(null) }} />
-      {tab === 'eggs' ? (
-        <>
-          <div class="egg-card center">
-            <div class="egg-stage" onClick={() => setOdds(true)}>
-              <div class="egg-glow" style={{ opacity: ready ? 1 : 0.3 }} />
-              <div class={ready ? 'wobble' : ''}><Egg rarity="BOX" width={84} glow={ready ? 20 : 4} style={{ opacity: ready ? 1 : 0.45 }} /></div>
-            </div>
-            <div class="title-medium" style="margin-top:4px">{ready ? `${z.boxesReady} egg${z.boxesReady === 1 ? '' : 's'} ready to hatch` : 'No egg ready yet'}</div>
-            <div class="bar" style="margin-top:12px"><div style={{ width: `${z.boxProgress * 100}%` }} /></div>
-            <div class="muted small" style="margin-top:6px">{z.timeToNextBox} remaining</div>
-            {golden && <div class="small" style="margin-top:6px;color:var(--gold);font-weight:650">Momentum is gold = {FOIL_CHANCE_PERCENT}% chance of a foil card</div>}
-            <div style="margin-top:14px;min-height:48px;display:grid;place-items:center">
-              {ready
-                ? <button class="glow-pill" onClick={() => setHatching('BOX')}>Hatch an egg</button>
-                : <span class="muted small">Tap the egg to see its hatch rates</span>}
-            </div>
+      {/* One page, like the phone: the eggs (compact), then the collection below. */}
+      <div class="egg-card compact" onClick={() => setOdds(true)} title="Hatch rates">
+        <div class="egg-stage">
+          <div class="egg-glow" style={{ opacity: ready ? 1 : 0.3 }} />
+          <div class={ready ? 'wobble' : ''}><Egg rarity="BOX" width={40} glow={ready ? 12 : 2} style={{ opacity: ready ? 1 : 0.45 }} /></div>
+        </div>
+        <div class="grow" style="min-width:0">
+          <div class="title-small" style="font-weight:700">{ready ? `${z.boxesReady} egg${z.boxesReady === 1 ? '' : 's'} ready to hatch` : 'No egg ready yet'}</div>
+          <div class="bar" style="margin-top:8px;height:6px"><div style={{ width: `${z.boxProgress * 100}%` }} /></div>
+          <div class="muted tiny ellipsis" style="margin-top:5px">{z.timeToNextBox} remaining{ready ? '' : ' · tap for hatch rates'}</div>
+          {tier && <div class={`tiny ellipsis tier-${tier.id}`} style="margin-top:2px;color:var(--tier-ink);font-weight:650">{tier.name} Momentum = {holoChancePercent(momentumDays)}% holo chance</div>}
+        </div>
+        {ready && <button class="glow-pill small" onClick={(e) => { e.stopPropagation(); setHatching('BOX') }}>Hatch</button>}
+      </div>
+      {tierRows.map(({ r, eggs, canTrade }) => (
+        <div key={r} class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
+          <div class={eggs > 0 ? 'wobble' : ''}><Egg rarity={r} width={44} glow={eggs > 0 ? 12 : 0} /></div>
+          <div class="grow">
+            <div class="title-medium">{RARITY_LABEL[r]} egg{eggs > 1 ? ` ×${eggs}` : ''}</div>
+            <div class="muted small">{eggs > 0 ? `Hatches a ${RARITY_LABEL[r]} animal` : `Trade ${TRADE_UP_COUNT} for a ${RARITY_LABEL[nextRarity(r)]} egg`}</div>
           </div>
-          {tierRows.map(({ r, eggs, canTrade }) => (
-            <div key={r} class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
-              <div class={eggs > 0 ? 'wobble' : ''}><Egg rarity={r} width={44} glow={eggs > 0 ? 12 : 0} /></div>
-              <div class="grow">
-                <div class="title-medium">{RARITY_LABEL[r]} egg{eggs > 1 ? ` ×${eggs}` : ''}</div>
-                <div class="muted small">{eggs > 0 ? `Hatches a ${RARITY_LABEL[r]} animal` : `Trade ${TRADE_UP_COUNT} for a ${RARITY_LABEL[nextRarity(r)]} egg`}</div>
-              </div>
-              {eggs > 0 && <button class="btn small" onClick={() => setHatching(r)}>Hatch</button>}
-              {canTrade && <button class="btn tonal small" onClick={() => { setTab('collection'); setTrade({ from: r, picks: [] }) }}>Trade up</button>}
-            </div>
-          ))}
-        </>
-      ) : (
+          {eggs > 0 && <button class="btn small" onClick={() => setHatching(r)}>Hatch</button>}
+          {canTrade && <button class="btn tonal small" onClick={() => { setTrade({ from: r, picks: [] }); setTimeout(() => document.getElementById('zoo-collection')?.scrollIntoView({ behavior: 'smooth' }), 0) }}>Trade up</button>}
+        </div>
+      ))}
+      <div id="zoo-collection" style="margin-top:12px">
         <Collection catalog={catalog} copies={z.copies} found={found} trophyId={s.zoo.trophyId} trade={trade} setTrade={setTrade} />
-      )}
-      {odds && <OddsDialog onClose={() => setOdds(false)} />}
+      </div>
+      {odds && <OddsDialog currentTier={tier} onClose={() => setOdds(false)} />}
       {hatching && <HatchDialog kind={hatching} onClose={() => setHatching(null)} />}
     </>
   )
@@ -142,7 +137,7 @@ function RarityPillInline({ rarity, width }) {
 
 /** "Egg hatch rates", like the phone's LootBoxOddsDialog: each tier's chance as a bar in its
  *  colours (never how many animals a tier holds), and Momentum's foil chance. */
-function OddsDialog({ onClose }) {
+function OddsDialog({ currentTier, onClose }) {
   const set = Object.fromEntries(LOOT_BOX_ODDS)
   const rest = 100 - LOOT_BOX_ODDS.reduce((a, [, p]) => a + p, 0)
   const pct = (v) => (v >= 10 || v === Math.floor(v) ? `${Math.round(v)}%` : `${v.toFixed(1)}%`)
@@ -161,7 +156,7 @@ function OddsDialog({ onClose }) {
             </div>
           )
         })}
-        <div class="foil-hint"><Bolt gold size={18} /><span>= {FOIL_CHANCE_PERCENT}% chance of a foil card</span></div>
+        <div class="foil-hint" style="display:block"><div class="small" style="margin:0 4px 6px">Momentum gives every egg earned a chance of a holo card</div><MomentumTierTable current={currentTier} /></div>
         <div class="stage-row" style="margin-top:20px"><GlowPill rarity="BOX" solid onClick={onClose}>Close</GlowPill></div>
       </div>
     </CardStage>
@@ -256,7 +251,7 @@ function HatchDialog({ kind, onClose }) {
             <div class="reveal-burst"><Sunburst rarity={r} scale={1.25} /></div>
             <div class="col" style="align-items:center;position:relative">
               <span class={`reveal-banner ${r === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(r), '--p': (LOOK[r] || LOOK.GREEN)[0] }}>
-                {result.copies === 1 ? 'NEW!' : `You now have ×${result.copies}`}{result.cert?.foil ? '  ✦ FOIL!' : ''}
+                {result.copies === 1 ? 'NEW!' : `You now have ×${result.copies}`}{result.cert?.foil ? '  ✦ HOLO!' : ''}
               </span>
               <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} onDisplay={onDisplay} /></div>
             </div>
@@ -561,7 +556,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
             <div class="photo-rule" />
             <span class={`rarity-pill ${mythic ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(animal.rarity) }}>{RARITY_LABEL[animal.rarity]}</span>
             <div class="corner-chips">
-              {foil && <span>✦ Foil</span>}
+              {foil && <span>✦ Holo</span>}
               {onDisplay && <span>🏆</span>}
               {timesFound > 1 && <span>×{timesFound}</span>}
             </div>
@@ -726,7 +721,7 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
         <div class="chips" style="justify-content:center">
           {copies.map((c, n) => (
             <button key={c.id} class={`chip ${n === i ? 'on' : ''}`} style="background:var(--c-high)" onClick={() => setI(n)}>
-              Copy {n + 1}{c.cert?.foil ? ' · foil' : ''}{carriesCertificate(r) && c.cert?.hourMark != null ? ` · h${c.cert.hourMark}` : ''}
+              Copy {n + 1}{c.cert?.foil ? ' · holo' : ''}{carriesCertificate(r) && c.cert?.hourMark != null ? ` · h${c.cert.hourMark}` : ''}
             </button>
           ))}
         </div>

@@ -3,13 +3,12 @@ import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
 } from '../store.js'
-import { counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAYS, GOLDEN_DAILY_MILLIS, typeLabel } from '../model/rules.js'
+import { counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
+import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
-import { FOIL_CHANCE_PERCENT } from '../model/zoo.js'
 import { useCatalog, AnimalCardView, Floaty } from './Zoo.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions } from './timers.js'
 import { ICONS } from './icons.js'
@@ -406,21 +405,27 @@ function FitCard({ children }) {
   return <div class="foil-example" style={{ zoom: scale }}><div ref={ref}>{children}</div></div>
 }
 
+/** What Momentum is and what it's for (HomeScreen.kt GoldenStreakDialog): the tier reached and
+ *  how far the next is, today's hour, every tier's holo chance, and a holo Fennec fox. */
 function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
-  const gold = days >= GOLDEN_DAYS
-  // An example of what gold can bring: a foil Fennec fox, as on the phone.
+  const tier = momentumTier(days)
+  const next = nextMomentumTier(tier)
+  const toGo = next && next.minDays - days
   const fennec = useCatalog()?.find((a) => a.id === 'fennec_fox')
   const pct = Math.min(1, todayMillis / GOLDEN_DAILY_MILLIS)
   return (
     <Dialog title={`Momentum · ${days}d`} onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>OK</button>}>
-      <div class="center" style="font-size:54px;margin:4px 0 10px"><Bolt gold={gold} muted={!gold} /></div>
-      <p style="margin:0 0 12px;font-weight:650;text-align:center">
-        {gold ? 'Your momentum is gold' : `${GOLDEN_DAYS - Math.min(days, GOLDEN_DAYS)} more day${GOLDEN_DAYS - days === 1 ? '' : 's'} to gold`}
-      </p>
-      <div class="small muted" style="margin-bottom:6px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}{immersing ? ' · counting now' : ''}</div>
-      <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, #c99a2e, #ffd76a)' }} /></div>
-      <p class="muted small" style="margin:14px 0 4px">1+ hour a day, {GOLDEN_DAYS} days in a row → gold. Every language counts together; music and Anki don't.</p>
-      <p class="muted small" style="margin:0">Gold = {FOIL_CHANCE_PERCENT}% foil chance on eggs earned.</p>
+      <div class={`tier-${tier?.id || 'bronze'}`}>
+        <div class="center" style="font-size:54px;margin:4px 0 10px"><Bolt tier={tier?.id} muted={!tier} /></div>
+        <p style={{ margin: '0 0 12px', fontWeight: 650, textAlign: 'center', color: tier ? 'var(--tier-ink)' : undefined }}>
+          {[tier?.name, next ? `${toGo} more day${toGo === 1 ? '' : 's'} to ${next.name}` : 'The top tier'].filter(Boolean).join(' · ')}
+        </p>
+        <div class="small muted" style="margin-bottom:6px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}{immersing ? ' · counting now' : ''}</div>
+        <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, var(--tier), var(--tier-pale))' }} /></div>
+        <p class="muted small" style="margin:14px 0 4px">1+ hour of immersion every day keeps it going - longer runs reach higher tiers. Every language counts together; music and Anki don't.</p>
+        <p class="muted small" style="margin:0 0 8px">Eggs earned at a tier get its chance of hatching holo.</p>
+        <MomentumTierTable current={tier} />
+      </div>
       {fennec && <FitCard><Floaty><AnimalCardView animal={fennec} cert={{ foil: true }} /></Floaty></FitCard>}
     </Dialog>
   )

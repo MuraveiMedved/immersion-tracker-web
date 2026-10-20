@@ -231,10 +231,26 @@ textarea.input { resize: vertical; }
 /* The Momentum pill: today's progress ring round the bolt, and the days. */
 .momentum { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 2px 4px; border-radius: 999px; }
 .momentum .days { font-size: 12px; font-weight: 700; color: var(--on-surface-variant); }
-.momentum.gold .days { color: var(--gold); }
+/* Momentum tiers: --tier (ring, glow) and --tier-ink (text), dark and light. */
+.tier-bronze { --tier: #E08A4A; --tier-pale: #F6C49A; --tier-ink: #EB9E64; }
+.tier-silver { --tier: #C9D2DD; --tier-pale: #F4F7FA; --tier-ink: #D5DCE5; }
+.tier-gold { --tier: #FFC21A; --tier-pale: #FFE89A; --tier-ink: var(--gold); }
+.tier-diamond { --tier: #6FDCFF; --tier-pale: #D6F7FF; --tier-ink: #8FE6FF; }
+:root[data-theme='light'] .tier-bronze { --tier-ink: #9A5420; }
+:root[data-theme='light'] .tier-silver { --tier-ink: #5E6875; }
+:root[data-theme='light'] .tier-diamond { --tier-ink: #0A7FA6; }
+.momentum.lit .days { color: var(--tier-ink); }
+.tier-table { display: flex; flex-direction: column; gap: 2px; }
+.tier-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 10px; }
+.tier-row .name { flex: 1; font-weight: 600; color: var(--tier-ink); }
+.tier-row.reached { background: color-mix(in srgb, var(--tier) 16%, transparent); }
+.tier-row.reached .name, .tier-row.reached b { font-weight: 750; color: var(--tier-ink); }
 .bolt { display: inline-block; flex: none; }
-/* Every platform draws ⚡ in its own yellow: tint it to gold, then glow. */
-.bolt.gold { filter: sepia(1) saturate(2.6) hue-rotate(-8deg) brightness(1.08) drop-shadow(0 0 .25em rgba(255, 194, 26, .9)) drop-shadow(0 0 .5em rgba(255, 194, 26, .45)); }
+/* Every platform draws ⚡ in its own yellow: tint it to the tier's colour, then glow. */
+.bolt.tier-gold { filter: sepia(1) saturate(2.6) hue-rotate(-8deg) brightness(1.08) drop-shadow(0 0 .25em rgba(255, 194, 26, .9)) drop-shadow(0 0 .5em rgba(255, 194, 26, .45)); }
+.bolt.tier-bronze { filter: sepia(1) saturate(1.9) hue-rotate(-22deg) brightness(.9) drop-shadow(0 0 .25em rgba(224, 138, 74, .9)) drop-shadow(0 0 .5em rgba(224, 138, 74, .45)); }
+.bolt.tier-silver { filter: grayscale(1) brightness(1.45) contrast(.9) drop-shadow(0 0 .25em rgba(214, 222, 232, .9)) drop-shadow(0 0 .5em rgba(214, 222, 232, .45)); }
+.bolt.tier-diamond { filter: grayscale(1) sepia(1) hue-rotate(150deg) saturate(3) brightness(1.25) drop-shadow(0 0 .25em rgba(111, 220, 255, .9)) drop-shadow(0 0 .5em rgba(111, 220, 255, .45)); }
 .bolt.muted { filter: grayscale(1); opacity: .55; }
 /* Now tracking: the language's dimmed colour, an outline, a dot, and stop / discard. */
 .now-banner {
@@ -756,3 +772,12 @@ textarea.input { resize: vertical; }
 .goal-bar { height: 6px; border-radius: 999px; background: var(--surface-variant); overflow: hidden; }
 .goal-bar > div { height: 100%; border-radius: 999px; background: var(--primary); }
 .diff-chip { flex: none; font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); white-space: nowrap; }
+/* A count on an icon button (Social's Friends: requests waiting), like Material's Badge. */
+.icon-btn.badged { position: relative; }
+.icon-btn.badged .badge { position: absolute; top: 4px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; }
+/* The Zoo's egg card, compact (ZooScreen.kt LootBoxCard): egg, progress, and Hatch in one row. */
+.egg-card.compact { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 22px; cursor: pointer; }
+.egg-card.compact .egg-stage { width: 64px; height: 64px; margin: 0; flex: none; }
+.egg-card.compact .egg-glow { inset: 1px; }
+.egg-card.compact .egg-stage .egg { transform: none; }
+.glow-pill.small { width: auto; height: 36px; padding: 0 18px; flex: none; }

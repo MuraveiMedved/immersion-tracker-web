@@ -1,7 +1,7 @@
 // Run with: TZ=America/Chicago npm test
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, PODCAST, READING, ANKI, LISTENING } from '../src/model/rules.js'
+import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING } from '../src/model/rules.js'
 import { goalDayStart } from '../src/model/time.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate } from '../src/model/zoo.js'
@@ -145,4 +145,12 @@ test('goal days run from 4 AM: a late night counts for the day before', () => {
   // 3 AM on the 15th the 14th is still "today", so the streak is 1 with nothing more needed.
   const list = [entry(at(2026, 10, 14, 23), HOUR / 2), entry(at(2026, 10, 15, 1), HOUR / 2)]
   assert.equal(computeStreak(dailyTotalsFor(list, 1, PODCAST, at(2026, 10, 15, 3)), HOUR, at(2026, 10, 15, 3)).current, 1)
+})
+
+test('Momentum tiers: Bronze 10 / Silver 30 / Gold 60 / Diamond 100 days, holo 10/20/30/40%', () => {
+  const at = (d) => momentumTier(d)?.id ?? null
+  assert.deepEqual([0, 9, 10, 29, 30, 59, 60, 99, 100, 400].map(at), [null, null, 'bronze', 'bronze', 'silver', 'silver', 'gold', 'gold', 'diamond', 'diamond'])
+  assert.deepEqual([10, 30, 60, 100].map((d) => momentumTier(d).holoPercent), [10, 20, 30, 40])
+  assert.equal(nextMomentumTier(null).id, 'bronze')
+  assert.equal(nextMomentumTier(momentumTier(100)), null)
 })

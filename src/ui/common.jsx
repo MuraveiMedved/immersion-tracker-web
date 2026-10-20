@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { createPortal } from 'preact/compat'
 import { GRADIENTS, LANGUAGE_COLORS, LANGUAGE_COLORS_BRIGHT, languageFill, luminance, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { getState } from '../store.js'
-import { GOLDEN_DAYS } from '../model/rules.js'
+import { MOMENTUM_TIERS, momentumTier } from '../model/rules.js'
 import { ICONS } from './icons.js'
 
 /** [hideScrollbar]: still scrolls, just without the bar (profiles, which are mostly pictures). */
@@ -298,9 +298,12 @@ export function ColorPicker({ colorHex, gradientColors, onChange }) {
 
 /** The Momentum ⚡ (the phone's GoldenBolt/MutedBolt): colour-corrected to gold with a soft gold
  *  glow when Momentum is lit, grey and faded below that. */
-export function Bolt({ gold = false, muted = false, size }) {
+/** The ⚡, tinted to a Momentum tier's colour (`tier`: 'bronze' | 'silver' | 'gold' | 'diamond'),
+ *  or grey when `muted`. `gold` is shorthand for tier 'gold'. */
+export function Bolt({ gold = false, tier, muted = false, size }) {
   const style = { fontSize: size ? `${size}px` : undefined, lineHeight: 1 }
-  return <span class={`bolt ${gold ? 'gold' : ''} ${muted ? 'muted' : ''}`} style={style}>⚡</span>
+  const t = tier || (gold ? 'gold' : null)
+  return <span class={`bolt ${t ? `tier-${t}` : ''} ${muted ? 'muted' : ''}`} style={style}>⚡</span>
 }
 
 export function Spinner() { return <span class="spin" /> }
@@ -340,25 +343,44 @@ export function StreakBadge({ streak }) {
   )
 }
 
-/** The phone's GoldenStreakPill: today's progress toward 1 hour as a thin gold ring round the
- *  bolt (just the bolt once today is done), then the days. */
+/** The phone's GoldenStreakPill: today's progress toward 1 hour as a thin ring round the bolt
+ *  (just the bolt once today is done), then the days - all in the tier's colour (bronze while
+ *  it's still building). */
 export function MomentumPill({ days, progress, onClick }) {
-  const lit = days >= GOLDEN_DAYS
+  const tier = momentumTier(days)
+  const lit = !!tier
   const p = Math.max(0, Math.min(1, progress))
   const r = 12.75, c = 2 * Math.PI * r
   return (
-    <button class={`momentum ${lit ? 'gold' : ''}`} onClick={onClick} title={`Momentum · ${days} days`}>
+    <button class={`momentum tier-${tier?.id || 'bronze'} ${lit ? 'lit' : ''}`} onClick={onClick} title={`Momentum · ${days} days`}>
       <span style="position:relative;width:28px;height:28px;display:grid;place-items:center">
         {p < 1 && (
           <svg width="28" height="28" style="position:absolute;inset:0;transform:rotate(-90deg)">
             <circle cx="14" cy="14" r={r} fill="none" stroke="color-mix(in srgb, var(--surface-variant) 60%, transparent)" stroke-width="2.5" />
-            {p > 0 && <circle cx="14" cy="14" r={r} fill="none" stroke={lit ? 'rgba(255,194,26,.75)' : 'rgba(255,194,26,.52)'} stroke-width="2.5" stroke-linecap="round" stroke-dasharray={`${c * p} ${c}`} />}
+            {p > 0 && <circle cx="14" cy="14" r={r} fill="none" stroke="var(--tier)" stroke-opacity={lit ? 0.75 : 0.52} stroke-width="2.5" stroke-linecap="round" stroke-dasharray={`${c * p} ${c}`} />}
           </svg>
         )}
-        <Bolt gold={lit} muted={!lit} size={12} />
+        <Bolt tier={tier?.id} muted={!lit} size={12} />
       </span>
       <span class="days">{days}d</span>
     </button>
   )
 }
 
+
+/** MomentumTierTable (StreakBadge.kt): every tier - bolt, name, the days it takes, its holo
+ *  chance - with `current` (the tier reached, if any) picked out in its own colour. */
+export function MomentumTierTable({ current }) {
+  return (
+    <div class="tier-table">
+      {MOMENTUM_TIERS.map((t) => (
+        <div key={t.id} class={`tier-row tier-${t.id} ${current?.id === t.id ? 'reached' : ''}`}>
+          <Bolt tier={t.id} size={15} />
+          <span class="name">{t.name}</span>
+          <span class="muted small">{t.minDays} days</span>
+          <b class="small">{t.holoPercent}% holo</b>
+        </div>
+      ))}
+    </div>
+  )
+}
