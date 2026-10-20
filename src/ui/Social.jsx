@@ -295,25 +295,16 @@ function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayM
           </div>
         </div>
         <div style="margin-top:6px"><SplitBar listening={listeningPart} reading={readingPart} anki={ankiPart} total={figure || 0} max={showingToday ? todayMax : scaleMax} colors={colors} /></div>
-        {/* Which colour is which is said once, by RaceBarLegend; the exact amounts are on the racer's sheet. */}
-        {!isLive && <div class="muted" style="font-size:11px;text-align:right;margin-top:3px;height:16px">{percentText(st.millis, goal)}%</div>}
+        <div class="row split-line">
+          {listeningPart != null && readingPart != null && <>
+            <SplitAmount type="PODCAST" color={colors.listening} millis={listeningPart} short />
+            <SplitAmount type="READING" color={colors.reading} millis={readingPart} short />
+            {ankiPart > 0 && <SplitAmount type="ANKI" color={colors.anki} millis={ankiPart} short />}
+          </>}
+          <span class="spacer" />
+          {!isLive && <span class="muted" style="font-size:11px">{percentText(st.millis, goal)}%</span>}
+        </div>
       </div>
-    </div>
-  )
-}
-
-/** One line above the standings saying which colour on the bars is which kind of immersion, for
- *  just the kinds anyone in this race has - so the rows needn't repeat it. */
-function RaceBarLegend({ event, colors }) {
-  const kinds = [
-    event.standings.some((x) => x.millis - (x.readingMillis || 0) - (x.ankiMillis || 0) > 0) && ['PODCAST', 'Listening', colors.listening],
-    event.standings.some((x) => x.readingMillis > 0) && ['READING', 'Reading', colors.reading],
-    event.standings.some((x) => x.ankiMillis > 0) && ['ANKI', 'Anki', colors.anki],
-  ].filter(Boolean)
-  if (!kinds.length) return null
-  return (
-    <div class="row race-legend">
-      {kinds.map(([type, label, color]) => <span key={type} class="row" style="gap:3px"><TypeIcon type={type} size={14} color={color} />{label}</span>)}
     </div>
   )
 }
@@ -329,14 +320,11 @@ function Standings({ event, now, isLive, view, onPerson }) {
   const todayMax = Math.max(0, ...event.standings.map((x) => (x.daily || {})[localTodayKey(x, now)] || 0))
   const colors = barColors(s)
   return (
-    <>
-    <RaceBarLegend event={event} colors={colors} />
-    <div class="col" style="gap:6px;margin-top:8px">
+    <div class="col" style="gap:6px;margin-top:10px">
       {event.standings.map((st, i) => (
         <StandingRow key={st.userId} rank={i + 1} st={st} isMe={st.userId === me} goal={goal} scaleMax={scaleMax} now={now} isLive={isLive} view={view} todayMax={todayMax} colors={colors} onClick={() => onPerson(st)} />
       ))}
     </div>
-    </>
   )
 }
 
