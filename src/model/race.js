@@ -350,24 +350,6 @@ export function visibleEvents(s, now = Date.now()) {
   return { running, done, keep: RECENT_FINISH_KEEP }
 }
 
-/* ------------------------------------------------------------------------------------------------
- * Outlook: my place and the gaps either side of me (RaceMath.raceOutlook).
- * --------------------------------------------------------------------------------------------- */
-
-export function raceOutlook(event, myUserId, now = Date.now()) {
-  if (!(now >= event.startMillis && !ended(event, now))) return null
-  const standings = event.standings
-  const i = standings.findIndex((x) => x.userId === myUserId)
-  if (i === -1) return null
-  const me = standings[i]
-  const ahead = standings[i - 1] || null
-  const behind = standings[i + 1] || null
-  return {
-    rank: i + 1, participants: standings.length, ahead, gapToAhead: ahead ? ahead.millis - me.millis : 0,
-    behind, leadOverBehind: behind ? me.millis - behind.millis : 0,
-  }
-}
-
 export const ordinal = (n) => {
   const t = n % 100
   if (t >= 11 && t <= 13) return `${n}th`

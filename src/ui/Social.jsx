@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow, update, getState } from '../store.js'
 import {
-  sync, syncIfStale, createEvent, joinByCode, leaveEvent, endEvent, editEvent, deleteEventForEveryone, deleteCompleted, visibleEvents, raceOutlook,
+  sync, syncIfStale, createEvent, joinByCode, leaveEvent, endEvent, editEvent, deleteEventForEveryone, deleteCompleted, visibleEvents,
   raceStatus, onRaceStatus, errorText, ordinal, localTodayKey, refreshFriends, addFriendByCode, addFriendById, respondFriend, removeFriend,
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
@@ -387,7 +387,6 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
   const zonesDiffer = event.standings.some((x) => {
     try { return x.timeZone && new Date(new Date(now).toLocaleString('en-US', { timeZone: x.timeZone })).getTime() !== new Date(new Date(now).toLocaleString('en-US')).getTime() } catch { return false }
   })
-  const outlook = raceOutlook(event, me, now)
   // You open your own profile (to see and edit it), the same sheet as Social's corner picture.
   const openPerson = (st) => (st.userId === me && onOpenMe ? onOpenMe() : setPerson(st))
   const dialogs = <>
@@ -444,7 +443,6 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
         </div>
         {countdown && <CardTag text={countdown} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
       </div>
-      {outlook && <OutlookSummary o={outlook} />}
       {!event.standings.length ? <div class="muted small" style="margin-top:12px">Nobody has joined yet.</div> : <>
         {canShowToday && (
           <div class="standings-switch">
@@ -490,23 +488,6 @@ function Avatar({ standing, profile, size = 34 }) {
   return (
     <div class="avatar" style={{ width: size, height: size, fontSize: size * 0.5, border: animal ? `2px solid ${RARITY_COLOR[animal.rarity]}` : undefined }}>
       {animal ? <AnimalPhoto animal={animal} /> : emoji || (standing?.name || prof?.name || '?').slice(0, 1).toUpperCase()}
-    </div>
-  )
-}
-
-/** "Where do I stand": my place and the gap to whoever's next, as a compact strip at the top of a
- *  race's card. */
-function OutlookSummary({ o }) {
-  const gap = o.participants < 2 ? 'Nobody else has joined yet'
-    : o.ahead ? (o.gapToAhead === 0 ? `Tied with ${o.ahead.name}` : `${formatHm(o.gapToAhead)} to pass ${o.ahead.name}`)
-      : o.behind ? `Leading ${o.behind.name} by ${formatHm(o.leadOverBehind)}` : null
-  return (
-    <div class="outlook-summary row">
-      <Icon name="leaderboard" size={20} color="var(--primary)" />
-      <div class="col grow" style="gap:0;min-width:0">
-        {o.participants >= 2 && <span style="font-weight:650">You're {ordinal(o.rank)} of {o.participants}</span>}
-        {gap && <span class="muted">{gap}</span>}
-      </div>
     </div>
   )
 }
