@@ -312,3 +312,23 @@ export function tradeUp(from, animalIds) {
 export function setTrophy(id) {
   update((s) => { s.zoo.trophyId = id })
 }
+
+/** Race sprint prizes already taken, by prize key (sprints.js). */
+export const takenPrizes = (s) => new Set(s.zoo.openings.filter((o) => String(o.rarity).startsWith('SPRINT:')).map((o) => o.rarity))
+
+/** Takes a won sprint's prize (ZooRepository.claimSprintPrize): Momentum right now gives it the
+ *  egg tiers' holo chance, and an Epic gets its birth certificate from now. Null if already taken. */
+export async function claimSprintPrize(key, animalId) {
+  await loadCatalog()
+  const animal = animalById(animalId)
+  if (!animal || takenPrizes(getState()).has(key)) return null
+  const now = Date.now()
+  let result = null
+  update((st) => {
+    if (st.zoo.openings.some((o) => o.rarity === key)) return
+    const cert = certify(st, snapshotEgg(st, now), animal.rarity)
+    st.zoo.openings.push({ id: uid(), rarity: key, animalId: animal.id, atMillis: now, upgradeKey: false, cert })
+    result = { animal, cert, copies: st.zoo.openings.filter((o) => o.animalId === animal.id).length, fromBox: false, prize: true }
+  })
+  return result
+}
