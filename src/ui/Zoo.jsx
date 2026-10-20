@@ -34,6 +34,45 @@ export function AnimalPhoto({ animal, style = {} }) {
   )
 }
 
+// The colour along the bottom of a photo, for the wash behind its card's details (see the phone's
+// rememberPhotoTint) - bright enough to read as a colour, muted enough not to shout.
+const photoTints = new Map()
+function usePhotoTint(src) {
+  const [tint, setTint] = useState(() => photoTints.get(src) || null)
+  useEffect(() => {
+    if (!src) return
+    if (photoTints.has(src)) { setTint(photoTints.get(src)); return }
+    let live = true
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas'); c.width = 8; c.height = 8
+        const ctx = c.getContext('2d', { willReadFrequently: true })
+        ctx.drawImage(img, 0, 0, 8, 8)
+        const d = ctx.getImageData(0, 6, 8, 2).data
+        let r = 0, g = 0, b = 0
+        for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2] }
+        const t = mutedTint(r / 16, g / 16, b / 16)
+        photoTints.set(src, t)
+        if (live) setTint(t)
+      } catch { /* a photo the canvas can't read just gets no wash */ }
+    }
+    img.src = src
+    return () => { live = false }
+  }, [src])
+  return tint
+}
+
+function mutedTint(r, g, b) {
+  const max = Math.max(r, g, b) / 255, min = Math.min(r, g, b) / 255, d = max - min
+  let h = 0
+  if (d) h = max === r / 255 ? ((g - b) / 255 / d) % 6 : max === g / 255 ? (b - r) / 255 / d + 2 : (r - g) / 255 / d + 4
+  h = (h * 60 + 360) % 360
+  const sat = Math.min(0.6, Math.max(0.25, max ? d / max : 0)), val = Math.min(0.85, Math.max(0.55, max))
+  const k = (n) => { const x = (n + h / 60) % 6; return Math.round(255 * (val - val * sat * Math.max(0, Math.min(x, 4 - x, 1)))) }
+  return [k(5), k(3), k(1)]
+}
+
 export function RarityBadge({ rarity }) {
   return <span class="rarity-badge" style={{ background: RARITY_GRADIENT[rarity] }}>{RARITY_LABEL[rarity]}</span>
 }
@@ -568,6 +607,13 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
   const wrapRef = useRef(null)
   const size = useSize(wrapRef)
   const border = mythic || foil ? 3 : 2
+  const tint = usePhotoTint(animal.image)
+  // Each card's own wash: its photo's bottom colour running on down into the details and fading,
+  // with a faint glow of the rarity in the far corner.
+  const wash = [
+    tint && `linear-gradient(to bottom, rgba(${tint}, .22) 0%, rgba(${tint}, .07) 55%, transparent 100%)`,
+    `radial-gradient(circle at 100% 100%, ${hexA(s2, 0.09)}, transparent 70%)`,
+  ].filter(Boolean).join(', ')
   // A Mythic's shape is measured and drawn as a path - CSS polygons can't round its corners.
   const outer = mythic && size ? { clipPath: `path('${mythicPath(size[0], size[1])}')` } : {}
   const inner = mythic && size ? { clipPath: `path('${mythicPath(size[0], size[1], border)}')`, borderRadius: 0 } : {}
@@ -587,7 +633,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
               {timesFound > 1 && <span>×{timesFound}</span>}
             </div>
           </div>
-          <div class="acard-body" style={{ paddingBottom: mythic ? 26 : 16 }}>
+          <div class="acard-body" style={{ paddingBottom: mythic ? 26 : 16, backgroundImage: wash }}>
             <div class="acard-name">{animal.name}</div>
             {animal.scientific && <div class="acard-sci">{animal.scientific}</div>}
             {animal.blurb && <div class="acard-blurb">{animal.blurb}</div>}
