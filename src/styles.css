@@ -526,6 +526,8 @@ textarea.input { resize: vertical; }
 .corner-chips { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
 .corner-chips span, .holo-chip { background: rgba(0, 0, 0, .55); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
 .holo-chip { flex: none; white-space: nowrap; }
+.holo-chip.compact { font-size: 11px; padding: 2px 7px; margin-left: -3px; }
+.tier-row > * { white-space: nowrap; }
 .acard-body { padding: 14px 18px 16px; }
 .acard-name { font-size: 22px; line-height: 28px; font-weight: 700; }
 .acard-sci { font-size: 14px; font-style: italic; color: var(--on-surface-variant); }
