@@ -7,7 +7,7 @@ import { useStore, useNow } from '../store.js'
 import { formatHm, formatYmd } from '../model/time.js'
 import { momentumTier } from '../model/rules.js'
 import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, setTrophy, takenPrizes } from '../model/zoo.js'
-import { sprintsFor, prizesWaiting, sprintEndMillis } from '../model/sprints.js'
+import { sprintsFor, prizesWaiting, sprintEndMillis, sprintStartMillis } from '../model/sprints.js'
 import { toast, Icon } from './common.jsx'
 import { AnimalCardView, CardStage, Floaty, GlowPill, rarityBrush } from './Zoo.jsx'
 
@@ -99,6 +99,9 @@ export function SprintsPanel({ event, now, data, onCollect }) {
         const color = RARITY_COLOR[top]
         const waiting = sp.earned.filter((m) => !taken.has(m.prizeKey))
         const fraction = Math.min(1, sp.myMillis / sp.capMillis)
+        // How much of its time is gone - stay ahead of the tick to reach the top reward on time.
+        const start = sp.current ? sprintStartMillis(event, sp) : 0, end = sp.current ? sprintEndMillis(event, sp) : 0
+        const elapsed = sp.current && end > start ? Math.min(1, Math.max(0, (now - start) / (end - start))) : null
         return (
           <div key={sp.key} class={`sprint-row ${sp.current ? 'current' : ''}`} style={{ '--p': color }}>
             <div class="row" style="gap:8px">
@@ -124,6 +127,7 @@ export function SprintsPanel({ event, now, data, onCollect }) {
                 <span key={m.rarity} class={`mark ${m.reached ? 'on' : ''}`} title={`${RARITY_LABEL[m.rarity]} at ${m.millis / 3600000} h`}
                   style={{ left: `calc((100% - 18px) * ${m.millis / sp.capMillis})`, '--c': RARITY_COLOR[m.rarity] }} />
               ))}
+              {elapsed != null && <span class="time-tick" style={{ left: `calc((100% - 18px) * ${elapsed} + 9px)` }} />}
             </div>
             <div class="muted" style="font-size:11px;margin-top:6px">{formatHm(Math.min(sp.myMillis, sp.capMillis))} of {sp.capHours} h</div>
             {waiting.length > 0 && <button class="sprint-claim" style={{ backgroundImage: rarityBrush(waiting[0].rarity) }} onClick={() => onCollect(waiting[0])}>Collect your {RARITY_LABEL[waiting[0].rarity]}</button>}

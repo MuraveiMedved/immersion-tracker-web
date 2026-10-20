@@ -46,9 +46,7 @@ export function Settings({ params, nav }) {
     <>
       <h1 class="page-title">Settings</h1>
 
-      <Block collapsible title="Appearance" summary="Ring style, colors & display">
-        <SettingRow icon="palette" title="Ring style, colors & display" onClick={() => setView('appearance')} />
-      </Block>
+      <Block collapsible title="Appearance" summary="Ring style, colors & display" onOpen={() => setView('appearance')} />
 
       <Block collapsible title="Languages" summary={languages.map((p) => p.name).join(', ') || 'No languages yet'} action={<button class="icon-btn" title="Add language" style="margin-right:-8px" onClick={() => setEditing('new')}><Icon name="add" /></button>}>
         {!languages.length && <div class="muted" style="padding:8px 0">No languages yet - tap + to add one.</div>}
@@ -64,9 +62,7 @@ export function Settings({ params, nav }) {
       </Block>
 
       {/* Everything about using this history on other devices, behind one row - as on the phone. */}
-      <Block collapsible title="Devices & sync" summary="Your devices">
-        <SettingRow icon="smartphone" title="Your devices" hint={s.sync.token ? 'Linked - syncing with your other devices' : 'Link your Android phone or other devices'} onClick={() => setView('account')} />
-      </Block>
+      <Block collapsible title="Devices & sync" summary={s.sync.token ? 'Linked - syncing with your other devices' : 'Link your Android phone or other devices'} onOpen={() => setView('account')} />
 
       <Block collapsible title="Tracking" summary="Show Anki on Home, Uncategorized logs, Entry threshold">
         <SettingRow icon={<TypeIcon type="ANKI" size={22} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">

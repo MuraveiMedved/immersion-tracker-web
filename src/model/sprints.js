@@ -82,6 +82,13 @@ export function sprintsFor(event, userId, now) {
 /** Rewards earned in sprints that are over and not collected yet, oldest first. */
 export const prizesWaiting = (sprints, taken) => [...sprints].sort((a, b) => a.lastDay - b.lastDay).flatMap((sp) => sp.earned).filter((m) => !taken.has(m.prizeKey))
 
+/** When a sprint opens: 4am on its first day (or the race's start, if later). */
+export function sprintStartMillis(event, sprint) {
+  const k = sprint.firstDay
+  const ms = new Date(Math.floor(k / 10000), Math.floor(k / 100) % 100 - 1, k % 100, RACE_DAY_START_HOUR).getTime()
+  return Math.max(event.startMillis, ms)
+}
+
 /** When a running sprint closes: 4am after its last day (or the race's end, if sooner). */
 export function sprintEndMillis(event, sprint) {
   const n = ed(sprint.lastDay) + 1

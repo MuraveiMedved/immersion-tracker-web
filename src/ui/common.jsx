@@ -190,7 +190,8 @@ const openBlocks = new Set()
 /** The phone's SettingsBlock: a rounded tinted block with a primary-coloured heading. A
  *  [collapsible] one is instead a row of its own - its name over [summary] (what's inside), with
  *  a chevron - that opens its rows in place, in the usual tinted block just beneath. */
-export function Block({ title, action, collapsible = false, summary, children }) {
+// [onOpen]: a section that's just a way into its own screen - its row goes straight there, no dropdown.
+export function Block({ title, action, collapsible = false, summary, onOpen, children }) {
   const [open, setOpen] = useState(() => openBlocks.has(title))
   if (!collapsible) {
     return (
@@ -206,16 +207,16 @@ export function Block({ title, action, collapsible = false, summary, children })
   }
   return (
     <div class="fold">
-      <div class="fold-row" onClick={toggle}>
+      <div class="fold-row" onClick={onOpen || toggle}>
         <div class="grow">
           <div class="fold-title">{title}</div>
           {summary && <div class="fold-summary">{summary}</div>}
         </div>
         {/* The row's own action (the "+") mustn't also open or close it. */}
         {action && <span onClick={(e) => e.stopPropagation()}>{action}</span>}
-        <span class={`block-chev${open ? ' open' : ''}`}><Icon name="expand_more" /></span>
+        {onOpen ? <span class="block-chev"><Icon name="chevron_right" /></span> : <span class={`block-chev${open ? ' open' : ''}`}><Icon name="expand_more" /></span>}
       </div>
-      {open && <div class="block fold-body">{children}</div>}
+      {open && !onOpen && <div class="block fold-body">{children}</div>}
     </div>
   )
 }

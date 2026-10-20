@@ -93,13 +93,15 @@ main.page {
 }
 .nav button.on { background: #fff; color: var(--nav-bg, var(--surface)); }
 :root[data-theme='light'] .nav button.on { background: var(--on-surface); }
-@media (min-width: 900px) {
+/* Anything wider than a phone: the bar stands on the left, and the page keeps clear of it
+   (20px + the 72px bar + a gap) however narrow the window. */
+@media (min-width: 600px) {
   .nav {
     left: 20px; right: auto; top: 50%; bottom: auto; transform: translateY(-50%);
     flex-direction: column; width: auto; padding: 10px;
   }
   .nav button { width: 52px; height: 52px; flex: none; }
-  main.page { padding-bottom: 48px; }
+  main.page { padding-bottom: 48px; padding-left: max(20px, calc(112px - max(0px, (100vw - 720px) / 2))); }
 }
 .backdrop-wash { position: fixed; inset: 0 0 auto 0; height: 320px; pointer-events: none; z-index: -1; transition: background .9s; }
 
@@ -596,7 +598,7 @@ textarea.input { resize: vertical; }
 .egg-glow { background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 50%, transparent), transparent); }
 .zoo-panel { border-radius: 28px; border: 2px solid transparent; padding: 22px; background-origin: border-box; background-clip: padding-box, border-box; }
 .zoo-panel.center { text-align: center; display: flex; flex-direction: column; align-items: center; }
-.rarity-pill-inline { display: inline-block; flex: none; text-align: center; padding: 3px 10px; border-radius: 999px; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+.rarity-pill-inline { display: inline-block; flex: none; text-align: center; padding: 3px 6px; border-radius: 999px; color: #fff; font-size: 10px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; white-space: nowrap; }
 .odds-row { display: flex; align-items: center; padding: 4px 0; }
 .odds-row b { font-size: 14px; min-width: 40px; text-align: right; }
 .odds-track { flex: 1; height: 10px; margin: 0 10px; border-radius: 999px; background: var(--surface-variant); overflow: hidden; }
@@ -813,6 +815,8 @@ textarea.input { resize: vertical; }
 .sprint-bar .fill { height: 100%; border-radius: 999px; }
 .sprint-bar .mark { position: absolute; bottom: 0; width: 18px; height: 18px; margin-left: 0; border-radius: 50%; border: 2px solid var(--c); background: var(--c-high); box-sizing: border-box; }
 .sprint-bar .mark.on { background: var(--c); }
+/* The time tick: how much of the period is gone (100% = its end) - stay ahead of it. */
+.sprint-bar .time-tick { position: absolute; bottom: 1px; width: 3px; height: 16px; margin-left: -1.5px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface) 85%, transparent); box-shadow: 0 0 0 .75px color-mix(in srgb, var(--surface) 60%, transparent); z-index: 1; }
 /* "+1 [card]" over each reward - one animal card is paid there (faded with a tick once collected). */
 .sprint-badge { position: absolute; top: 0; width: 34px; display: flex; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 900; color: var(--c); line-height: 14px; }
 .sprint-badge.done { opacity: .45; }
