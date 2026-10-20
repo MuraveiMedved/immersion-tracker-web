@@ -266,7 +266,7 @@ function SplitBar({ listening, reading, anki = 0, total, max, colors, height = 1
 }
 
 /** One person's line in the standings: medal, name, the figure, its split bar and the split in numbers. */
-function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayMax, colors, showSplit = true, onClick }) {
+function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayMax, colors, onClick }) {
   const todayKey = localTodayKey(st, now)
   const hasDaily = Object.keys(st.daily || {}).length > 0
   const today = isLive && hasDaily ? Math.min(st.millis, st.daily[todayKey] || 0) : null
@@ -295,23 +295,30 @@ function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayM
           </div>
         </div>
         <div style="margin-top:6px"><SplitBar listening={listeningPart} reading={readingPart} anki={ankiPart} total={figure || 0} max={showingToday ? todayMax : scaleMax} colors={colors} /></div>
-        {showSplit && <div class="row split-line">
-          {listeningPart != null && readingPart != null && <>
-            <SplitAmount type="PODCAST" color={colors.listening} millis={listeningPart} short />
-            <SplitAmount type="READING" color={colors.reading} millis={readingPart} short />
-            {ankiPart > 0 && <SplitAmount type="ANKI" color={colors.anki} millis={ankiPart} short />}
-          </>}
-          <span class="spacer" />
-          {!isLive && <span class="muted" style="font-size:11px">{percentText(st.millis, goal)}%</span>}
-        </div>}
+        {/* Which colour is which is said once, by RaceBarLegend; the exact amounts are on the racer's sheet. */}
+        {!isLive && <div class="muted" style="font-size:11px;text-align:right;margin-top:3px;height:16px">{percentText(st.millis, goal)}%</div>}
       </div>
     </div>
   )
 }
 
-/** [showSplit]: the listening/reading/Anki numbers under each bar - off on a running race's card
- *  until its details are opened (the bar's colors still show the split). */
-function Standings({ event, now, isLive, view, onPerson, showSplit = true }) {
+/** One line above the standings saying which colour on the bars is which kind of immersion, for
+ *  just the kinds anyone in this race has - so the rows needn't repeat it. */
+function RaceBarLegend({ event, colors }) {
+  const kinds = [
+    event.standings.some((x) => x.millis - (x.readingMillis || 0) - (x.ankiMillis || 0) > 0) && ['PODCAST', 'Listening', colors.listening],
+    event.standings.some((x) => x.readingMillis > 0) && ['READING', 'Reading', colors.reading],
+    event.standings.some((x) => x.ankiMillis > 0) && ['ANKI', 'Anki', colors.anki],
+  ].filter(Boolean)
+  if (!kinds.length) return null
+  return (
+    <div class="row race-legend">
+      {kinds.map(([type, label, color]) => <span key={type} class="row" style="gap:3px"><span class="swatch" style={{ background: color }} /><TypeIcon type={type} size={14} color={color} />{label}</span>)}
+    </div>
+  )
+}
+
+function Standings({ event, now, isLive, view, onPerson }) {
   const s = useStore()
   const me = s.race.userId
   const goal = event.goalHours * HOUR
@@ -322,11 +329,14 @@ function Standings({ event, now, isLive, view, onPerson, showSplit = true }) {
   const todayMax = Math.max(0, ...event.standings.map((x) => (x.daily || {})[localTodayKey(x, now)] || 0))
   const colors = barColors(s)
   return (
-    <div class="col" style="gap:6px;margin-top:10px">
+    <>
+    <RaceBarLegend event={event} colors={colors} />
+    <div class="col" style="gap:6px;margin-top:8px">
       {event.standings.map((st, i) => (
-        <StandingRow key={st.userId} rank={i + 1} st={st} isMe={st.userId === me} goal={goal} scaleMax={scaleMax} now={now} isLive={isLive} view={view} todayMax={todayMax} colors={colors} showSplit={showSplit} onClick={() => onPerson(st)} />
+        <StandingRow key={st.userId} rank={i + 1} st={st} isMe={st.userId === me} goal={goal} scaleMax={scaleMax} now={now} isLive={isLive} view={view} todayMax={todayMax} colors={colors} onClick={() => onPerson(st)} />
       ))}
     </div>
+    </>
   )
 }
 
@@ -445,7 +455,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
         )}
         {canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
         <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} showSplit={details} />
-        <button class="btn text details-toggle" onClick={() => setDetails(!details)}>{details ? 'Hide breakdown & outlook' : 'Breakdown & outlook'}<Icon name={details ? 'expand_less' : 'expand_more'} size={18} /></button>
+        {outlook && <button class="btn text details-toggle" onClick={() => setDetails(!details)}>{details ? 'Hide outlook' : 'Outlook'}<Icon name={details ? 'expand_less' : 'expand_more'} size={18} /></button>}
         {details && outlook && <OutlookTips o={outlook} event={event} />}
         {started && <RaceCharts event={event} now={now} />}
       </>}
@@ -960,6 +970,21 @@ function PersonSheet({ event, standing: st, now, onClose, onOpenMe }) {
             <span class="muted" style="font-size:11px">{st.ankiBankedMillis > 0 ? `counted · ${formatHm(st.ankiBankedMillis)} banked` : 'counted'}</span>
           </div>
         )}
+        {/* Today's split too, while the race runs - the card's Today view shows only the bars. */}
+        {live && Object.keys(st.dailyReading || {}).length > 0 && (() => {
+          const k = localTodayKey(st, now)
+          const today = Math.min(st.millis, (st.daily || {})[k] || 0)
+          const r = Math.min(today, st.dailyReading[k] || 0)
+          const a = Math.min(today, (st.dailyAnki || {})[k] || 0)
+          return (
+            <div class="row split-line" style="gap:12px;margin-top:8px">
+              <span class="muted" style="font-size:11px">{localTime ? 'Their today' : 'Today'}</span>
+              <SplitAmount type="PODCAST" color={colors.listening} millis={Math.max(0, today - r - a)} />
+              <SplitAmount type="READING" color={colors.reading} millis={r} />
+              {a > 0 && <SplitAmount type="ANKI" color={colors.anki} millis={a} />}
+            </div>
+          )
+        })()}
       </div>
       <div class="person-stats">
         {live && hasDaily && <StatTile label={localTime ? 'Their today' : 'Today'} value={formatHm((st.daily || {})[localTodayKey(st, now)] || 0)} />}
