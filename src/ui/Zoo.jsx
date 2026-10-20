@@ -138,9 +138,22 @@ function RarityPillInline({ rarity, width }) {
 /** "Egg hatch rates", like the phone's LootBoxOddsDialog: each tier's chance as a bar in its
  *  colours (never how many animals a tier holds), and Momentum's foil chance. */
 function OddsDialog({ currentTier, onClose }) {
+  const [preview, setPreview] = useState(false)
+  const fennec = useCatalog()?.find((x) => x.id === 'fennec_fox')
   const set = Object.fromEntries(LOOT_BOX_ODDS)
   const rest = 100 - LOOT_BOX_ODDS.reduce((a, [, p]) => a + p, 0)
   const pct = (v) => (v >= 10 || v === Math.floor(v) ? `${Math.round(v)}%` : `${v.toFixed(1)}%`)
+  // Preview: a holo Fennec fox in place of the rates, Close returning to them.
+  if (preview && fennec) {
+    return (
+      <CardStage rarity={fennec.rarity} onClose={() => setPreview(false)}>
+        <div class="col" style="align-items:center;gap:16px">
+          <Floaty><AnimalCardView animal={fennec} cert={{ foil: true }} /></Floaty>
+          <div class="stage-row" style="width:100%"><GlowPill rarity={fennec.rarity} solid onClick={() => setPreview(false)}>Close</GlowPill></div>
+        </div>
+      </CardStage>
+    )
+  }
   return (
     <CardStage rarity="BOX" onClose={onClose}>
       <div class="zoo-panel" style={{ backgroundImage: 'linear-gradient(var(--c-high), var(--c-high)), linear-gradient(135deg, var(--primary), var(--tertiary))' }}>
@@ -156,7 +169,14 @@ function OddsDialog({ currentTier, onClose }) {
             </div>
           )
         })}
-        <div class="foil-hint" style="display:block"><div class="small" style="margin:0 4px 6px">Momentum gives every egg earned a chance of a holo card</div><MomentumTierTable current={currentTier} /></div>
+        <div class="foil-hint" style="display:block">
+          {/* A small Preview beside the hint - the holo card opens on its own, so this stays the same size. */}
+          <div class="row" style="align-items:center;gap:8px;margin:0 0 6px 4px">
+            <div class="small grow">Momentum gives eggs a holo chance</div>
+            <button class="chip-btn" onClick={() => setPreview(true)}>Preview</button>
+          </div>
+          <MomentumTierTable current={currentTier} />
+        </div>
         <div class="stage-row" style="margin-top:20px"><GlowPill rarity="BOX" solid onClick={onClose}>Close</GlowPill></div>
       </div>
     </CardStage>

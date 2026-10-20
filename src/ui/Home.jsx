@@ -9,7 +9,6 @@ import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance,
 import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
-import { useCatalog, AnimalCardView, Floaty } from './Zoo.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions } from './timers.js'
 import { ICONS } from './icons.js'
 
@@ -387,31 +386,12 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
   )
 }
 
-/** Shows [children] (a card) at its natural width, scaled down as a whole - like the phone's
- *  FitToHeight - so it takes at most 40% of the window's height instead of wrapping taller. */
-function FitCard({ children }) {
-  const ref = useRef(null)
-  const [scale, setScale] = useState(1)
-  useEffect(() => {
-    const fit = () => {
-      const h = ref.current?.offsetHeight
-      if (h) setScale(Math.min(1, (window.innerHeight * 0.62) / h)) // most of the screen - the dialog scrolls
-    }
-    fit()
-    const t = setTimeout(fit, 300) // again once the photo has loaded and the card has its real height
-    window.addEventListener('resize', fit)
-    return () => { clearTimeout(t); window.removeEventListener('resize', fit) }
-  }, [])
-  return <div class="foil-example" style={{ zoom: scale }}><div ref={ref}>{children}</div></div>
-}
-
 /** What Momentum is and what it's for (HomeScreen.kt GoldenStreakDialog): the tier reached and
- *  how far the next is, today's hour, every tier's holo chance, and a holo Fennec fox. */
+ *  how far the next is, today's hour and every tier's holo chance. */
 function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
   const tier = momentumTier(days)
   const next = nextMomentumTier(tier)
   const toGo = next && next.minDays - days
-  const fennec = useCatalog()?.find((a) => a.id === 'fennec_fox')
   const pct = Math.min(1, todayMillis / GOLDEN_DAILY_MILLIS)
   return (
     <Dialog title={`Momentum · ${days}d`} onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>OK</button>}>
@@ -422,11 +402,9 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
         </p>
         <div class="small muted" style="margin-bottom:6px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}{immersing ? ' · counting now' : ''}</div>
         <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, var(--tier), var(--tier-pale))' }} /></div>
-        <p class="muted small" style="margin:14px 0 4px">1+ hour of immersion every day keeps it going - longer runs reach higher tiers. Every language counts together; music and Anki don't.</p>
-        <p class="muted small" style="margin:0 0 8px">Eggs earned at a tier get its chance of hatching holo.</p>
+        <p class="muted small" style="margin:14px 0 8px">1+ hour of immersion every day keeps it going - longer runs reach higher tiers. Every language counts together; music and Anki don't.</p>
         <MomentumTierTable current={tier} />
       </div>
-      {fennec && <FitCard><Floaty><AnimalCardView animal={fennec} cert={{ foil: true }} /></Floaty></FitCard>}
     </Dialog>
   )
 }

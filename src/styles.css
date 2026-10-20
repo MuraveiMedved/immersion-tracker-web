@@ -781,3 +781,5 @@ textarea.input { resize: vertical; }
 .egg-card.compact .egg-glow { inset: 1px; }
 .egg-card.compact .egg-stage .egg { transform: none; }
 .glow-pill.small { width: auto; height: 36px; padding: 0 18px; flex: none; }
+/* A small pill button inside a panel (the hatch rates' Preview) - sized to its text. */
+.chip-btn { flex: none; border: 0; border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 650; background: var(--secondary-container, var(--c-highest)); color: var(--on-secondary-container, var(--on-surface)); cursor: pointer; }
