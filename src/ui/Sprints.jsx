@@ -3,7 +3,7 @@
 // of its colour) and the reveal - a holo one gets the celebration (prism burst, holo shards, the
 // card flipping in).
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { useStore } from '../store.js'
+import { useStore, useNow } from '../store.js'
 import { formatHm, formatYmd } from '../model/time.js'
 import { momentumTier } from '../model/rules.js'
 import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, setTrophy, takenPrizes } from '../model/zoo.js'
@@ -11,12 +11,55 @@ import { sprintsFor, prizesWaiting, sprintEndMillis } from '../model/sprints.js'
 import { toast, Icon } from './common.jsx'
 import { AnimalCardView, CardStage, Floaty, GlowPill, rarityBrush } from './Zoo.jsx'
 
-/** This person's Weekly and Monthly in `event`, and the rewards waiting to be collected. */
-export function useSprints(event, now) {
+/** Each race this person is in (running first, then finished ones still kept here) with its
+ *  Weekly and Monthly - the phone's rememberChallengeRaces. */
+export function useChallengeRaces(now) {
   const s = useStore()
+  const me = s.race.userId
+  const deleted = new Set(s.race.deleted)
+  const seen = new Set()
+  const ended = (e) => e.endMillis != null && now >= e.endMillis
+  const races = [...s.race.cachedEvents, ...s.race.archive]
+    .filter((e) => e && !seen.has(e.id) && seen.add(e.id) && !deleted.has(e.id) && (e.standings || []).some((x) => x.userId === me))
+    .sort((a, b) => ended(a) - ended(b) || (b.endMillis ?? Infinity) - (a.endMillis ?? Infinity))
+    .map((event) => ({ event, sprints: sprintsFor(event, me, now) }))
+    .filter((r) => r.sprints.length)
   const taken = takenPrizes(s)
-  const sprints = sprintsFor(event, s.race.userId, now)
-  return { sprints, taken, waiting: prizesWaiting(sprints, taken) }
+  return { races, taken, waiting: races.some((r) => prizesWaiting(r.sprints, taken).length > 0) }
+}
+
+/** The trophy on Home's "Today" row - a red dot while a reward waits; hidden with no race joined. */
+export function ChallengesButton({ nav }) {
+  const now = useNow(60000)
+  const { races, waiting } = useChallengeRaces(now)
+  if (!races.length) return null
+  return (
+    <button class="icon-btn challenges-btn" title="Challenges" onClick={() => nav('challenges')}>
+      <Icon name="emoji_events" />{waiting && <span class="dot" />}
+    </button>
+  )
+}
+
+/** Challenges: your own Weekly and Monthly in each race you're in, opened from Home. */
+export function Challenges({ nav }) {
+  const now = useNow(30000)
+  const { races, taken } = useChallengeRaces(now)
+  const { collect, dialog } = useCollect()
+  return (
+    <>
+      <div class="row" style="align-items:center;gap:4px;margin-bottom:8px">
+        <button class="icon-btn" title="Back" onClick={() => nav('home')}><Icon name="arrow_back" /></button>
+        <h1 class="page-title grow" style="margin:0">Challenges</h1>
+      </div>
+      {races.map(({ event, sprints }) => (
+        <div key={event.id} style="margin-bottom:14px">
+          {races.length > 1 && <div class="title-medium ellipsis" style="margin:16px 4px 0">{event.name}</div>}
+          <SprintsPanel event={event} now={now} data={{ sprints, taken }} onCollect={collect} />
+        </div>
+      ))}
+      {dialog}
+    </>
+  )
 }
 
 function left(ms) {
@@ -43,14 +86,14 @@ export function useCollect() {
 
 /** The Challenges tab: your own Weekly and Monthly (nobody else's), each with its dates, time left,
  *  progress toward its cap and a "+1 card" badge over each reward - no explaining text (the user
- *  wants it visually self-explanatory). Earlier periods fold away under "Previous (N)" - except
- *  one with a reward still to collect, which never hides. */
+ *  wants it visually self-explanatory). Every ended period folds away under "Previous (N)", which
+ *  carries a red dot while one has a reward to collect. */
 export function SprintsPanel({ event, now, data, onCollect }) {
   const [showPrevious, setShowPrevious] = useState(false)
   const { sprints, taken } = data
   const waits = (sp) => (sp.earned.some((m) => !taken.has(m.prizeKey)) ? 1 : 0)
-  const shown = sprints.filter((sp) => sp.current || waits(sp)).sort((x, y) => waits(y) - waits(x))
-  const previous = sprints.filter((sp) => !sp.current && !waits(sp))
+  const shown = sprints.filter((sp) => sp.current)
+  const previous = sprints.filter((sp) => !sp.current).sort((x, y) => waits(y) - waits(x))
   const row = (sp) => {
         const top = sp.milestones[sp.milestones.length - 1].rarity
         const color = RARITY_COLOR[top]
@@ -92,7 +135,7 @@ export function SprintsPanel({ event, now, data, onCollect }) {
       {shown.map(row)}
       {previous.length > 0 && (
         <button class="sprint-previous" onClick={() => setShowPrevious(!showPrevious)}>
-          <span class="grow">Previous ({previous.length})</span><Icon name={showPrevious ? 'expand_less' : 'expand_more'} size={20} />
+          <span>Previous ({previous.length})</span>{previous.some(waits) && <span class="dot" />}<span class="grow" /><Icon name={showPrevious ? 'expand_less' : 'expand_more'} size={20} />
         </button>
       )}
       {showPrevious && previous.map(row)}

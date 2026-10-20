@@ -8,6 +8,7 @@ import { ensureBase, recordEarnedEggs, backfillHoloMomentum } from './model/zoo.
 import * as syncModule from './model/sync.js'
 import { Home, TabTitle } from './ui/Home.jsx'
 import { Entries } from './ui/Entries.jsx'
+import { Challenges } from './ui/Sprints.jsx'
 import { Social } from './ui/Social.jsx'
 import { Zoo } from './ui/Zoo.jsx'
 import { Settings } from './ui/Settings.jsx'
@@ -52,7 +53,8 @@ function App() {
     return () => mq?.removeEventListener?.('change', on)
   }, [])
   const tabs = TABS.filter(([t]) => (t !== 'social' || s.settings.showRaceTab) && (t !== 'zoo' || s.settings.showZooTab))
-  const tab = tabs.some(([t]) => t === route.tab) ? route.tab : 'home'
+  // Challenges is a page of its own, opened from Home - not in the nav bar.
+  const tab = route.tab === 'challenges' || tabs.some(([t]) => t === route.tab) ? route.tab : 'home'
   return (
     <div class="shell">
       <nav class="nav" style={navTint(s)}>
@@ -63,6 +65,7 @@ function App() {
       <main class="page">
         {tab === 'home' && <Home nav={nav} />}
         {tab === 'entries' && <Entries params={route.params} />}
+        {tab === 'challenges' && <Challenges nav={nav} />}
         {tab === 'social' && <Social />}
         {tab === 'zoo' && <Zoo />}
         {tab === 'settings' && <Settings params={route.params} nav={nav} />}

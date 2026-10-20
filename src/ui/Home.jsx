@@ -9,6 +9,7 @@ import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance,
 import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
+import { ChallengesButton } from './Sprints.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions } from './timers.js'
 import { ICONS } from './icons.js'
 
@@ -98,6 +99,7 @@ export function Home({ nav }) {
       <div class="today-row">
         <h2>Today</h2>
         <MomentumPill days={goldenDays} progress={goldenToday / GOLDEN_DAILY_MILLIS} onClick={() => setGolden(true)} />
+        <ChallengesButton nav={nav} />
         <button class="icon-btn" title="Entries" onClick={() => nav('entries', { tab: 'entries' })}><Icon name="list" /></button>
       </div>
 

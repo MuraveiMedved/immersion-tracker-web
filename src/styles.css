@@ -804,6 +804,9 @@ textarea.input { resize: vertical; }
 .sprint-row { padding: 12px; border-radius: 16px; background: color-mix(in srgb, var(--p) 5%, transparent); border: 1px solid color-mix(in srgb, var(--p) 20%, transparent); }
 .sprint-row.current { background: color-mix(in srgb, var(--p) 10%, transparent); border-color: color-mix(in srgb, var(--p) 45%, transparent); }
 .sprint-previous { display: flex; align-items: center; width: 100%; padding: 6px 4px; border: 0; border-radius: 12px; background: transparent; color: var(--on-surface-variant); font-size: 14px; font-weight: 500; cursor: pointer; text-align: left; }
+.sprint-previous .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); margin-left: 6px; }
+.challenges-btn { position: relative; }
+.challenges-btn .dot { position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
 .sprint-claim { width: 100%; height: 40px; margin-top: 10px; border: 0; border-radius: 999px; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
 .sprint-bar { position: relative; height: 36px; margin-top: 2px; }
 .sprint-bar .track { position: absolute; left: 9px; right: 9px; bottom: 5px; height: 8px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
