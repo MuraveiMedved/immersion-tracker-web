@@ -171,8 +171,9 @@ export function Egg({ rarity, width = 84, crack = 0, style, onClick, glow = 0 })
 }
 
 /** A rarity's pill, in its colours (the phone's RarityPill). */
+// [width] is a minimum: the pills line up, but one whose label runs wider (a wider font) grows to fit.
 function RarityPillInline({ rarity, width }) {
-  return <span class={`rarity-pill-inline ${rarity === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(rarity), width }}>{RARITY_LABEL[rarity]}</span>
+  return <span class={`rarity-pill-inline ${rarity === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(rarity), minWidth: width }}>{RARITY_LABEL[rarity]}</span>
 }
 
 /** "Egg hatch rates", like the phone's LootBoxOddsDialog: each tier's chance as a bar in its
