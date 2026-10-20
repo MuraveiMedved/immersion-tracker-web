@@ -266,7 +266,7 @@ function SplitBar({ listening, reading, anki = 0, total, max, colors, height = 1
 }
 
 /** One person's line in the standings: medal, name, the figure, its split bar and the split in numbers. */
-function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayMax, colors, onClick }) {
+function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayMax, colors, showSplit = true, onClick }) {
   const todayKey = localTodayKey(st, now)
   const hasDaily = Object.keys(st.daily || {}).length > 0
   const today = isLive && hasDaily ? Math.min(st.millis, st.daily[todayKey] || 0) : null
@@ -295,7 +295,7 @@ function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayM
           </div>
         </div>
         <div style="margin-top:6px"><SplitBar listening={listeningPart} reading={readingPart} anki={ankiPart} total={figure || 0} max={showingToday ? todayMax : scaleMax} colors={colors} /></div>
-        <div class="row split-line">
+        {showSplit && <div class="row split-line">
           {listeningPart != null && readingPart != null && <>
             <SplitAmount type="PODCAST" color={colors.listening} millis={listeningPart} short />
             <SplitAmount type="READING" color={colors.reading} millis={readingPart} short />
@@ -303,13 +303,15 @@ function StandingRow({ rank, st, isMe, goal, scaleMax, now, isLive, view, todayM
           </>}
           <span class="spacer" />
           {!isLive && <span class="muted" style="font-size:11px">{percentText(st.millis, goal)}%</span>}
-        </div>
+        </div>}
       </div>
     </div>
   )
 }
 
-function Standings({ event, now, isLive, view, onPerson }) {
+/** [showSplit]: the listening/reading/Anki numbers under each bar - off on a running race's card
+ *  until its details are opened (the bar's colors still show the split). */
+function Standings({ event, now, isLive, view, onPerson, showSplit = true }) {
   const s = useStore()
   const me = s.race.userId
   const goal = event.goalHours * HOUR
@@ -320,28 +322,20 @@ function Standings({ event, now, isLive, view, onPerson }) {
   const todayMax = Math.max(0, ...event.standings.map((x) => (x.daily || {})[localTodayKey(x, now)] || 0))
   const colors = barColors(s)
   return (
-    <div class="col" style="gap:6px;margin-top:14px">
+    <div class="col" style="gap:6px;margin-top:10px">
       {event.standings.map((st, i) => (
-        <StandingRow key={st.userId} rank={i + 1} st={st} isMe={st.userId === me} goal={goal} scaleMax={scaleMax} now={now} isLive={isLive} view={view} todayMax={todayMax} colors={colors} onClick={() => onPerson(st)} />
+        <StandingRow key={st.userId} rank={i + 1} st={st} isMe={st.userId === me} goal={goal} scaleMax={scaleMax} now={now} isLive={isLive} view={view} todayMax={todayMax} colors={colors} showSplit={showSplit} onClick={() => onPerson(st)} />
       ))}
     </div>
   )
 }
 
+/** The race's key facts as one small line under its name: "Goal 1000 h · Started Oct 3 · Ends ...".
+ *  As tiles they took a whole band of the card above the standings. */
 function RaceFacts({ event, started }) {
-  const tile = (icon, label, value) => (
-    <div class="fact-tile">
-      <div class="row" style="gap:5px"><Icon name={icon} size={14} color="var(--primary)" /><span class="k">{label.toUpperCase()}</span></div>
-      <div class="v">{value}</div>
-    </div>
-  )
-  return (
-    <div class="race-facts">
-      {tile('emoji_events', 'Goal', `${event.goalHours} h`)}
-      {tile('flag', started ? 'Started' : 'Starts', factDate(event.startMillis, !started))}
-      {event.endMillis != null && tile('sports_score', 'Ends', factDate(event.endMillis, true))}
-    </div>
-  )
+  const parts = [`Goal ${event.goalHours} h`, `${started ? 'Started' : 'Starts'} ${factDate(event.startMillis, !started)}`]
+  if (event.endMillis != null) parts.push(`Ends ${factDate(event.endMillis, true)}`)
+  return <div class="race-facts-line">{parts.join('  ·  ')}</div>
 }
 
 function RaceCharts({ event, now }) {
@@ -376,6 +370,8 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
   const [edit, setEdit] = useState(false)
   const [view, setView] = useState('total')
   const [expanded, setExpanded] = useState(false)
+  // The split numbers under each bar and the outlook tips - read now and then, scrolled past otherwise.
+  const [details, setDetails] = useState(false)
   const started = now >= event.startMillis
   const joined = event.standings.some((x) => x.userId === me)
   const isCreator = event.createdBy === me
@@ -434,10 +430,13 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
     <div class={`race-card ${started && joined ? 'live' : ''}`}>
       <div class="row" style="gap:12px">
         <IconBadge icon={started ? 'flag' : 'schedule'} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />
-        <div class="race-title grow">{event.name}</div>
+        <div class="grow" style="min-width:0">
+          <div class="race-title">{event.name}</div>
+          <RaceFacts event={event} started={started} />
+        </div>
         {countdown && <CardTag text={countdown} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
       </div>
-      <RaceFacts event={event} started={started} />
+      {outlook && <OutlookSummary o={outlook} />}
       {!event.standings.length ? <div class="muted small" style="margin-top:12px">Nobody has joined yet.</div> : <>
         {canShowToday && (
           <div class="standings-switch">
@@ -445,9 +444,10 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
           </div>
         )}
         {canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
-        <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} />
+        <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} showSplit={details} />
+        <button class="btn text details-toggle" onClick={() => setDetails(!details)}>{details ? 'Hide breakdown & outlook' : 'Breakdown & outlook'}<Icon name={details ? 'expand_less' : 'expand_more'} size={18} /></button>
+        {details && outlook && <OutlookTips o={outlook} event={event} />}
         {started && <RaceCharts event={event} now={now} />}
-        {outlook && <OutlookNote o={outlook} event={event} />}
       </>}
       {!joined ? <button class="btn" style="width:100%;margin-top:14px" onClick={() => sync({ joinEventId: event.id })}>Join</button> : <>
         <div class="race-rule" />
@@ -488,13 +488,27 @@ function Avatar({ standing, profile, size = 34 }) {
   )
 }
 
-function OutlookNote({ o, event }) {
+/** "Where do I stand": my place and the gap to whoever's next, as a compact strip at the top of a
+ *  race's card. The rest of the outlook is [OutlookTips], behind the card's details toggle. */
+function OutlookSummary({ o }) {
+  const gap = o.participants < 2 ? 'Nobody else has joined yet'
+    : o.ahead ? (o.gapToAhead === 0 ? `Tied with ${o.ahead.name}` : `${formatHm(o.gapToAhead)} to pass ${o.ahead.name}`)
+      : o.behind ? `Leading ${o.behind.name} by ${formatHm(o.leadOverBehind)}` : null
+  return (
+    <div class="outlook-summary row">
+      <Icon name="leaderboard" size={20} color="var(--primary)" />
+      <div class="col grow" style="gap:0;min-width:0">
+        {o.participants >= 2 && <span style="font-weight:650">You're {ordinal(o.rank)} of {o.participants}</span>}
+        {gap && <span class="muted">{gap}</span>}
+      </div>
+    </div>
+  )
+}
+
+/** The rest of the outlook - gap to the leader, what it would take to win, your pace. */
+function OutlookTips({ o, event }) {
   const lines = []
-  if (o.participants < 2) lines.push('Nobody else has joined yet')
-  else {
-    lines.push(`You're ${ordinal(o.rank)} of ${o.participants}`)
-    if (o.ahead) lines.push(o.gapToAhead === 0 ? `Tied with ${o.ahead.name}` : `${formatHm(o.gapToAhead)} to pass ${o.ahead.name}`)
-    else if (o.behind) lines.push(`Leading ${o.behind.name} by ${formatHm(o.leadOverBehind)}`)
+  if (o.participants >= 2) {
     if (o.leader) lines.push(`${formatHm(o.gapToLeader)} behind the leader, ${o.leader.name}`)
     if (o.neededPerDay != null) {
       lines.push(o.neededPerDay > DAY ? `Catching ${event.standings[0].name} at their current pace would take more than 24 hours a day`
@@ -506,7 +520,8 @@ function OutlookNote({ o, event }) {
     lines.push(o.projectedGoal ? `Your pace: ${formatHm(o.myPerDay)} a day, reaching ${o.goalHours}h around ${formatDate(o.projectedGoal)}`
       : o.projectedAtEnd ? `Your pace: ${formatHm(o.myPerDay)} a day, about ${formatHm(o.projectedAtEnd)} by the end` : `Your pace: ${formatHm(o.myPerDay)} a day`)
   }
-  return <div class="col small" style="gap:2px;margin-top:14px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb, var(--primary) 8%, transparent)">{lines.map((l, i) => <span key={i} class={i ? 'muted' : ''} style={i ? '' : 'font-weight:650'}>{l}</span>)}</div>
+  if (!lines.length) return null
+  return <div class="col small muted" style="gap:6px;margin-top:4px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb, var(--primary) 8%, transparent)">{lines.map((l, i) => <span key={i}>{l}</span>)}</div>
 }
 
 /* ------------------------------------------------------------------------------------------------
