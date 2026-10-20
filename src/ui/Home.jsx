@@ -46,7 +46,9 @@ export function Home({ nav }) {
   const columns = [[], []]
   const weights = [0, 0]
   for (const p of grid) {
-    const w = (p.podcastGoalMinutes > 0) + (p.readingGoalMinutes > 0)
+    // Roughly the card's height: the name row plus each ring (about twice as tall). The Anki
+    // card's time-only ring counts too, or every card after it piled into one column.
+    const w = 1 + 2 * ((p.podcastGoalMinutes > 0) + (p.readingGoalMinutes > 0) + (p.isAnki ? 1 : 0))
     const i = weights[0] <= weights[1] ? 0 : 1
     columns[i].push(p)
     weights[i] += w
