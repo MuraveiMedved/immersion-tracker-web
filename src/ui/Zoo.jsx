@@ -95,6 +95,7 @@ export function Zoo() {
   const found = everFound(s)
   const rarityOfId = (id) => catalog.find((a) => a.id === id)?.rarity
   const heldOfTier = (r) => Object.entries(z.copies).filter(([id]) => rarityOfId(id) === r).reduce((t, [, l]) => t + l.length, 0)
+  const startTradeOf = (r) => { setTrade({ from: r, picks: [] }); setTimeout(() => document.getElementById('zoo-collection')?.scrollIntoView({ behavior: 'smooth' }), 0) }
   // Like the phone: a tier shows only once there's a coloured egg to hatch or enough to trade up.
   const tierRows = RARITIES.map((r) => ({ r, eggs: z.coloured[r], canTrade: !!nextRarity(r) && heldOfTier(r) >= TRADE_UP_COUNT })).filter((t) => t.eggs > 0 || t.canTrade)
   const ready = z.boxesReady > 0
@@ -116,7 +117,8 @@ export function Zoo() {
         </div>
         {ready && <button class="glow-pill small" onClick={(e) => { e.stopPropagation(); setHatching('BOX') }}>Hatch</button>}
       </div>
-      {tierRows.map(({ r, eggs, canTrade }) => (
+      {/* Trading up isn't advertised here: a long-press on an animal in the collection starts it. */}
+      {tierRows.filter((t) => t.eggs > 0).map(({ r, eggs, canTrade }) => (
         <div key={r} class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
           <div class={eggs > 0 ? 'wobble' : ''}><Egg rarity={r} width={44} glow={eggs > 0 ? 12 : 0} /></div>
           <div class="grow">
@@ -124,7 +126,7 @@ export function Zoo() {
             <div class="muted small">{eggs > 0 ? `Hatches a ${RARITY_LABEL[r]} animal` : `Trade ${TRADE_UP_COUNT} for a ${RARITY_LABEL[nextRarity(r)]} egg`}</div>
           </div>
           {eggs > 0 && <button class="btn small" onClick={() => setHatching(r)}>Hatch</button>}
-          {canTrade && <button class="btn tonal small" onClick={() => { setTrade({ from: r, picks: [] }); setTimeout(() => document.getElementById('zoo-collection')?.scrollIntoView({ behavior: 'smooth' }), 0) }}>Trade up</button>}
+          {canTrade && <button class="btn tonal small" onClick={() => startTradeOf(r)}>Trade up</button>}
         </div>
       ))}
       <div id="zoo-collection" style="margin-top:12px">
