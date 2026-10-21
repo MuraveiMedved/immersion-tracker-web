@@ -138,6 +138,7 @@ export function errorText(err) {
   if (!err) return ''
   switch (err.kind) {
     case 'OFFLINE': return "You're offline, or the race server can't be reached right now."
+    case 'TIMEOUT': return "The race server took too long to answer. It's usually a brief hiccup, so try again."
     case 'NOT_A_RACE_SERVER': return "That link didn't answer like a race server. Check it's the Web app URL ending in /exec, deployed with access for \"Anyone\"."
     case 'SERVER_UNAVAILABLE': return `Google's servers answered with an error (${err.detail}). This is usually temporary, so try again in a minute.`
     case 'SCRIPT_OUTDATED': return "The race server's script is older than this app. Whoever set it up needs to paste in the new Code.gs and deploy a new version."
@@ -146,7 +147,36 @@ export function errorText(err) {
   }
 }
 
-export async function post(body) {
+/** Pauses before trying again when the script was busy with other requests ("Lock timeout") -
+ *  growing, plus up to LOCK_RETRY_JITTER_MILLIS at random so browsers and phones that queued
+ *  together don't all come back together. */
+const LOCK_RETRY_DELAYS_MILLIS = [3000, 8000]
+const LOCK_RETRY_JITTER_MILLIS = 2000
+let postQueue = Promise.resolve()
+
+const isLockBusy = (err) => err?.kind === 'SERVER_MESSAGE' && /lock/i.test(err.detail || '')
+
+/** One post at a time from this browser - races and friends alike - so it never has several
+ *  requests waiting on the script's lock at once. One that timed out waiting for the lock never got
+ *  as far as writing anything, so it's tried again after a pause, whatever the action; still busy
+ *  after that, it's the plain "took too long". */
+export function post(body) {
+  const run = postQueue.then(async () => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await postOnce(body)
+      } catch (err) {
+        if (!isLockBusy(err)) throw err
+        if (attempt >= LOCK_RETRY_DELAYS_MILLIS.length) throw new RaceError('TIMEOUT')
+        await new Promise((r) => setTimeout(r, LOCK_RETRY_DELAYS_MILLIS[attempt] + Math.random() * LOCK_RETRY_JITTER_MILLIS))
+      }
+    }
+  })
+  postQueue = run.catch(() => {})
+  return run
+}
+
+async function postOnce(body) {
   const url = serverUrl()
   body.userId = getState().race.userId
   let res
@@ -234,7 +264,8 @@ async function request(body, activity, retry = false) {
       try {
         json = await post(body)
       } catch (err) {
-        const transient = err.kind === 'SERVER_UNAVAILABLE' || (err.kind === 'SERVER_MESSAGE' && /lock/i.test(err.detail || ''))
+        // (A busy lock is retried already, by post.)
+        const transient = err.kind === 'SERVER_UNAVAILABLE'
         if (!retry || !transient) throw err
         await new Promise((r) => setTimeout(r, 2000))
         json = await post(body)
