@@ -283,7 +283,7 @@ export function Icon({ name, size = 24, color = 'currentColor', style }) {
 export const NavIcon = ({ name, size = 22 }) => <Icon name={name} size={size} />
 
 // The phone's content-type glyphs (ContentTypeIcon.kt).
-const TYPE_ICON = { PODCAST: 'headphones', READING: 'menu_book', ANKI: 'style', LISTENING: 'music_note' }
+const TYPE_ICON = { PODCAST: 'headphones', READING: 'menu_book', ANKI: 'style', LISTENING: 'music_note', GENERAL: 'all_inclusive' }
 
 /** A content type's icon - headphones (listening), open book (reading), cards (Anki), note (music). */
 export const TypeIcon = ({ type, size = 18, color, style }) => <Icon name={TYPE_ICON[type]} size={size} color={color || 'currentColor'} style={style} />
@@ -291,6 +291,21 @@ export const TypeIcon = ({ type, size = 18, color, style }) => <Icon name={TYPE_
 /** "<icon> Label" in one line. */
 export function TypeLabel({ type, children, size = 16 }) {
   return <span class="row" style="gap:6px;display:inline-flex"><TypeIcon type={type} size={size} />{children}</span>
+}
+
+/** A language's goal type (GoalModeChoice.kt): separate listening + reading goals, or one General
+ *  goal (∞) that both count toward. */
+export function GoalModeChoice({ general, onChange }) {
+  return (
+    <div class="chips" role="radiogroup">
+      <button type="button" role="radio" aria-checked={!general} class={`chip ${!general ? 'on' : ''}`} onClick={() => onChange(false)}>
+        <span class="row" style="gap:4px;display:inline-flex"><TypeIcon type="PODCAST" size={16} /><TypeIcon type="READING" size={16} />Separate</span>
+      </button>
+      <button type="button" role="radio" aria-checked={!!general} class={`chip ${general ? 'on' : ''}`} onClick={() => onChange(true)}>
+        <TypeLabel type="GENERAL" size={16}>General</TypeLabel>
+      </button>
+    </div>
+  )
 }
 
 /** The leading mark of an entry row: its type icon in the language's colour (the phone's ICON

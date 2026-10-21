@@ -237,6 +237,7 @@ export async function readPhoneBackup(file) {
       id: p.id, name: p.name || '', colorHex: p.colorHex || '#4370A3', gradientColors: p.gradientColors || null,
       scriptDetectors: splitList(p.scriptDetectors), keywords: splitList(p.keywords), sortOrder: p.sortOrder ?? p.id,
       podcastGoalMinutes: p.podcastGoalMinutes || 0, readingGoalMinutes: p.readingGoalMinutes || 0,
+      generalGoal: !!p.generalGoal, generalGoalMinutes: p.generalGoalMinutes || 0,
       isMain: !!p.isMain, isAnki: !!p.isAnki,
     }))
     s.entries = entries.map((e) => ({

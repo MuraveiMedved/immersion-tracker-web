@@ -5,7 +5,7 @@ import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntri
 import { formatHm } from '../model/time.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
 import { AccountSection } from './Account.jsx'
-import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorPicker, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
+import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorPicker, GoalModeChoice, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
 
 const SCRIPTS = [
   ['CYRILLIC_RUSSIAN', 'Russian', 'Cyrillic script'], ['CYRILLIC_UKRAINIAN', 'Ukrainian', 'і, ї, є, ґ'], ['JAPANESE_KANA', 'Japanese', 'hiragana / katakana'],
@@ -196,11 +196,21 @@ function LanguageEdit({ id, onClose }) {
         <div class="col"><div style="font-weight:600">Color</div><ColorPicker colorHex={p.colorHex} gradientColors={p.gradientColors} onChange={(c, g) => setP((x) => ({ ...x, colorHex: c, gradientColors: g }))} /></div>
         <div class="col">
           <div style="font-weight:600">Daily goals</div>
+          <GoalModeChoice general={!!p.generalGoal} onChange={(v) => setP((x) => ({
+            ...x, generalGoal: v,
+            // Switching to General the first time starts it at the two separate goals added together.
+            generalGoalMinutes: v && !x.generalGoalMinutes ? (x.podcastGoalMinutes || 0) + (x.readingGoalMinutes || 0) : x.generalGoalMinutes || 0,
+          }))} />
+          {p.generalGoal ? <>
+            <label class="field"><TypeLabel type="GENERAL" size={14}>General (minutes)</TypeLabel><input class="input" inputMode="numeric" value={p.generalGoalMinutes} onInput={(e) => set('generalGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+            <div class="muted small">One goal for everything in this language - listening and reading both count toward it. Set to 0 to hide the ring.</div>
+          </> : <>
           <div class="row">
             <label class="field grow"><TypeLabel type="PODCAST" size={14}>Listening (minutes)</TypeLabel><input class="input" inputMode="numeric" value={p.podcastGoalMinutes} onInput={(e) => set('podcastGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
             <label class="field grow"><TypeLabel type="READING" size={14}>Reading (minutes)</TypeLabel><input class="input" inputMode="numeric" value={p.readingGoalMinutes} onInput={(e) => set('readingGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
           </div>
           <div class="muted small">Set either to 0 to hide that ring.</div>
+          </>}
         </div>
         <SettingRow title="Main language" hint="Pre-selected by default whenever you start a manual entry."><Switch checked={!!p.isMain} onChange={(v) => set('isMain', v)} /></SettingRow>
         <details>

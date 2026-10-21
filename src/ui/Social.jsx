@@ -1296,7 +1296,7 @@ function MyProfileSheet({ onClose }) {
 function ProfileTodayCard({ p }) {
   const asOf = p.dayKey > 0 && p.dayKey !== ymdOf(goalDayStart(Date.now()))
   const has = (l, k) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || !!l[k + 'Streak']
-  const cards = p.languages.filter((l) => has(l, 'listen') || has(l, 'read'))
+  const cards = p.languages.filter((l) => has(l, 'listen') || has(l, 'read') || has(l, 'gen'))
   // As their Home lays them out: an odd one out goes full width - their main language, at the top
   // (else the last, at the bottom) - the rest balanced between the columns by card height.
   const odd = cards.length % 2 === 1 ? cards.find((l) => l.main) || cards[cards.length - 1] : null
@@ -1307,7 +1307,7 @@ function ProfileTodayCard({ p }) {
   for (const l of grid) {
     const i = weights[0] <= weights[1] ? 0 : 1
     columns[i].push(l)
-    weights[i] += 1 + 2 * (has(l, 'listen') + has(l, 'read'))
+    weights[i] += 1 + 2 * (has(l, 'listen') + has(l, 'read') + has(l, 'gen'))
   }
   if (!cards.length) return null
   return (
@@ -1336,7 +1336,7 @@ function ProfileGoalCard({ l, ringStyle, wide }) {
     ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
     : { color: light ? deepened(color, 0.42) : color }
   const iconColor = light ? '#000' : '#fff'
-  const goals = [['listen', 'PODCAST'], ['read', 'READING']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak'])
+  const goals = [['listen', 'PODCAST'], ['read', 'READING'], ['gen', 'GENERAL']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak'])
   return (
     <div class={`goal-card ${wide ? 'wide' : ''}`} style={{ background: bg, cursor: 'default' }}>
       <div class="name ellipsis" style={nameStyle}>{l.name}</div>

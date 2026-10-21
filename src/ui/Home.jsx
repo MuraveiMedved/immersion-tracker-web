@@ -3,11 +3,11 @@ import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
 } from '../store.js'
-import { counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
+import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
+import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions } from './timers.js'
 import { ICONS } from './icons.js'
@@ -37,7 +37,7 @@ export function Home({ nav }) {
   const immersing = running.some((e) => (e.contentType === PODCAST || e.contentType === READING) && e.languageProfileId != null)
 
   const cards = s.profiles
-    .filter((p) => (p.isAnki ? s.settings.showAnkiOnHome : p.podcastGoalMinutes > 0 || p.readingGoalMinutes > 0))
+    .filter((p) => (p.isAnki ? s.settings.showAnkiOnHome : hasGoal(p)))
     .sort((a, b) => a.sortOrder - b.sortOrder)
   // An odd number of cards: one goes full width - the main language, at the top.
   const oddOne = cards.length % 2 === 1 ? cards.find((p) => p.isMain) || cards[cards.length - 1] : null
@@ -48,7 +48,7 @@ export function Home({ nav }) {
   for (const p of grid) {
     // Roughly the card's height: the name row plus each ring (about twice as tall). The Anki
     // card's time-only ring counts too, or every card after it piled into one column.
-    const w = 1 + 2 * ((p.podcastGoalMinutes > 0) + (p.readingGoalMinutes > 0) + (p.isAnki ? 1 : 0))
+    const w = 1 + 2 * ((listeningGoalOf(p) > 0) + (readingGoalOf(p) > 0) + (generalGoalOf(p) > 0) + (p.isAnki ? 1 : 0))
     const i = weights[0] <= weights[1] ? 0 : 1
     columns[i].push(p)
     weights[i] += w
@@ -304,8 +304,8 @@ function EditElapsedDialog({ entry, onClose }) {
 function GoalCard({ profile, now, running, light, wide, onOpen }) {
   const s = useStore()
   const todayStart = goalDayStart(now) // goal days run from 4 AM
-  const todayOf = (type) => s.entries.reduce((t, e) => (e.languageProfileId === profile.id && e.contentType === type && e.startTimeMillis >= todayStart ? t + durationOf(e, now) : t), 0)
-  const isActive = (type) => running.some((e) => e.languageProfileId === profile.id && e.contentType === type)
+  const todayOf = (type) => s.entries.reduce((t, e) => (e.languageProfileId === profile.id && fillsGoal(type, e.contentType) && e.startTimeMillis >= todayStart ? t + durationOf(e, now) : t), 0)
+  const isActive = (type) => running.some((e) => e.languageProfileId === profile.id && fillsGoal(type, e.contentType))
   const active = isActive(PODCAST) || isActive(READING) || isActive(ANKI)
   const stops = gradientStops(profile)
   const multi = stops && stops.length > 1
@@ -321,7 +321,7 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
   const iconColor = light ? '#000' : '#fff'
   const rings = profile.isAnki
     ? [[ANKI, 0]]
-    : [[PODCAST, profile.podcastGoalMinutes], [READING, profile.readingGoalMinutes]].filter(([, g]) => g > 0)
+    : [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)]].filter(([, g]) => g > 0)
   return (
     <div class={`goal-card ${wide ? 'wide' : ''}`} style={{ background: bg, borderColor: outline }} onClick={onOpen} role="button">
       <div class="name" style={nameStyle}>{profile.name}</div>
@@ -329,7 +329,9 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
       {rings.map(([type, goal]) => {
         const ms = todayOf(type)
         const on = isActive(type)
-        const tap = { role: 'button', tabIndex: 0, title: on ? `Stop ${sessionName(type, profile.id)}` : `Start ${sessionName(type, profile.id)}`,
+        // The General ring stands for two kinds of session, so a tap on it opens the card's dialog
+        // (pick what to add there) rather than guessing which timer to start.
+        const tap = type === GENERAL ? {} : { role: 'button', tabIndex: 0, title: on ? `Stop ${sessionName(type, profile.id)}` : `Start ${sessionName(type, profile.id)}`,
           onClick: (ev) => { ev.stopPropagation(); toggleTimer(type, profile.id) },
           onKeyDown: (ev) => { if (ev.key === 'Enter') { ev.stopPropagation(); toggleTimer(type, profile.id) } } }
         if (!goal) {
@@ -343,11 +345,11 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
         }
         const goalMs = goal * 60000
         return (
-          <div key={type} class={`ring-stat tap ${on ? 'on' : ''}`} {...tap}>
+          <div key={type} class={`ring-stat ${type === GENERAL ? '' : 'tap'} ${on ? 'on' : ''}`} {...tap}>
             <Ring size={64} progress={ms / goalMs} color={profile.colorHex} stops={stops} ringStyle={s.settings.ringStyle} iconType={type} iconColor={iconColor} active={isActive(type)} light={light} />
             <span class="val">{formatHm(ms)} / {formatHm(goalMs, true)}</span>
             <StreakBadge streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} />
-            <span class="tap-hint"><Icon name={on ? 'stop' : 'play_arrow'} size={16} /></span>
+            {type !== GENERAL && <span class="tap-hint"><Icon name={on ? 'stop' : 'play_arrow'} size={16} /></span>}
           </div>
         )
       })}
@@ -359,9 +361,15 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
 function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
   const [listen, setListen] = useState(String(profile.podcastGoalMinutes))
   const [read, setRead] = useState(String(profile.readingGoalMinutes))
+  const [general, setGeneral] = useState(!!profile.generalGoal)
+  // Switching to General the first time starts it at the two separate goals added together.
+  const [gen, setGen] = useState(String(profile.generalGoalMinutes || (profile.podcastGoalMinutes || 0) + (profile.readingGoalMinutes || 0)))
   const [color, setColor] = useState({ colorHex: profile.colorHex, gradientColors: profile.gradientColors })
   const save = () => {
-    upsertProfile({ ...profile, podcastGoalMinutes: Number(listen) || 0, readingGoalMinutes: Number(read) || 0, ...color })
+    upsertProfile({
+      ...profile, podcastGoalMinutes: Number(listen) || 0, readingGoalMinutes: Number(read) || 0,
+      generalGoal: general, generalGoalMinutes: general ? Number(gen) || 0 : profile.generalGoalMinutes || 0, ...color,
+    })
     onClose()
   }
   return (
@@ -376,11 +384,17 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
           <button class="btn tonal grow" onClick={() => onAdd(PODCAST)}><TypeLabel type={PODCAST}>Add listening</TypeLabel></button>
           <button class="btn tonal grow" onClick={() => onAdd(READING)}><TypeLabel type={READING}>Add reading</TypeLabel></button>
         </div>
+        <GoalModeChoice general={general} onChange={setGeneral} />
+        {general ? <>
+          <label class="field"><TypeLabel type={GENERAL}>General (minutes)</TypeLabel><input class="input" inputMode="numeric" value={gen} onInput={(e) => setGen(e.currentTarget.value.replace(/\D/g, ''))} /></label>
+          <div class="muted small">One goal for everything in this language - listening and reading both count toward it. Set to 0 to hide the ring.</div>
+        </> : <>
         <div class="row">
           <label class="field grow">Listening (minutes)<input class="input" inputMode="numeric" value={listen} onInput={(e) => setListen(e.currentTarget.value.replace(/\D/g, ''))} /></label>
           <label class="field grow">Reading (minutes)<input class="input" inputMode="numeric" value={read} onInput={(e) => setRead(e.currentTarget.value.replace(/\D/g, ''))} /></label>
         </div>
         <div class="muted small">Set either to 0 to hide that ring.</div>
+        </>}
         <div style="font-weight:600">Ring color</div>
         <ColorPicker colorHex={color.colorHex} gradientColors={color.gradientColors} onChange={(c, g) => setColor({ colorHex: c, gradientColors: g })} />
       </div>

@@ -239,6 +239,8 @@ export function newProfile(fields = {}) {
     sortOrder: state.profiles.length + 1,
     podcastGoalMinutes: 0,
     readingGoalMinutes: 0,
+    generalGoal: false,
+    generalGoalMinutes: 0,
     isMain: false,
     isAnki: false,
     ...fields,

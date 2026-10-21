@@ -1,7 +1,7 @@
 // Races and friends on the same Apps Script server the phones use (race-backend/Code.gs) - the
 // web app is just another racer: it reports its own totals, worked out from its own entries.
 import { getState, update } from '../store.js'
-import { ANKI, PODCAST, READING, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor } from './rules.js'
+import { ANKI, PODCAST, READING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor } from './rules.js'
 import { DAY, HOUR, localZone, zonedParts, dayStart, goalDayStart, ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
 
 /** The owner's server, built into the phone app too (see Tracker APP/CLAUDE.md - temporary until
@@ -386,20 +386,20 @@ export function buildProfileBody(now = Date.now()) {
   }
   let longest = 0
   const languages = s.profiles
-    .filter((p) => !p.isAnki && (p.podcastGoalMinutes > 0 || p.readingGoalMinutes > 0))
+    .filter((p) => !p.isAnki && hasGoal(p))
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((p) => {
       const out = { name: p.name, color: p.colorHex }
       if (p.gradientColors) out.gradient = p.gradientColors
       // Their main language - its card goes full width at the top, as on their Home.
       if (p.isMain) out.main = true
-      for (const [type, goal, key] of [[PODCAST, p.podcastGoalMinutes, 'listen'], [READING, p.readingGoalMinutes, 'read']]) {
+      for (const [type, goal, key] of [[PODCAST, listeningGoalOf(p), 'listen'], [READING, readingGoalOf(p), 'read'], [GENERAL, generalGoalOf(p), 'gen']]) {
         if (goal <= 0) continue
         const daily = dailyTotalsFor(entries, p.id, type, now)
         const todayMs = daily.get(todayStart) || 0
         const streak = computeStreak(daily, goal * 60000, now)
         longest = Math.max(longest, streak.record, streak.current)
-        if (share.rings) out[key === 'listen' ? 'listenProgress' : 'readProgress'] = todayMs / (goal * 60000)
+        if (share.rings) out[key + 'Progress'] = todayMs / (goal * 60000)
         if (share.goals) {
           out[key + 'Goal'] = goal
           out[key + 'Today'] = Math.floor(todayMs / 60000)

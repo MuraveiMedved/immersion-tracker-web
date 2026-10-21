@@ -6,6 +6,17 @@ export const LISTENING = 'LISTENING' // music
 export const PODCAST = 'PODCAST' // spoken listening - "Listening" in the UI
 export const READING = 'READING'
 export const ANKI = 'ANKI'
+/** Not an entry type: the General goal's ring - listening and reading together (∞ icon). */
+export const GENERAL = 'GENERAL'
+
+/** A language's goals in effect (LanguageProfile.listeningGoal / readingGoal / generalGoalOrZero):
+ *  with [generalGoal] on, one General goal replaces the separate listening and reading ones. */
+export const listeningGoalOf = (p) => (p.generalGoal ? 0 : p.podcastGoalMinutes || 0)
+export const readingGoalOf = (p) => (p.generalGoal ? 0 : p.readingGoalMinutes || 0)
+export const generalGoalOf = (p) => (p.generalGoal ? p.generalGoalMinutes || 0 : 0)
+export const hasGoal = (p) => listeningGoalOf(p) > 0 || readingGoalOf(p) > 0 || generalGoalOf(p) > 0
+/** Whether an entry type fills a goal ring of [goalType] - GENERAL takes listening and reading. */
+export const fillsGoal = (goalType, type) => (goalType === GENERAL ? type === PODCAST || type === READING : type === goalType)
 
 export const GOLDEN_DAYS = 10
 export const GOLDEN_DAILY_MILLIS = HOUR
@@ -98,11 +109,11 @@ export function computeStreak(dailyTotals, goalMillis, now = Date.now()) {
 }
 
 /** Per-goal-day totals (keyed by the 4 AM start of the goal day a session started in, like the
- *  phone) for one language and content type. */
+ *  phone) for one language and content type (or GENERAL: listening and reading together). */
 export function dailyTotalsFor(entries, profileId, type, now = Date.now()) {
   const totals = new Map()
   for (const e of entries) {
-    if (e.languageProfileId !== profileId || e.contentType !== type) continue
+    if (e.languageProfileId !== profileId || !fillsGoal(type, e.contentType)) continue
     const d = goalDayStart(e.startTimeMillis)
     totals.set(d, (totals.get(d) || 0) + durationOf(e, now))
   }

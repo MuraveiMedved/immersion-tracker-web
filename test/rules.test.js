@@ -1,7 +1,7 @@
 // Run with: TZ=America/Chicago npm test
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING } from '../src/model/rules.js'
+import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal } from '../src/model/rules.js'
 import { goalDayStart } from '../src/model/time.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate } from '../src/model/zoo.js'
@@ -153,4 +153,17 @@ test('Momentum tiers: Bronze 10 / Silver 30 / Gold 60 / Diamond 100 days, holo 1
   assert.deepEqual([10, 30, 60, 100].map((d) => momentumTier(d).holoPercent), [10, 20, 30, 40])
   assert.equal(nextMomentumTier(null).id, 'bronze')
   assert.equal(nextMomentumTier(momentumTier(100)), null)
+})
+
+test('General goal: listening and reading together, replacing the separate goals', () => {
+  const p = { podcastGoalMinutes: 30, readingGoalMinutes: 20, generalGoal: true, generalGoalMinutes: 45 }
+  assert.deepEqual([listeningGoalOf(p), readingGoalOf(p), generalGoalOf(p), hasGoal(p)], [0, 0, 45, true])
+  const off = { ...p, generalGoal: false }
+  assert.deepEqual([listeningGoalOf(off), readingGoalOf(off), generalGoalOf(off)], [30, 20, 0])
+  assert.equal(hasGoal({ podcastGoalMinutes: 30, generalGoal: true, generalGoalMinutes: 0 }), false)
+  const day = at(2026, 10, 20)
+  const entries = [entry(day, 20 * 60000, PODCAST), entry(day + HOUR, 25 * 60000, READING), entry(day + 2 * HOUR, 60 * 60000, LISTENING), entry(day + 3 * HOUR, 10 * 60000, ANKI), entry(day, 5 * 60000, READING, 2)]
+  const totals = dailyTotalsFor(entries, 1, GENERAL, day + 5 * HOUR)
+  assert.equal(totals.get(goalDayStart(day)), 45 * 60000)
+  assert.equal(computeStreak(totals, 45 * 60000, day + 5 * HOUR).current, 1)
 })
