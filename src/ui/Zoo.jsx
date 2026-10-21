@@ -850,16 +850,17 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
 function NametagInfo({ held, animal, onClose }) {
   return (
     <CardStage rarity="ORANGE" onClose={onClose}>
-      <div class="col" style="align-items:center;text-align:center" onClick={(e) => e.stopPropagation()}>
+      {/* A solid panel under it all, so the words and the demo read clearly over the glow. */}
+      <div class="col nametag-info" style="align-items:center;text-align:center" onClick={(e) => e.stopPropagation()}>
         <div style="font-size:44px;line-height:1">🏷</div>
         <div class="title-large" style="color:#fff;font-weight:800;margin-top:4px">Nametags</div>
         <div style="color:rgba(255,255,255,.85);margin:6px 0 16px;max-width:340px">
           Earn one by reaching 70 hours in a Monthly challenge. Spend it to give any animal in your Zoo a name of its own - open its card and tap Name. Every name or rename uses one.
         </div>
         {animal && <NametagDemo animal={animal} />}
-        <div style="color:rgba(255,255,255,.9);font-weight:600;margin:16px 0 12px">You have {held}</div>
+        <div style="color:rgba(255,255,255,.9);font-weight:600;margin:16px 0 14px">You have {held}</div>
+        <GlowPill rarity="ORANGE" onClick={onClose}>Got it</GlowPill>
       </div>
-      <GlowPill rarity="ORANGE" onClick={onClose}>Got it</GlowPill>
     </CardStage>
   )
 }
