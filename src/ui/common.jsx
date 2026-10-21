@@ -294,7 +294,7 @@ export function TypeLabel({ type, children, size = 16 }) {
 }
 
 /** A language's goal type (GoalModeChoice.kt): separate listening + reading goals, or one General
- *  goal (🎧/📖) that both count toward. */
+ *  goal (∞) that both count toward. */
 export function GoalModeChoice({ general, onChange }) {
   return (
     <div class="chips" role="radiogroup">

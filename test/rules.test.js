@@ -167,3 +167,22 @@ test('General goal: listening and reading together, replacing the separate goals
   assert.equal(totals.get(goalDayStart(day)), 45 * 60000)
   assert.equal(computeStreak(totals, 45 * 60000, day + 5 * HOUR).current, 1)
 })
+
+test('General goal changes only goal progress: race score and stats read the same', async () => {
+  // Bars, quick stats and time of day take entries and language ids only - no goals - so the
+  // heatmap (the one stats view given the profiles) and the race score are what can differ.
+  const { heatmap } = await import('../src/model/stats.js')
+  const now = at(2026, 10, 20, 20)
+  const day = at(2026, 10, 20)
+  const list = [entry(day, 20 * 60000, PODCAST), entry(day + HOUR, 25 * 60000, READING), entry(day + 2 * HOUR, 60 * 60000, LISTENING), entry(day - 24 * HOUR, 40 * 60000, READING), entry(day + 3 * HOUR, 10 * 60000, ANKI, 3)]
+  const separate = [{ id: 1, name: 'Japanese', colorHex: '#DB434F', podcastGoalMinutes: 30, readingGoalMinutes: 20 }, { id: 3, name: 'Anki', colorHex: '#888888', isAnki: true }]
+  const general = separate.map((p) => (p.id === 1 ? { ...p, generalGoal: true, generalGoalMinutes: 45 } : p))
+  const langs = new Set([1])
+  // (Its legend hands back the profiles themselves - compare which languages, not their goal fields.)
+  const map = (profiles) => { const h = heatmap(list, langs, profiles, now); return { ...h, legend: h.legend.map((p) => p.id) } }
+  assert.deepEqual(map(general), map(separate))
+  // The race counts every listening and reading minute once, by its real type (it takes no profiles).
+  const s = scoreFor({ id: 'e', startMillis: day - 48 * HOUR, endMillis: null }, list.filter((e) => e.contentType !== ANKI), now)
+  assert.equal(s.millis, (20 + 25 + 40) * 60000)
+  assert.equal(s.readingMillis, (25 + 40) * 60000)
+})
