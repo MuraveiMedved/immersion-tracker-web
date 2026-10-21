@@ -7,7 +7,7 @@ import {
 } from '../model/zoo.js'
 import { goldenStreakDays, momentumTier } from '../model/rules.js'
 import { formatDate } from '../model/time.js'
-import { Dialog, Seg, toast, Spinner, Bolt, MomentumTierTable } from './common.jsx'
+import { Dialog, Seg, toast, Spinner, Bolt, MomentumTierTable, Icon } from './common.jsx'
 import { createPortal } from 'preact/compat'
 import { HoloCelebration, ChallengesButton } from './Sprints.jsx'
 
@@ -109,7 +109,7 @@ export function Zoo({ nav }) {
         {/* Weekly/Monthly challenges - their rewards land here, so they live here (a dot while one waits). */}
         {nav && <ChallengesButton nav={nav} />}
         {/* Nametags held - a currency, spent naming an animal from its card (ZooScreen.kt NametagCount). */}
-        <button class="nametag-count" title={`${nametagsOf(s).held} nametags - what are these?`} onClick={() => setNametagInfo(true)}>🏷 <b>{nametagsOf(s).held}</b></button>
+        <button class="nametag-count" title={`${nametagsOf(s).held} nametags - what are these?`} onClick={() => setNametagInfo(true)}><Icon name="sell" size={15} /><b>{nametagsOf(s).held}</b></button>
       </div>
       {/* One page, like the phone: the eggs (compact), then the collection below. */}
       <div class="egg-card compact" onClick={() => setOdds(true)} title="Hatch rates">

@@ -837,8 +837,8 @@ textarea.input { resize: vertical; }
 
 /* Nametags (ZooScreen.kt NametagCount / NameAnimalDialog): the count in the Zoo's corner, a named
    animal's species under its name, and the naming form on its card. */
-.nametag-count { cursor: pointer; color: var(--on-surface); display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 14px;
-  background: color-mix(in srgb, #FFC21A 16%, transparent); border: 1px solid color-mix(in srgb, #FFC21A 55%, transparent); }
+.nametag-count { cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 14px;
+  color: var(--on-surface); background: color-mix(in srgb, var(--on-surface) 10%, transparent); border: 1px solid color-mix(in srgb, var(--on-surface) 60%, transparent); }
 .acard-species { font-size: 14px; font-weight: 600; color: var(--on-surface-variant); }
 .name-form { width: min(360px, 100%); margin: 12px auto 0; padding: 12px; border-radius: 16px; background: rgba(0, 0, 0, .45); color: #fff; }
 .name-form .input { width: 100%; }
