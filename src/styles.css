@@ -840,7 +840,11 @@ textarea.input { resize: vertical; }
 .nametag-count { cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 14px;
   color: var(--on-surface); background: color-mix(in srgb, var(--on-surface) 10%, transparent); border: 1px solid color-mix(in srgb, var(--on-surface) 60%, transparent); }
 .acard-species { font-size: 14px; font-weight: 600; color: var(--on-surface-variant); }
-.name-form { width: min(360px, 100%); margin: 12px auto 0; padding: 12px; border-radius: 16px; background: rgba(0, 0, 0, .45); color: #fff; }
+.name-form { width: min(380px, 100%); margin: 12px auto 0; padding: 14px; border-radius: 22px; background: #1B1E26; color: #fff;
+  border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+.name-form .input { background: #2A2E39; color: #fff; border: 0; border-radius: 14px; font-weight: 600; }
+.name-form .btn:not(.tonal) { background: #fff; color: #14161C; }
+.name-form .btn:not(.tonal):disabled { background: rgba(255, 255, 255, .15); color: rgba(255, 255, 255, .45); }
 .name-form .input { width: 100%; }
 
 /* The nametag explainer's demo card (ZooScreen.kt NametagDemo). */
