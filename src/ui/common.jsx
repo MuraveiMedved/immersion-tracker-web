@@ -396,10 +396,10 @@ export function MomentumPill({ days, progress, onClick }) {
 }
 
 
-/** MomentumTierTable (StreakBadge.kt): every tier - bolt, name, the days it takes, its holo
- *  chance - with `current` (the tier reached, if any) picked out in its own colour. `topTierFirst`
- *  lists Diamond at the top (the egg hatch rates, matching their rarest-first order). */
-export function MomentumTierTable({ current, topTierFirst = false }) {
+/** MomentumTierTable (StreakBadge.kt): every tier - bolt, name, the days it takes and (with
+ *  `showHolo`, the Zoo's egg rates) its holo chance - with `current` (the tier reached, if any)
+ *  picked out in its own colour. `topTierFirst` lists Diamond at the top. */
+export function MomentumTierTable({ current, topTierFirst = false, showHolo = true }) {
   return (
     <div class="tier-table">
       {(topTierFirst ? [...MOMENTUM_TIERS].reverse() : MOMENTUM_TIERS).map((t) => (
@@ -407,7 +407,7 @@ export function MomentumTierTable({ current, topTierFirst = false }) {
           <Bolt tier={t.id} size={15} />
           <span class="name">{t.name}</span>
           <span class="muted small">{t.minDays}d</span>
-          <b class="small">{t.holoPercent}%</b><span class="holo-chip compact">✦ Holo</span>
+          {showHolo && <><b class="small">{t.holoPercent}%</b><span class="holo-chip compact">✦ Holo</span></>}
         </div>
       ))}
     </div>

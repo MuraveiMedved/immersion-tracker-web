@@ -32,7 +32,9 @@ export function useChallengeRaces(now) {
 export function ChallengesButton({ nav }) {
   const now = useNow(60000)
   const { races, waiting } = useChallengeRaces(now)
-  if (!races.length) return null
+  // Challenges pay out Zoo animals - with the Zoo switched off they're hidden too.
+  const zooOn = useStore().settings.showZooTab
+  if (!races.length || !zooOn) return null
   return (
     <button class="icon-btn challenges-btn" title="Challenges" onClick={() => nav('challenges')}>
       <Icon name="emoji_events" />{waiting && <span class="dot" />}

@@ -391,7 +391,7 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
 }
 
 /** What Momentum is and what it's for (HomeScreen.kt GoldenStreakDialog): the tier reached and
- *  how far the next is, today's hour and every tier's holo chance. */
+ *  how far the next is, today's hour and the days each tier takes. */
 function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
   const tier = momentumTier(days)
   const next = nextMomentumTier(tier)
@@ -407,7 +407,7 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
         <div class="small muted" style="margin-bottom:6px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}{immersing ? ' · counting now' : ''}</div>
         <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, var(--tier), var(--tier-pale))' }} /></div>
         <p class="muted small" style="margin:14px 0 8px">1+ hour of immersion every day keeps it going - longer runs reach higher tiers. Every language counts together; music and Anki don't.</p>
-        <MomentumTierTable current={tier} topTierFirst />
+        <MomentumTierTable current={tier} topTierFirst showHolo={false} />
       </div>
     </Dialog>
   )
