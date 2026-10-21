@@ -30,10 +30,11 @@ test('weekly pays one blue at 20h once it ends', () => {
   assert.deepEqual(now.milestones.map((m) => m.millis), [20 * HOUR])
 })
 
-test('monthly pays blue at 75h and purple at 100h; not in the race = none; race end cuts', () => {
+test('monthly pays blue at 70h and purple at 100h; not in the race = none; race end cuts', () => {
   const daily = Object.fromEntries(Array.from({ length: 31 }, (_, i) => [String(20261001 + i), 4 * HOUR]))
   const oct = sprintsFor(event([standing('me', daily)]), 'me', at(2026, 11, 2)).find((s) => s.key === 'M202610')
   assert.deepEqual(oct.earned.map((m) => m.rarity), ['BLUE', 'PURPLE'])
+  assert.deepEqual(oct.milestones.map((m) => m.millis), [70 * HOUR, 100 * HOUR])
   assert.equal(sprintsFor(event([standing('a', {})]), 'me', at(2026, 10, 20)).length, 0)
   const done = sprintsFor(event([standing('me', { 20261008: 20 * HOUR })], at(2026, 10, 9, 18)), 'me', at(2026, 10, 9, 20))
   assert.deepEqual(done.map((s) => s.key), ['W20261005', 'M202610'])

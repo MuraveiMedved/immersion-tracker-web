@@ -2,7 +2,7 @@
 // mirroring the phone's data/race/RaceSprints.kt exactly. Weekly runs every week (Monday to
 // Sunday), Monthly every calendar month, both cut to the race's days. Individual: only this
 // person's own progress counts or shows. When one ends: a Weekly pays one random blue animal for
-// reaching its 20h; a Monthly a blue at 3/4 of its 100h and a purple at 100h (both stack).
+// reaching its 20h; a Monthly a blue at 70h and a purple at 100h (both stack).
 // Nothing is stored on the race
 // server; a reward collected is a Zoo opening stored with its prize key as the rarity
 // ("SPRINT:<race id>:<key>:<RARITY>").
@@ -13,7 +13,7 @@ const HOUR = 3_600_000
 export const PRIZE_PREFIX = 'SPRINT:'
 export const SPRINT_KINDS = [
   { id: 'WEEKLY', prefix: 'W', capHours: 20, milestones: [[1, 'BLUE']] },
-  { id: 'MONTHLY', prefix: 'M', capHours: 100, milestones: [[0.75, 'BLUE'], [1, 'PURPLE']] },
+  { id: 'MONTHLY', prefix: 'M', capHours: 100, milestones: [[0.7, 'BLUE'], [1, 'PURPLE']] },
 ]
 export const prizeKey = (eventId, key, rarity) => `${PRIZE_PREFIX}${eventId}:${key}:${rarity}`
 
@@ -63,7 +63,8 @@ export function sprintsFor(event, userId, now) {
       const capMillis = kind.capHours * HOUR
       const ended = today > last || (raceOver && raceLast != null && last === raceLast)
       const milestones = kind.milestones.map(([share, rarity]) => {
-        const millis = Math.trunc(capMillis * share)
+        // Rounded - 0.7 of 100h is a hair under 70h in floating point.
+        const millis = Math.round(capMillis * share)
         return { rarity, millis, reached: mine >= millis, prizeKey: prizeKey(event.id, key, rarity) }
       })
       out.push({
