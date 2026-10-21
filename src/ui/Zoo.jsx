@@ -108,7 +108,7 @@ export function Zoo({ nav }) {
         {/* Weekly/Monthly challenges - their rewards land here, so they live here (a dot while one waits). */}
         {nav && <ChallengesButton nav={nav} />}
         {/* Nametags held - a currency, spent naming an animal from its card (ZooScreen.kt NametagCount). */}
-        {nametagsOf(s).held > 0 && <span class="nametag-count" title={`${nametagsOf(s).held} nametags`}>🏷 <b>{nametagsOf(s).held}</b></span>}
+        <span class="nametag-count" title={`${nametagsOf(s).held} nametags`}>🏷 <b>{nametagsOf(s).held}</b></span>
       </div>
       {/* One page, like the phone: the eggs (compact), then the collection below. */}
       <div class="egg-card compact" onClick={() => setOdds(true)} title="Hatch rates">
