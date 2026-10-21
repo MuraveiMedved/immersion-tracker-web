@@ -67,7 +67,7 @@ function App() {
         {tab === 'entries' && <Entries params={route.params} />}
         {tab === 'challenges' && <Challenges nav={nav} />}
         {tab === 'social' && <Social />}
-        {tab === 'zoo' && <Zoo />}
+        {tab === 'zoo' && <Zoo nav={nav} />}
         {tab === 'settings' && <Settings params={route.params} nav={nav} />}
       </main>
       <ToastHost />

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { useStore, useNow } from '../store.js'
 import { formatHm, formatYmd } from '../model/time.js'
 import { momentumTier } from '../model/rules.js'
-import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, setTrophy, takenPrizes } from '../model/zoo.js'
+import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, claimNametag, setTrophy, takenPrizes } from '../model/zoo.js'
 import { HatchDialog } from './Zoo.jsx'
 import { sprintsFor, prizesWaiting, sprintEndMillis, sprintStartMillis } from '../model/sprints.js'
 import { toast, Icon } from './common.jsx'
@@ -51,7 +51,7 @@ export function Challenges({ nav }) {
   return (
     <>
       <div class="row" style="align-items:center;gap:4px;margin-bottom:8px">
-        <button class="icon-btn" title="Back" onClick={() => nav('home')}><Icon name="arrow_back" /></button>
+        <button class="icon-btn" title="Back" onClick={() => nav('zoo')}><Icon name="arrow_back" /></button>
         <h1 class="page-title grow" style="margin:0">Challenges</h1>
       </div>
       {races.map(({ event, sprints }) => (
@@ -71,16 +71,41 @@ function left(ms) {
   return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m % 60}m` : `${m}m`
 }
 
-/** Collects one reward and shows it. */
-// A reward is an egg of its colour, hatched the same way as the Zoo's (Zoo.jsx HatchDialog).
+/** Collects one reward and shows it. An animal is an egg of its colour, hatched the same way as
+ *  the Zoo's (Zoo.jsx HatchDialog); a nametag goes straight into the Zoo with a small celebration. */
 export function useCollect() {
   const [pending, setPending] = useState(null)
-  const collect = (m) => { if (!pending) setPending(m) }
-  const dialog = pending && (
+  const [nametag, setNametag] = useState(false)
+  const collect = (m) => {
+    if (pending) return
+    if (!m.rarity) { if (claimNametag(m.prizeKey)) setNametag(true); return }
+    setPending(m)
+  }
+  const dialog = (pending && (
     <HatchDialog kind={pending.rarity} hatch={() => claimSprintPrize(pending.prizeKey, pending.rarity)} onClose={() => setPending(null)} />
-  )
+  )) || (nametag && <NametagCollected onClose={() => setNametag(false)} />)
   return { collect, dialog }
 }
+
+/** A nametag collected: the tag in gold, and what it's for (ChallengesScreen.kt NametagCollectedDialog). */
+function NametagCollected({ onClose }) {
+  return (
+    <CardStage rarity="ORANGE" onClose={onClose}>
+      <Floaty>
+        <div class="col" style="align-items:center;text-align:center">
+          <div style="font-size:72px;line-height:1">🏷</div>
+          <div class="title-large" style="color:#fff;font-weight:800;margin-top:8px">+1 Nametag</div>
+          <div style="color:rgba(255,255,255,.85);margin:6px 0 18px">Name an animal in your Zoo - open its card and tap Name.</div>
+        </div>
+      </Floaty>
+      <GlowPill rarity="ORANGE" onClick={onClose}>Nice!</GlowPill>
+    </CardStage>
+  )
+}
+
+// A reward's colours and name: its rarity's, or gold and "nametag" for a nametag.
+const rewardColor = (r) => RARITY_COLOR[r || 'ORANGE']
+const rewardName = (r) => (r ? RARITY_LABEL[r] : 'nametag')
 
 /** The Challenges tab: your own Weekly and Monthly (nobody else's), each with its dates, time left,
  *  progress toward its cap and a "+1 card" badge over each reward - no explaining text (the user
@@ -94,7 +119,7 @@ export function SprintsPanel({ event, now, data, onCollect }) {
   const previous = sprints.filter((sp) => !sp.current).sort((x, y) => waits(y) - waits(x))
   const row = (sp) => {
         const top = sp.milestones[sp.milestones.length - 1].rarity
-        const color = RARITY_COLOR[top]
+        const color = rewardColor(top)
         const waiting = sp.earned.filter((m) => !taken.has(m.prizeKey))
         const fraction = Math.min(1, sp.myMillis / sp.capMillis)
         // How much of its time is gone - stay ahead of the tick to reach the top reward on time.
@@ -110,25 +135,25 @@ export function SprintsPanel({ event, now, data, onCollect }) {
               <div class="muted" style="font-size:12px;font-weight:600">{sp.current ? `${left(sprintEndMillis(event, sp) - now)} left` : 'Ended'}</div>
             </div>
             <div class="sprint-bar">
-              <div class="track"><div class="fill" style={{ width: `${fraction * 100}%`, background: `linear-gradient(90deg, ${RARITY_COLOR[sp.milestones[0].rarity]}, ${color})` }} /></div>
+              <div class="track"><div class="fill" style={{ width: `${fraction * 100}%`, background: `linear-gradient(90deg, ${rewardColor(sp.milestones[0].rarity)}, ${color})` }} /></div>
               {sp.milestones.map((m, i) => {
                 const last = i === sp.milestones.length - 1
                 const share = m.millis / sp.capMillis
                 return (
-                  <span key={'b' + m.rarity} class={`sprint-badge ${taken.has(m.prizeKey) ? 'done' : ''}`} title={`+1 ${RARITY_LABEL[m.rarity]} animal card`}
-                    style={{ ...(last ? { right: 0 } : { left: `calc((100% - 18px) * ${share} + 9px - 17px)` }), '--c': RARITY_COLOR[m.rarity] }}>
-                    {taken.has(m.prizeKey) ? '✓' : '+1'}<i class="sprint-card"><Icon name="pets" size={7} color={RARITY_COLOR[m.rarity]} /></i>
+                  <span key={'b' + m.prizeKey} class={`sprint-badge ${taken.has(m.prizeKey) ? 'done' : ''}`} title={m.rarity ? `+1 ${RARITY_LABEL[m.rarity]} animal card` : '+1 nametag'}
+                    style={{ ...(last ? { right: 0 } : { left: `calc((100% - 18px) * ${share} + 9px - 17px)` }), '--c': rewardColor(m.rarity) }}>
+                    {taken.has(m.prizeKey) ? '✓' : '+1'}{m.rarity ? <i class="sprint-card"><Icon name="pets" size={7} color={RARITY_COLOR[m.rarity]} /></i> : <span style="font-size:11px;margin-left:2px">🏷</span>}
                   </span>
                 )
               })}
               {sp.milestones.map((m) => (
-                <span key={m.rarity} class={`mark ${m.reached ? 'on' : ''}`} title={`${RARITY_LABEL[m.rarity]} at ${m.millis / 3600000} h`}
-                  style={{ left: `calc((100% - 18px) * ${m.millis / sp.capMillis})`, '--c': RARITY_COLOR[m.rarity] }} />
+                <span key={m.prizeKey} class={`mark ${m.reached ? 'on' : ''}`} title={`${rewardName(m.rarity)} at ${m.millis / 3600000} h`}
+                  style={{ left: `calc((100% - 18px) * ${m.millis / sp.capMillis})`, '--c': rewardColor(m.rarity) }} />
               ))}
               {elapsed != null && <span class="time-tick" style={{ left: `calc((100% - 18px) * ${elapsed} + 9px)` }} />}
             </div>
             <div class="muted" style="font-size:11px;margin-top:6px">{formatHm(Math.min(sp.myMillis, sp.capMillis))} of {sp.capHours} h</div>
-            {waiting.length > 0 && <button class="sprint-claim" style={{ backgroundImage: rarityBrush(waiting[0].rarity) }} onClick={() => onCollect(waiting[0])}>Collect your {RARITY_LABEL[waiting[0].rarity]}</button>}
+            {waiting.length > 0 && <button class="sprint-claim" style={{ backgroundImage: rarityBrush(waiting[0].rarity || 'ORANGE') }} onClick={() => onCollect(waiting[0])}>Collect your {rewardName(waiting[0].rarity)}</button>}
           </div>
         )
   }

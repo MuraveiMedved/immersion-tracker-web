@@ -78,7 +78,7 @@ export function defaultState() {
       avatar: '',
       lastFetch: 0,
     },
-    zoo: { base: null, openings: [], grants: [], tradeIns: [], eggs: {}, trophyId: null },
+    zoo: { base: null, openings: [], grants: [], tradeIns: [], eggs: {}, nametags: [], trophyId: null },
     // This device's sign-in to the sync server - never synced itself.
     sync: { url: '', token: '', accountId: '', sinceRev: 0, lastSync: 0, error: '' },
   }

@@ -3,12 +3,13 @@ import { useStore, useNow } from '../store.js'
 import {
   loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, backfillHoloMomentum, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound,
   RARITIES, RARITY_LABEL, RARITY_COLOR, HOURS_PER_BOX, TRADE_UP_COUNT, LOOT_BOX_ODDS, holoChancePercent, nextRarity, carriesCertificate,
+  nametagsOf, nameAnimal, NAMETAG_MAX_LENGTH,
 } from '../model/zoo.js'
 import { goldenStreakDays, momentumTier } from '../model/rules.js'
 import { formatDate } from '../model/time.js'
 import { Dialog, Seg, toast, Spinner, Bolt, MomentumTierTable } from './common.jsx'
 import { createPortal } from 'preact/compat'
-import { HoloCelebration } from './Sprints.jsx'
+import { HoloCelebration, ChallengesButton } from './Sprints.jsx'
 
 export const RARITY_GRADIENT = {
   GREEN: 'linear-gradient(135deg, #2e7d32, #66bb6a)',
@@ -77,7 +78,7 @@ export function RarityBadge({ rarity }) {
   return <span class="rarity-badge" style={{ background: RARITY_GRADIENT[rarity] }}>{RARITY_LABEL[rarity]}</span>
 }
 
-export function Zoo() {
+export function Zoo({ nav }) {
   const s = useStore()
   const now = useNow(15000)
   const catalog = useCatalog()
@@ -102,7 +103,13 @@ export function Zoo() {
 
   return (
     <>
-      <h1 class="page-title">Zoo</h1>
+      <div class="row" style="align-items:center;margin-bottom:16px">
+        <h1 class="page-title grow" style="margin:0">Zoo</h1>
+        {/* Weekly/Monthly challenges - their rewards land here, so they live here (a dot while one waits). */}
+        {nav && <ChallengesButton nav={nav} />}
+        {/* Nametags held - a currency, spent naming an animal from its card (ZooScreen.kt NametagCount). */}
+        {nametagsOf(s).held > 0 && <span class="nametag-count" title={`${nametagsOf(s).held} nametags`}>🏷 <b>{nametagsOf(s).held}</b></span>}
+      </div>
       {/* One page, like the phone: the eggs (compact), then the collection below. */}
       <div class="egg-card compact" onClick={() => setOdds(true)} title="Hatch rates">
         <div class="egg-stage">
@@ -320,7 +327,7 @@ export function HatchDialog({ kind, onClose, hatch }) {
               <span class={`reveal-banner ${r === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(r), '--p': (LOOK[r] || LOOK.GREEN)[0] }}>
                 {result.copies === 1 ? 'NEW!' : `You now have ×${result.copies}`}{result.cert?.foil ? '  ✦ HOLO!' : ''}
               </span>
-              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} onDisplay={onDisplay} /></div>
+              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} onDisplay={onDisplay} nickname={nametagsOf(s).names[result.animal.id]} /></div>
             </div>
           </div>
         </Floaty>
@@ -602,7 +609,7 @@ function useSize(ref) {
 
 /** The full trading card: photo (rarity pill, chips), names, Wikipedia's one-liner, stats, the
  *  fun fact, its birth certificate, conservation status and the photo credit. */
-export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false }) {
+export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false, nickname = null }) {
   const [p, s2] = LOOK[animal.rarity] || LOOK.GREEN
   const mythic = animal.rarity === 'RAINBOW'
   const foil = !!cert?.foil
@@ -639,7 +646,8 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
             </div>
           </div>
           <div class="acard-body" style={{ paddingBottom: mythic ? 26 : 16, backgroundImage: wash }}>
-            <div class="acard-name">{animal.name}</div>
+            {/* A nametag's name takes the title; the species sits under it. */}
+            {nickname ? <><div class="acard-name">“{nickname}”</div><div class="acard-species">{animal.name}</div></> : <div class="acard-name">{animal.name}</div>}
             {animal.scientific && <div class="acard-sci">{animal.scientific}</div>}
             {animal.blurb && <div class="acard-blurb">{animal.blurb}</div>}
             {animal.stats?.length > 0 && (
@@ -713,6 +721,7 @@ export function GlowPill({ rarity, onClick, children, disabled, solid }) {
 /** Only animals found so far (no silhouettes of the rest), rarest first - like the phone. A
  *  long-press (or right-click) on one starts a trade-up of its tier. */
 function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
+  const names = nametagsOf(useStore()).names
   const [open, setOpen] = useState(null)
   const held = Object.keys(copies).length
   const list = catalog
@@ -762,7 +771,7 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
                 {have > 1 && <span class="count">×{have}</span>}
                 {picks > 0 && <span class="count pick">{picks}</span>}
                 {a.id === trophyId && <span class="count pick">🏆</span>}
-                <div class="cap">{a.name}</div>
+                <div class="cap">{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
               </div>
             )
           })}
@@ -789,11 +798,26 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
 
 function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
   const [i, setI] = useState(0)
+  const tags = nametagsOf(useStore())
+  const nickname = tags.names[animal.id]
+  const [naming, setNaming] = useState(null) // the name being typed, while naming
   const copy = copies[i]
   const r = animal.rarity
+  const confirmName = () => { if (nameAnimal(animal.id, naming)) setNaming(null); else toast('No nametag to use') }
   return (
     <CardStage rarity={r} onClose={onClose}>
-      <Floaty><AnimalCardView animal={animal} cert={copy?.cert} timesFound={copies.length} onDisplay={trophyId === animal.id} /></Floaty>
+      <Floaty><AnimalCardView animal={animal} cert={copy?.cert} timesFound={copies.length} onDisplay={trophyId === animal.id} nickname={nickname} /></Floaty>
+      {naming != null && (
+        <div class="name-form" onClick={(e) => e.stopPropagation()}>
+          <div class="small" style="opacity:.85;margin-bottom:6px">This uses one nametag (you have {tags.held}). Renaming later takes another.</div>
+          <input class="input" autoFocus maxLength={NAMETAG_MAX_LENGTH} value={naming} placeholder={`Name your ${animal.name}`}
+            onInput={(e) => setNaming(e.currentTarget.value)} onKeyDown={(e) => { if (e.key === 'Enter' && naming.trim() && naming.trim() !== nickname) confirmName() }} />
+          <div class="row" style="margin-top:8px;gap:8px">
+            <button class="btn tonal grow" onClick={() => setNaming(null)}>Cancel</button>
+            <button class="btn grow" disabled={!naming.trim() || naming.trim() === nickname} onClick={confirmName}>Use nametag</button>
+          </div>
+        </div>
+      )}
       {copies.length > 1 && (
         <div class="chips" style="justify-content:center">
           {copies.map((c, n) => (
@@ -810,6 +834,8 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
             ? <GlowPill rarity={r} onClick={() => setTrophy(null)}>Take off my profile</GlowPill>
             : <GlowPill rarity={r} onClick={() => { setTrophy(animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
           {nextRarity(r) && <GlowPill rarity={r} onClick={onTrade}>Trade up</GlowPill>}
+          {/* Naming takes a nametag - only offered while there's one to spend. */}
+          {tags.held > 0 && naming == null && <GlowPill rarity={r} onClick={() => setNaming(nickname || '')}>🏷 {nickname ? 'Rename' : 'Name'}</GlowPill>}
         </div>
       )}
       <GlowPill rarity={r} onClick={onClose}>Close</GlowPill>

@@ -834,3 +834,11 @@ textarea.input { resize: vertical; }
 .holo-note { margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--tier-ink); text-align: center; animation: holo-note-in .6s ease-out 1.8s both; }
 @keyframes holo-note-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
+
+/* Nametags (ZooScreen.kt NametagCount / NameAnimalDialog): the count in the Zoo's corner, a named
+   animal's species under its name, and the naming form on its card. */
+.nametag-count { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 14px;
+  background: color-mix(in srgb, #FFC21A 16%, transparent); border: 1px solid color-mix(in srgb, #FFC21A 55%, transparent); }
+.acard-species { font-size: 14px; font-weight: 600; color: var(--on-surface-variant); }
+.name-form { width: min(360px, 100%); margin: 12px auto 0; padding: 12px; border-radius: 16px; background: rgba(0, 0, 0, .45); color: #fff; }
+.name-form .input { width: 100%; }

@@ -1,11 +1,11 @@
 // Race Weekly/Monthly (internally "sprints") - personal immersion targets inside every race,
 // mirroring the phone's data/race/RaceSprints.kt exactly. Weekly runs every week (Monday to
 // Sunday), Monthly every calendar month, both cut to the race's days. Individual: only this
-// person's own progress counts or shows. When one ends: a Weekly pays one random blue animal for
-// reaching its 20h; a Monthly a blue at 70h and a purple at 100h (both stack).
-// Nothing is stored on the race
-// server; a reward collected is a Zoo opening stored with its prize key as the rarity
-// ("SPRINT:<race id>:<key>:<RARITY>").
+// person's own progress counts or shows. A reward is collectable the moment it's reached: a
+// Weekly pays one random blue animal at 20h; a Monthly a nametag at 70h and a purple at 100h.
+// Nothing is stored on the race server; an animal collected is a Zoo opening stored with its
+// prize key as the rarity ("SPRINT:<race id>:<key>:<RARITY>"), a nametag a Zoo nametag row with it
+// as its id ("...:NAMETAG").
 import { RACE_DAY_START_HOUR } from './race.js'
 import { ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
 
@@ -13,9 +13,11 @@ const HOUR = 3_600_000
 export const PRIZE_PREFIX = 'SPRINT:'
 export const SPRINT_KINDS = [
   { id: 'WEEKLY', prefix: 'W', capHours: 20, milestones: [[1, 'BLUE']] },
-  { id: 'MONTHLY', prefix: 'M', capHours: 100, milestones: [[0.7, 'BLUE'], [1, 'PURPLE']] },
+  // null = a nametag rather than an animal.
+  { id: 'MONTHLY', prefix: 'M', capHours: 100, milestones: [[0.7, null], [1, 'PURPLE']] },
 ]
-export const prizeKey = (eventId, key, rarity) => `${PRIZE_PREFIX}${eventId}:${key}:${rarity}`
+export const NAMETAG = 'NAMETAG'
+export const prizeKey = (eventId, key, rarity) => `${PRIZE_PREFIX}${eventId}:${key}:${rarity || NAMETAG}`
 
 /** This browser's race day (yyyymmdd) for `ms` - a day starts at 4am (RaceMath.raceDayKey). */
 export function raceDayKeyLocal(ms) {
@@ -71,7 +73,8 @@ export function sprintsFor(event, userId, now) {
         eventId: event.id, kind: kind.id, key, capHours: kind.capHours, capMillis,
         firstDay: firstKey, lastDay: lastKey, myMillis: mine, ended,
         current: today >= first && today <= last && !raceOver,
-        milestones, earned: ended ? milestones.filter((m) => m.reached) : [],
+        // Collectable as soon as reached - no waiting for the period to end.
+        milestones, earned: milestones.filter((m) => m.reached),
       })
       start = end + 1
     }
@@ -81,7 +84,7 @@ export function sprintsFor(event, userId, now) {
   return out.sort((a, b) => (b.current - a.current) || ((b.current ? 0 : b.lastDay) - (a.current ? 0 : a.lastDay)) || rank(a) - rank(b))
 }
 
-/** Rewards earned in sprints that are over and not collected yet, oldest first. */
+/** Rewards reached and not collected yet, oldest sprint first. */
 export const prizesWaiting = (sprints, taken) => [...sprints].sort((a, b) => a.lastDay - b.lastDay).flatMap((sp) => sp.earned).filter((m) => !taken.has(m.prizeKey))
 
 /** When a sprint opens: 4am on its first day (or the race's start, if later). */

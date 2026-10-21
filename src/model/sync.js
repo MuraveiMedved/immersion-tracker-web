@@ -12,6 +12,7 @@ import { remapIds } from './ids.js'
  *  different one can still be pasted in Settings. */
 export const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbyUSUQGINveSTIe7dHbXphSkEUe6QWcH2q8kUoE4ls5M-PORVKO9ZQ6B-XueUnjYO1v/exec'
 const SNAPSHOT_KEY = 'syncSnapshot'
+const NAMETAG_PREFIX = 'nametag:'
 const PUSH_CHUNK = 1500
 const AUTO_DELAY = 4000
 // Just long enough for one action's several updates (and its IndexedDB save) to land together.
@@ -36,6 +37,12 @@ export function collect(s) {
   for (const g of s.zoo.grants) out.grant.set(String(g.id), JSON.stringify(g))
   for (const t of s.zoo.tradeIns) out.tradeIn.set(String(t.id), JSON.stringify(t))
   for (const [k, egg] of Object.entries(s.zoo.eggs)) out.egg.set(k, JSON.stringify(egg))
+  // Nametag rows travel as prefs records "nametag:<id>" (the phone's WebSyncCodec.NAMETAG_PREFIX):
+  // the sync server only takes its fixed collections, and one record per row means devices never
+  // overwrite each other's. Same fields, in the same shape, as the phone sends.
+  for (const t of s.zoo.nametags || []) {
+    out.prefs.set(NAMETAG_PREFIX + t.id, JSON.stringify({ kind: t.kind, animalId: t.animalId ?? null, name: t.name ?? null, atMillis: t.atMillis }))
+  }
   out.prefs.set('settings', JSON.stringify(pick(s.settings, SETTINGS_KEYS)))
   out.prefs.set('race', JSON.stringify(pick(s.race, RACE_KEYS)))
   out.prefs.set('friends', JSON.stringify(pick(s.friends, FRIEND_KEYS)))
@@ -83,6 +90,11 @@ export function applyRecords(s, records) {
         if (r.id === 'friends') s.friends = { ...s.friends, ...r.data }
         if (r.id === 'zoo') s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyId: r.data.trophyId ?? null }
         if (r.id === 'paused') s.paused = r.data || {}
+        if (r.id.startsWith(NAMETAG_PREFIX) && (r.data.kind === 'earned' || r.data.kind === 'spent')) {
+          const id = r.id.slice(NAMETAG_PREFIX.length)
+          const row = { id, kind: r.data.kind, animalId: r.data.animalId ?? null, name: r.data.name ?? null, atMillis: Number(r.data.atMillis) || 0 }
+          s.zoo.nametags = [...(s.zoo.nametags || []).filter((t) => t.id !== id), row]
+        }
       }
     }
   }

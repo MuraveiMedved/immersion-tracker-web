@@ -314,7 +314,47 @@ export function setTrophy(id) {
 }
 
 /** Race Weekly/Monthly rewards already collected, by prize key (sprints.js). */
-export const takenPrizes = (s) => new Set(s.zoo.openings.filter((o) => String(o.rarity).startsWith('SPRINT:')).map((o) => o.rarity))
+export const takenPrizes = (s) => new Set([
+  ...s.zoo.openings.filter((o) => String(o.rarity).startsWith('SPRINT:')).map((o) => o.rarity),
+  ...(s.zoo.nametags || []).filter((t) => t.kind === 'earned').map((t) => t.id),
+])
+
+// Nametags (the phone's ZooNametag): a Monthly challenge's reward, spent naming an animal. A ledger
+// of rows - earned (id = the prize key, so it's earned once everywhere) and spent (with the animal
+// and the name). Held = earned - spent; an animal's name is its latest spent row's.
+export const NAMETAG_MAX_LENGTH = 24
+export function nametagsOf(s) {
+  const rows = s.zoo.nametags || []
+  const spent = rows.filter((t) => t.kind === 'spent')
+  const names = {}
+  for (const t of [...spent].sort((a, b) => a.atMillis - b.atMillis || String(a.id).localeCompare(String(b.id)))) {
+    if (t.animalId && t.name) names[t.animalId] = t.name
+  }
+  return { held: Math.max(0, rows.filter((t) => t.kind === 'earned').length - spent.length), names }
+}
+
+/** Collects a Monthly challenge's nametag - false if it was already collected. */
+export function claimNametag(key) {
+  let added = false
+  update((s) => {
+    s.zoo.nametags = s.zoo.nametags || []
+    if (s.zoo.nametags.some((t) => t.id === key)) return
+    s.zoo.nametags.push({ id: key, kind: 'earned', animalId: null, name: null, atMillis: Date.now() })
+    added = true
+  })
+  return added
+}
+
+/** Spends a nametag naming animal `animalId` (renaming takes another) - false with none held. */
+export function nameAnimal(animalId, name) {
+  const trimmed = String(name || '').trim().slice(0, NAMETAG_MAX_LENGTH)
+  if (!trimmed || nametagsOf(getState()).held <= 0) return false
+  update((s) => {
+    s.zoo.nametags = s.zoo.nametags || []
+    s.zoo.nametags.push({ id: uid(), kind: 'spent', animalId, name: trimmed, atMillis: Date.now() })
+  })
+  return true
+}
 
 /** Collects a Weekly/Monthly reward: a random animal of `rarity` (ZooRepository.claimSprintPrize).
  *  Momentum right now gives it the egg tiers' holo chance, and an Epic gets its birth certificate
