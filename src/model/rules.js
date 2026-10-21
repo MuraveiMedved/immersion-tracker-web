@@ -6,7 +6,7 @@ export const LISTENING = 'LISTENING' // music
 export const PODCAST = 'PODCAST' // spoken listening - "Listening" in the UI
 export const READING = 'READING'
 export const ANKI = 'ANKI'
-/** Not an entry type: the General goal's ring - listening and reading together (∞ icon). */
+/** Not an entry type: the General goal's ring - listening and reading together (🎧/📖 icon). */
 export const GENERAL = 'GENERAL'
 
 /** A language's goals in effect (LanguageProfile.listeningGoal / readingGoal / generalGoalOrZero):

@@ -283,7 +283,7 @@ export function Icon({ name, size = 24, color = 'currentColor', style }) {
 export const NavIcon = ({ name, size = 22 }) => <Icon name={name} size={size} />
 
 // The phone's content-type glyphs (ContentTypeIcon.kt).
-const TYPE_ICON = { PODCAST: 'headphones', READING: 'menu_book', ANKI: 'style', LISTENING: 'music_note', GENERAL: 'all_inclusive' }
+const TYPE_ICON = { PODCAST: 'headphones', READING: 'menu_book', ANKI: 'style', LISTENING: 'music_note', GENERAL: 'general' }
 
 /** A content type's icon - headphones (listening), open book (reading), cards (Anki), note (music). */
 export const TypeIcon = ({ type, size = 18, color, style }) => <Icon name={TYPE_ICON[type]} size={size} color={color || 'currentColor'} style={style} />
@@ -294,7 +294,7 @@ export function TypeLabel({ type, children, size = 16 }) {
 }
 
 /** A language's goal type (GoalModeChoice.kt): separate listening + reading goals, or one General
- *  goal (∞) that both count toward. */
+ *  goal (🎧/📖) that both count toward. */
 export function GoalModeChoice({ general, onChange }) {
   return (
     <div class="chips" role="radiogroup">

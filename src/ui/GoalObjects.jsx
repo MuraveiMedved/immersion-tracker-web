@@ -24,7 +24,7 @@ const MOON_TURN_SECONDS = 24
 const FLOWER_SWAY_SECONDS = 9
 export const OBJECT_STYLES = ['MOON', 'FLOWER']
 
-const TYPE_ICON = { PODCAST: 'headphones', READING: 'menu_book', ANKI: 'style', LISTENING: 'music_note', GENERAL: 'all_inclusive' }
+const TYPE_ICON = { PODCAST: 'headphones', READING: 'menu_book', ANKI: 'style', LISTENING: 'music_note', GENERAL: 'general' }
 const iconPaths = {}
 function iconPath(type) {
   const name = TYPE_ICON[type]
