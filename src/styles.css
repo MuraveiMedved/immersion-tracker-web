@@ -852,3 +852,8 @@ textarea.input { resize: vertical; }
 
 .nametag-info { width: min(400px, 100%); margin: 0 auto; padding: 18px 20px; border-radius: 28px;
   background: rgba(20, 22, 28, .92); border: 1px solid color-mix(in srgb, #FFC21A 40%, transparent); }
+
+/* A card's title row, and on one's own card the round white tag button beside the name. */
+.acard-title { display: flex; align-items: center; gap: 10px; }
+.name-tag-btn { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--on-surface);
+  background: color-mix(in srgb, var(--on-surface) 10%, transparent); border: 1.5px solid color-mix(in srgb, var(--on-surface) 85%, transparent); }

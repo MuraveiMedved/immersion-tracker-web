@@ -611,7 +611,7 @@ function useSize(ref) {
 
 /** The full trading card: photo (rarity pill, chips), names, Wikipedia's one-liner, stats, the
  *  fun fact, its birth certificate, conservation status and the photo credit. */
-export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false, nickname = null }) {
+export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false, nickname = null, onNameClick = null }) {
   const [p, s2] = LOOK[animal.rarity] || LOOK.GREEN
   const mythic = animal.rarity === 'RAINBOW'
   const foil = !!cert?.foil
@@ -649,7 +649,13 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
           </div>
           <div class="acard-body" style={{ paddingBottom: mythic ? 26 : 16, backgroundImage: wash }}>
             {/* A nametag's name takes the title; the species sits under it. */}
-            {nickname ? <><div class="acard-name">“{nickname}”</div><div class="acard-species">{animal.name}</div></> : <div class="acard-name">{animal.name}</div>}
+            <div class="acard-title">
+              <div style="min-width:0">
+                {nickname ? <><div class="acard-name">“{nickname}”</div><div class="acard-species">{animal.name}</div></> : <div class="acard-name">{animal.name}</div>}
+              </div>
+              {/* On this person's own card: a round tag button that starts naming it (ZooScreen.kt NameTagButton). */}
+              {onNameClick && <button class="name-tag-btn" title="Name" aria-label="Name" onClick={(e) => { e.stopPropagation(); onNameClick() }}><Icon name="sell" size={17} /></button>}
+            </div>
             {animal.scientific && <div class="acard-sci">{animal.scientific}</div>}
             {animal.blurb && <div class="acard-blurb">{animal.blurb}</div>}
             {animal.stats?.length > 0 && (
@@ -802,45 +808,53 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
   const [i, setI] = useState(0)
   const tags = nametagsOf(useStore())
   const nickname = tags.names[animal.id]
-  const [naming, setNaming] = useState(null) // the name being typed, while naming
+  // A name being tried out: null while not naming; shown live on the card until confirmed
+  // (which spends a nametag) or dropped.
+  const [preview, setPreview] = useState(null)
   const copy = copies[i]
   const r = animal.rarity
-  const confirmName = () => { if (nameAnimal(animal.id, naming)) setNaming(null); else toast('No nametag to use') }
+  const trimmed = (preview || '').trim()
+  const canSave = tags.held > 0 && trimmed && trimmed !== nickname
+  const confirmName = () => { if (canSave && nameAnimal(animal.id, trimmed)) setPreview(null) }
   return (
     <CardStage rarity={r} onClose={onClose}>
-      <Floaty><AnimalCardView animal={animal} cert={copy?.cert} timesFound={copies.length} onDisplay={trophyId === animal.id} nickname={nickname} /></Floaty>
-      {naming != null && (
+      <Floaty><AnimalCardView animal={animal} cert={copy?.cert} timesFound={copies.length} onDisplay={trophyId === animal.id}
+        nickname={trimmed || nickname || null} onNameClick={copies.length ? () => setPreview(preview ?? nickname ?? '') : null} /></Floaty>
+      {preview != null ? (
         <div class="name-form" onClick={(e) => e.stopPropagation()}>
-          <div class="small" style="opacity:.85;margin-bottom:6px">This uses one nametag (you have {tags.held}). Renaming later takes another.</div>
-          <input class="input" autoFocus maxLength={NAMETAG_MAX_LENGTH} value={naming} placeholder={`Name your ${animal.name}`}
-            onInput={(e) => setNaming(e.currentTarget.value)} onKeyDown={(e) => { if (e.key === 'Enter' && naming.trim() && naming.trim() !== nickname) confirmName() }} />
-          <div class="row" style="margin-top:8px;gap:8px">
-            <button class="btn tonal grow" onClick={() => setNaming(null)}>Cancel</button>
-            <button class="btn grow" disabled={!naming.trim() || naming.trim() === nickname} onClick={confirmName}>Use nametag</button>
+          <input class="input" autoFocus maxLength={NAMETAG_MAX_LENGTH} value={preview} placeholder="Name"
+            onInput={(e) => setPreview(e.currentTarget.value)} onKeyDown={(e) => { if (e.key === 'Enter') confirmName() }} />
+          <div class="small" style="opacity:.8;margin-top:6px">
+            {tags.held > 0 ? `Confirming uses one nametag (you have ${tags.held}). Renaming later takes another.` : 'You have no nametags - preview only. Earn one at 70 hours in a Monthly challenge.'}
+          </div>
+          <div class="row" style="margin-top:10px;gap:8px">
+            <button class="btn tonal grow" onClick={() => setPreview(null)}>Cancel</button>
+            <button class="btn grow" disabled={!canSave} onClick={confirmName}>{tags.held > 0 ? 'Confirm' : 'Needs a nametag'}</button>
           </div>
         </div>
+      ) : (
+        <>
+          {copies.length > 1 && (
+            <div class="chips" style="justify-content:center">
+              {copies.map((c, n) => (
+                <button key={c.id} class={`chip ${n === i ? 'on' : ''}`} style="background:var(--c-high)" onClick={() => setI(n)}>
+                  Copy {n + 1}{c.cert?.foil ? ' · holo' : ''}{carriesCertificate(r) && c.cert?.hourMark != null ? ` · h${c.cert.hourMark}` : ''}
+                </button>
+              ))}
+            </div>
+          )}
+          {copy && <div class="stage-note small" style="opacity:.75">Hatched {formatDate(copy.atMillis, { year: 'numeric', month: 'short', day: 'numeric' })}</div>}
+          {copies.length > 0 && (
+            <div class="stage-row">
+              {trophyId === animal.id
+                ? <GlowPill rarity={r} onClick={() => setTrophy(null)}>Take off my profile</GlowPill>
+                : <GlowPill rarity={r} onClick={() => { setTrophy(animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
+              {nextRarity(r) && <GlowPill rarity={r} onClick={onTrade}>Trade up</GlowPill>}
+            </div>
+          )}
+          <GlowPill rarity={r} onClick={onClose}>Close</GlowPill>
+        </>
       )}
-      {copies.length > 1 && (
-        <div class="chips" style="justify-content:center">
-          {copies.map((c, n) => (
-            <button key={c.id} class={`chip ${n === i ? 'on' : ''}`} style="background:var(--c-high)" onClick={() => setI(n)}>
-              Copy {n + 1}{c.cert?.foil ? ' · holo' : ''}{carriesCertificate(r) && c.cert?.hourMark != null ? ` · h${c.cert.hourMark}` : ''}
-            </button>
-          ))}
-        </div>
-      )}
-      {copy && <div class="stage-note small" style="opacity:.75">Hatched {formatDate(copy.atMillis, { year: 'numeric', month: 'short', day: 'numeric' })}</div>}
-      {copies.length > 0 && (
-        <div class="stage-row">
-          {trophyId === animal.id
-            ? <GlowPill rarity={r} onClick={() => setTrophy(null)}>Take off my profile</GlowPill>
-            : <GlowPill rarity={r} onClick={() => { setTrophy(animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
-          {nextRarity(r) && <GlowPill rarity={r} onClick={onTrade}>Trade up</GlowPill>}
-          {/* Naming takes a nametag - only offered while there's one to spend. */}
-          {tags.held > 0 && naming == null && <GlowPill rarity={r} onClick={() => setNaming(nickname || '')}>🏷 {nickname ? 'Rename' : 'Name'}</GlowPill>}
-        </div>
-      )}
-      <GlowPill rarity={r} onClick={onClose}>Close</GlowPill>
     </CardStage>
   )
 }

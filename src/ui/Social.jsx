@@ -1202,7 +1202,7 @@ function FriendRow({ p, onClick }) {
       <ProfilePicture p={p} color={cs[0]} />
       <div class="grow" style="min-width:0;padding-left:12px">
         <div class="row" style="gap:8px"><span class="title-medium ellipsis" style="font-weight:600">{p.name}</span>{p.goldenDays >= GOLDEN_DAYS && <MomentumPill days={p.goldenDays} progress={1} />}</div>
-        <div class="muted ellipsis" style="font-size:12px">{[trophy?.name, p.updatedAt ? agoText(p.updatedAt) : null].filter(Boolean).join(' · ')}</div>
+        <div class="muted ellipsis" style="font-size:12px">{[trophy ? (p.names?.[trophy.id] ? `“${p.names[trophy.id]}”` : trophy.name) : null, p.updatedAt ? agoText(p.updatedAt) : null].filter(Boolean).join(' · ')}</div>
       </div>
       <Icon name="chevron_right" color={cs[0]} />
     </div>
@@ -1412,7 +1412,9 @@ function ProfileSections({ p }) {
           <div class="photo"><AnimalPhoto animal={trophy} /></div>
           <div class="grow" style="min-width:0;text-align:left">
             <div class="row muted" style="gap:4px;font-size:12px;font-weight:500"><Icon name="emoji_events" size={16} color={RARITY_COLOR[trophy.rarity]} />On display</div>
-            <div class="title-medium" style="font-weight:700">{trophy.name}</div>
+            {p.names?.[trophy.id]
+              ? <><div class="title-medium ellipsis" style="font-weight:700">“{p.names[trophy.id]}”</div><div class="muted small ellipsis">{trophy.name}</div></>
+              : <div class="title-medium" style="font-weight:700">{trophy.name}</div>}
             <div style="padding-top:4px"><RarityBadge rarity={trophy.rarity} /></div>
           </div>
         </button>
@@ -1422,7 +1424,7 @@ function ProfileSections({ p }) {
           <div class="pc-title">Zoo · {zoo.length}</div>
           <div class="profile-zoo">
             {(all ? zoo : zoo.slice(0, 12)).map(([a, n]) => (
-              <button key={a.id} class="tile-animal" style={{ borderColor: RARITY_COLOR[a.rarity] }} title={a.name} onClick={() => setOpen(a)}>
+              <button key={a.id} class="tile-animal" style={{ borderColor: RARITY_COLOR[a.rarity] }} title={p.names?.[a.id] ? `“${p.names[a.id]}” · ${a.name}` : a.name} onClick={() => setOpen(a)}>
                 <AnimalPhoto animal={a} />{cert(a.id)?.foil && <FoilSheen seed={a.id} />}{n > 1 && <span class="count">×{n}</span>}
               </button>
             ))}
@@ -1445,7 +1447,7 @@ function ProfileSections({ p }) {
       {p.updatedAt > 0 && <div class="muted" style="font-size:11px;font-weight:500;letter-spacing:.5px">Updated {agoText(p.updatedAt)}</div>}
       {open && (
         <CardStage rarity={open.rarity} onClose={() => setOpen(null)}>
-          <Floaty><AnimalCardView animal={open} cert={cert(open.id)} timesFound={p.zoo?.[open.id] || 1} /></Floaty>
+          <Floaty><AnimalCardView animal={open} cert={cert(open.id)} timesFound={p.zoo?.[open.id] || 1} nickname={p.names?.[open.id] || null} /></Floaty>
           <GlowPill rarity={open.rarity} onClick={() => setOpen(null)}>Close</GlowPill>
         </CardStage>
       )}

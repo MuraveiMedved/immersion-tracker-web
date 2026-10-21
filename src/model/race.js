@@ -427,6 +427,13 @@ export function buildProfileBody(now = Date.now()) {
   if (share.zoo) body.zoo = held
   const certs = bestCertificates(s, held, share, trophy)
   if (Object.keys(certs).length) body.zc = certs
+  // Names given with nametags (model/zoo.js nametagsOf - the latest name per animal), for the
+  // animals shown: the trophy, and the collection when shared (the phone's FriendProfile zn).
+  const names = {}
+  for (const t of [...(s.zoo.nametags || [])].filter((t) => t.kind === 'spent').sort((a, b) => a.atMillis - b.atMillis || String(a.id).localeCompare(String(b.id)))) {
+    if (t.animalId && t.name && ((share.zoo && held[t.animalId]) || (share.trophy && t.animalId === trophy))) names[t.animalId] = t.name
+  }
+  if (Object.keys(names).length) body.zn = names
   if (share.rings || share.goals || share.streaks) body.languages = languages
   if (share.records) {
     body.records = {
@@ -508,6 +515,9 @@ export function readProfile(o) {
     goldenDays: body.gd ?? null,
     zoo: body.zoo || null,
     certs: body.zc || null,
+    names: body.zn && typeof body.zn === 'object'
+      ? Object.fromEntries(Object.entries(body.zn).slice(0, 500).map(([id, n]) => [id, String(n || '').trim().slice(0, 24)]).filter(([, n]) => n))
+      : {},
     languages: Array.isArray(body.languages) ? body.languages : [],
     records: body.records || null,
     shows: { rings: true, goals: true, streaks: true, records: true, trophy: true, zoo: true, ...(body.shows || {}) },
