@@ -84,6 +84,7 @@ export function Zoo({ nav }) {
   const catalog = useCatalog()
   const [hatching, setHatching] = useState(null) // 'BOX' or a rarity
   const [odds, setOdds] = useState(false)
+  const [nametagInfo, setNametagInfo] = useState(false)
 
   useEffect(() => { ensureBase() }, [])
   useEffect(() => { recordEarnedEggs(); backfillHoloMomentum() }, [s.entries.length, Math.floor(now / 60000)])
@@ -108,7 +109,7 @@ export function Zoo({ nav }) {
         {/* Weekly/Monthly challenges - their rewards land here, so they live here (a dot while one waits). */}
         {nav && <ChallengesButton nav={nav} />}
         {/* Nametags held - a currency, spent naming an animal from its card (ZooScreen.kt NametagCount). */}
-        <span class="nametag-count" title={`${nametagsOf(s).held} nametags`}>🏷 <b>{nametagsOf(s).held}</b></span>
+        <button class="nametag-count" title={`${nametagsOf(s).held} nametags - what are these?`} onClick={() => setNametagInfo(true)}>🏷 <b>{nametagsOf(s).held}</b></button>
       </div>
       {/* One page, like the phone: the eggs (compact), then the collection below. */}
       <div class="egg-card compact" onClick={() => setOdds(true)} title="Hatch rates">
@@ -140,6 +141,7 @@ export function Zoo({ nav }) {
         <Collection catalog={catalog} copies={z.copies} found={found} trophyId={s.zoo.trophyId} trade={trade} setTrade={setTrade} />
       </div>
       {odds && <OddsDialog currentTier={tier} onClose={() => setOdds(false)} />}
+      {nametagInfo && <NametagInfo held={nametagsOf(s).held} animal={(catalog || []).find((a) => z.copies?.[a.id]?.length) || (catalog || []).find((a) => a.id === 'fennec_fox') || catalog?.[0]} onClose={() => setNametagInfo(false)} />}
       {hatching && <HatchDialog kind={hatching} onClose={() => setHatching(null)} />}
     </>
   )
@@ -840,5 +842,54 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
       )}
       <GlowPill rarity={r} onClick={onClose}>Close</GlowPill>
     </CardStage>
+  )
+}
+
+/** What a nametag is, with a little looping demo of a card being named (ZooScreen.kt
+ *  NametagInfoDialog): the title turns from the species into a name, the species tucked under it. */
+function NametagInfo({ held, animal, onClose }) {
+  return (
+    <CardStage rarity="ORANGE" onClose={onClose}>
+      <div class="col" style="align-items:center;text-align:center" onClick={(e) => e.stopPropagation()}>
+        <div style="font-size:44px;line-height:1">🏷</div>
+        <div class="title-large" style="color:#fff;font-weight:800;margin-top:4px">Nametags</div>
+        <div style="color:rgba(255,255,255,.85);margin:6px 0 16px;max-width:340px">
+          Earn one by reaching 70 hours in a Monthly challenge. Spend it to give any animal in your Zoo a name of its own - open its card and tap Name. Every name or rename uses one.
+        </div>
+        {animal && <NametagDemo animal={animal} />}
+        <div style="color:rgba(255,255,255,.9);font-weight:600;margin:16px 0 12px">You have {held}</div>
+      </div>
+      <GlowPill rarity="ORANGE" onClick={onClose}>Got it</GlowPill>
+    </CardStage>
+  )
+}
+
+const DEMO_NAME = 'Biscuit'
+function NametagDemo({ animal }) {
+  const [typed, setTyped] = useState('')
+  const [tag, setTag] = useState(false)
+  useEffect(() => {
+    let alive = true
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+    ;(async () => {
+      while (alive) {
+        setTyped(''); setTag(false)
+        await wait(1100); if (!alive) return
+        setTag(true)
+        await wait(450)
+        for (let i = 1; i <= DEMO_NAME.length && alive; i++) { setTyped(DEMO_NAME.slice(0, i)); await wait(110) }
+        await wait(1800)
+      }
+    })()
+    return () => { alive = false }
+  }, [animal.id])
+  return (
+    <div class="nametag-demo" style={{ borderColor: RARITY_COLOR[animal.rarity] }}>
+      <div class="photo"><AnimalPhoto animal={animal} /></div>
+      <div class="body">
+        {typed ? <><b>“{typed}”</b><span class="muted small">{animal.name}</span></> : <b>{animal.name}</b>}
+      </div>
+      <span class={`tag ${tag ? 'on' : ''}`}>🏷</span>
+    </div>
   )
 }

@@ -837,8 +837,15 @@ textarea.input { resize: vertical; }
 
 /* Nametags (ZooScreen.kt NametagCount / NameAnimalDialog): the count in the Zoo's corner, a named
    animal's species under its name, and the naming form on its card. */
-.nametag-count { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 14px;
+.nametag-count { cursor: pointer; color: var(--on-surface); display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 14px;
   background: color-mix(in srgb, #FFC21A 16%, transparent); border: 1px solid color-mix(in srgb, #FFC21A 55%, transparent); }
 .acard-species { font-size: 14px; font-weight: 600; color: var(--on-surface-variant); }
 .name-form { width: min(360px, 100%); margin: 12px auto 0; padding: 12px; border-radius: 16px; background: rgba(0, 0, 0, .45); color: #fff; }
 .name-form .input { width: 100%; }
+
+/* The nametag explainer's demo card (ZooScreen.kt NametagDemo). */
+.nametag-demo { position: relative; width: 200px; border: 2px solid; border-radius: 18px; background: var(--c-high); color: var(--on-surface); text-align: left; }
+.nametag-demo .photo { aspect-ratio: 4 / 3; overflow: hidden; border-radius: 16px 16px 0 0; }
+.nametag-demo .body { display: flex; flex-direction: column; padding: 10px 12px; min-height: 44px; }
+.nametag-demo .tag { position: absolute; top: -10px; right: -8px; font-size: 30px; opacity: 0; transform: translateY(-40px) rotate(-18deg); transition: opacity .25s, transform .45s cubic-bezier(.34, 1.56, .64, 1); }
+.nametag-demo .tag.on { opacity: 1; transform: none; }
