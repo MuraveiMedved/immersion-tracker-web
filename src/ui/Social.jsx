@@ -1297,14 +1297,17 @@ function ProfileTodayCard({ p }) {
   const asOf = p.dayKey > 0 && p.dayKey !== ymdOf(goalDayStart(Date.now()))
   const has = (l, k) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || !!l[k + 'Streak']
   const cards = p.languages.filter((l) => has(l, 'listen') || has(l, 'read'))
-  const odd = cards.length % 2 === 1 ? cards[cards.length - 1] : null
+  // As their Home lays them out: an odd one out goes full width - their main language, at the top
+  // (else the last, at the bottom) - the rest balanced between the columns by card height.
+  const odd = cards.length % 2 === 1 ? cards.find((l) => l.main) || cards[cards.length - 1] : null
   const grid = cards.filter((l) => l !== odd)
+  const oddLeads = !!odd && (!!odd.main || !grid.length)
   const columns = [[], []]
   const weights = [0, 0]
   for (const l of grid) {
     const i = weights[0] <= weights[1] ? 0 : 1
     columns[i].push(l)
-    weights[i] += has(l, 'listen') + has(l, 'read')
+    weights[i] += 1 + 2 * (has(l, 'listen') + has(l, 'read'))
   }
   if (!cards.length) return null
   return (
@@ -1314,8 +1317,9 @@ function ProfileTodayCard({ p }) {
         {asOf && <span class="label-small muted">as of {formatYmd(p.dayKey)}</span>}
         {p.shows.streaks && p.goldenDays >= GOLDEN_DAYS && <MomentumPill days={p.goldenDays} progress={1} />}
       </div>
+      {odd && oddLeads && <ProfileGoalCard l={odd} ringStyle={p.ringStyle} wide />}
       {grid.length > 0 && <div class="goal-cols">{columns.map((col, i) => <div key={i}>{col.map((l, j) => <ProfileGoalCard key={j} l={l} ringStyle={p.ringStyle} />)}</div>)}</div>}
-      {odd && <ProfileGoalCard l={odd} ringStyle={p.ringStyle} wide />}
+      {odd && !oddLeads && <ProfileGoalCard l={odd} ringStyle={p.ringStyle} wide />}
     </div>
   )
 }

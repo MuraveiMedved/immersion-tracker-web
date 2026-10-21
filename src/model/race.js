@@ -391,6 +391,8 @@ export function buildProfileBody(now = Date.now()) {
     .map((p) => {
       const out = { name: p.name, color: p.colorHex }
       if (p.gradientColors) out.gradient = p.gradientColors
+      // Their main language - its card goes full width at the top, as on their Home.
+      if (p.isMain) out.main = true
       for (const [type, goal, key] of [[PODCAST, p.podcastGoalMinutes, 'listen'], [READING, p.readingGoalMinutes, 'read']]) {
         if (goal <= 0) continue
         const daily = dailyTotalsFor(entries, p.id, type, now)
