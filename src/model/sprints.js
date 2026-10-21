@@ -1,8 +1,9 @@
 // Race Weekly/Monthly (internally "sprints") - personal immersion targets inside every race,
 // mirroring the phone's data/race/RaceSprints.kt exactly. Weekly runs every week (Monday to
 // Sunday), Monthly every calendar month, both cut to the race's days. Individual: only this
-// person's own progress counts or shows. When one ends, reaching 3/4 of its cap pays a random
-// animal of one colour and the cap one of the next (both stack). Nothing is stored on the race
+// person's own progress counts or shows. When one ends: a Weekly pays one random blue animal for
+// reaching its 20h; a Monthly a blue at 3/4 of its 100h and a purple at 100h (both stack).
+// Nothing is stored on the race
 // server; a reward collected is a Zoo opening stored with its prize key as the rarity
 // ("SPRINT:<race id>:<key>:<RARITY>").
 import { RACE_DAY_START_HOUR } from './race.js'
@@ -11,7 +12,7 @@ import { ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
 const HOUR = 3_600_000
 export const PRIZE_PREFIX = 'SPRINT:'
 export const SPRINT_KINDS = [
-  { id: 'WEEKLY', prefix: 'W', capHours: 25, milestones: [[0.75, 'GREEN'], [1, 'BLUE']] },
+  { id: 'WEEKLY', prefix: 'W', capHours: 20, milestones: [[1, 'BLUE']] },
   { id: 'MONTHLY', prefix: 'M', capHours: 100, milestones: [[0.75, 'BLUE'], [1, 'PURPLE']] },
 ]
 export const prizeKey = (eventId, key, rarity) => `${PRIZE_PREFIX}${eventId}:${key}:${rarity}`

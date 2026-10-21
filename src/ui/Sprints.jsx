@@ -7,6 +7,7 @@ import { useStore, useNow } from '../store.js'
 import { formatHm, formatYmd } from '../model/time.js'
 import { momentumTier } from '../model/rules.js'
 import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, setTrophy, takenPrizes } from '../model/zoo.js'
+import { HatchDialog } from './Zoo.jsx'
 import { sprintsFor, prizesWaiting, sprintEndMillis, sprintStartMillis } from '../model/sprints.js'
 import { toast, Icon } from './common.jsx'
 import { AnimalCardView, CardStage, Floaty, GlowPill, rarityBrush } from './Zoo.jsx'
@@ -71,18 +72,13 @@ function left(ms) {
 }
 
 /** Collects one reward and shows it. */
+// A reward is an egg of its colour, hatched the same way as the Zoo's (Zoo.jsx HatchDialog).
 export function useCollect() {
-  const [result, setResult] = useState(null)
-  const [busy, setBusy] = useState(false)
-  const collect = async (m) => {
-    if (busy) return
-    setBusy(true)
-    const r = await claimSprintPrize(m.prizeKey, m.rarity)
-    setBusy(false)
-    if (!r) { toast('Already collected'); return }
-    setResult(r)
-  }
-  const dialog = result && <PrizeReveal result={result} onClose={() => setResult(null)} />
+  const [pending, setPending] = useState(null)
+  const collect = (m) => { if (!pending) setPending(m) }
+  const dialog = pending && (
+    <HatchDialog kind={pending.rarity} hatch={() => claimSprintPrize(pending.prizeKey, pending.rarity)} onClose={() => setPending(null)} />
+  )
   return { collect, dialog }
 }
 

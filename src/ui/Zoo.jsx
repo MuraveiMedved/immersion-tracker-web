@@ -245,7 +245,9 @@ function Sunburst({ rarity, scale = 1, alpha = 0.35 }) {
 /** Hatching, like the phone's CrateOpenDialog: the egg wobbles until tapped (anywhere), then shakes
  *  harder and cracks as its glow swells over a second, and the card springs out over a slowly
  *  turning sunburst with "NEW!" or how many you now have (and FOIL!). */
-function HatchDialog({ kind, onClose }) {
+/** Hatching an egg: it wobbles until tapped, shakes and cracks, then shows what was inside.
+ *  `hatch` (a Weekly/Monthly reward) supplies the animal instead of using up a Zoo egg. */
+export function HatchDialog({ kind, onClose, hatch }) {
   const s = useStore()
   const [round, setRound] = useState(0)
   const [charge, setCharge] = useState(0)
@@ -254,7 +256,7 @@ function HatchDialog({ kind, onClose }) {
   const [revealed, setRevealed] = useState(false)
   const [t, setT] = useState(0)
   const z = zooState(s)
-  const left = kind === 'BOX' ? z.boxesReady : z.coloured[kind]
+  const left = hatch ? 0 : kind === 'BOX' ? z.boxesReady : z.coloured[kind]
 
   // The shake's own clock, and the charge building over a second once tapped.
   useEffect(() => {
@@ -275,7 +277,7 @@ function HatchDialog({ kind, onClose }) {
   const tap = async () => {
     if (tapped) return
     setTapped(true)
-    const r = await (kind === 'BOX' ? hatchLootEgg() : hatchColouredEgg(kind))
+    const r = await (hatch ? hatch() : kind === 'BOX' ? hatchLootEgg() : hatchColouredEgg(kind))
     if (!r) { toast('No egg to hatch'); onClose(); return }
     // The card never shows before its photo: it's fetched while the egg shakes (at most 3 s).
     if (r.animal.image) await Promise.race([new Promise((res) => { const im = new Image(); im.onload = im.onerror = res; im.src = r.animal.image }), new Promise((res) => setTimeout(res, 3000))])
