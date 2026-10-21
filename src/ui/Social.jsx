@@ -376,7 +376,8 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
     try { return x.timeZone && new Date(new Date(now).toLocaleString('en-US', { timeZone: x.timeZone })).getTime() !== new Date(new Date(now).toLocaleString('en-US')).getTime() } catch { return false }
   })
   // You open your own profile (to see and edit it), the same sheet as Social's corner picture.
-  const openPerson = (st) => (st.userId === me && onOpenMe ? onOpenMe() : setPerson(st))
+  // Anyone - yourself included - opens their stats in this race (your profile is the corner picture).
+  const openPerson = (st) => setPerson(st)
   const dialogs = <>
     {person && <PersonSheet event={event} standing={event.standings.find((x) => x.userId === person.userId) || person} now={now} onClose={() => setPerson(null)} onOpenMe={onOpenMe && (() => { setPerson(null); onOpenMe() })} />}
     {edit && <EditRaceDialog event={event} onClose={() => setEdit(false)} />}

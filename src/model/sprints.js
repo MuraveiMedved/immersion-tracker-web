@@ -11,8 +11,8 @@ import { ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
 const HOUR = 3_600_000
 export const PRIZE_PREFIX = 'SPRINT:'
 export const SPRINT_KINDS = [
-  { id: 'WEEKLY', prefix: 'W', capHours: 50, milestones: [[0.75, 'GREEN'], [1, 'BLUE']] },
-  { id: 'MONTHLY', prefix: 'M', capHours: 200, milestones: [[0.75, 'BLUE'], [1, 'PURPLE']] },
+  { id: 'WEEKLY', prefix: 'W', capHours: 25, milestones: [[0.75, 'GREEN'], [1, 'BLUE']] },
+  { id: 'MONTHLY', prefix: 'M', capHours: 100, milestones: [[0.75, 'BLUE'], [1, 'PURPLE']] },
 ]
 export const prizeKey = (eventId, key, rarity) => `${PRIZE_PREFIX}${eventId}:${key}:${rarity}`
 
