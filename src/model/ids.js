@@ -16,13 +16,15 @@ export function remapIds(s) {
   const firstAnki = s.profiles.find((p) => p.isAnki)
   s.profiles = s.profiles.filter((p) => !p.isAnki || p === firstAnki)
   for (const p of s.profiles) if (profileMap.has(p.id)) p.id = profileMap.get(p.id)
+  const entryMap = new Map()
   for (const e of s.entries) {
-    if (e.id < SMALL) e.id = uid()
+    if (e.id < SMALL) { const n = uid(); entryMap.set(e.id, n); e.id = n }
     if (e.languageProfileId != null && profileMap.has(e.languageProfileId)) e.languageProfileId = profileMap.get(e.languageProfileId)
   }
   for (const k of Object.keys(s.paused || {})) {
     const p = s.paused[k]
     if (p.languageProfileId != null && profileMap.has(p.languageProfileId)) p.languageProfileId = profileMap.get(p.languageProfileId)
+    if (p.entryId != null && entryMap.has(p.entryId)) p.entryId = entryMap.get(p.entryId)
   }
   const openingMap = new Map()
   for (const o of s.zoo.openings) if (o.id < SMALL) { const n = uid(); openingMap.set(o.id, n); o.id = n }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
-  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING,
+  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry
 } from '../store.js'
 import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
@@ -9,7 +9,7 @@ import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance,
 import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
-import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, continueHere } from './timers.js'
+import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, continueHere, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
 
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
@@ -57,6 +57,7 @@ export function Home({ nav }) {
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])
   const recent = sorted.filter((e) => e.languageProfileId != null).slice(0, 5)
   const uncategorized = s.settings.logUncategorized ? sorted.filter((e) => e.languageProfileId == null) : []
+  const paused = running.length ? null : pausedEntry()
   const activeProfile = running.map((e) => profileById(e.languageProfileId)).find((p) => p && !p.isAnki)
   // Desktop: Space stops what's running (the newest one), or resumes the last session.
   useEffect(() => {
@@ -66,6 +67,7 @@ export function Home({ nav }) {
       e.preventDefault()
       const live = RUNNING_ORDER.map((t) => getState().entries.find((x) => x.endTimeMillis == null && x.contentType === t)).filter(Boolean)
       if (live.length) stopTimer(live.reduce((a, b) => (b.startTimeMillis > a.startTimeMillis ? b : a)))
+      else if (pausedEntry()) resumeTimer(pausedEntry())
       else {
         const last = lastSession()
         if (last) startTimer(last.contentType, last.languageProfileId, last.mediaTitle)
@@ -93,7 +95,9 @@ export function Home({ nav }) {
 
       {running.length
         ? running.map((e) => <NowTrackingBanner key={e.id} entry={e} now={now} light={light} mode={s.settings.goalCardStyleMode} />)
-        : <IdleBanner onOther={() => setManual({})} />}
+        : paused
+          ? <NowTrackingBanner entry={paused} now={now} light={light} mode={s.settings.goalCardStyleMode} paused onOpen={() => paused.id != null && setDetails(paused.id)} />
+          : <IdleBanner now={now} onOther={() => setManual({})} />}
 
       <div class="today-row">
         <h2>Today</h2>
@@ -149,9 +153,10 @@ function Title({ mode, active, light }) {
 }
 
 /** The phone's NowTrackingBanner: the language's colour taken down to a background, its outline,
- *  "Listening · Japanese · 12:34" in the language colour, the title, and stop / discard. A session
- *  the phone is tracking says so, with Continue here: stop it there, carry on with a timer here. */
-function NowTrackingBanner({ entry, now, light, mode }) {
+ *  "Listening · Japanese · 12:34" in the language colour, the title, and pause / stop / discard. A
+ *  session the phone is tracking says so, with Continue here: stop it there, carry on with a timer
+ *  here. [paused]: a paused timer - play resumes it, and a tap opens it like any saved entry. */
+function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) {
   const profile = profileById(entry.languageProfileId)
   const [edit, setEdit] = useState(false)
   const color = profile?.colorHex || '#6FA8C9'
@@ -163,31 +168,34 @@ function NowTrackingBanner({ entry, now, light, mode }) {
   const ink = light ? deepened(color, 0.42) : color
   const phone = fromPhone(entry)
   return (
-    <div class="now-banner" style={{ background: bg, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => setEdit(true)}>
+    <div class="now-banner" style={{ background: bg, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
       <div class="grow">
         <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} · {profile?.name || 'Uncategorized'} · {formatClock(durationOf(entry, now))}</div>
         {entry.mediaTitle && <div class="small ellipsis">{entry.mediaTitle}</div>}
         <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>
-          {phone ? 'On your phone' : 'Manual · tap to edit title or time'}
-          {phone && (entry.contentType === PODCAST || entry.contentType === READING) && (
+          {paused ? 'Paused · tap to edit' : phone ? 'On your phone' : 'Manual · tap to edit title or time'}
+          {phone && !paused && (entry.contentType === PODCAST || entry.contentType === READING) && (
             <button class="continue-here" style={{ color: ink, borderColor: withAlpha(color, 0.6) }} title="Stop it on the phone and carry on with a timer here"
               onClick={(ev) => { ev.stopPropagation(); continueHere(entry) }}>Continue here</button>
           )}
         </div>
       </div>
-      <button class="stop" style={{ color: ink }} title="Stop and save (Space)" onClick={(ev) => { ev.stopPropagation(); stopTimer(entry) }}><span /></button>
-      <button class="stop" style={{ color: ink }} title="Discard without counting its time" onClick={(ev) => { ev.stopPropagation(); discardTimer(entry) }}><Icon name="close" size={18} /></button>
+      {paused
+        ? <button class="stop" style={{ color: ink }} title="Resume (Space)" onClick={(ev) => { ev.stopPropagation(); resumeTimer(entry) }}><Icon name="play_arrow" size={24} /></button>
+        : !phone && <button class="stop" style={{ color: ink }} title="Pause" onClick={(ev) => { ev.stopPropagation(); pauseTimer(entry) }}><Icon name="pause" size={22} /></button>}
+      <button class="stop" style={{ color: ink }} title={paused ? 'Stop and save' : 'Stop and save (Space)'} onClick={(ev) => { ev.stopPropagation(); paused ? stopPausedTimer(entry) : stopTimer(entry) }}><span /></button>
+      <button class="stop" style={{ color: ink }} title="Discard without counting its time" onClick={(ev) => { ev.stopPropagation(); paused ? discardPausedTimer(entry) : discardTimer(entry) }}><Icon name="close" size={18} /></button>
       {edit && <EditElapsedDialog entry={entry} onClose={() => setEdit(false)} />}
     </div>
   )
 }
 
-/** Not tracking: your last session, one tap from running again, and the way to start anything
- *  else. (With nothing to resume, the whole banner opens Add a session.) */
-function IdleBanner({ onOther }) {
+/** Not tracking: your last session, one tap from running again (until the Resume button
+ *  setting's time since it ended passes), and the way to start anything else. (With nothing to resume, the whole banner opens Add a session.) */
+function IdleBanner({ now, onOther }) {
   useStore()
-  const last = lastSession()
+  const last = lastSession(now)
   if (!last) return <div class="idle-banner" role="button" onClick={onOther}>Not tracking · tap to start a session</div>
   const profile = profileById(last.languageProfileId)
   const color = profile?.colorHex || '#6FA8C9'

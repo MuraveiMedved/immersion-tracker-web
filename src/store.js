@@ -41,6 +41,7 @@ export function defaultState() {
       showRaceTab: true,
       showZooTab: true,
       showAnkiOnHome: true,
+      resumeHideMinutes: 60,
       logUncategorized: true,
       entryThresholdEnabled: false,
       entryThresholdSeconds: 30,
@@ -80,7 +81,7 @@ export function defaultState() {
     },
     zoo: { base: null, openings: [], grants: [], tradeIns: [], eggs: {}, nametags: [], trophyId: null },
     // This device's sign-in to the sync server - never synced itself.
-    sync: { url: '', token: '', accountId: '', sinceRev: 0, lastSync: 0, error: '' },
+    sync: { url: '', token: '', accountId: '', sinceRev: 0, lastSync: 0, lastReconcile: 0, error: '' },
   }
 }
 
@@ -289,7 +290,8 @@ export function startManualEntry(type, languageProfileId, title) {
   let id = null
   update((s) => {
     const now = Date.now()
-    delete s.paused[type]
+    // A new session replaces a paused one, which stays in history as it is.
+    s.paused = {}
     for (const t of ALL_TYPES) closeRunning(s, t, now)
     id = addEntry(s, {
       startTimeMillis: now,
@@ -330,23 +332,79 @@ export function stopRunningEntry(type) {
   })
 }
 
-/** Pause = close the running entry, remembering what it was so Resume starts the same again. */
+/** Pause = stop counting without ending the session: the running entry is closed now (without the
+ *  minimum-length rule - that's for when it really ends) and remembered, so Resume carries on with
+ *  that same entry. Synced as prefs "paused": { [type]: { entryId, title, languageProfileId } } -
+ *  title and language are what older versions resumed from. */
 export function pauseRunningEntry(type) {
   update((s) => {
     const r = s.entries.find((e) => e.endTimeMillis == null && e.contentType === type)
     if (!r) return
-    s.paused[type] = { title: r.mediaTitle, languageProfileId: r.languageProfileId }
-    closeRunning(s, type, Date.now())
+    r.endTimeMillis = Date.now()
+    s.paused = { [type]: { entryId: r.id, title: r.mediaTitle, languageProfileId: r.languageProfileId } }
   })
 }
 
-export function resumePaused(type) {
-  const p = state.paused[type]
-  if (p) startManualEntry(type, p.languageProfileId, p.title)
+/** The paused session's entry, while it's still in history and still stopped. */
+export function pausedEntry() {
+  for (const [type, p] of Object.entries(state.paused || {})) {
+    const e = p.entryId != null && state.entries.find((x) => x.id === p.entryId && x.endTimeMillis != null)
+    if (e) return e
+    // Paused by an older version (no entry id): what to start again, as before.
+    if (p.entryId == null) return { id: null, contentType: type, mediaTitle: p.title, languageProfileId: p.languageProfileId, startTimeMillis: 0, endTimeMillis: 0 }
+  }
+  return null
 }
 
+/** Carries on the paused session as the same entry, its start moved forward by the paused gap so
+ *  that gap never counts (the phone's TimeEntryDao.reopenAsRunning). Whatever else is running
+ *  stops - one session at a time. */
+export function resumePaused(type) {
+  const p = state.paused[type]
+  if (!p) return
+  const paused = p.entryId != null && state.entries.find((e) => e.id === p.entryId && e.endTimeMillis != null)
+  if (!paused) {
+    if (p.entryId == null) startManualEntry(type, p.languageProfileId, p.title)
+    else dismissPaused(type)
+    return
+  }
+  update((s) => {
+    const now = Date.now()
+    s.paused = {}
+    for (const t of ALL_TYPES) closeRunning(s, t, now)
+    const e = s.entries.find((x) => x.id === paused.id)
+    if (!e) return
+    e.startTimeMillis += Math.max(0, now - e.endTimeMillis)
+    e.endTimeMillis = null
+  })
+}
+
+/** Stop on a paused session: it stays as it is - unless it's under the minimum entry length, the
+ *  same rule as stopping it while running. */
 export function dismissPaused(type) {
-  update((s) => { delete s.paused[type] })
+  update((s) => {
+    const p = s.paused[type]
+    delete s.paused[type]
+    const min = minEntryMillis()
+    if (p?.entryId != null) s.entries = s.entries.filter((e) => !(e.id === p.entryId && e.endTimeMillis != null && e.endTimeMillis - e.startTimeMillis < min))
+  })
+}
+
+/** Undo for stopping or discarding a paused session: paused again, the entry put back if it went. */
+export function restorePaused(snapshot) {
+  update((s) => {
+    if (!s.entries.some((e) => e.id === snapshot.id)) s.entries.push({ ...snapshot })
+    s.paused = { [snapshot.contentType]: { entryId: snapshot.id, title: snapshot.mediaTitle, languageProfileId: snapshot.languageProfileId } }
+  })
+}
+
+/** Discard on a paused session - removed without counting its time. */
+export function discardPaused(type) {
+  update((s) => {
+    const p = s.paused[type]
+    delete s.paused[type]
+    if (p?.entryId != null) s.entries = s.entries.filter((e) => !(e.id === p.entryId && e.endTimeMillis != null))
+  })
 }
 
 export function deleteRunningEntry(type) {

@@ -5,6 +5,7 @@ import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntri
 import { formatHm } from '../model/time.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
 import { AccountSection } from './Account.jsx'
+import { RESUME_HIDE_CHOICES, resumeHideLabel } from './timers.js'
 import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorPicker, GoalModeChoice, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
 
 const SCRIPTS = [
@@ -64,9 +65,12 @@ export function Settings({ params, nav }) {
       {/* Everything about using this history on other devices, behind one row - as on the phone. */}
       <Block collapsible icon="smartphone" title="Devices & sync" summary={s.sync.token ? 'Linked - syncing with your other devices' : 'Link your Android phone or other devices'} onOpen={() => setView('account')} />
 
-      <Block collapsible icon="timer" title="Tracking" summary="Show Anki on Home, Uncategorized logs, Entry threshold">
+      <Block collapsible icon="timer" title="Tracking" summary="Show Anki on Home, Resume button, Uncategorized logs, Entry threshold">
         <SettingRow icon={<TypeIcon type="ANKI" size={22} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
           <Switch checked={s.settings.showAnkiOnHome} onChange={(v) => setSetting('showAnkiOnHome', v)} />
+        </SettingRow>
+        <SettingRow icon="play_arrow" title="Resume button" hint="How long Home offers your last session again after it ends.">
+          <ResumeHideStepper minutes={s.settings.resumeHideMinutes ?? 60} />
         </SettingRow>
         <SettingRow icon="folder" title="Uncategorized logs" hint="Allow sessions with no language and collect them in an Uncategorized folder on Home.">
           <Switch checked={s.settings.logUncategorized} onChange={(v) => setSetting('logUncategorized', v)} />
@@ -483,5 +487,19 @@ function PhoneImportDialog({ data, onClose }) {
         </SettingRow>
       </div>
     </Dialog>
+  )
+}
+
+/** −/+ through the Resume button's hide-after choices, ending at "Always" (as the phone's ResumeHideRow). */
+function ResumeHideStepper({ minutes }) {
+  const at = RESUME_HIDE_CHOICES.indexOf(minutes)
+  const i = at >= 0 ? at : RESUME_HIDE_CHOICES.indexOf(60)
+  const step = (d) => setSetting('resumeHideMinutes', RESUME_HIDE_CHOICES[i + d])
+  return (
+    <div class="row" style="gap:4px;flex-shrink:0">
+      <button class="icon-btn filled" title="Shorter" disabled={i === 0} onClick={() => step(-1)}>−</button>
+      <b style="width:56px;text-align:center">{resumeHideLabel(RESUME_HIDE_CHOICES[i])}</b>
+      <button class="icon-btn filled" title="Longer" disabled={i === RESUME_HIDE_CHOICES.length - 1} onClick={() => step(1)}>＋</button>
+    </div>
   )
 }

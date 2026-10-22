@@ -1,7 +1,7 @@
 // Every start / stop / switch / discard of a live timer goes through here, so each one is a single
 // tap with an Undo in its toast instead of a confirm dialog - timers get started and stopped many
 // times a day, and a mis-tap should cost one more tap, not a trip into the entry list.
-import { getState, startManualEntry, stopRunningEntry, deleteRunningEntry, reopenEntry, discardEntry, profileById, runningEntry, WEB_APP, PODCAST, READING, ANKI } from '../store.js'
+import { getState, startManualEntry, stopRunningEntry, deleteRunningEntry, reopenEntry, discardEntry, profileById, runningEntry, pauseRunningEntry, resumePaused, dismissPaused, discardPaused, restorePaused, WEB_APP, PODCAST, READING, ANKI } from '../store.js'
 import { durationOf } from '../model/rules.js'
 import { formatHm } from '../model/time.js'
 import { toast } from './common.jsx'
@@ -81,6 +81,36 @@ export function continueHere(entry) {
   })
 }
 
+/** Pauses a running timer: its time stops counting, and Resume carries on with the same session
+ *  (the paused gap never counts). No toast - the banner itself turns into the paused one. */
+export function pauseTimer(entry) {
+  pauseRunningEntry(entry.contentType)
+}
+
+export function resumeTimer(entry) {
+  resumePaused(entry.contentType)
+}
+
+/** Stop on a paused timer: saved as it is; Undo leaves it paused. */
+export function stopPausedTimer(entry) {
+  const snapshot = { ...entry }
+  const ms = durationOf(entry)
+  dismissPaused(entry.contentType)
+  if (entry.id == null) return
+  toast(ms < 60000 ? 'Stopped - too short to count' : `${formatHm(ms)} of ${sessionName(entry.contentType, entry.languageProfileId)} saved`, {
+    label: 'Undo',
+    run: () => restorePaused(snapshot),
+  })
+}
+
+/** Discard on a paused timer; Undo brings it back, still paused. */
+export function discardPausedTimer(entry) {
+  const snapshot = { ...entry }
+  discardPaused(entry.contentType)
+  if (entry.id == null) return
+  toast('Session discarded', { label: 'Undo', run: () => restorePaused(snapshot) })
+}
+
 /** Throws a running timer away without counting it; Undo brings it back, still running. */
 export function discardTimer(entry) {
   const snapshot = { ...entry }
@@ -95,13 +125,21 @@ export function toggleTimer(type, languageProfileId) {
   else startTimer(type, languageProfileId)
 }
 
+/** Settings > Tracking > Resume button: minutes after a session ends that Resume still offers it,
+ *  shortest first; 0 = always (as the phone's TrackingRepository.RESUME_HIDE_CHOICES). Per device. */
+export const RESUME_HIDE_CHOICES = [15, 30, 60, 180, 0]
+export const resumeHideLabel = (m) => (m === 0 ? 'Always' : m % 60 === 0 ? `${m / 60}h` : `${m}m`)
+
 /** The most recent web-app session that can be resumed in one tap, when nothing's running. Sessions
- *  synced from the phone are skipped - the Resume bar only offers what was tracked here. */
-export function lastSession() {
+ *  synced from the phone are skipped - the Resume bar only offers what was tracked here. Once the
+ *  Resume button setting's time has passed since it ended, there's none. */
+export function lastSession(now = Date.now()) {
+  const hideMinutes = getState().settings.resumeHideMinutes ?? 60
   let best = null
   for (const e of getState().entries) {
     if (e.endTimeMillis == null || e.appPackage !== WEB_APP || (e.contentType !== PODCAST && e.contentType !== READING && e.contentType !== ANKI)) continue
     if (!best || e.endTimeMillis > best.endTimeMillis) best = e
   }
+  if (best && hideMinutes > 0 && now - best.endTimeMillis >= hideMinutes * 60000) return null
   return best
 }
