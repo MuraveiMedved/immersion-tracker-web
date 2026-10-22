@@ -3,14 +3,14 @@
 
 export const PRESETS = [
   'OBSIDIAN', 'MIDNIGHT', 'SLATE', 'DUSK', 'FOG', 'AMOLED', 'MAROON', 'OXBLOOD', 'FOREST', 'OCEAN',
-  'AMETHYST', 'SAKURA', 'ESPRESSO', 'SYNTHWAVE', 'PAPER', 'IVORY', 'PEARL', 'MINT',
+  'AMETHYST', 'SAKURA', 'ESPRESSO', 'SYNTHWAVE', 'PAPER', 'IVORY', 'PEARL', 'MINT', 'GREEN_TEA',
 ]
-export const presetLabel = (p) => (p === 'AMOLED' ? 'AMOLED' : p[0] + p.slice(1).toLowerCase())
-export const isLightPreset = (p) => p === 'PAPER' || p === 'IVORY' || p === 'PEARL' || p === 'MINT'
+export const presetLabel = (p) => (p === 'AMOLED' ? 'AMOLED' : p.split('_').map((w) => w[0] + w.slice(1).toLowerCase()).join(' '))
+export const isLightPreset = (p) => p === 'PAPER' || p === 'IVORY' || p === 'PEARL' || p === 'MINT' || p === 'GREEN_TEA'
 
 const DELTA = {
   OBSIDIAN: -0.085, MIDNIGHT: -0.045, SLATE: 0, DUSK: 0.06, FOG: 0.11, AMOLED: -0.125, MAROON: 0, OXBLOOD: -0.05,
-  FOREST: 0, OCEAN: 0, AMETHYST: 0, SAKURA: 0.02, ESPRESSO: 0, SYNTHWAVE: 0, PAPER: 0.035, IVORY: 0.03, PEARL: 0.03, MINT: 0.025,
+  FOREST: 0, OCEAN: 0, AMETHYST: 0, SAKURA: 0.02, ESPRESSO: 0, SYNTHWAVE: 0, PAPER: 0.035, IVORY: 0.03, PEARL: 0.03, MINT: 0.025, GREEN_TEA: 0.02,
 }
 const TINT = {
   AMOLED: { surfaceSat: 0 },
@@ -26,6 +26,7 @@ const TINT = {
   IVORY: { surfaceHue: 42, surfaceSat: 1.4, accentHue: 28, lightSat: 0.1 },
   PEARL: { surfaceHue: 222, lightSat: 0.05 },
   MINT: { surfaceHue: 150, accentHue: 168, lightSat: 0.08 },
+  GREEN_TEA: { surfaceHue: 78, surfaceSat: 1.2, accentHue: 92, lightSat: 0.1 },
 }
 
 const DARK = {
