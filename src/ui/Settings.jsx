@@ -47,8 +47,7 @@ export function Settings({ params, nav }) {
     <>
       <h1 class="page-title">Settings</h1>
 
-      <Block collapsible icon="palette" title="Appearance" summary="Ring style, colors & display" onOpen={() => setView('appearance')} />
-
+      {/* Most-reached-for first, set-once things last - the phone's order. */}
       <Block collapsible icon="language" title="Languages" summary={languages.map((p) => p.name).join(', ') || 'No languages yet'} action={<button class="icon-btn" title="Add language" style="margin-right:-8px" onClick={() => setEditing('new')}><Icon name="add" /></button>}>
         {!languages.length && <div class="muted" style="padding:8px 0">No languages yet - tap + to add one.</div>}
         {languages.map((p) => (
@@ -61,9 +60,6 @@ export function Settings({ params, nav }) {
           </div>
         ))}
       </Block>
-
-      {/* Everything about using this history on other devices, behind one row - as on the phone. */}
-      <Block collapsible icon="smartphone" title="Devices & sync" summary={s.sync.token ? 'Linked - syncing with your other devices' : 'Link your Android phone or other devices'} onOpen={() => setView('account')} />
 
       <Block collapsible icon="timer" title="Tracking" summary="Show Anki on Home, Resume button, Uncategorized logs, Entry threshold">
         <SettingRow icon={<TypeIcon type="ANKI" size={22} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
@@ -88,6 +84,8 @@ export function Settings({ params, nav }) {
         )}
       </Block>
 
+      <Block collapsible icon="palette" title="Appearance" summary="Ring style, colors & display" onOpen={() => setView('appearance')} />
+
       <Block collapsible icon="flag" title="Race" summary="Social tab">
         <SettingRow icon="groups" title="Social tab" hint="Show races and friends as a tab in the bottom bar.">
           <Switch checked={s.settings.showRaceTab} onChange={(v) => setSetting('showRaceTab', v)} />
@@ -99,6 +97,9 @@ export function Settings({ params, nav }) {
           <Switch checked={s.settings.showZooTab} onChange={(v) => setSetting('showZooTab', v)} />
         </SettingRow>
       </Block>
+
+      {/* Everything about using this history on other devices, behind one row - as on the phone. */}
+      <Block collapsible icon="smartphone" title="Devices & sync" summary={s.sync.token ? 'Linked - syncing with your other devices' : 'Link your Android phone or other devices'} onOpen={() => setView('account')} />
 
       <Block collapsible icon="cloud" title="Backup" summary="Download, restore, import from Android, Toggl, PolyLogger">
         <div class="muted small" style="padding-bottom:4px">{s.sync.token ? 'Your data is also saved to your account. A downloaded file is an extra copy you keep yourself.' : 'Everything lives in this browser only. Download a backup now and then, or link it in Your devices - clearing the browser\'s site data loses it otherwise.'}</div>
