@@ -149,6 +149,9 @@ function Title({ mode, active, light }) {
       ? <h1 class="app-title gradient" style={{ backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.5) : c)).join(', ')})`, fontWeight: 900 }}>Immersion Tracker</h1>
       : <h1 class="app-title" style={{ color: light ? deepened(active.colorHex, 0.5) : active.colorHex, fontWeight: 900 }}>Immersion Tracker</h1>
   }
+  // The current-language title is always this bold, coloured or not: the bolder text is wider, and
+  // switching weight as a session gained or lost its language could wrap it to two lines and back.
+  if (mode === 'CURRENT_LANGUAGE') return <h1 class="app-title" style="font-weight:900">Immersion Tracker</h1>
   return <h1 class="app-title">Immersion Tracker</h1>
 }
 
