@@ -9,14 +9,17 @@ const session = (start, hours, { type = 'PODCAST', language = 1, running = false
   startTimeMillis: start, endTimeMillis: running ? null : start + hours * HOUR, contentType: type, languageProfileId: language,
 })
 
-test('challenges: weeks and months from when they became local', () => {
+test('challenges: weeks and months from October 3', () => {
   const sprints = localSprints([], at(2026, 11, 4))
-  assert.deepEqual(sprints.map((s) => s.key), ['W20261102', 'M202611', 'W20261026', 'M202610', 'W20261019'])
+  assert.deepEqual(sprints.map((s) => s.key), ['W20261102', 'M202611', 'W20261026', 'M202610', 'W20261019', 'W20261012', 'W20261005', 'W20260928'])
   assert.ok(sprints[0].current && sprints[1].current)
   assert.ok(sprints.slice(2).every((s) => s.ended && !s.current))
   assert.ok(sprints.every((s) => s.eventId === LOCAL_ID))
-  assert.equal(sprints[0].firstDay, 20261102)
-  assert.equal(sprints[0].lastDay, 20261108)
+  const first = sprints.find((s) => s.key === 'W20260928')
+  assert.deepEqual([first.firstDay, first.lastDay], [20261003, 20261004])
+  assert.equal(sprints.find((s) => s.key === 'M202610').firstDay, 20261003)
+  const early = localSprints([session(at(2026, 10, 2), 6), session(at(2026, 10, 3), 2)], at(2026, 10, 4))
+  assert.equal(early.find((s) => s.key === 'W20260928').myMillis, 2 * HOUR)
 })
 
 test('challenges: a week counts own immersion and pays one blue', () => {
@@ -40,7 +43,7 @@ test('challenges: a running session counts to now; one across 4 AM is split', ()
 })
 
 test('challenges: a month pays a nametag at 70h and an epic at 100h', () => {
-  const entries = Array.from({ length: 25 }, (_, i) => session(at(2026, 10, i + 1), 4))
+  const entries = Array.from({ length: 26 }, (_, i) => session(at(2026, 10, i + 3), 4))
   const oct = localSprints(entries, at(2026, 11, 2)).find((s) => s.key === 'M202610')
   assert.deepEqual(oct.earned.map((m) => m.rarity), [null, 'PURPLE'])
   assert.equal(oct.earned[0].prizeKey, 'SPRINT:local:M202610:NAMETAG')

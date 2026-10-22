@@ -2,7 +2,7 @@
 // tied to any race, mirroring the phone's data/race/RaceSprints.kt exactly. Weekly runs every week
 // (Monday to Sunday), Monthly every calendar month, each from 4 AM. Progress is this person's
 // immersion (rules.js counts - listening and reading in a language, as Momentum) from their own
-// sessions. A reward is collectable the moment it's reached: a Weekly pays one random blue animal
+// sessions, from Oct 3, 2026 on. A reward is collectable the moment it's reached: a Weekly pays one random blue animal
 // at 20h; a Monthly a nametag at 70h and a purple at 100h. An animal collected is a Zoo opening
 // stored with its prize key as the rarity ("SPRINT:local:<key>:<RARITY>"), a nametag a Zoo nametag
 // row with it as its id ("...:NAMETAG"). They used to run inside each race ("SPRINT:<race id>:...")
@@ -37,9 +37,9 @@ function monthEnd(n) {
 
 /** What stands in a prize key's race slot now that challenges are this person's own. */
 export const LOCAL_ID = 'local'
-/** The first week (a Monday) and month challenges run as this person's own (RaceSprints.LOCAL_FIRST_*). */
-const FIRST_WEEK = 20261019
-const FIRST_MONTH = 20261001
+/** The day challenges begin (RaceSprints.LOCAL_FIRST_DAY): the first Weekly and Monthly start here,
+ *  part-way through their week and month; nothing before it counts. */
+const FIRST_DAY = 20261003
 
 /** The 4 AM that starts race day `ymd` (yyyymmdd), in this browser's time. */
 const dayStartMs = (k) => new Date(Math.floor(k / 10000), Math.floor(k / 100) % 100 - 1, k % 100, RACE_DAY_START_HOUR).getTime()
@@ -51,7 +51,7 @@ export function localSprints(entries, now) {
   const todayKey = raceDayKeyLocal(now)
   if (!isValidYmd(todayKey)) return []
   const today = ed(todayKey)
-  const countFrom = dayStartMs(FIRST_MONTH) - RACE_DAY_START_HOUR * HOUR
+  const countFrom = dayStartMs(FIRST_DAY)
   const byDay = new Map()
   for (const e of entries) {
     if (!counts(e.contentType, e.languageProfileId)) continue
@@ -69,10 +69,12 @@ export function localSprints(entries, now) {
 
   const out = []
   for (const kind of SPRINT_KINDS) {
-    let start = ed(kind.id === 'WEEKLY' ? FIRST_WEEK : FIRST_MONTH)
+    const firstDay = ed(FIRST_DAY)
+    let start = kind.id === 'WEEKLY' ? firstDay - ((((firstDay + 3) % 7) + 7) % 7) : ed(Math.floor(FIRST_DAY / 100) * 100 + 1)
     while (start <= today) {
       const end = kind.id === 'WEEKLY' ? start + 6 : monthEnd(start)
-      const firstKey = ymd(start), lastKey = ymd(end)
+      const first = Math.max(start, firstDay)
+      const firstKey = ymd(first), lastKey = ymd(end)
       let mine = 0
       for (const [k, v] of byDay) if (k >= firstKey && k <= lastKey) mine += Math.max(0, v)
       const key = kind.prefix + (kind.id === 'WEEKLY' ? String(ymd(start)) : String(Math.floor(ymd(start) / 100)))
@@ -85,7 +87,7 @@ export function localSprints(entries, now) {
       out.push({
         eventId: LOCAL_ID, kind: kind.id, key, capHours: kind.capHours, capMillis,
         firstDay: firstKey, lastDay: lastKey, myMillis: mine, ended: today > end,
-        current: today >= start && today <= end,
+        current: today >= first && today <= end,
         // Collectable as soon as reached - no waiting for the period to end.
         milestones, earned: milestones.filter((m) => m.reached),
       })
