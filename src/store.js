@@ -244,6 +244,9 @@ export function newProfile(fields = {}) {
     generalGoalMinutes: 0,
     isMain: false,
     isAnki: false,
+    // Home card's layout: true = half width, rings stacked; false = full width, rings beside the
+    // name; null = not picked (the phone's LanguageProfile.ringsStacked).
+    ringsStacked: null,
     ...fields,
   }
 }
@@ -512,6 +515,21 @@ export function reorderProfiles(orderedIds) {
       const at = s.profiles.findIndex((p) => p.id === id)
       if (s.profiles[at].sortOrder !== i) s.profiles[at] = { ...s.profiles[at], sortOrder: i }
     })
+  })
+}
+
+/** Home's goal cards confirmed in their rearrange mode: [orderedIds]' order (null = unchanged,
+ *  see reorderProfiles) and each switched card's rings stacked or side by side ({ id: stacked },
+ *  the phone's TrackingRepository.setRingsStacked). */
+export function saveGoalCardLayout(orderedIds, stacked) {
+  if (orderedIds) reorderProfiles(orderedIds)
+  const ids = Object.keys(stacked || {})
+  if (!ids.length) return
+  update((s) => {
+    for (const id of ids) {
+      const at = s.profiles.findIndex((p) => p.id === Number(id))
+      if (at >= 0) s.profiles[at] = { ...s.profiles[at], ringsStacked: stacked[id] }
+    }
   })
 }
 

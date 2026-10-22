@@ -238,7 +238,7 @@ export async function readPhoneBackup(file) {
       scriptDetectors: splitList(p.scriptDetectors), keywords: splitList(p.keywords), sortOrder: p.sortOrder ?? p.id,
       podcastGoalMinutes: p.podcastGoalMinutes || 0, readingGoalMinutes: p.readingGoalMinutes || 0,
       generalGoal: !!p.generalGoal, generalGoalMinutes: p.generalGoalMinutes || 0,
-      isMain: !!p.isMain, isAnki: !!p.isAnki,
+      isMain: !!p.isMain, isAnki: !!p.isAnki, ringsStacked: p.ringsStacked == null ? null : !!p.ringsStacked,
     }))
     s.entries = entries.map((e) => ({
       id: e.id, startTimeMillis: e.startTimeMillis, endTimeMillis: e.endTimeMillis ?? null, mediaTitle: e.mediaTitle || '',

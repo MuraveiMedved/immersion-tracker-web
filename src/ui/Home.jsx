@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
-  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, reorderProfiles, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry
+  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry
 } from '../store.js'
 import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
@@ -39,23 +39,31 @@ export function Home({ nav }) {
   const sortedCards = s.profiles
     .filter((p) => (p.isAnki ? s.settings.showAnkiOnHome : hasGoal(p)))
     .sort((a, b) => a.sortOrder - b.sortOrder)
-  const drag = useGoalCardDrag(sortedCards.map((p) => p.id), reorderProfiles)
+  const drag = useGoalCardDrag(sortedCards, saveGoalCardLayout)
   const cards = drag.order
     ? drag.order.map((id) => sortedCards.find((p) => p.id === id)).filter(Boolean).concat(sortedCards.filter((p) => !drag.order.includes(p.id)))
     : sortedCards
-  // An odd number of cards: one goes full width - the main language, at the top.
-  const oddOne = cards.length % 2 === 1 ? cards.find((p) => p.isMain) || cards[cards.length - 1] : null
-  const grid = cards.filter((p) => p !== oddOne)
-  const oddLeads = oddOne && (oddOne.isMain || !grid.length)
-  const columns = [[], []]
-  const weights = [0, 0]
-  for (const p of grid) {
+  // A card's width follows its rings (the phone's GoalCardsGrid): side by side = full width,
+  // stacked = half. Unpicked cards are half width, except an odd one out: when the half-width cards
+  // add up to an odd number, one unpicked card goes full width - the main language (placed first),
+  // else the last unpicked one (left where it is). A card picked as stacked is never widened.
+  const halves = cards.filter((p) => drag.stackedOf(p) !== false)
+  const unpicked = halves.filter((p) => drag.stackedOf(p) == null)
+  const oddOne = halves.length % 2 === 1 ? unpicked.find((p) => p.isMain) || unpicked[unpicked.length - 1] || null : null
+  const isWide = (p) => drag.stackedOf(p) === false || p === oddOne
+  const laidOut = oddOne?.isMain ? [oddOne, ...cards.filter((p) => p !== oddOne)] : cards
+  // Full-width cards keep their place and split the half-width ones into separate two-column runs.
+  const blocks = []
+  for (const p of laidOut) {
+    if (isWide(p)) { blocks.push({ wide: p }); continue }
+    let run = blocks[blocks.length - 1]
+    if (!run || run.wide) blocks.push(run = { columns: [[], []], weights: [0, 0] })
     // Roughly the card's height: the name row plus each ring (about twice as tall). The Anki
     // card's time-only ring counts too, or every card after it piled into one column.
     const w = 1 + 2 * ((listeningGoalOf(p) > 0) + (readingGoalOf(p) > 0) + (generalGoalOf(p) > 0) + (p.isAnki ? 1 : 0))
-    const i = weights[0] <= weights[1] ? 0 : 1
-    columns[i].push(p)
-    weights[i] += w
+    const i = run.weights[0] <= run.weights[1] ? 0 : 1
+    run.columns[i].push(p)
+    run.weights[i] += w
   }
   const languages = s.profiles.filter((p) => !p.isAnki)
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])
@@ -81,7 +89,9 @@ export function Home({ nav }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-  const card = (p, wide) => <GoalCard key={p.id} profile={p} now={now} running={running} light={light} wide={wide} lifted={drag.id === p.id} onOpen={() => setGoalCard(p.id)} />
+  const card = (p, wide) => <GoalCard key={p.id} profile={p} now={now} running={running} light={light} wide={wide}
+    lifted={drag.id === p.id} selected={drag.selected === p.id} stacked={drag.stackedOf(p) === true}
+    onToggleStacked={drag.selected === p.id ? () => drag.toggleStacked(p, wide) : null} onOpen={() => setGoalCard(p.id)} />
 
   return (
     <>
@@ -106,6 +116,8 @@ export function Home({ nav }) {
       <div class="today-row">
         <h2>Today</h2>
         <MomentumPill days={goldenDays} progress={goldenToday / GOLDEN_DAILY_MILLIS} onClick={() => setGolden(true)} />
+        {/* Rearranging the goal cards (a long press on one starts it): the checkmark saves. */}
+        {drag.editing && <button class="icon-btn reorder-done" title="Done rearranging" onClick={drag.confirm}><Icon name="check" /></button>}
         <button class="icon-btn" title="Entries" onClick={() => nav('entries', { tab: 'entries' })}><Icon name="list" /></button>
       </div>
 
@@ -116,10 +128,10 @@ export function Home({ nav }) {
           <button class="btn" onClick={() => nav('settings', { addLanguage: true })}>Add language</button>
         </div>
       ) : (
-        <div class="goal-area" {...drag.handlers}>
-          {oddOne && oddLeads && card(oddOne, true)}
-          {grid.length > 0 && <div class="goal-cols">{columns.map((col, i) => <div key={i}>{col.map((p) => card(p, false))}</div>)}</div>}
-          {oddOne && !oddLeads && card(oddOne, true)}
+        <div {...drag.handlers}>
+          {blocks.map((b, n) => (b.wide
+            ? card(b.wide, true)
+            : <div class="goal-cols" key={`run${n}`}>{b.columns.map((col, i) => <div key={i}>{col.map((p) => card(p, false))}</div>)}</div>))}
         </div>
       )}
 
@@ -324,19 +336,28 @@ function EditElapsedDialog({ entry, onClose }) {
 const LONG_PRESS_MS = 500
 const PRESS_SLOP = 8
 
-/** Long-press a goal card to pick it up and drag it over another to take that one's place, like
- *  the phone's GoalCardsGrid; letting go hands the new order to [onDrop] (ids, first to last).
- *  Returns the order to show while dragging (and until the saved one comes back - null otherwise),
- *  the lifted card's id, and the handlers for the cards' wrapper. The lifted card follows the
- *  finger by a transform worked out from wherever it's laid out now, since it can change column or
- *  go full-width as the others move. */
-function useGoalCardDrag(ids, onDrop) {
-  const [state, setState] = useState(null) // { id, order }
-  const live = useRef(null) // { id, order, start, x, y, grabX, grabY, lastSwap }
+/** Rearranging the goal cards, like the phone's GoalCardsGrid / GoalCardsReorderState. Outside it
+ *  the cards are left alone (a drag scrolls as usual); only a long press on a card starts it.
+ *  While it's on, the selected card is highlighted, a card is picked up (and selected) as soon as
+ *  it's touched and dragged over another to take that one's place, taps don't open cards, and the
+ *  selected card can switch between half width (rings stacked) and full width (rings beside the
+ *  name). Nothing is saved
+ *  until confirm() (the checkmark) hands [onSave] the new order (ids, first to last - null if
+ *  unchanged) and the switched rings ({ id: stacked }); Escape drops it all. The lifted card
+ *  follows the finger by a transform worked out from wherever it's laid out now, since it can
+ *  change column or go full-width as others move. */
+function useGoalCardDrag(cards, onSave) {
+  const ids = cards.map((p) => p.id)
+  const [state, setState] = useState(null) // { order, id (lifted), selected, stacked: { id: bool } }
+  const live = useRef(null) // { id, order, x, y, grabX, grabY, lastSwap }
   const suppressClickUntil = useRef(0)
-  const idsKey = ids.join(',')
-  // The saved order arrived (or the cards changed) - show the store's order again.
-  useEffect(() => { if (state && !live.current) setState(null) }, [idsKey])
+  const editing = !!state
+  useEffect(() => {
+    if (!editing) return
+    const onKey = (e) => { if (e.key === 'Escape') setState(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [editing])
 
   const cardEl = (id) => document.querySelector(`.goal-area [data-goal-id="${id}"]`)
   const follow = () => {
@@ -350,21 +371,24 @@ function useGoalCardDrag(ids, onDrop) {
   useLayoutEffect(follow)
 
   const onPointerDown = (e) => {
-    if (e.button !== 0 || live.current) return
+    if (e.button !== 0 || live.current || e.target.closest('.rings-toggle')) return
     const el = e.target.closest('[data-goal-id]')
     if (!el) return
     const id = Number(el.dataset.goalId)
     const startX = e.clientX, startY = e.clientY
     let x = startX, y = startY
-    let timer = setTimeout(() => {
+    const preventScroll = (ev) => ev.preventDefault()
+    const begin = () => {
       timer = null
       const r = el.getBoundingClientRect()
-      live.current = { id, order: ids, start: ids, x, y, grabX: x - r.left, grabY: y - r.top, lastSwap: null }
-      navigator.vibrate?.(10)
+      const order = state?.order ?? ids
+      live.current = { id, order, x, y, grabX: x - r.left, grabY: y - r.top, lastSwap: null }
+      if (!editing) navigator.vibrate?.(10)
       document.addEventListener('touchmove', preventScroll, { passive: false })
-      setState({ id, order: ids })
-    }, LONG_PRESS_MS)
-    const preventScroll = (ev) => ev.preventDefault()
+      setState((st) => ({ stacked: {}, ...st, order, id, selected: id }))
+    }
+    // Already rearranging: picked up straight away. Otherwise only a long press starts it.
+    let timer = editing ? null : setTimeout(begin, LONG_PRESS_MS)
     const onMove = (ev) => {
       x = ev.clientX
       y = ev.clientY
@@ -386,7 +410,7 @@ function useGoalCardDrag(ids, onDrop) {
         const order = d.order.filter((o) => o !== id)
         order.splice(order.indexOf(overId), 0, id)
         d.order = order
-        setState({ id, order })
+        setState((st) => ({ ...st, order }))
       }
     }
     const end = () => {
@@ -401,33 +425,50 @@ function useGoalCardDrag(ids, onDrop) {
       if (el) el.style.transform = ''
       live.current = null
       suppressClickUntil.current = Date.now() + 400
-      if (d.order.join(',') === d.start.join(',')) setState(null)
-      else {
-        setState({ id: null, order: d.order })
-        onDrop(d.order)
-      }
+      setState((st) => st && { ...st, order: d.order, id: null })
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', end)
     window.addEventListener('pointercancel', end)
+    if (editing) {
+      e.preventDefault()
+      begin()
+    }
   }
+
+  /** Stacked as switched here, else the language's saved choice; null = not picked. */
+  const stackedOf = (p) => state?.stacked?.[p.id] ?? p.ringsStacked ?? null
 
   return {
     order: state?.order ?? null,
     id: state?.id ?? null,
+    selected: state?.selected ?? null,
+    editing,
+    stackedOf,
+    /** Flips the card between full width, rings side by side ([wide] now), and half, stacked. */
+    toggleStacked: (p, wide) => setState((st) => st && { ...st, stacked: { ...st.stacked, [p.id]: wide } }),
+    confirm: () => {
+      const order = state?.order && state.order.join(',') !== ids.join(',') ? state.order : null
+      const stacked = Object.fromEntries(Object.entries(state?.stacked ?? {})
+        .filter(([id, v]) => cards.find((p) => p.id === Number(id))?.ringsStacked !== v))
+      if (order || Object.keys(stacked).length) onSave(order, stacked)
+      setState(null)
+    },
     handlers: {
+      class: `goal-area ${editing ? 'editing' : ''}`,
       onPointerDown,
-      // A long press doesn't also open the card (or start a ring's timer) when it's let go.
-      onClickCapture: (e) => { if (Date.now() < suppressClickUntil.current) { e.stopPropagation(); e.preventDefault() } },
+      // A long press (or anything but the rings button while rearranging) doesn't also open the
+      // card or start a ring's timer when it's let go.
+      onClickCapture: (e) => {
+        if (e.target.closest('.rings-toggle')) return
+        if (editing || Date.now() < suppressClickUntil.current) { e.stopPropagation(); e.preventDefault() }
+      },
       onContextMenu: (e) => { if (e.target.closest('[data-goal-id]')) e.preventDefault() },
     },
   }
 }
 
-/** A goal card as on the phone: the language's colour taken down to a dark (or, on light themes,
- *  pale) card, brighter with an outline while something in it is being tracked; its name in the
- *  language colour; one ring per goal. [wide] puts the rings beside the name. */
-function GoalCard({ profile, now, running, light, wide, lifted, onOpen }) {
+function GoalCard({ profile, now, running, light, wide, lifted, selected, stacked, onToggleStacked, onOpen }) {
   const s = useStore()
   const todayStart = goalDayStart(now) // goal days run from 4 AM
   const todayOf = (type) => s.entries.reduce((t, e) => (e.languageProfileId === profile.id && fillsGoal(type, e.contentType) && e.startTimeMillis >= todayStart ? t + durationOf(e, now) : t), 0)
@@ -449,7 +490,13 @@ function GoalCard({ profile, now, running, light, wide, lifted, onOpen }) {
     ? [[ANKI, 0]]
     : [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)]].filter(([, g]) => g > 0)
   return (
-    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''}`} data-goal-id={profile.id} style={{ background: bg, borderColor: outline }} onClick={onOpen} role="button">
+    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''}`}
+      data-goal-id={profile.id} style={{ background: bg, borderColor: outline }} onClick={onOpen} role="button">
+      {onToggleStacked && (
+        <button class="rings-toggle" title={wide ? 'Rings stacked' : 'Rings side by side'} onClick={(ev) => { ev.stopPropagation(); onToggleStacked() }}>
+          <Icon name="screen_rotation" size={20} />
+        </button>
+      )}
       <div class="name" style={nameStyle}>{profile.name}</div>
       <div class="rings">
       {rings.map(([type, goal]) => {
