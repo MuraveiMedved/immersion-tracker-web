@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useStore, useNow } from '../store.js'
 import { formatHm, formatYmd } from '../model/time.js'
-import { momentumTier } from '../model/rules.js'
+import { momentumTier, counts } from '../model/rules.js'
 import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, claimNametag, setTrophy, takenPrizes } from '../model/zoo.js'
 import { HatchDialog } from './Zoo.jsx'
 import { localSprints, prizesWaiting, sprintEndMillis, sprintStartMillis, waitingIn, isTaken } from '../model/sprints.js'
@@ -36,6 +36,8 @@ export function ChallengesButton({ nav }) {
 export function Challenges({ nav }) {
   const now = useNow(30000)
   const { sprints, taken } = useChallenges(now)
+  // Immersion being tracked right now: the running ones' bars flash white (the phone's whiteFlash).
+  const immersing = useStore().entries.some((e) => e.endTimeMillis == null && counts(e.contentType, e.languageProfileId))
   const { collect, dialog } = useCollect()
   return (
     <>
@@ -43,7 +45,7 @@ export function Challenges({ nav }) {
         <button class="icon-btn" title="Back" onClick={() => nav('zoo')}><Icon name="arrow_back" /></button>
         <h1 class="page-title grow" style="margin:0">Challenges</h1>
       </div>
-      <SprintsPanel now={now} data={{ sprints, taken }} onCollect={collect} />
+      <SprintsPanel now={now} data={{ sprints, taken }} onCollect={collect} immersing={immersing} />
       {dialog}
     </>
   )
@@ -95,7 +97,7 @@ const rewardName = (r) => (r ? RARITY_LABEL[r] : 'nametag')
  *  progress toward its cap and a "+1 card" badge over each reward - no explaining text (the user
  *  wants it visually self-explanatory). Every ended period folds away under "Previous (N)", which
  *  carries a red dot while one has a reward to collect. */
-export function SprintsPanel({ now, data, onCollect }) {
+export function SprintsPanel({ now, data, onCollect, immersing = false }) {
   const [showPrevious, setShowPrevious] = useState(false)
   const { sprints, taken } = data
   const waits = (sp) => (waitingIn(sp, taken).length ? 1 : 0)
@@ -121,7 +123,7 @@ export function SprintsPanel({ now, data, onCollect }) {
               <div class="muted" style="font-size:12px;font-weight:600">{sp.current ? `${left(sprintEndMillis(sp) - now)} left` : 'Ended'}</div>
             </div>
             <div class="sprint-bar">
-              <div class="track"><div class="fill" style={{ width: `${fraction * 100}%`, background: `linear-gradient(90deg, ${rewardColor(sp.milestones[0].rarity)}, ${color})` }} /></div>
+              <div class="track"><div class={`fill ${immersing && sp.current ? 'flashing' : ''}`} style={{ width: `${fraction * 100}%`, background: `linear-gradient(90deg, ${rewardColor(sp.milestones[0].rarity)}, ${color})` }} /></div>
               {sp.milestones.map((m, i) => {
                 const last = i === sp.milestones.length - 1
                 const share = m.millis / sp.capMillis
