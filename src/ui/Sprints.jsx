@@ -126,6 +126,8 @@ export function SprintsPanel({ event, now, data, onCollect }) {
         // How much of its time is gone - stay ahead of the tick to reach the top reward on time.
         const start = sp.current ? sprintStartMillis(event, sp) : 0, end = sp.current ? sprintEndMillis(event, sp) : 0
         const elapsed = sp.current && end > start ? Math.min(1, Math.max(0, (now - start) / (end - start))) : null
+        // Ahead = more of the target done than of the time gone: the tick and the marker turn green.
+        const ahead = elapsed != null && sp.myMillis / sp.capMillis > elapsed
         return (
           <div key={sp.key} class={`sprint-row ${sp.current ? 'current' : ''}`} style={{ '--p': color }}>
             <div class="row" style="gap:8px">
@@ -151,8 +153,16 @@ export function SprintsPanel({ event, now, data, onCollect }) {
                 <span key={m.prizeKey} class={`mark ${m.reached ? 'on' : ''}`} title={`${rewardName(m.rarity)} at ${m.millis / 3600000} h`}
                   style={{ left: `calc((100% - 18px) * ${m.millis / sp.capMillis})`, '--c': rewardColor(m.rarity) }} />
               ))}
-              {elapsed != null && <span class="time-tick" style={{ left: `calc((100% - 18px) * ${elapsed} + 9px)` }} />}
+              {elapsed != null && <span class={`time-tick ${ahead ? 'ahead' : ''}`} style={{ left: `calc((100% - 18px) * ${elapsed} + 9px)` }} />}
             </div>
+            {/* Under the tick: a triangle and "Hurry!" - green with "You're Ahead." once ahead of it
+                (RaceSprintsPanel's SprintPaceMarker). Kept inside the row near either end. */}
+            {elapsed != null && (
+              <div class={`sprint-pace ${ahead ? 'ahead' : ''}`}>
+                <span class="tri" style={{ left: `calc((100% - 18px) * ${elapsed} + 9px)` }} />
+                <span class="word" style={{ left: `clamp(0px, calc((100% - 18px) * ${elapsed} + 9px - 40px), calc(100% - 80px))` }}>{ahead ? "You're Ahead." : 'Hurry!'}</span>
+              </div>
+            )}
             <div class="muted" style="font-size:11px;margin-top:6px">{formatHm(sp.myMillis)} of {sp.capHours} h</div>
             {waiting.length > 0 && <button class="sprint-claim" style={{ backgroundImage: rarityBrush(waiting[0].rarity || 'ORANGE') }} onClick={() => onCollect(waiting[0])}>Collect your {rewardName(waiting[0].rarity)}</button>}
           </div>

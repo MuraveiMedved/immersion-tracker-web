@@ -824,6 +824,11 @@ textarea.input { resize: vertical; }
 .sprint-bar .mark.on { background: var(--c); }
 /* The time tick: how much of the period is gone (100% = its end) - stay ahead of it. */
 .sprint-bar .time-tick { position: absolute; bottom: 1px; width: 3px; height: 16px; margin-left: -1.5px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface) 85%, transparent); box-shadow: 0 0 0 .75px color-mix(in srgb, var(--surface) 60%, transparent); z-index: 1; }
+.sprint-bar .time-tick.ahead { background: #43A047; }
+.sprint-pace { position: relative; height: 22px; margin-top: 1px; color: var(--on-surface-variant); }
+.sprint-pace.ahead { color: #43A047; }
+.sprint-pace .tri { position: absolute; top: 0; margin-left: -5px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 6px solid currentColor; }
+.sprint-pace .word { position: absolute; top: 6px; width: 80px; text-align: center; font-size: 11px; font-weight: 600; white-space: nowrap; }
 /* "+1 [card]" over each reward - one animal card is paid there (faded with a tick once collected). */
 .sprint-badge { position: absolute; top: 0; width: 34px; display: flex; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 900; color: var(--c); line-height: 14px; }
 .sprint-badge.done { opacity: .45; }
