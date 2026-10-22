@@ -21,9 +21,17 @@
  * whole, before or after); an account's latest revision is kept in script properties, so a device
  * that's up to date is answered without opening the file; 'sync' is a push and the first pull page
  * in one call; and which account a token belongs to is cached rather than looked up in the Sheet.
+ *
+ * First stop stands (v3): a session running on the phone can be stopped in the web app, but the
+ * phone only hears that on its next sync - if it stops the session itself first (paused the
+ * player), its later stop used to win as the newer edit, undoing the web's stop and counting the
+ * time twice next to the timer started on the computer. A device that saw an entry running and now
+ * sends it stopped marks the change 'closes'; if the account already has that session stopped
+ * earlier (or discarded), that's kept and the device takes it on its pull. Older devices don't
+ * send the mark and are merged as before.
  */
 
-var SYNC_VERSION = 2;
+var SYNC_VERSION = 3;
 var ACCOUNTS_SHEET = 'Accounts';
 var ACCOUNT_HEADERS = ['accountId', 'fileId', 'name', 'createdAt', 'lastSeen'];
 var DEVICES_SHEET = 'Devices';
@@ -191,7 +199,16 @@ function cleanRecord_(r) {
   var deleted = !!r.deleted;
   var data = deleted ? null : r.data;
   if (!deleted && (data === undefined || JSON.stringify(data).length > MAX_RECORD_CHARS)) return null;
-  return { coll: r.coll, id: id, updatedAt: updatedAt, deleted: deleted, data: data };
+  return { coll: r.coll, id: id, updatedAt: updatedAt, deleted: deleted, data: data, closes: !deleted && r.closes === true };
+}
+
+/** Whether [old] - the account's copy of an entry a device is now sending stopped ('closes') -
+ *  was already stopped no later than that, or discarded, by another device. */
+function stoppedFirst_(old, r) {
+  if (r.coll !== 'entry' || !old) return false;
+  if (old.deleted) return true;
+  var end = old.data && old.data.endTimeMillis;
+  return end != null && r.data && r.data.endTimeMillis != null && Number(end) <= Number(r.data.endTimeMillis);
 }
 
 /** Merges [changes] into [doc], newest edit winning; returns how many were taken. */
@@ -206,6 +223,9 @@ function merge_(doc, changes, now) {
     // for ever after.
     r.updatedAt = Math.min(r.updatedAt, now + 60 * 1000);
     if (old && old.updatedAt > r.updatedAt) return;
+    var closes = r.closes;
+    delete r.closes;
+    if (closes && stoppedFirst_(old, r)) return;
     doc.rev += 1;
     r.rev = doc.rev;
     doc.records[key] = r;

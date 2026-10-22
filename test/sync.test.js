@@ -69,3 +69,44 @@ test('an imported copy of the same session is matched up, not doubled', async ()
   assert.deepEqual(s.entries.map((e) => e.id), [901])
   assert.deepEqual(s.profiles.filter((p) => !p.isAnki).map((p) => p.id), [900])
 })
+
+test('an entry stopped since it was agreed running is sent marked closes', () => {
+  const s = sample()
+  s.entries.push({ id: 2, languageProfileId: 2, startTimeMillis: 100, endTimeMillis: null, contentType: 'PODCAST' })
+  const snap = Object.fromEntries(Object.entries(collect(s)).map(([c, m]) => [c, Object.fromEntries(m)]))
+  s.entries[1].endTimeMillis = 500
+  s.entries[0].mediaTitle = 'renamed'
+  const changes = diff(collect(s), snap)
+  assert.equal(changes.find((c) => c.id === '2').closes, true)
+  assert.equal(changes.find((c) => c.id === '1').closes, undefined)
+})
+
+test('server: the first stop of a running session stands', async () => {
+  const vm = await import('node:vm')
+  const { readFileSync } = await import('node:fs')
+  const ctx = vm.createContext({ Date, JSON, Math, Number, String, Object, Array, Error, isFinite })
+  vm.runInContext(readFileSync(new URL('../sync-backend/Code.gs', import.meta.url), 'utf8'), ctx)
+  const entry = (end, extra = {}) => ({ coll: 'entry', id: '7', deleted: false, data: { id: 7, startTimeMillis: 100, endTimeMillis: end, contentType: 'PODCAST' }, ...extra })
+  const docWith = (rec) => ({ rev: 1, records: { 'entry:7': { ...rec, rev: 1 } } })
+
+  // The web stopped it at 300; the phone, not having heard, stops it at 900 - the web's stop stays.
+  let doc = docWith({ ...entry(300), updatedAt: 1000 })
+  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000), 0)
+  assert.equal(doc.records['entry:7'].data.endTimeMillis, 300)
+  // Discarded in the web app: the phone's stop doesn't bring it back.
+  doc = docWith({ coll: 'entry', id: '7', deleted: true, data: null, updatedAt: 1000 })
+  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000), 0)
+  assert.equal(doc.records['entry:7'].deleted, true)
+  // The phone stopped it earlier than the web did: the phone's stop is taken (and stored unmarked).
+  doc = docWith({ ...entry(300), updatedAt: 1000 })
+  assert.equal(ctx.merge_(doc, [{ ...entry(200, { closes: true }), updatedAt: 2000 }], 3000), 1)
+  assert.equal(doc.records['entry:7'].data.endTimeMillis, 200)
+  assert.equal('closes' in doc.records['entry:7'], false)
+  // Still running on the account: the stop is taken.
+  doc = docWith({ ...entry(null), updatedAt: 1000 })
+  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000), 1)
+  // An older app (no mark) merges as before: newest edit wins.
+  doc = docWith({ ...entry(300), updatedAt: 1000 })
+  assert.equal(ctx.merge_(doc, [{ ...entry(900), updatedAt: 2000 }], 3000), 1)
+  assert.equal(doc.records['entry:7'].data.endTimeMillis, 900)
+})

@@ -51,12 +51,20 @@ export function collect(s) {
   return out
 }
 
-/** Records that differ from [snap] (coll -> {id: json}). */
+/** Records that differ from [snap] (coll -> {id: json}). An entry last agreed as running and now
+ *  stopped is marked 'closes': if another device stopped it first, the server keeps that stop
+ *  (sync-backend/Code.gs, "First stop stands"). */
 export function diff(cur, snap, now = Date.now()) {
   const changes = []
   for (const [coll, map] of Object.entries(cur)) {
     const old = snap[coll] || {}
-    for (const [id, json] of map) if (old[id] !== json) changes.push({ coll, id, updatedAt: now, deleted: false, data: JSON.parse(json) })
+    for (const [id, json] of map) {
+      if (old[id] === json) continue
+      const data = JSON.parse(json)
+      const change = { coll, id, updatedAt: now, deleted: false, data }
+      if (coll === 'entry' && old[id] && data.endTimeMillis != null && JSON.parse(old[id]).endTimeMillis == null) change.closes = true
+      changes.push(change)
+    }
     for (const id of Object.keys(old)) if (!map.has(id)) changes.push({ coll, id, updatedAt: now, deleted: true, data: null })
   }
   return changes

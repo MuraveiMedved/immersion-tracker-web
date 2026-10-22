@@ -9,7 +9,7 @@ import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance,
 import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
-import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions } from './timers.js'
+import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, continueHere } from './timers.js'
 import { ICONS } from './icons.js'
 
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
@@ -149,7 +149,8 @@ function Title({ mode, active, light }) {
 }
 
 /** The phone's NowTrackingBanner: the language's colour taken down to a background, its outline,
- *  "Listening · Japanese · 12:34" in the language colour, the title, and stop / discard. */
+ *  "Listening · Japanese · 12:34" in the language colour, the title, and stop / discard. A session
+ *  the phone is tracking says so, with Continue here: stop it there, carry on with a timer here. */
 function NowTrackingBanner({ entry, now, light, mode }) {
   const profile = profileById(entry.languageProfileId)
   const [edit, setEdit] = useState(false)
@@ -160,13 +161,20 @@ function NowTrackingBanner({ entry, now, light, mode }) {
     ? `linear-gradient(90deg, ${stops.map((c) => dimColor(c, 0.9, 0.32, light)).join(', ')})`
     : dimColor(color, 0.9, 0.32, light)
   const ink = light ? deepened(color, 0.42) : color
+  const phone = fromPhone(entry)
   return (
     <div class="now-banner" style={{ background: bg, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => setEdit(true)}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
       <div class="grow">
         <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} · {profile?.name || 'Uncategorized'} · {formatClock(durationOf(entry, now))}</div>
         {entry.mediaTitle && <div class="small ellipsis">{entry.mediaTitle}</div>}
-        <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>Manual · tap to edit title or time</div>
+        <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>
+          {phone ? 'On your phone' : 'Manual · tap to edit title or time'}
+          {phone && (entry.contentType === PODCAST || entry.contentType === READING) && (
+            <button class="continue-here" style={{ color: ink, borderColor: withAlpha(color, 0.6) }} title="Stop it on the phone and carry on with a timer here"
+              onClick={(ev) => { ev.stopPropagation(); continueHere(entry) }}>Continue here</button>
+          )}
+        </div>
       </div>
       <button class="stop" style={{ color: ink }} title="Stop and save (Space)" onClick={(ev) => { ev.stopPropagation(); stopTimer(entry) }}><span /></button>
       <button class="stop" style={{ color: ink }} title="Discard without counting its time" onClick={(ev) => { ev.stopPropagation(); discardTimer(entry) }}><Icon name="close" size={18} /></button>

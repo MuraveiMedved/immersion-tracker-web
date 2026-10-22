@@ -51,14 +51,33 @@ export function startTimer(type, languageProfileId, title = defaultTitle(languag
   })
 }
 
+/** A session the phone is tracking (synced here while it runs), not a timer started in the web app. */
+export const fromPhone = (entry) => entry.appPackage !== WEB_APP
+
 /** Stops a running timer and saves it; Undo lets it run on as if never stopped. */
 export function stopTimer(entry) {
   const snapshot = { ...entry }
   const ms = durationOf(entry)
   stopRunningEntry(entry.contentType)
-  toast(ms < 60000 ? 'Stopped - too short to count' : `${formatHm(ms)} of ${sessionName(entry.contentType, entry.languageProfileId)} saved`, {
+  const saved = ms < 60000 ? 'Stopped - too short to count' : `${formatHm(ms)} of ${sessionName(entry.contentType, entry.languageProfileId)} saved`
+  // The phone only hears about the stop on its next sync - until then it still shows it running.
+  toast(fromPhone(entry) ? `${saved} · the phone stops it when it next syncs` : saved, {
     label: 'Undo',
     run: () => reopenEntry(snapshot),
+  })
+}
+
+/** Picking up here what the phone is tracking (stepping away from the phone to the computer): the
+ *  phone's session is stopped and saved and a timer starts here with the same language and title,
+ *  as one tap with one Undo. The phone stops counting when it next syncs, and a stop it makes itself
+ *  before then (pausing the player) doesn't override this one - see "First stop stands" in
+ *  sync-backend/Code.gs. */
+export function continueHere(entry) {
+  const snapshot = { ...entry }
+  const id = startManualEntry(entry.contentType, entry.languageProfileId, entry.mediaTitle || defaultTitle(entry.languageProfileId))
+  toast(`${sessionName(entry.contentType, entry.languageProfileId)} carries on here`, {
+    label: 'Undo',
+    run: () => { discardEntry(id); reopenEntry(snapshot) },
   })
 }
 
