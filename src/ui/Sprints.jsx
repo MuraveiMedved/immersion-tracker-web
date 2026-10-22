@@ -153,7 +153,7 @@ export function SprintsPanel({ event, now, data, onCollect }) {
               ))}
               {elapsed != null && <span class="time-tick" style={{ left: `calc((100% - 18px) * ${elapsed} + 9px)` }} />}
             </div>
-            <div class="muted" style="font-size:11px;margin-top:6px">{formatHm(Math.min(sp.myMillis, sp.capMillis))} of {sp.capHours} h</div>
+            <div class="muted" style="font-size:11px;margin-top:6px">{formatHm(sp.myMillis)} of {sp.capHours} h</div>
             {waiting.length > 0 && <button class="sprint-claim" style={{ backgroundImage: rarityBrush(waiting[0].rarity || 'ORANGE') }} onClick={() => onCollect(waiting[0])}>Collect your {rewardName(waiting[0].rarity)}</button>}
           </div>
         )
