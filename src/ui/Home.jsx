@@ -205,7 +205,7 @@ function IdleBanner({ now, onOther }) {
   return (
     <div class="idle-banner resume">
       <button class="resume-btn" title="Resume (Space)" onClick={() => startTimer(last.contentType, last.languageProfileId, last.mediaTitle)}>
-        <span class="resume-play" style={{ background: withAlpha(color, 0.22), color }}><Icon name="play_arrow" size={26} /></span>
+        <span class="resume-play" style={{ background: withAlpha(color, 0.22), color }}><TypeIcon type={last.contentType} size={24} /></span>
         <span class="grow" style="min-width:0;text-align:left">
           <span class="resume-label">Resume · {sessionName(last.contentType, last.languageProfileId)}</span>
           {last.mediaTitle && <span class="resume-title ellipsis">{last.mediaTitle}</span>}
