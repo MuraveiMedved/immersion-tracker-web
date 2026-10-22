@@ -534,6 +534,7 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
   // Switching to General the first time starts it at the two separate goals added together.
   const [gen, setGen] = useState(String(profile.generalGoalMinutes || (profile.podcastGoalMinutes || 0) + (profile.readingGoalMinutes || 0)))
   const [color, setColor] = useState({ colorHex: profile.colorHex, gradientColors: profile.gradientColors })
+  const [colorsOpen, setColorsOpen] = useState(false)
   const save = () => {
     upsertProfile({
       ...profile, podcastGoalMinutes: Number(listen) || 0, readingGoalMinutes: Number(read) || 0,
@@ -546,10 +547,13 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
     if (color.colorHex !== profile.colorHex || (color.gradientColors ?? null) !== (profile.gradientColors ?? null)) upsertProfile({ ...profile, ...color })
     onClose()
   }
+  const minutes = (value, set) => <input class="input" inputMode="numeric" value={value} onInput={(e) => set(e.currentTarget.value.replace(/\D/g, ''))} />
+  // Like the phone's GoalEditDialog: the language and its settings, logging time, its daily goal,
+  // then its colour (folded away until wanted) - three sections split by a line.
   return (
-    <Dialog title={`${profile.name} goals`} onClose={dismissKeepingColor} actions={<>
-      <button class="btn text" onClick={onSettings}>Language settings</button>
-      <span class="spacer" />
+    <Dialog title={<span class="goal-dialog-title"><span class="grow">{profile.name}</span>
+      <button class="icon-btn" title="Language settings" onClick={onSettings}><Icon name="settings" /></button></span>}
+    onClose={dismissKeepingColor} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
       <button class="btn" onClick={save}>Save</button>
     </>}>
@@ -558,19 +562,26 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
           <button class="btn tonal grow" onClick={() => onAdd(PODCAST)}><TypeLabel type={PODCAST}>Add listening</TypeLabel></button>
           <button class="btn tonal grow" onClick={() => onAdd(READING)}><TypeLabel type={READING}>Add reading</TypeLabel></button>
         </div>
-        <GoalModeChoice general={general} onChange={setGeneral} />
-        {general ? <>
-          <label class="field"><TypeLabel type={GENERAL}>General (minutes)</TypeLabel><input class="input" inputMode="numeric" value={gen} onInput={(e) => setGen(e.currentTarget.value.replace(/\D/g, ''))} /></label>
-          <div class="muted small">One goal for everything in this language - listening and reading both count toward it. Set to 0 to hide the ring.</div>
-        </> : <>
-        <div class="row">
-          <label class="field grow">Listening (minutes)<input class="input" inputMode="numeric" value={listen} onInput={(e) => setListen(e.currentTarget.value.replace(/\D/g, ''))} /></label>
-          <label class="field grow">Reading (minutes)<input class="input" inputMode="numeric" value={read} onInput={(e) => setRead(e.currentTarget.value.replace(/\D/g, ''))} /></label>
-        </div>
-        <div class="muted small">Set either to 0 to hide that ring.</div>
+        {/* Anki is tracked without a goal. */}
+        {!profile.isAnki && <>
+          <div class="divider goal-dialog-divider" />
+          <div class="goal-dialog-section">Daily goal</div>
+          <GoalModeChoice general={general} onChange={setGeneral} />
+          {general
+            ? <label class="field"><TypeLabel type={GENERAL}>General · min</TypeLabel>{minutes(gen, setGen)}</label>
+            : <div class="row">
+                <label class="field grow"><TypeLabel type={PODCAST}>Listening · min</TypeLabel>{minutes(listen, setListen)}</label>
+                <label class="field grow"><TypeLabel type={READING}>Reading · min</TypeLabel>{minutes(read, setRead)}</label>
+              </div>}
+          <div class="muted small">{general ? 'Listening and reading both count. 0 hides the ring.' : '0 hides a ring.'}</div>
         </>}
-        <div style="font-weight:600">Ring color</div>
-        <ColorPicker colorHex={color.colorHex} gradientColors={color.gradientColors} onChange={(c, g) => setColor({ colorHex: c, gradientColors: g })} />
+        <div class="divider goal-dialog-divider" />
+        <button type="button" class="goal-dialog-color" aria-expanded={colorsOpen} onClick={() => setColorsOpen(!colorsOpen)}>
+          <span class="swatch-preview" style={{ background: languageFill(color, 135) }} />
+          <span class="grow">Color</span>
+          <Icon name="expand_more" style={{ transform: colorsOpen ? 'rotate(180deg)' : 'none', transition: 'transform .25s' }} />
+        </button>
+        {colorsOpen && <ColorPicker colorHex={color.colorHex} gradientColors={color.gradientColors} onChange={(c, g) => setColor({ colorHex: c, gradientColors: g })} />}
       </div>
     </Dialog>
   )
