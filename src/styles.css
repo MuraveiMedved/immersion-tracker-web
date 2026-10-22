@@ -295,6 +295,9 @@ textarea.input { resize: vertical; }
   box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: background .55s, border-color .55s;
 }
 .goal-card.wide { flex-direction: row; justify-content: space-evenly; margin: 6px 0; }
+/* Long-press to drag (useGoalCardDrag): no text selection or iOS callout while holding a card. */
+.goal-card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.goal-card.lifted { position: relative; z-index: 5; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 .goal-card .name { font-size: 16px; line-height: 24px; font-weight: 600; }
 .ring-stat { display: flex; flex-direction: column; align-items: center; }
 .goal-card:not(.wide) .ring-stat { margin-top: 12px; }

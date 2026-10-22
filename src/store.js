@@ -499,6 +499,22 @@ export function upsertProfile(profile) {
   })
 }
 
+/** Puts [orderedIds] (Home's goal cards, as dragged) in that order, like the phone's
+ *  LanguageProfileDao.reorder: languages not in it (no card) keep their places in between, and
+ *  every language's sortOrder becomes its position - which syncs like any other profile change. */
+export function reorderProfiles(orderedIds) {
+  update((s) => {
+    const all = [...s.profiles].sort((a, b) => a.sortOrder - b.sortOrder)
+    const moving = orderedIds.filter((id) => all.some((p) => p.id === id))
+    const movingIds = new Set(moving)
+    const ids = all.map((p) => (movingIds.has(p.id) ? moving.shift() : p.id))
+    ids.forEach((id, i) => {
+      const at = s.profiles.findIndex((p) => p.id === id)
+      if (s.profiles[at].sortOrder !== i) s.profiles[at] = { ...s.profiles[at], sortOrder: i }
+    })
+  })
+}
+
 /** Deletes a language; entries already logged under it stay but lose their language. */
 export function deleteProfile(id) {
   update((s) => {

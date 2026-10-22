@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
-  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry
+  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, reorderProfiles, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry
 } from '../store.js'
 import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
@@ -36,9 +36,13 @@ export function Home({ nav }) {
   const goldenToday = goldenTodayMillis(s.entries, now)
   const immersing = running.some((e) => (e.contentType === PODCAST || e.contentType === READING) && e.languageProfileId != null)
 
-  const cards = s.profiles
+  const sortedCards = s.profiles
     .filter((p) => (p.isAnki ? s.settings.showAnkiOnHome : hasGoal(p)))
     .sort((a, b) => a.sortOrder - b.sortOrder)
+  const drag = useGoalCardDrag(sortedCards.map((p) => p.id), reorderProfiles)
+  const cards = drag.order
+    ? drag.order.map((id) => sortedCards.find((p) => p.id === id)).filter(Boolean).concat(sortedCards.filter((p) => !drag.order.includes(p.id)))
+    : sortedCards
   // An odd number of cards: one goes full width - the main language, at the top.
   const oddOne = cards.length % 2 === 1 ? cards.find((p) => p.isMain) || cards[cards.length - 1] : null
   const grid = cards.filter((p) => p !== oddOne)
@@ -77,7 +81,7 @@ export function Home({ nav }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-  const card = (p, wide) => <GoalCard key={p.id} profile={p} now={now} running={running} light={light} wide={wide} onOpen={() => setGoalCard(p.id)} />
+  const card = (p, wide) => <GoalCard key={p.id} profile={p} now={now} running={running} light={light} wide={wide} lifted={drag.id === p.id} onOpen={() => setGoalCard(p.id)} />
 
   return (
     <>
@@ -112,11 +116,11 @@ export function Home({ nav }) {
           <button class="btn" onClick={() => nav('settings', { addLanguage: true })}>Add language</button>
         </div>
       ) : (
-        <>
+        <div class="goal-area" {...drag.handlers}>
           {oddOne && oddLeads && card(oddOne, true)}
           {grid.length > 0 && <div class="goal-cols">{columns.map((col, i) => <div key={i}>{col.map((p) => card(p, false))}</div>)}</div>}
           {oddOne && !oddLeads && card(oddOne, true)}
-        </>
+        </div>
       )}
 
       <div class="divider" />
@@ -317,10 +321,113 @@ function EditElapsedDialog({ entry, onClose }) {
   )
 }
 
+const LONG_PRESS_MS = 500
+const PRESS_SLOP = 8
+
+/** Long-press a goal card to pick it up and drag it over another to take that one's place, like
+ *  the phone's GoalCardsGrid; letting go hands the new order to [onDrop] (ids, first to last).
+ *  Returns the order to show while dragging (and until the saved one comes back - null otherwise),
+ *  the lifted card's id, and the handlers for the cards' wrapper. The lifted card follows the
+ *  finger by a transform worked out from wherever it's laid out now, since it can change column or
+ *  go full-width as the others move. */
+function useGoalCardDrag(ids, onDrop) {
+  const [state, setState] = useState(null) // { id, order }
+  const live = useRef(null) // { id, order, start, x, y, grabX, grabY, lastSwap }
+  const suppressClickUntil = useRef(0)
+  const idsKey = ids.join(',')
+  // The saved order arrived (or the cards changed) - show the store's order again.
+  useEffect(() => { if (state && !live.current) setState(null) }, [idsKey])
+
+  const cardEl = (id) => document.querySelector(`.goal-area [data-goal-id="${id}"]`)
+  const follow = () => {
+    const d = live.current
+    const el = d && cardEl(d.id)
+    if (!el) return
+    el.style.transform = ''
+    const r = el.getBoundingClientRect()
+    el.style.transform = `translate(${d.x - d.grabX - r.left}px, ${d.y - d.grabY - r.top}px) scale(1.04)`
+  }
+  useLayoutEffect(follow)
+
+  const onPointerDown = (e) => {
+    if (e.button !== 0 || live.current) return
+    const el = e.target.closest('[data-goal-id]')
+    if (!el) return
+    const id = Number(el.dataset.goalId)
+    const startX = e.clientX, startY = e.clientY
+    let x = startX, y = startY
+    let timer = setTimeout(() => {
+      timer = null
+      const r = el.getBoundingClientRect()
+      live.current = { id, order: ids, start: ids, x, y, grabX: x - r.left, grabY: y - r.top, lastSwap: null }
+      navigator.vibrate?.(10)
+      document.addEventListener('touchmove', preventScroll, { passive: false })
+      setState({ id, order: ids })
+    }, LONG_PRESS_MS)
+    const preventScroll = (ev) => ev.preventDefault()
+    const onMove = (ev) => {
+      x = ev.clientX
+      y = ev.clientY
+      const d = live.current
+      if (!d) {
+        if (timer && Math.hypot(x - startX, y - startY) > PRESS_SLOP) end()
+        return
+      }
+      d.x = x
+      d.y = y
+      follow()
+      const over = document.elementsFromPoint(x, y).map((n) => n.closest?.('.goal-area [data-goal-id]')).find((n) => n && Number(n.dataset.goalId) !== id)
+      const overId = over ? Number(over.dataset.goalId) : null
+      // Not swapped back with the card it just traded places with until the finger has left it,
+      // or cards of different heights would trade back and forth under it.
+      if (overId == null) d.lastSwap = null
+      else if (overId !== d.lastSwap) {
+        d.lastSwap = overId
+        const order = d.order.filter((o) => o !== id)
+        order.splice(order.indexOf(overId), 0, id)
+        d.order = order
+        setState({ id, order })
+      }
+    }
+    const end = () => {
+      if (timer) clearTimeout(timer)
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      document.removeEventListener('touchmove', preventScroll)
+      const d = live.current
+      if (!d) return
+      const el = cardEl(id)
+      if (el) el.style.transform = ''
+      live.current = null
+      suppressClickUntil.current = Date.now() + 400
+      if (d.order.join(',') === d.start.join(',')) setState(null)
+      else {
+        setState({ id: null, order: d.order })
+        onDrop(d.order)
+      }
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+  }
+
+  return {
+    order: state?.order ?? null,
+    id: state?.id ?? null,
+    handlers: {
+      onPointerDown,
+      // A long press doesn't also open the card (or start a ring's timer) when it's let go.
+      onClickCapture: (e) => { if (Date.now() < suppressClickUntil.current) { e.stopPropagation(); e.preventDefault() } },
+      onContextMenu: (e) => { if (e.target.closest('[data-goal-id]')) e.preventDefault() },
+    },
+  }
+}
+
 /** A goal card as on the phone: the language's colour taken down to a dark (or, on light themes,
  *  pale) card, brighter with an outline while something in it is being tracked; its name in the
  *  language colour; one ring per goal. [wide] puts the rings beside the name. */
-function GoalCard({ profile, now, running, light, wide, onOpen }) {
+function GoalCard({ profile, now, running, light, wide, lifted, onOpen }) {
   const s = useStore()
   const todayStart = goalDayStart(now) // goal days run from 4 AM
   const todayOf = (type) => s.entries.reduce((t, e) => (e.languageProfileId === profile.id && fillsGoal(type, e.contentType) && e.startTimeMillis >= todayStart ? t + durationOf(e, now) : t), 0)
@@ -342,7 +449,7 @@ function GoalCard({ profile, now, running, light, wide, onOpen }) {
     ? [[ANKI, 0]]
     : [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)]].filter(([, g]) => g > 0)
   return (
-    <div class={`goal-card ${wide ? 'wide' : ''}`} style={{ background: bg, borderColor: outline }} onClick={onOpen} role="button">
+    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''}`} data-goal-id={profile.id} style={{ background: bg, borderColor: outline }} onClick={onOpen} role="button">
       <div class="name" style={nameStyle}>{profile.name}</div>
       <div class="rings">
       {rings.map(([type, goal]) => {
