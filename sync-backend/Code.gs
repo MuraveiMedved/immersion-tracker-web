@@ -31,7 +31,7 @@
  * send the mark and are merged as before.
  */
 
-var SYNC_VERSION = 3;
+var SYNC_VERSION = 4;
 var ACCOUNTS_SHEET = 'Accounts';
 var ACCOUNT_HEADERS = ['accountId', 'fileId', 'name', 'createdAt', 'lastSeen'];
 var DEVICES_SHEET = 'Devices';
@@ -49,6 +49,9 @@ var PULL_PAGE = 4000;
 var SEEN_EVERY_MILLIS = 10 * 60 * 1000;
 /** How long a token -> account lookup is cached (CacheService's longest). */
 var DEVICE_CACHE_SECONDS = 6 * 60 * 60;
+/** Re-reads of an account file that comes back older than its last write (see freshDoc_). */
+var STALE_RETRIES = 4;
+var STALE_WAIT_MILLIS = 1500;
 
 function doGet() {
   return json_({ ok: true, service: 'immersion-tracker-sync', version: SYNC_VERSION });
@@ -237,12 +240,30 @@ function merge_(doc, changes, now) {
 /** Merges the device's records into its account (under the lock). The file is written before the
  *  revision is noted, so a pull that sees the new revision always finds the file that has it. */
 function pushInto_(device, req, now) {
-  var doc = readDoc_(device.fileId);
+  var doc = freshDoc_(device);
   var changes = Array.isArray(req.changes) ? req.changes.slice(0, MAX_PUSH) : [];
   var accepted = merge_(doc, changes, now);
   if (accepted) writeDoc_(device.fileId, doc);
-  if (accepted || savedRev_(device.accountId) !== doc.rev) PropertiesService.getScriptProperties().setProperty('rev:' + device.accountId, String(doc.rev));
+  var saved = savedRev_(device.accountId);
+  if (saved == null || doc.rev > saved) PropertiesService.getScriptProperties().setProperty('rev:' + device.accountId, String(doc.rev));
   return { doc: doc, accepted: accepted, taken: changes.length };
+}
+
+/** The account file for a push. Drive can hand back the copy from before the last write for a
+ *  moment; merging into that and writing it back loses what that write added, and numbers new
+ *  records with revisions devices have already pulled past (so they never see them). The revision
+ *  noted after each write tells a stale copy apart: read again for a few seconds, and if it's still
+ *  behind, at least never let revisions go backwards (devices re-send anything lost - 'Missing
+ *  records' in sync.js / WebSyncRepository). */
+function freshDoc_(device) {
+  var saved = savedRev_(device.accountId);
+  var doc = readDoc_(device.fileId);
+  for (var tries = 0; saved != null && doc.rev < saved && tries < STALE_RETRIES; tries++) {
+    Utilities.sleep(STALE_WAIT_MILLIS);
+    doc = readDoc_(device.fileId);
+  }
+  if (saved != null && doc.rev < saved) doc.rev = saved;
+  return doc;
 }
 
 /** One page of the records in [doc] changed after [since], oldest first. */

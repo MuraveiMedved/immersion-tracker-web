@@ -36,6 +36,18 @@ test('Momentum: today counts only once it reaches 1h', () => {
   assert.equal(isGolden(ten, now), true)
 })
 
+test('Momentum: a deleted language\'s entries are uncategorized and stop counting', () => {
+  // Deleting a language clears it from its entries on both phone and web (the phone used to keep
+  // the dead id and still count them, so its streak ran longer than the web's).
+  const now = at(2026, 10, 16, 9)
+  const days = [11, 12, 13, 14, 15].map((d) => entry(at(2026, 10, d, 10), HOUR, PODCAST, d === 13 ? 2 : 1))
+  assert.equal(goldenStreakDays(days, now), 5)
+  const afterDelete = days.map((e) => (e.languageProfileId === 2 ? { ...e, languageProfileId: null } : e))
+  assert.equal(goldenStreakDays(afterDelete, now), 2)
+  // Given a language again, it counts again.
+  assert.equal(goldenStreakDays(afterDelete.map((e) => ({ ...e, languageProfileId: e.languageProfileId ?? 1 })), now), 5)
+})
+
 test('Momentum splits sessions across midnight', () => {
   const now = at(2026, 10, 16, 12)
   // 22:00 -> 02:00 is 2h on the 14th and 2h on the 15th.

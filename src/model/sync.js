@@ -199,7 +199,7 @@ async function saveSnapshot() {
 const deviceName = () => {
   const ua = navigator.userAgent
   const os = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows PC' : /Linux/.test(ua) ? 'Linux' : 'Device'
-  const browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'browser'
+  const browser = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'browser'
   return `${os} · ${browser}`
 }
 
@@ -234,6 +234,53 @@ async function pullAll(token, cur, first = null) {
   }
 }
 
+/** Missing records: once a day the whole account is read and checked against [snapshot] (what this
+ *  device believes the account holds). A record the snapshot has but the account doesn't was lost
+ *  there (sync-backend/Code.gs freshDoc_) - it's dropped from the snapshot, so the next push sends
+ *  it again. A record the account has in another version than agreed here (one this device's pulls
+ *  skipped) is taken, unless it was edited here since - that edit goes up instead. */
+export function reconcile(records, cur, snap) {
+  const onServer = new Set(records.map((r) => `${r.coll}:${r.id}`))
+  const lost = []
+  for (const [coll, m] of Object.entries(snap)) {
+    for (const id of Object.keys(m)) if (!onServer.has(`${coll}:${id}`)) lost.push([coll, id])
+  }
+  const take = records.filter((r) => {
+    const agreed = snap[r.coll]?.[r.id]
+    if ((cur[r.coll]?.get(r.id) ?? null) !== (agreed ?? null)) return false // edited here since
+    return r.deleted ? agreed != null : agreed !== JSON.stringify(r.data)
+  })
+  return { lost, take }
+}
+
+const RECONCILE_EVERY = 24 * 60 * 60 * 1000
+
+async function reconcileWithAccount(token) {
+  const records = []
+  let since = 0
+  for (;;) {
+    const res = await call({ action: 'pull', token, sinceRev: since })
+    records.push(...res.records)
+    since = res.rev
+    if (!res.more) break
+  }
+  const { lost, take } = reconcile(records, collect(getState()), snapshot)
+  for (const [coll, id] of lost) delete snapshot[coll][id]
+  update((s) => {
+    dedupeAgainst(s, take)
+    applyRecords(s, take)
+    s.sync.sinceRev = since
+  })
+  const after = collect(getState())
+  for (const r of take) {
+    const m = snapshot[r.coll] ||= {}
+    const v = after[r.coll]?.get(r.id)
+    if (v == null) delete m[r.id]
+    else m[r.id] = v
+  }
+  update((s) => { s.sync.lastReconcile = Date.now() })
+}
+
 // Set once a server without 'sync' (one deployed before it) has said so - then push, then pull.
 let noCombined = false
 
@@ -265,6 +312,7 @@ async function round() {
   const { token } = getState().sync
   if (!token) return
   await loadSnapshot()
+  if (Date.now() - (getState().sync.lastReconcile || 0) >= RECONCILE_EVERY) await reconcileWithAccount(token)
   const cur = collect(getState())
   const changes = diff(cur, snapshot)
   // Never let one device empty the account: if most of the history suddenly looks deleted here
@@ -353,7 +401,7 @@ export async function signOut({ tellServer = true } = {}) {
   if (tellServer) { try { await call({ action: 'unlink', token: getState().sync.token }) } catch { /* offline - still sign out here */ } }
   snapshot = {}
   await saveSnapshot()
-  update((s) => { s.sync = { ...s.sync, token: '', accountId: '', sinceRev: 0, lastSync: 0, error: '' } })
+  update((s) => { s.sync = { ...s.sync, token: '', accountId: '', sinceRev: 0, lastSync: 0, lastReconcile: 0, error: '' } })
 }
 
 /** Syncs a few seconds after any change, every couple of minutes, and when the page comes back. */

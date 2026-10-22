@@ -51,6 +51,7 @@ const context = vm.createContext({
     getUuid: () => randomUUID(),
     DigestAlgorithm: { SHA_256: 'sha256' },
     Charset: { UTF_8: 'utf8' },
+    sleep: () => {},
     computeDigest: (alg, text) => [...createHash('sha256').update(text).digest()].map((b) => (b > 127 ? b - 256 : b)),
   },
   Date, JSON, Math, Number, String, Object, Array, Error, isFinite,

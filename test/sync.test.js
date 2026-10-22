@@ -110,3 +110,57 @@ test('server: the first stop of a running session stands', async () => {
   assert.equal(ctx.merge_(doc, [{ ...entry(900), updatedAt: 2000 }], 3000), 1)
   assert.equal(doc.records['entry:7'].data.endTimeMillis, 900)
 })
+
+test('server: a stale read of the account file loses nothing and never moves revisions back', async () => {
+  const vm = await import('node:vm')
+  const { readFileSync } = await import('node:fs')
+  const props = new Map()
+  let file = JSON.stringify({ rev: 0, records: {} })
+  let stale = null // what Drive hands back for the next few reads, if set
+  let staleReads = 0
+  const ctx = vm.createContext({
+    Date, JSON, Math, Number, String, Object, Array, Error, isFinite,
+    PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props.get(k) ?? null, setProperty: (k, v) => props.set(k, String(v)) }) },
+    DriveApp: { getFileById: () => ({ getBlob: () => ({ getDataAsString: () => (staleReads-- > 0 ? stale : file) }), setContent: (t) => { file = t } }) },
+    Utilities: { sleep: () => {} },
+  })
+  vm.runInContext(readFileSync(new URL('../sync-backend/Code.gs', import.meta.url), 'utf8'), ctx)
+  const device = { accountId: 'a', fileId: 'f' }
+  const rec = (id) => ({ coll: 'entry', id, updatedAt: 1000, deleted: false, data: { id, startTimeMillis: 1, endTimeMillis: 2, contentType: 'PODCAST' } })
+
+  ctx.pushInto_(device, { changes: [rec('1'), rec('2')] }, 2000)
+  const before = file
+  ctx.pushInto_(device, { changes: [rec('3')] }, 2000)
+  // Drive returns the copy from before '3' for two reads: the push waits it out and keeps '3'.
+  stale = before
+  staleReads = 2
+  ctx.pushInto_(device, { changes: [rec('4')] }, 2000)
+  let doc = JSON.parse(file)
+  assert.deepEqual(Object.keys(doc.records).sort(), ['entry:1', 'entry:2', 'entry:3', 'entry:4'])
+  assert.equal(doc.rev, 4)
+  // Stale for longer than it waits: revisions still go forward, and the noted one never drops.
+  staleReads = 99
+  ctx.pushInto_(device, { changes: [rec('5')] }, 2000)
+  doc = JSON.parse(file)
+  assert.equal(doc.records['entry:5'].rev, 5)
+  assert.equal(props.get('rev:a'), '5')
+  staleReads = 99
+  ctx.pushInto_(device, { changes: [] }, 2000)
+  assert.equal(props.get('rev:a'), '5')
+})
+
+test('missing records: lost ones are sent again, skipped ones are taken, local edits win', async () => {
+  const { reconcile } = await import('../src/model/sync.js')
+  const s = sample()
+  s.entries.push({ id: 2, languageProfileId: 2, startTimeMillis: 20, endTimeMillis: 30, contentType: 'PODCAST' })
+  const snap = Object.fromEntries(Object.entries(collect(s)).map(([c, m]) => [c, Object.fromEntries(m)]))
+  s.entries[0].mediaTitle = 'edited here'
+  const server = [
+    ...Object.entries(snap).flatMap(([coll, m]) => Object.entries(m).map(([id, json]) => ({ coll, id, deleted: false, data: JSON.parse(json) }))),
+  ].filter((r) => !(r.coll === 'entry' && r.id === '2')) // the account lost entry 2
+  server.find((r) => r.coll === 'entry' && r.id === '1').data.mediaTitle = 'edited elsewhere'
+  server.push({ coll: 'entry', id: '3', deleted: false, data: { id: 3, languageProfileId: 2, startTimeMillis: 40, endTimeMillis: 50, contentType: 'READING' } })
+  const { lost, take } = reconcile(server, collect(s), snap)
+  assert.deepEqual(lost, [['entry', '2']])
+  assert.deepEqual(take.map((r) => `${r.coll}:${r.id}`), ['entry:3']) // entry 1 was edited here - that goes up instead
+})
