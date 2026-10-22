@@ -9,7 +9,7 @@ import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance,
 import { Ring } from './Ring.jsx'
 import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
-import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, continueHere, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
+import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
 
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
@@ -173,8 +173,8 @@ function Title({ mode, active, light }) {
 
 /** The phone's NowTrackingBanner: the language's colour taken down to a background, its outline,
  *  "Listening · Japanese · 12:34" in the language colour, the title, and pause / stop / discard. A
- *  session the phone is tracking says so, with Continue here: stop it there, carry on with a timer
- *  here. [paused]: a paused timer - play resumes it, and a tap opens it like any saved entry. */
+ *  session the phone is tracking just says so ("On your phone") - it plays there, so there's
+ *  nothing to carry on with in a browser. [paused]: a paused timer - play resumes it, and a tap opens it like any saved entry. */
 function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) {
   const profile = profileById(entry.languageProfileId)
   const [edit, setEdit] = useState(false)
@@ -194,10 +194,6 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
         {entry.mediaTitle && <div class="small ellipsis">{entry.mediaTitle}</div>}
         <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>
           {paused ? 'Paused · tap to edit' : phone ? 'On your phone' : 'Manual · tap to edit title or time'}
-          {phone && !paused && (entry.contentType === PODCAST || entry.contentType === READING) && (
-            <button class="continue-here" style={{ color: ink, borderColor: withAlpha(color, 0.6) }} title="Stop it on the phone and carry on with a timer here"
-              onClick={(ev) => { ev.stopPropagation(); continueHere(entry) }}>Continue here</button>
-          )}
         </div>
       </div>
       {paused

@@ -67,20 +67,6 @@ export function stopTimer(entry) {
   })
 }
 
-/** Picking up here what the phone is tracking (stepping away from the phone to the computer): the
- *  phone's session is stopped and saved and a timer starts here with the same language and title,
- *  as one tap with one Undo. The phone stops counting when it next syncs, and a stop it makes itself
- *  before then (pausing the player) doesn't override this one - see "First stop stands" in
- *  sync-backend/Code.gs. */
-export function continueHere(entry) {
-  const snapshot = { ...entry }
-  const id = startManualEntry(entry.contentType, entry.languageProfileId, entry.mediaTitle || defaultTitle(entry.languageProfileId))
-  toast(`${sessionName(entry.contentType, entry.languageProfileId)} carries on here`, {
-    label: 'Undo',
-    run: () => { discardEntry(id); reopenEntry(snapshot) },
-  })
-}
-
 /** Pauses a running timer: its time stops counting, and Resume carries on with the same session
  *  (the paused gap never counts). No toast - the banner itself turns into the paused one. */
 export function pauseTimer(entry) {
