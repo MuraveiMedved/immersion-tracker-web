@@ -29,13 +29,11 @@ export function useChallengeRaces(now) {
   return { races, taken, waiting: races.some((r) => prizesWaiting(r.sprints, taken).length > 0) }
 }
 
-/** The trophy on Home's "Today" row - a red dot while a reward waits; hidden with no race joined. */
+/** The trophy at the top of the Zoo - a red dot while a reward waits. */
 export function ChallengesButton({ nav }) {
   const now = useNow(60000)
   const { races, waiting } = useChallengeRaces(now)
-  // Challenges pay out Zoo animals - with the Zoo switched off they're hidden too.
-  const zooOn = useStore().settings.showZooTab
-  if (!races.length || !zooOn) return null
+  // Always there, race or not: with none joined, Challenges says how to get some.
   return (
     <button class="icon-btn challenges-btn" title="Challenges" onClick={() => nav('challenges')}>
       <Icon name="emoji_events" />{waiting && <span class="dot" />}
@@ -54,6 +52,9 @@ export function Challenges({ nav }) {
         <button class="icon-btn" title="Back" onClick={() => nav('zoo')}><Icon name="arrow_back" /></button>
         <h1 class="page-title grow" style="margin:0">Challenges</h1>
       </div>
+      {!races.length && (
+        <p class="muted" style="margin:12px 4px">Weekly and Monthly challenges run inside races, and their rewards are Zoo animals and nametags. Join or start a race on the Race tab and yours will show up here.</p>
+      )}
       {races.map(({ event, sprints }) => (
         <div key={event.id} style="margin-bottom:14px">
           {races.length > 1 && <div class="title-medium ellipsis" style="margin:16px 4px 0">{event.name}</div>}

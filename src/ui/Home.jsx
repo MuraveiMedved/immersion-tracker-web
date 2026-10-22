@@ -388,8 +388,13 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
     })
     onClose()
   }
+  // Clicking outside (or Escape) keeps a colour that was picked - only the colour; Cancel drops it.
+  const dismissKeepingColor = () => {
+    if (color.colorHex !== profile.colorHex || (color.gradientColors ?? null) !== (profile.gradientColors ?? null)) upsertProfile({ ...profile, ...color })
+    onClose()
+  }
   return (
-    <Dialog title={`${profile.name} goals`} onClose={onClose} actions={<>
+    <Dialog title={`${profile.name} goals`} onClose={dismissKeepingColor} actions={<>
       <button class="btn text" onClick={onSettings}>Language settings</button>
       <span class="spacer" />
       <button class="btn text" onClick={onClose}>Cancel</button>

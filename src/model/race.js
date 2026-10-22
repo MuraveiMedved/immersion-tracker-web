@@ -216,6 +216,20 @@ function setStatus(patch) { Object.assign(raceStatus, patch); listeners.forEach(
 const competedIn = (event, userId) => (event.standings || []).some((s) => s.userId === userId)
 const ended = (event, now) => event.endMillis != null && event.endMillis <= now
 
+/** `current` plus any running race this person was in that one reply left out - kept for that one
+ *  reply, so it isn't filed as finished "now" by updateArchive and shown completed until a later
+ *  sync lists it again; missing twice in a row, it's filed as before (RaceRepository.carryOverMissing). */
+function carryOverMissing(s, previous, current, now) {
+  const userId = s.race.userId
+  const currentIds = new Set(current.map((e) => e.id))
+  const missedOnce = new Set(s.race.missingOnce || [])
+  const deleted = new Set(s.race.deleted || [])
+  const carried = previous.filter((e) => !currentIds.has(e.id) && !missedOnce.has(e.id) && !deleted.has(e.id) &&
+    !ended(e, now) && competedIn(e, userId))
+  s.race.missingOnce = carried.map((e) => e.id)
+  return [...current, ...carried]
+}
+
 /** Finished races go into this browser's own history (see RaceRepository.updateArchive). */
 function updateArchive(s, previous, current, now) {
   const userId = s.race.userId
@@ -275,8 +289,9 @@ async function request(body, activity, retry = false) {
       return null
     }
     const now = Date.now()
-    const events = cleanEvents(json.events)
+    const fresh = cleanEvents(json.events)
     update((s) => {
+      const events = carryOverMissing(s, s.race.cachedEvents, fresh, now)
       updateArchive(s, s.race.cachedEvents, events, now)
       s.race.cachedEvents = events
       s.race.lastSync = now
