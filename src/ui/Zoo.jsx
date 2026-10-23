@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
-import { useStore, useNow } from '../store.js'
+import { useStore, useNow, setSetting } from '../store.js'
 import {
-  loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, backfillHoloMomentum, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound,
+  loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, backfillHoloMomentum, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound, addToTrophyCase, removeFromTrophyCase, TROPHY_CASE_SIZE,
   RARITIES, RARITY_LABEL, RARITY_COLOR, HOURS_PER_BOX, TRADE_UP_COUNT, LOOT_BOX_ODDS, holoChancePercent, nextRarity, carriesCertificate,
   nametagsOf, nameAnimal, NAMETAG_MAX_LENGTH,
 } from '../model/zoo.js'
@@ -111,6 +111,7 @@ export function Zoo({ nav }) {
         {/* Nametags held - a currency, spent naming an animal from its card (ZooScreen.kt NametagCount). */}
         <button class="nametag-count" title={`${nametagsOf(s).held} nametags - what are these?`} onClick={() => setNametagInfo(true)}><Icon name="sell" size={15} /><b>{nametagsOf(s).held}</b></button>
       </div>
+      {Object.keys(z.copies).some((id) => z.copies[id]?.length) && <TrophyCase catalog={catalog} copies={z.copies} />}
       {/* One page, like the phone: the eggs (compact), then the collection below. */}
       <div class="egg-card compact" onClick={() => setOdds(true)} title="Hatch rates">
         <div class="egg-stage">
@@ -730,6 +731,7 @@ export function GlowPill({ rarity, onClick, children, disabled, solid }) {
  *  long-press (or right-click) on one starts a trade-up of its tier. */
 function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   const names = nametagsOf(useStore()).names
+  const columns = Math.min(5, Math.max(2, useStore().settings.zooColumns || 4))
   const [open, setOpen] = useState(null)
   const held = Object.keys(copies).length
   const list = catalog
@@ -759,10 +761,18 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
 
   return (
     <>
-      <div class="section-header">Collection · {held}</div>
+      <div class="row collection-head">
+        <div class="section-header grow">Collection · {held}</div>
+        {/* Cards per row, 2 to 5. */}
+        <div class="col-pick" role="radiogroup" aria-label="Cards per row">
+          {[2, 3, 4, 5].map((n) => (
+            <button key={n} type="button" role="radio" aria-checked={n === columns} class={n === columns ? 'on' : ''} title={`${n} per row`} onClick={() => setSetting('zooColumns', n)}>{n}</button>
+          ))}
+        </div>
+      </div>
       {!trade && held > 0 && <div class="muted" style="font-size:12px;margin:-4px 0 10px">Long-press to trade up</div>}
       {!list.length ? <div class="empty">{!held ? 'No animals yet - hatch an egg to find your first.' : 'None of these yet.'}</div> : (
-        <div class="zoo-grid">
+        <div class={`zoo-grid ${columns <= 3 ? 'roomy' : ''}`} style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
           {list.map((a) => {
             const have = copies[a.id]?.length || 0
             const picks = trade ? trade.picks.filter((x) => x === a.id).length : 0
@@ -804,9 +814,52 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   )
 }
 
+/** The trophy case (ZooScreen.kt TrophyCase): three slots for animals picked to show off - the
+ *  first is also the profile's trophy. A filled slot opens its animal; an empty one, a picker. */
+function TrophyCase({ catalog, copies }) {
+  const s = useStore()
+  const ids = s.zoo.trophyIds || []
+  const names = nametagsOf(s).names
+  const [open, setOpen] = useState(null)
+  const [picking, setPicking] = useState(false)
+  const byId = Object.fromEntries(catalog.map((a) => [a.id, a]))
+  const slots = Array.from({ length: TROPHY_CASE_SIZE }, (_, i) => byId[ids[i]] || null)
+  const choices = catalog.filter((a) => copies[a.id]?.length && !ids.includes(a.id))
+  return (
+    <div class="trophy-case">
+      <div class="section-header" style="margin-top:0">Trophy case</div>
+      <div class="muted small" style="margin:-6px 0 8px">Three animals to show off - the first is the one on your profile.</div>
+      <div class="trophy-slots">
+        {slots.map((a, i) => (a
+          ? <div key={a.id} class="tile-animal" role="button" style={{ borderColor: RARITY_COLOR[a.rarity] }} onClick={() => setOpen(a)}>
+              <AnimalPhoto animal={a} />
+              {i === 0 && <span class="count pick">🏆</span>}
+              <div class="cap">{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
+            </div>
+          : <button key={`empty${i}`} class="trophy-empty" title="Add to trophy case" onClick={() => setPicking(true)}><Icon name="add" /></button>))}
+      </div>
+      {picking && (
+        <Dialog title="Pick an animal" onClose={() => setPicking(false)} actions={<button class="btn text" onClick={() => setPicking(false)}>Close</button>}>
+          <div class="zoo-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            {choices.map((a) => (
+              <div key={a.id} class="tile-animal" role="button" style={{ borderColor: RARITY_COLOR[a.rarity] }} onClick={() => { addToTrophyCase(a.id); setPicking(false) }}>
+                <AnimalPhoto animal={a} />
+                <div class="cap">{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
+              </div>
+            ))}
+          </div>
+        </Dialog>
+      )}
+      {open && <AnimalDialog animal={open} copies={copies[open.id] || []} trophyId={s.zoo.trophyId} onClose={() => setOpen(null)} />}
+    </div>
+  )
+}
+
 function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
   const [i, setI] = useState(0)
-  const tags = nametagsOf(useStore())
+  const st = useStore()
+  const inCase = (st.zoo.trophyIds || []).includes(animal.id)
+  const tags = nametagsOf(st)
   const nickname = tags.names[animal.id]
   // A name being tried out: null while not naming; shown live on the card until confirmed
   // (which spends a nametag) or dropped.
@@ -846,10 +899,10 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
           {copy && <div class="stage-note small" style="opacity:.75">Hatched {formatDate(copy.atMillis, { year: 'numeric', month: 'short', day: 'numeric' })}</div>}
           {copies.length > 0 && (
             <div class="stage-row">
-              {trophyId === animal.id
-                ? <GlowPill rarity={r} onClick={() => setTrophy(null)}>Take off my profile</GlowPill>
-                : <GlowPill rarity={r} onClick={() => { setTrophy(animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
-              {nextRarity(r) && <GlowPill rarity={r} onClick={onTrade}>Trade up</GlowPill>}
+              {inCase
+                ? <GlowPill rarity={r} onClick={() => removeFromTrophyCase(animal.id)}>Remove from trophy case</GlowPill>
+                : <GlowPill rarity={r} onClick={() => { if (!addToTrophyCase(animal.id)) toast('The trophy case is full - take one out first') }}>Add to trophy case</GlowPill>}
+              {nextRarity(r) && onTrade && <GlowPill rarity={r} onClick={onTrade}>Trade up</GlowPill>}
             </div>
           )}
           <GlowPill rarity={r} onClick={onClose}>Close</GlowPill>

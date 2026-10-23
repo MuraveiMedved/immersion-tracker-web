@@ -46,7 +46,7 @@ export function collect(s) {
   out.prefs.set('settings', JSON.stringify(pick(s.settings, SETTINGS_KEYS)))
   out.prefs.set('race', JSON.stringify(pick(s.race, RACE_KEYS)))
   out.prefs.set('friends', JSON.stringify(pick(s.friends, FRIEND_KEYS)))
-  out.prefs.set('zoo', JSON.stringify({ base: s.zoo.base, trophyId: s.zoo.trophyId }))
+  out.prefs.set('zoo', JSON.stringify({ base: s.zoo.base, trophyId: s.zoo.trophyId, trophyIds: s.zoo.trophyIds || [] }))
   out.prefs.set('paused', JSON.stringify(s.paused || {}))
   return out
 }
@@ -96,7 +96,11 @@ export function applyRecords(s, records) {
         if (r.id === 'settings') s.settings = { ...s.settings, ...r.data }
         if (r.id === 'race') s.race = { ...s.race, ...r.data }
         if (r.id === 'friends') s.friends = { ...s.friends, ...r.data }
-        if (r.id === 'zoo') s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyId: r.data.trophyId ?? null }
+        if (r.id === 'zoo') {
+          // The whole trophy case; a record from an older version only has its first (trophyId).
+          const trophyIds = Array.isArray(r.data.trophyIds) ? r.data.trophyIds : (r.data.trophyId ? [r.data.trophyId] : [])
+          s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyIds, trophyId: trophyIds[0] || null }
+        }
         if (r.id === 'paused') s.paused = r.data || {}
         if (r.id.startsWith(NAMETAG_PREFIX) && (r.data.kind === 'earned' || r.data.kind === 'spent')) {
           const id = r.id.slice(NAMETAG_PREFIX.length)

@@ -40,6 +40,8 @@ export function defaultState() {
     settings: {
       showRaceTab: true,
       showZooTab: true,
+      // Cards per row in the Zoo collection, 2-5 (the phone's ZooRepository.columns) - per device, not synced.
+      zooColumns: 4,
       showAnkiOnHome: true,
       resumeHideMinutes: 60,
       logUncategorized: true,
@@ -79,7 +81,8 @@ export function defaultState() {
       avatar: '',
       lastFetch: 0,
     },
-    zoo: { base: null, openings: [], grants: [], tradeIns: [], eggs: {}, nametags: [], trophyId: null },
+    // trophyIds: the trophy case, up to 3 (the phone's ZooRepository.trophyIds); trophyId is its first - the profile's trophy.
+    zoo: { base: null, openings: [], grants: [], tradeIns: [], eggs: {}, nametags: [], trophyId: null, trophyIds: [] },
     // This device's sign-in to the sync server - never synced itself.
     sync: { url: '', token: '', accountId: '', sinceRev: 0, lastSync: 0, lastReconcile: 0, error: '' },
   }
@@ -139,6 +142,8 @@ function migrate(saved) {
   const s = { ...base, ...saved }
   for (const k of ['nextId', 'settings', 'race', 'friends', 'zoo', 'sync']) s[k] = { ...base[k], ...(saved[k] || {}) }
   s.friends.share = { ...base.friends.share, ...(saved.friends?.share || {}) }
+  // From before the trophy case: the one trophy becomes its first.
+  if (!saved.zoo?.trophyIds) s.zoo.trophyIds = s.zoo.trophyId ? [s.zoo.trophyId] : []
   s.profiles = saved.profiles || []
   s.entries = saved.entries || []
   s.paused = saved.paused || {}

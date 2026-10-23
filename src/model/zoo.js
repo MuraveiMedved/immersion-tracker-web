@@ -304,13 +304,39 @@ export function tradeUp(from, animalIds) {
     st.zoo.grants.push({ id: grantId, rarity: to, source: 'trade', atMillis: now })
     for (const c of copies) st.zoo.tradeIns.push({ id: uid(), animalId: c.animalId, grantId, atMillis: now, openingId: c.id })
     st.zoo.eggs[`grant:${grantId}`] = snapshotEgg(st, now)
-    if (st.zoo.trophyId && !copiesHeld(st)[st.zoo.trophyId]) st.zoo.trophyId = null
+    const held = copiesHeld(st)
+    st.zoo.trophyIds = (st.zoo.trophyIds || []).filter((id) => held[id])
+    st.zoo.trophyId = st.zoo.trophyIds[0] || null
   })
   return to
 }
 
+/** The trophy case's size (the phone's TROPHY_CASE_SIZE). */
+export const TROPHY_CASE_SIZE = 3
+
+/** The whole trophy case, first to last; its first is also the profile's trophy. */
+export function setTrophies(ids) {
+  const list = [...new Set(ids)].slice(0, TROPHY_CASE_SIZE)
+  update((s) => { s.zoo.trophyIds = list; s.zoo.trophyId = list[0] || null })
+}
+
+/** Shows [id] on the profile: it goes first in the trophy case. Null takes the first out. */
 export function setTrophy(id) {
-  update((s) => { s.zoo.trophyId = id })
+  const now = getState().zoo.trophyIds || []
+  setTrophies(id == null ? now.slice(1) : [id, ...now.filter((x) => x !== id)])
+}
+
+/** Puts [id] in the trophy case's first free slot - false if it's full. */
+export function addToTrophyCase(id) {
+  const now = getState().zoo.trophyIds || []
+  if (now.includes(id)) return true
+  if (now.length >= TROPHY_CASE_SIZE) return false
+  setTrophies([...now, id])
+  return true
+}
+
+export function removeFromTrophyCase(id) {
+  setTrophies((getState().zoo.trophyIds || []).filter((x) => x !== id))
 }
 
 /** Race Weekly/Monthly rewards already collected, by prize key (sprints.js). */

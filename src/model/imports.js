@@ -260,7 +260,8 @@ export async function readPhoneBackup(file) {
     for (const e of eggs) s.zoo.eggs[e.key] = { earnedAt: e.earnedAt, golden: !!e.golden, hourMark: e.hourMark ?? null, languageName: e.languageName ?? null, languageColor: e.languageColor ?? null, mediaTitle: e.mediaTitle ?? null, ...(e.momentumDays != null ? { momentumDays: e.momentumDays } : {}) }
     const zp = prefs.zoo_prefs || {}
     if (zp.credit_base_immersion != null) s.zoo.base = { immersionMillis: Number(zp.credit_base_immersion) || 0, credits: Number(zp.credit_base_credits) || 0 }
-    s.zoo.trophyId = zp.trophy_animal || null
+    s.zoo.trophyIds = zp.trophy_case ? String(zp.trophy_case).split(',').filter(Boolean) : (zp.trophy_animal ? [zp.trophy_animal] : [])
+    s.zoo.trophyId = s.zoo.trophyIds[0] || null
     const rp = prefs.race_prefs || {}
     s.race = { ...current.race, cachedEvents: [], archive: [], lastSync: 0 }
     if (keepIdentity && rp.user_id) {
