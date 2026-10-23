@@ -638,11 +638,13 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
   const isPast = day < today
 
   // Newest first, one per title + type + language, like HomeViewModel.recentManualSessions.
+  // Opened from a language's goal card, only that language's.
   const presets = useMemo(() => {
     const seen = new Set()
     const out = []
     for (const e of [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis)) {
       if (!e.isManual) continue
+      if (initialProfileId != null && e.languageProfileId !== initialProfileId) continue
       const key = `${e.mediaTitle}|${e.contentType}|${e.languageProfileId}`
       if (seen.has(key)) continue
       seen.add(key)
@@ -650,7 +652,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
       if (out.length >= MAX_RECENT_MANUAL_SESSIONS) break
     }
     return out
-  }, [s.entries])
+  }, [s.entries, initialProfileId])
 
   const langFor = (t) => (t === ANKI ? anki?.id ?? null : profileId)
   const canSubmit = millis > 0 || !isPast
