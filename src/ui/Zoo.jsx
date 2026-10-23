@@ -111,7 +111,6 @@ export function Zoo({ nav }) {
         {/* Nametags held - a currency, spent naming an animal from its card (ZooScreen.kt NametagCount). */}
         <button class="nametag-count" title={`${nametagsOf(s).held} nametags - what are these?`} onClick={() => setNametagInfo(true)}><Icon name="sell" size={15} /><b>{nametagsOf(s).held}</b></button>
       </div>
-      {Object.keys(z.copies).some((id) => z.copies[id]?.length) && <TrophyCase catalog={catalog} copies={z.copies} />}
       {/* One page, like the phone: the eggs (compact), then the collection below. */}
       <div class="egg-card compact" onClick={() => setOdds(true)} title="Hatch rates">
         <div class="egg-stage">
@@ -138,6 +137,8 @@ export function Zoo({ nav }) {
           {canTrade && <button class="btn tonal small" onClick={() => startTradeOf(r)}>Trade up</button>}
         </div>
       ))}
+      {/* The trophy case, at the top of the collection - the eggs stay above. */}
+      {Object.keys(z.copies).some((id) => z.copies[id]?.length) && <div style="margin-top:12px"><TrophyCase catalog={catalog} copies={z.copies} /></div>}
       <div id="zoo-collection" style="margin-top:12px">
         <Collection catalog={catalog} copies={z.copies} found={found} trophyId={s.zoo.trophyId} trade={trade} setTrade={setTrade} />
       </div>
