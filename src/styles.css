@@ -452,17 +452,25 @@ textarea.input { resize: vertical; }
 /* Add a session (the phone's StartManualEntryDialog). */
 .manual-body { display: flex; flex-direction: column; gap: 16px; max-height: min(520px, calc(100dvh - 220px)); overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
 .manual-body .hr { height: 1px; background: var(--outline-variant); flex: none; }
-.section-band { display: flex; flex-direction: column; gap: 12px; border-radius: 16px; padding: 14px; flex: none; }
+.section-band { display: flex; flex-direction: column; gap: 18px; border-radius: 16px; padding: 14px; flex: none; }
 .section-band.primary { background: color-mix(in srgb, var(--primary) 10%, transparent); }
-.section-band.secondary { background: color-mix(in srgb, var(--secondary) 10%, transparent); gap: 8px; }
-.type-lang-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.section-band.secondary { background: color-mix(in srgb, var(--secondary) 10%, transparent); }
+/* The add-session form's labelled groups (the phone's FormGroup / TypePill). */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: .1px; color: var(--on-surface-variant); }
+.type-pills { display: flex; gap: 8px; }
+.type-pill {
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; border-radius: 14px;
+  background: var(--surface-variant); color: var(--on-surface-variant); font-size: 12px; font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--outline) 70%, transparent);
+}
+.type-pill.on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
 .type-btn {
   width: 44px; height: 44px; border-radius: 50%; display: inline-grid; place-items: center; flex: none;
   background: var(--surface-variant); color: var(--on-surface-variant);
   border: 1px solid color-mix(in srgb, var(--outline) 70%, transparent);
 }
 .type-btn.on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
-.vdivider { width: 1px; height: 28px; background: var(--outline-variant); flex: none; }
 .recent-session {
   display: flex; align-items: center; border-radius: 14px; padding: 6px 12px 6px 0; cursor: pointer;
   border: var(--rs-w) solid transparent;

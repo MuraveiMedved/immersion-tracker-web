@@ -709,39 +709,52 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
         )}
         {presets.length > 0 && <div class="hr" />}
         <div class="section-band primary">
-          <div class="type-lang-row">
-            <TypeButton type={PODCAST} label="Listening" selected={type === PODCAST} onClick={() => pickType(PODCAST)} />
-            <TypeButton type={READING} label="Reading" selected={type === READING} onClick={() => pickType(READING)} />
-            {anki && <TypeButton type={ANKI} label="Anki" selected={type === ANKI} onClick={() => pickType(ANKI)} />}
-            {type !== ANKI && <span class="vdivider" />}
-            {type !== ANKI && languages.map((p) => (
-              <LanguageFilterChip key={p.id} profile={p} selected={profileId === p.id} onClick={() => pickLang(p.id)} />
-            ))}
-            {type !== ANKI && (allowUncategorized || languages.length === 0) && (
-              <button class={`chip ${profileId == null ? 'on' : ''}`} onClick={() => pickLang(null)}>{profileId == null && <Icon name="check" size={18} />}Uncategorized</button>
-            )}
+          <div class="form-group">
+            <div class="form-label">Type</div>
+            <div class="type-pills">
+              <TypePill type={PODCAST} label="Listening" selected={type === PODCAST} onClick={() => pickType(PODCAST)} />
+              <TypePill type={READING} label="Reading" selected={type === READING} onClick={() => pickType(READING)} />
+              {anki && <TypePill type={ANKI} label="Anki" selected={type === ANKI} onClick={() => pickType(ANKI)} />}
+            </div>
           </div>
+          {type !== ANKI && (
+            <div class="form-group">
+              <div class="form-label">Language</div>
+              <div class="chips">
+                {languages.map((p) => (
+                  <LanguageFilterChip key={p.id} profile={p} selected={profileId === p.id} onClick={() => pickLang(p.id)} />
+                ))}
+                {(allowUncategorized || languages.length === 0) && (
+                  <button class={`chip ${profileId == null ? 'on' : ''}`} onClick={() => pickLang(null)}>{profileId == null && <Icon name="check" size={18} />}Uncategorized</button>
+                )}
+              </div>
+            </div>
+          )}
           <label class="field">Title (optional)<input class="input" value={title} onInput={(e) => { setTitle(e.currentTarget.value); setPicked(null) }} onKeyDown={(e) => e.key === 'Enter' && submit()} /></label>
         </div>
         <div class="section-band secondary">
           {picked && <SelectedSessionBanner preset={picked} profile={profileById(picked.profileId)} onChange={() => scrollTo(false)} />}
-          <div class="label-large">When</div>
-          <DayChips today={today} selected={day} onSelect={setDay} />
-          <div class="label-large" style="padding-top:8px">How long</div>
-          <div class="chips">
-            {QUICK_DURATION_MINUTES.map((min) => {
-              const ms = min * 60000
-              const on = millis === ms
-              return (
-                <button key={min} class={`chip ${on ? 'on' : ''}`} onClick={() => {
-                  if (on) { setH(''); setM('') } else { setH(min >= 60 ? String(Math.floor(min / 60)) : ''); setM(min % 60 === 0 && min >= 60 ? '' : String(min % 60)) }
-                }}>{on && <Icon name="check" size={18} />}{formatHm(ms, true)}</button>
-              )
-            })}
+          <div class="form-group">
+            <div class="form-label">When</div>
+            <DayChips today={today} selected={day} onSelect={setDay} />
           </div>
-          <DurationInput hours={h} minutes={m} onHours={setH} onMinutes={setM} />
-          {millis > 0 && <div class="muted small">= {formatHm(millis)}</div>}
-          {millis === 0 && <div class={`small ${isPast ? 'err' : 'muted'}`}>{isPast ? 'Enter how long to log a past day' : 'Leave blank to start a live timer instead'}</div>}
+          <div class="form-group">
+            <div class="form-label">How long</div>
+            <div class="chips">
+              {QUICK_DURATION_MINUTES.map((min) => {
+                const ms = min * 60000
+                const on = millis === ms
+                return (
+                  <button key={min} class={`chip ${on ? 'on' : ''}`} onClick={() => {
+                    if (on) { setH(''); setM('') } else { setH(min >= 60 ? String(Math.floor(min / 60)) : ''); setM(min % 60 === 0 && min >= 60 ? '' : String(min % 60)) }
+                  }}>{on && <Icon name="check" size={18} />}{formatHm(ms, true)}</button>
+                )
+              })}
+            </div>
+            <DurationInput hours={h} minutes={m} onHours={setH} onMinutes={setM} />
+            {millis > 0 && <div class="muted small">= {formatHm(millis)}</div>}
+            {millis === 0 && <div class={`small ${isPast ? 'err' : 'muted'}`}>{isPast ? 'Enter how long to log a past day' : 'Leave blank to start a live timer instead'}</div>}
+          </div>
         </div>
       </div>
     </Dialog>
@@ -811,8 +824,10 @@ function GradientIcon({ name, size, ink, brush }) {
 }
 
 /** Icon-only content-type toggle (the phone's ContentTypeIconButton). */
-function TypeButton({ type, label, selected, onClick }) {
-  return <button class={`type-btn ${selected ? 'on' : ''}`} title={label} aria-label={label} aria-pressed={selected} onClick={onClick}><TypeIcon type={type} size={22} /></button>
+/** A session type in the form: its icon over its name, one of a row sharing the band's width
+ *  (the phone's TypePill). */
+function TypePill({ type, label, selected, onClick }) {
+  return <button class={`type-pill ${selected ? 'on' : ''}`} aria-pressed={selected} onClick={onClick}><TypeIcon type={type} size={22} /><span>{label}</span></button>
 }
 
 /** Today, Yesterday, a chip for an older picked day, then a calendar button (the app's own
