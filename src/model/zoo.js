@@ -1,10 +1,10 @@
 // The Zoo, ported from ZooRepository / ZooRules / Certificates: an egg per 10 hours of immersion,
 // hatch odds Mythic 1% / Legendary 5% / Epic 10% / Rare 30% / else Common, 5-for-1 trade-ups into
 // a coloured egg of the next tier, birth certificates on Epic+ copies and a holo chance on eggs
-// earned while Momentum is Bronze or better - 10/20/30/40% by tier. Everything is an append-only
+// earned while Momentum is Bronze or better - 10/20/25/30% by tier. Everything is an append-only
 // log, like on the phone. (Holo is stored as `foil`, the same as the phone and older records.)
 import { getState, update, uid } from '../store.js'
-import { counts, immersionTotal, goldenStreakDays, momentumTier, GOLDEN_DAYS } from './rules.js'
+import { counts, immersionTotal, vouchedEntries, goldenStreakDays, momentumTier, GOLDEN_DAYS } from './rules.js'
 import { HOUR } from './time.js'
 import { myLiveRaceMillis, bestFirst } from './race.js'
 
@@ -71,12 +71,12 @@ export function ensureBase() {
   const s = getState()
   if (s.zoo.base) return
   update((st) => {
-    st.zoo.base = { immersionMillis: immersionTotal(st.entries), credits: Math.floor(myLiveRaceMillis() / HOUR) }
+    st.zoo.base = { immersionMillis: immersionTotal(vouchedEntries(st.entries)), credits: Math.floor(myLiveRaceMillis() / HOUR) }
   })
 }
 
 export function zooState(s, now = Date.now()) {
-  const immersion = immersionTotal(s.entries, now)
+  const immersion = immersionTotal(vouchedEntries(s.entries), now)
   const earned = earnedHours(s, immersion)
   const progressMs = s.zoo.base ? Math.max(0, immersion - s.zoo.base.immersionMillis) % HOUR : 0
   const boxesOpened = s.zoo.openings.filter((o) => o.rarity === 'BOX').length
@@ -181,7 +181,7 @@ export function recordEarnedEggs() {
   const s = getState()
   if (!s.zoo.base) return
   const now = Date.now()
-  const earned = Math.floor(earnedHours(s, immersionTotal(s.entries, now)) / HOURS_PER_BOX)
+  const earned = Math.floor(earnedHours(s, immersionTotal(vouchedEntries(s.entries), now)) / HOURS_PER_BOX)
   const hatched = s.zoo.openings.filter((o) => o.rarity === 'BOX').length
   const missing = []
   for (let n = hatched + 1; n <= earned; n++) if (!s.zoo.eggs[`box:${n}`]) missing.push(n)
@@ -203,7 +203,40 @@ function certify(s, egg, rarity) {
   const foil = randomInt(100) < holoChancePercent(momentumDays)
   // momentumDays: its tier colours a holo card's pill (ZooCrateOpening.momentumDays).
   if (!carriesCertificate(rarity)) return foil ? { foil: true, momentumDays } : null
-  return { hourMark: egg.hourMark, languageName: egg.languageName, languageColor: egg.languageColor, mediaTitle: egg.mediaTitle, foil, momentumDays }
+  // The hour is the person's total hours now, as it's unlocked - the egg's own moment of earning
+  // was counted from the Zoo's start (which race hours set), not from all history.
+  const hourMark = hourMarkAt(vouchedEntries(s.entries), Date.now()) ?? egg.hourMark
+  return { hourMark, languageName: egg.languageName, languageColor: egg.languageColor, mediaTitle: egg.mediaTitle, foil, momentumDays }
+}
+
+/** The hour mark for a copy unlocked at `at`: total immersion hours by then, from the very first
+ *  session (Certificates.hourMarkAt); null with none at all. */
+export function hourMarkAt(entries, at) {
+  const imm = entries.filter((e) => counts(e.contentType, e.languageProfileId) && e.startTimeMillis < at)
+  if (!imm.length) return null
+  return Math.floor(imm.reduce((t, e) => t + Math.max(0, Math.min(e.endTimeMillis ?? at, at) - e.startTimeMillis), 0) / HOUR)
+}
+
+/** Certificates whose hour came out too low (read from the Zoo's start, which race hours set,
+ *  rather than all history) get the real total hours at the moment that copy was unlocked
+ *  (ZooRepository.raiseCertificateHours). Only ever raised, so history still syncing in can't
+ *  lower a correct one; runs whenever the Zoo opens. */
+export function raiseCertificateHours() {
+  const s = getState()
+  const entries = vouchedEntries(s.entries)
+  const fixes = []
+  for (const o of s.zoo.openings) {
+    if (o.cert?.hourMark == null) continue
+    const hour = hourMarkAt(entries, o.atMillis)
+    if (hour != null && hour > o.cert.hourMark) fixes.push([o.id, hour])
+  }
+  if (!fixes.length) return
+  update((st) => {
+    for (const [id, hour] of fixes) {
+      const at = st.zoo.openings.findIndex((o) => o.id === id)
+      if (at >= 0) st.zoo.openings[at] = { ...st.zoo.openings[at], cert: { ...st.zoo.openings[at].cert, hourMark: hour } }
+    }
+  })
 }
 
 /** Holo copies hatched before a copy kept its egg's Momentum get it once, from the egg they
@@ -305,8 +338,8 @@ export function tradeUp(from, animalIds) {
     for (const c of copies) st.zoo.tradeIns.push({ id: uid(), animalId: c.animalId, grantId, atMillis: now, openingId: c.id })
     st.zoo.eggs[`grant:${grantId}`] = snapshotEgg(st, now)
     const held = copiesHeld(st)
-    st.zoo.trophyIds = (st.zoo.trophyIds || []).filter((id) => held[id])
-    st.zoo.trophyId = st.zoo.trophyIds[0] || null
+    st.zoo.trophyIds = normalizeTrophies((st.zoo.trophyIds || []).map((id) => (held[id] ? id : '')))
+    st.zoo.trophyId = st.zoo.trophyIds.find(Boolean) || null
   })
   return to
 }
@@ -314,29 +347,44 @@ export function tradeUp(from, animalIds) {
 /** The trophy case's size (the phone's TROPHY_CASE_SIZE). */
 export const TROPHY_CASE_SIZE = 3
 
-/** The whole trophy case, first to last; its first is also the profile's trophy. */
+/** Trophy-case slots as kept (the phone's normalizeTrophies): at most TROPHY_CASE_SIZE, '' for an
+ *  empty one, an animal in only one slot, no empty slots trailing. */
+export function normalizeTrophies(ids) {
+  const seen = new Set()
+  const out = (ids || []).slice(0, TROPHY_CASE_SIZE).map((id) => {
+    const v = String(id || '').trim()
+    if (!v || seen.has(v)) return ''
+    seen.add(v)
+    return v
+  })
+  while (out.length && !out[out.length - 1]) out.pop()
+  return out
+}
+
+/** The whole trophy case, slot by slot ('' = empty); its first filled slot is the profile's trophy. */
 export function setTrophies(ids) {
-  const list = [...new Set(ids)].slice(0, TROPHY_CASE_SIZE)
-  update((s) => { s.zoo.trophyIds = list; s.zoo.trophyId = list[0] || null })
+  const list = normalizeTrophies(ids)
+  update((s) => { s.zoo.trophyIds = list; s.zoo.trophyId = list.find(Boolean) || null })
 }
 
-/** Shows [id] on the profile: it goes first in the trophy case. Null takes the first out. */
+/** Shows [id] on the profile: it goes into the first slot, the rest moving along after it (the
+ *  last drops off a full case). Null empties the profile's slot. */
 export function setTrophy(id) {
-  const now = getState().zoo.trophyIds || []
-  setTrophies(id == null ? now.slice(1) : [id, ...now.filter((x) => x !== id)])
+  const filled = (getState().zoo.trophyIds || []).filter(Boolean)
+  setTrophies(id == null ? filled.slice(1) : [id, ...filled.filter((x) => x !== id)])
 }
 
-/** Puts [id] in the trophy case's first free slot - false if it's full. */
-export function addToTrophyCase(id) {
+/** Puts [id] in trophy-case [slot] - replacing what's there, and leaving its old slot (if any) empty. */
+export function setTrophySlot(slot, id) {
   const now = getState().zoo.trophyIds || []
-  if (now.includes(id)) return true
-  if (now.length >= TROPHY_CASE_SIZE) return false
-  setTrophies([...now, id])
-  return true
+  const list = Array.from({ length: TROPHY_CASE_SIZE }, (_, i) => (now[i] === id ? '' : now[i] || ''))
+  list[Math.min(Math.max(slot, 0), TROPHY_CASE_SIZE - 1)] = id
+  setTrophies(list)
 }
 
+/** Empties the slot [id] is in; the others stay where they are. */
 export function removeFromTrophyCase(id) {
-  setTrophies((getState().zoo.trophyIds || []).filter((x) => x !== id))
+  setTrophies((getState().zoo.trophyIds || []).map((x) => (x === id ? '' : x)))
 }
 
 /** Race Weekly/Monthly rewards already collected, by prize key (sprints.js). */

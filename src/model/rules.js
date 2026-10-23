@@ -67,8 +67,8 @@ export const isGolden = (entries, now = Date.now()) => goldenStreakDays(entries,
 export const MOMENTUM_TIERS = [
   { id: 'bronze', name: 'Bronze', minDays: 10, holoPercent: 10 },
   { id: 'silver', name: 'Silver', minDays: 30, holoPercent: 20 },
-  { id: 'gold', name: 'Gold', minDays: 60, holoPercent: 30 },
-  { id: 'diamond', name: 'Diamond', minDays: 100, holoPercent: 40 },
+  { id: 'gold', name: 'Gold', minDays: 60, holoPercent: 25 },
+  { id: 'diamond', name: 'Diamond', minDays: 100, holoPercent: 30 },
 ]
 
 /** The tier a run of `days` has reached - null below Bronze. */
@@ -121,6 +121,16 @@ export function dailyTotalsFor(entries, profileId, type, now = Date.now()) {
 }
 
 /** All-time immersion, a running session counting up to now. */
+/**
+ * [entries] as this browser can vouch for them: a session from another device (the phone, a
+ * computer) that still looks running here is left out until its stop syncs. That device reports
+ * its own live time; counted here up to "now", it grew without limit whenever the stop never
+ * arrived (the phone offline, the app killed) - and the race report and profile sent from here
+ * then showed friends hours that were never done. Used for everything sent or credited from here
+ * (race scores, the profile, Zoo eggs, challenges), not for what's shown on screen.
+ */
+export const vouchedEntries = (entries) => entries.filter((e) => e.endTimeMillis != null || e.appPackage === 'web')
+
 export function immersionTotal(entries, now = Date.now()) {
   let t = 0
   for (const e of entries) if (counts(e.contentType, e.languageProfileId)) t += durationOf(e, now)

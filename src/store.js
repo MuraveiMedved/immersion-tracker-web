@@ -81,7 +81,8 @@ export function defaultState() {
       avatar: '',
       lastFetch: 0,
     },
-    // trophyIds: the trophy case, up to 3 (the phone's ZooRepository.trophyIds); trophyId is its first - the profile's trophy.
+    // trophyIds: the trophy case's slots, up to 3, '' for an empty one (the phone's ZooRepository.trophyIds);
+    // trophyId is its first filled slot - the profile's trophy.
     zoo: { base: null, openings: [], grants: [], tradeIns: [], eggs: {}, nametags: [], trophyId: null, trophyIds: [] },
     // This device's sign-in to the sync server - never synced itself.
     sync: { url: '', token: '', accountId: '', sinceRev: 0, lastSync: 0, lastReconcile: 0, error: '' },

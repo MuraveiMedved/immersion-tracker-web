@@ -98,8 +98,9 @@ export function applyRecords(s, records) {
         if (r.id === 'friends') s.friends = { ...s.friends, ...r.data }
         if (r.id === 'zoo') {
           // The whole trophy case; a record from an older version only has its first (trophyId).
-          const trophyIds = Array.isArray(r.data.trophyIds) ? r.data.trophyIds : (r.data.trophyId ? [r.data.trophyId] : [])
-          s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyIds, trophyId: trophyIds[0] || null }
+          // '' is an empty slot - slots keep their places.
+          const trophyIds = Array.isArray(r.data.trophyIds) ? r.data.trophyIds.map((x) => (typeof x === 'string' ? x : '')) : (r.data.trophyId ? [r.data.trophyId] : [])
+          s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyIds, trophyId: trophyIds.find(Boolean) || null }
         }
         if (r.id === 'paused') s.paused = r.data || {}
         if (r.id.startsWith(NAMETAG_PREFIX) && (r.data.kind === 'earned' || r.data.kind === 'spent')) {

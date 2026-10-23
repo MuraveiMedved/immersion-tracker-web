@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { useStore, useNow } from '../store.js'
 import { formatHm, formatYmd } from '../model/time.js'
-import { momentumTier, counts } from '../model/rules.js'
+import { momentumTier, counts, vouchedEntries } from '../model/rules.js'
 import { RARITY_COLOR, RARITY_LABEL, claimSprintPrize, claimNametag, setTrophy, takenPrizes } from '../model/zoo.js'
 import { HatchDialog } from './Zoo.jsx'
 import { localSprints, prizesWaiting, sprintEndMillis, sprintStartMillis, waitingIn, isTaken } from '../model/sprints.js'
@@ -15,7 +15,8 @@ import { AnimalCardView, CardStage, Floaty, GlowPill, rarityBrush } from './Zoo.
 /** This person's Weekly and Monthly, and the rewards already collected (RaceViewModel.challenges). */
 export function useChallenges(now) {
   const s = useStore()
-  const sprints = localSprints(s.entries, now)
+  // Only time this browser can vouch for (see vouchedEntries) - challenges hand out prizes.
+  const sprints = localSprints(vouchedEntries(s.entries), now)
   const taken = takenPrizes(s)
   return { sprints, taken, waiting: prizesWaiting(sprints, taken).length > 0 }
 }

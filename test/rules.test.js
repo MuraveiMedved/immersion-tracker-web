@@ -1,10 +1,10 @@
 // Run with: TZ=America/Chicago npm test
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal } from '../src/model/rules.js'
+import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, vouchedEntries } from '../src/model/rules.js'
 import { goalDayStart } from '../src/model/time.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
-import { lootBoxTier, immersionReachedAt, computeCertificate } from '../src/model/zoo.js'
+import { lootBoxTier, immersionReachedAt, computeCertificate, hourMarkAt } from '../src/model/zoo.js'
 import { parsePolyLogger, parseToggl, csvRows, guessMapping } from '../src/model/imports.js'
 import { HOUR } from '../src/model/time.js'
 
@@ -159,10 +159,10 @@ test('goal days run from 4 AM: a late night counts for the day before', () => {
   assert.equal(computeStreak(dailyTotalsFor(list, 1, PODCAST, at(2026, 10, 15, 3)), HOUR, at(2026, 10, 15, 3)).current, 1)
 })
 
-test('Momentum tiers: Bronze 10 / Silver 30 / Gold 60 / Diamond 100 days, holo 10/20/30/40%', () => {
+test('Momentum tiers: Bronze 10 / Silver 30 / Gold 60 / Diamond 100 days, holo 10/20/25/30%', () => {
   const at = (d) => momentumTier(d)?.id ?? null
   assert.deepEqual([0, 9, 10, 29, 30, 59, 60, 99, 100, 400].map(at), [null, null, 'bronze', 'bronze', 'silver', 'silver', 'gold', 'gold', 'diamond', 'diamond'])
-  assert.deepEqual([10, 30, 60, 100].map((d) => momentumTier(d).holoPercent), [10, 20, 30, 40])
+  assert.deepEqual([10, 30, 60, 100].map((d) => momentumTier(d).holoPercent), [10, 20, 25, 30])
   assert.equal(nextMomentumTier(null).id, 'bronze')
   assert.equal(nextMomentumTier(momentumTier(100)), null)
 })
@@ -197,4 +197,25 @@ test('General goal changes only goal progress: race score and stats read the sam
   const s = scoreFor({ id: 'e', startMillis: day - 48 * HOUR, endMillis: null }, list.filter((e) => e.contentType !== ANKI), now)
   assert.equal(s.millis, (20 + 25 + 40) * 60000)
   assert.equal(s.readingMillis, (25 + 40) * 60000)
+})
+
+test('a phone session still running here is not reported from the web until its stop syncs', () => {
+  const now = at(2026, 10, 22, 22)
+  const event = { id: 'e', startMillis: at(2026, 10, 22, 0), endMillis: null }
+  const done = entry(at(2026, 10, 22, 9), 2 * HOUR, PODCAST, 1, { appPackage: 'com.spotify.music' })
+  // Started on the phone at 10:00 and never heard to stop: counted to "now" it would be 12 hours.
+  const stale = { ...entry(at(2026, 10, 22, 10), 0, PODCAST, 1, { appPackage: 'com.spotify.music' }), endTimeMillis: null }
+  // A timer running in this browser is this browser's own, so it still counts.
+  const mine = { ...entry(at(2026, 10, 22, 21), 0, READING, 1, { appPackage: 'web' }), endTimeMillis: null }
+  const kept = vouchedEntries([done, stale, mine])
+  assert.deepEqual(kept, [done, mine])
+  assert.equal(scoreFor(event, kept, now).millis, 3 * HOUR)
+})
+
+test('a certificate\'s hour is total immersion hours at unlock, from the first session', () => {
+  const start = at(2025, 1, 1)
+  const history = [entry(start, 300 * HOUR), entry(start + 400 * HOUR, 5 * HOUR, LISTENING), entry(start + 410 * HOUR, 2 * HOUR, PODCAST, null), entry(start + 500 * HOUR, 12 * HOUR)]
+  assert.equal(hourMarkAt(history, start + 506 * HOUR), 306)
+  assert.equal(hourMarkAt(history, start + 600 * HOUR), 312)
+  assert.equal(hourMarkAt([], start), null)
 })

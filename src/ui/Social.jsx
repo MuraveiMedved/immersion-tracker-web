@@ -1398,6 +1398,10 @@ function ProfileSections({ p }) {
   const [all, setAll] = useState(false)
   const [open, setOpen] = useState(null)
   const trophy = p.trophy && catalog?.find((a) => a.id === p.trophy)
+  // Their trophy case (all three slots) when they send it; older versions send just the one trophy.
+  const caseSlots = p.trophyCase && catalog ? [0, 1, 2].map((i) => catalog.find((a) => a.id === p.trophyCase[i]) || null) : null
+  const showCase = caseSlots && caseSlots.some(Boolean)
+  const firstFilled = showCase ? caseSlots.findIndex(Boolean) : -1
   const cert = (id) => {
     const c = p.certs?.[id]
     return c ? { hourMark: c[0] >= 0 ? c[0] : null, languageName: c[1] || null, languageColor: c[2] || null, mediaTitle: c[3] || null, foil: c[4] === 1, momentumDays: Number.isInteger(c[5]) && c[5] >= 0 ? c[5] : null } : null
@@ -1407,7 +1411,20 @@ function ProfileSections({ p }) {
     .sort((a, b) => ORDER.indexOf(a[0].rarity) - ORDER.indexOf(b[0].rarity) || a[0].name.toLowerCase().localeCompare(b[0].name.toLowerCase())) : []
   return (
     <div class="col" style="gap:16px">
-      {trophy && p.shows.trophy && (
+      {showCase && p.shows.trophy && (
+        <div class="profile-card">
+          <div class="row muted" style="gap:4px;font-size:12px;font-weight:500;margin-bottom:10px"><Icon name="emoji_events" size={16} />Trophy case</div>
+          <div class="trophy-slots">
+            {caseSlots.map((a, i) => (a
+              ? <button key={`${i}${a.id}`} class="trophy-slot" style={{ '--rarity': RARITY_COLOR[a.rarity] }} onClick={() => setOpen(a)}>
+                  <div class="photo"><AnimalPhoto animal={a} />{cert(a.id)?.foil && <FoilSheen seed={a.id} />}{i === firstFilled && <span class="count pick">🏆</span>}</div>
+                  <div class="name">{p.names?.[a.id] ? `“${p.names[a.id]}”` : a.name}</div>
+                </button>
+              : <div key={`empty${i}`} class="trophy-slot empty"><div class="photo" /></div>))}
+          </div>
+        </div>
+      )}
+      {!showCase && trophy && p.shows.trophy && (
         <button class="trophy-card" style={{ '--rarity': RARITY_COLOR[trophy.rarity] }} onClick={() => setOpen(trophy)}>
           <div class="photo"><AnimalPhoto animal={trophy} /></div>
           <div class="grow" style="min-width:0;text-align:left">

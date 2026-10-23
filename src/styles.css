@@ -361,9 +361,11 @@ textarea.input { resize: vertical; }
 .trophy-empty { aspect-ratio: 1; border-radius: 16px; border: 2px dashed color-mix(in srgb, var(--on-surface-variant) 35%, transparent); background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 60%, transparent); display: grid; place-items: center; cursor: pointer; }
 .zoo-grid.roomy .tile-animal .cap { font-size: 12px; padding: 14px 6px 6px; }
 .collection-head { align-items: center; }
-.col-pick { display: flex; gap: 2px; padding: 2px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface-variant) 10%, transparent); }
-.col-pick button { width: 28px; height: 28px; border: 0; border-radius: 999px; background: transparent; color: var(--on-surface-variant); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.col-pick button.on { background: var(--primary); color: var(--bg); }
+/* Cards per row: one pill like the app's chips - icon, "4 per row", an arrow (the phone's ColumnsPicker). */
+.col-pick { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 10px; border-radius: 999px; background: var(--c-high); color: var(--on-surface-variant); cursor: pointer; }
+.col-pick select { appearance: none; -webkit-appearance: none; border: 0; background: transparent; color: var(--on-surface); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; padding: 0; }
+.col-pick select:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 4px; }
+.col-pick option { color: initial; }
 .tile-animal { position: relative; border-radius: 16px; overflow: hidden; aspect-ratio: 1; background: var(--surface-variant); cursor: pointer; border: 2px solid transparent; user-select: none; -webkit-user-select: none; }
 .tile-animal img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
 .tile-animal .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 4px 4px; font-size: 10px; font-weight: 600; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.75)); line-height: 1.2; }
@@ -499,6 +501,14 @@ textarea.input { resize: vertical; }
 }
 .trophy-card .photo { width: 84px; height: 84px; border-radius: 16px; overflow: hidden; flex: none; box-shadow: 0 6px 16px color-mix(in srgb, var(--rarity) 45%, transparent); }
 .trophy-card .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* A profile's trophy case (the phone's TrophyCaseShowcase): three slots, each in its rarity's colour. */
+.trophy-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; min-width: 0; }
+.trophy-slot .photo { position: relative; width: 100%; aspect-ratio: 1; border-radius: 16px; overflow: hidden; border: 2px solid var(--rarity); box-shadow: 0 6px 16px color-mix(in srgb, var(--rarity) 40%, transparent); }
+.trophy-slot .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.trophy-slot .photo .count { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+.trophy-slot .name { font-size: 12px; font-weight: 600; text-align: center; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.trophy-slot.empty { cursor: default; }
+.trophy-slot.empty .photo { border: 1px solid color-mix(in srgb, var(--on-surface-variant) 20%, transparent); box-shadow: none; background: color-mix(in srgb, var(--on-surface) 5%, transparent); }
 
 /* Race cards (the phone's OpenEventCard / CompletedEventCard). */
 .race-card { border-radius: 16px; padding: 16px; margin-top: 12px; background: var(--block); border: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent); }

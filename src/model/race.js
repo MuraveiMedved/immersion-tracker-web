@@ -1,7 +1,7 @@
 // Races and friends on the same Apps Script server the phones use (race-backend/Code.gs) - the
 // web app is just another racer: it reports its own totals, worked out from its own entries.
 import { getState, update } from '../store.js'
-import { ANKI, PODCAST, READING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor } from './rules.js'
+import { ANKI, PODCAST, READING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor, vouchedEntries } from './rules.js'
 import { DAY, HOUR, localZone, zonedParts, dayStart, goalDayStart, ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
 
 /** The owner's server, built into the phone app too (see Tracker APP/CLAUDE.md - temporary until
@@ -322,7 +322,7 @@ export async function sync({ joinEventId = null, followUp = true } = {}) {
   const scores = s.race.cachedEvents
     .filter((e) => e.id === joinEventId || competedIn(e, s.race.userId))
     .filter((e) => !e.standings.some((st) => st.userId === s.race.userId && st.final))
-    .map((e) => scoreFor(e, s.entries, now))
+    .map((e) => scoreFor(e, vouchedEntries(s.entries), now))
   const report = { action: 'sync', name: s.race.name, emoji: s.race.emoji, color: s.race.chartColor, scores }
   const profile = buildProfileBody()
   if (profile) report.profile = profile
@@ -417,7 +417,7 @@ export function zooSummary(s) {
 export function buildProfileBody(now = Date.now()) {
   const s = getState()
   const share = s.friends.share
-  const entries = s.entries
+  const entries = vouchedEntries(s.entries)
   // Goal rings, streaks and "today" are goal days (from 4 AM), like Home.
   const todayStart = goalDayStart(now)
   const today = ymdOf(todayStart)
@@ -458,12 +458,15 @@ export function buildProfileBody(now = Date.now()) {
   for (const [d, m] of immersionByDay) if (!best || m > best[1]) best = [d, m]
   const held = zooSummary(s)
   const trophy = s.zoo.trophyId && held[s.zoo.trophyId] ? s.zoo.trophyId : null
+  // The trophy case, slot by slot ('' = empty, or no longer held) - the phone's FriendProfile tc.
+  const trophyCase = (s.zoo.trophyIds || []).slice(0, 3).map((id) => (id && held[id] ? id : ''))
   const body = {
     v: 1,
     dayKey: today,
     shows: { ...share },
   }
   if (trophy && share.trophy) body.trophy = trophy
+  if (share.trophy && trophyCase.some(Boolean)) body.tc = trophyCase
   if (s.friends.banner) body.banner = s.friends.banner
   if (s.friends.background) body.bg = s.friends.background
   if (s.settings.ringStyle && s.settings.ringStyle !== 'CLASSIC') body.ringStyle = s.settings.ringStyle
@@ -471,13 +474,13 @@ export function buildProfileBody(now = Date.now()) {
   if (share.trophy || share.zoo) body.zooFound = Object.keys(held).length
   if (share.streaks) body.gd = goldenStreakDays(entries, now)
   if (share.zoo) body.zoo = held
-  const certs = bestCertificates(s, held, share, trophy)
+  const certs = bestCertificates(s, held, share, trophy, trophyCase)
   if (Object.keys(certs).length) body.zc = certs
   // Names given with nametags (model/zoo.js nametagsOf - the latest name per animal), for the
-  // animals shown: the trophy, and the collection when shared (the phone's FriendProfile zn).
+  // animals shown: the trophy case, and the collection when shared (the phone's FriendProfile zn).
   const names = {}
   for (const t of [...(s.zoo.nametags || [])].filter((t) => t.kind === 'spent').sort((a, b) => a.atMillis - b.atMillis || String(a.id).localeCompare(String(b.id)))) {
-    if (t.animalId && t.name && ((share.zoo && held[t.animalId]) || (share.trophy && t.animalId === trophy))) names[t.animalId] = t.name
+    if (t.animalId && t.name && ((share.zoo && held[t.animalId]) || (share.trophy && (t.animalId === trophy || trophyCase.includes(t.animalId))))) names[t.animalId] = t.name
   }
   if (Object.keys(names).length) body.zn = names
   if (share.rings || share.goals || share.streaks) body.languages = languages
@@ -496,13 +499,13 @@ export function buildProfileBody(now = Date.now()) {
   return body
 }
 
-function bestCertificates(s, held, share, trophy) {
+function bestCertificates(s, held, share, trophy, trophyCase = []) {
   const out = {}
   const traded = new Set(s.zoo.tradeIns.map((t) => t.openingId))
   const byAnimal = {}
   for (const o of s.zoo.openings) if (!traded.has(o.id) && o.cert) (byAnimal[o.animalId] = byAnimal[o.animalId] || []).push(o)
   for (const [id, list] of Object.entries(byAnimal)) {
-    if (!((share.zoo && held[id]) || (share.trophy && id === trophy))) continue
+    if (!((share.zoo && held[id]) || (share.trophy && (id === trophy || trophyCase.includes(id))))) continue
     list.sort(bestFirst)
     const c = list[0].cert
     if (c.hourMark == null && !c.foil) continue
@@ -553,6 +556,8 @@ export function readProfile(o) {
     updatedAt: o.updatedAt || 0,
     dayKey: body.dayKey || 0,
     trophy: body.trophy || null,
+    // Their trophy case's slots ('' = empty); null from versions before it (only `trophy` then).
+    trophyCase: Array.isArray(body.tc) ? body.tc.slice(0, 3).map((x) => (typeof x === 'string' ? x : '')) : null,
     banner: hexes.test(body.banner || '') ? body.banner : '',
     background: hexes.test(body.bg || '') || /^theme:[A-Z_]{1,20}$/.test(body.bg || '') ? body.bg : '',
     ringStyle: /^[A-Z_]{1,24}$/.test(body.ringStyle || '') ? body.ringStyle : '',
