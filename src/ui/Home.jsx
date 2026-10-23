@@ -725,12 +725,16 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
                   <LanguageFilterChip key={p.id} profile={p} selected={profileId === p.id} onClick={() => pickLang(p.id)} />
                 ))}
                 {(allowUncategorized || languages.length === 0) && (
-                  <button class={`chip ${profileId == null ? 'on' : ''}`} onClick={() => pickLang(null)}>{profileId == null && <Icon name="check" size={18} />}Uncategorized</button>
+                  <LanguageFilterChip profile={UNCATEGORIZED_CHIP} selected={profileId == null} onClick={() => pickLang(null)} />
                 )}
               </div>
             </div>
           )}
-          <label class="field">Title (optional)<input class="input" value={title} onInput={(e) => { setTitle(e.currentTarget.value); setPicked(null) }} onKeyDown={(e) => e.key === 'Enter' && submit()} /></label>
+          <div class="title-field">
+            <Icon name="edit" size={20} />
+            <input placeholder="Title (optional)" aria-label="Title (optional)" value={title} onInput={(e) => { setTitle(e.currentTarget.value); setPicked(null) }} onKeyDown={(e) => e.key === 'Enter' && submit()} />
+            {title && <button class="icon-btn" aria-label="Clear title" onClick={() => { setTitle(''); setPicked(null) }}><Icon name="close" size={20} /></button>}
+          </div>
         </div>
         <div class="section-band secondary">
           {picked && <SelectedSessionBanner preset={picked} profile={profileById(picked.profileId)} onChange={() => scrollTo(false)} />}
@@ -760,6 +764,9 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
     </Dialog>
   )
 }
+
+/** The "no language" chip: shaped like the languages beside it, in neutral grey (the phone's UNCATEGORIZED_CHIP_HEX). */
+const UNCATEGORIZED_CHIP = { name: 'Uncategorized', colorHex: '#9E9EA8' }
 
 const stopsOf = (p) => (p?.gradientColors ? p.gradientColors.split(',').map((x) => x.trim()).filter(Boolean) : null)
 const UNRESOLVED_GRAY = '#9E9EA8'
