@@ -5,7 +5,7 @@
 // pushes whatever differs from it (new, changed, or gone = a tombstone), then pulls everything the
 // server has after the last revision this device saw and applies it. The newest edit wins per
 // record, decided on the server.
-import { getState, update, readExtra, writeExtra, subscribe } from '../store.js'
+import { getState, update, readExtra, writeExtra, subscribe, uncategorizeLegacyAnki } from '../store.js'
 import { remapIds } from './ids.js'
 
 /** The built-in sync server (sync-backend/Code.gs, deployed 2026-10-16 - see its SETUP.md). A
@@ -74,6 +74,13 @@ const LISTS = { entry: (s) => s.entries, profile: (s) => s.profiles, opening: (s
 const SET_LIST = { entry: (s, v) => { s.entries = v }, profile: (s, v) => { s.profiles = v }, opening: (s, v) => { s.zoo.openings = v }, grant: (s, v) => { s.zoo.grants = v }, tradeIn: (s, v) => { s.zoo.tradeIns = v } }
 
 /** Puts server [records] into [s]. */
+/** A record from an older app or web version lacks the fields added since - those keep the value
+ *  this device has (the phone's WebSyncCodec.profileFrom does the same). */
+function keepNewerFields(coll, existing, data) {
+  if (coll !== 'profile' || !existing || !data || 'ankiGoalMinutes' in data) return data
+  return { ...data, ankiGoalMinutes: existing.ankiGoalMinutes ?? 0 }
+}
+
 export function applyRecords(s, records) {
   const byColl = {}
   for (const r of records) (byColl[r.coll] = byColl[r.coll] || []).push(r)
@@ -82,7 +89,7 @@ export function applyRecords(s, records) {
       const items = new Map(LISTS[coll](s).map((x) => [String(x.id), x]))
       for (const r of list) {
         if (r.deleted) items.delete(r.id)
-        else items.set(r.id, r.data)
+        else items.set(r.id, keepNewerFields(coll, items.get(r.id), r.data))
       }
       SET_LIST[coll](s, [...items.values()])
     } else if (coll === 'egg') {
@@ -318,6 +325,9 @@ async function round() {
   if (!token) return
   await loadSnapshot()
   if (Date.now() - (getState().sync.lastReconcile || 0) >= RECONCILE_EVERY) await reconcileWithAccount(token)
+  // Anki an older version put on the retired Anki profile loses its language, here and (pushed
+  // now) everywhere - see uncategorizeLegacyAnki.
+  if (uncategorizeLegacyAnki(getState())) update(() => {})
   const cur = collect(getState())
   const changes = diff(cur, snapshot)
   // Never let one device empty the account: if most of the history suddenly looks deleted here

@@ -14,7 +14,10 @@ export const GENERAL = 'GENERAL'
 export const listeningGoalOf = (p) => (p.generalGoal ? 0 : p.podcastGoalMinutes || 0)
 export const readingGoalOf = (p) => (p.generalGoal ? 0 : p.readingGoalMinutes || 0)
 export const generalGoalOf = (p) => (p.generalGoal ? p.generalGoalMinutes || 0 : 0)
-export const hasGoal = (p) => listeningGoalOf(p) > 0 || readingGoalOf(p) > 0 || generalGoalOf(p) > 0
+/** The language's daily Anki goal (LanguageProfile.ankiGoal) - Anki is a third mode of each
+ *  language, never part of the General goal; the retired Anki profile has none. */
+export const ankiGoalOf = (p) => (p.isAnki ? 0 : p.ankiGoalMinutes || 0)
+export const hasGoal = (p) => listeningGoalOf(p) > 0 || readingGoalOf(p) > 0 || generalGoalOf(p) > 0 || ankiGoalOf(p) > 0
 /** Whether an entry type fills a goal ring of [goalType] - GENERAL takes listening and reading. */
 export const fillsGoal = (goalType, type) => (goalType === GENERAL ? type === PODCAST || type === READING : type === goalType)
 

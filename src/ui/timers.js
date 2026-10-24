@@ -8,9 +8,8 @@ import { toast } from './common.jsx'
 
 const KIND = { [PODCAST]: 'listening', [READING]: 'reading', [ANKI]: 'Anki' }
 
-/** "Japanese listening", "Anki", "Uncategorized reading". */
+/** "Japanese listening", "Japanese Anki", "Uncategorized reading". */
 export function sessionName(type, languageProfileId) {
-  if (type === ANKI) return 'Anki'
   return `${profileById(languageProfileId)?.name || 'Uncategorized'} ${KIND[type] || 'music'}`
 }
 

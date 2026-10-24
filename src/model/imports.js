@@ -125,7 +125,6 @@ export function guessMapping(project, profiles) {
   else if (/music|song/.test(lower)) type = LISTENING
   else if (/listen|podcast|audio|watch/.test(lower)) type = PODCAST
   else if (/read/.test(lower)) type = READING
-  if (type === ANKI) return { type, languageProfileId: profiles.find((p) => p.isAnki)?.id ?? null }
   const code = lower.split(/[^a-z]+/).find(Boolean)
   const script = CODE_SCRIPTS[code]
   const byCode = script ? profiles.find((p) => !p.isAnki && p.scriptDetectors?.includes(script)) : null
@@ -237,7 +236,7 @@ export async function readPhoneBackup(file) {
       id: p.id, name: p.name || '', colorHex: p.colorHex || '#4370A3', gradientColors: p.gradientColors || null,
       scriptDetectors: splitList(p.scriptDetectors), keywords: splitList(p.keywords), sortOrder: p.sortOrder ?? p.id,
       podcastGoalMinutes: p.podcastGoalMinutes || 0, readingGoalMinutes: p.readingGoalMinutes || 0,
-      generalGoal: !!p.generalGoal, generalGoalMinutes: p.generalGoalMinutes || 0,
+      generalGoal: !!p.generalGoal, generalGoalMinutes: p.generalGoalMinutes || 0, ankiGoalMinutes: p.isAnki ? 0 : p.ankiGoalMinutes || 0,
       isMain: !!p.isMain, isAnki: !!p.isAnki, ringsStacked: p.ringsStacked == null ? null : !!p.ringsStacked,
     }))
     s.entries = entries.map((e) => ({

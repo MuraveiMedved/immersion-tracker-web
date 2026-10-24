@@ -43,7 +43,7 @@ export function UncategorizedFolder({ entries, now, onOpen }) {
         <span class="muted"><Icon name={open ? 'expand_less' : 'expand_more'} /></span>
       </div>
       {open && <div class="list" style="margin:0 20px">{entries.slice(0, 50).map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => onOpen(e.id)} />)}</div>}
-      {confirm && <Confirm title="Delete all uncategorized entries?" text="This deletes everything in this folder, with no language assigned. This can't be undone." confirmLabel="Delete all" danger onConfirm={deleteAllUncategorized} onClose={() => setConfirm(false)} />}
+      {confirm && <Confirm title="Delete all uncategorized entries?" text="This deletes everything in this folder with no language assigned, except Anki (it counts in races). This can't be undone." confirmLabel="Delete all" danger onConfirm={deleteAllUncategorized} onClose={() => setConfirm(false)} />}
     </div>
   )
 }
@@ -61,7 +61,7 @@ export function EntryDetails({ id, onClose }) {
   return (
     <Dialog title={entry.mediaTitle || typeLabel(entry.contentType)} onClose={onClose}>
       <div class="col" style="gap:10px">
-        <div class="row"><TypeIcon type={entry.contentType} size={22} color={profile?.colorHex} /><span>{typeLabel(entry.contentType)}</span>{entry.contentType !== ANKI && <LanguageChip profile={profile} />}</div>
+        <div class="row"><TypeIcon type={entry.contentType} size={22} color={profile?.colorHex} /><span>{typeLabel(entry.contentType)}</span><LanguageChip profile={profile} /></div>
         <div class="muted small">
           {running ? `${formatHm(durationOf(entry, now))} so far · still tracking` : `${formatDateTime(entry.startTimeMillis)} – ${formatTime(entry.endTimeMillis)} · ${formatHm(durationOf(entry))}`}
         </div>
@@ -78,7 +78,7 @@ export function EntryDetails({ id, onClose }) {
             ))}
           </div>
         )}
-        {entry.contentType !== ANKI && <button class="btn tonal" onClick={() => setMode('lang')}>Change language</button>}
+        <button class="btn tonal" onClick={() => setMode('lang')}>Change language</button>
         {!running && <button class="btn tonal" onClick={() => setMode('dur')}>Change duration</button>}
         <button class="btn tonal" onClick={() => setMode('title')}>Change title</button>
         <button class={`btn ${armDelete ? 'danger' : 'text danger'}`} onClick={() => {
@@ -149,7 +149,8 @@ export function Entries({ params }) {
   const [confirm, setConfirm] = useState(false)
 
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])
-  const uncategorized = s.settings.logUncategorized ? sorted.filter((e) => e.languageProfileId == null) : []
+  // Anki without a language (from before Anki was a mode of each language) is always listed.
+  const uncategorized = sorted.filter((e) => e.languageProfileId == null && (s.settings.logUncategorized || e.contentType === ANKI))
   const shown = sorted.filter((e) => e.languageProfileId != null).slice(0, limit)
   const groups = []
   for (const e of shown) {

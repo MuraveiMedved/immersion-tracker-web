@@ -3,7 +3,7 @@ import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry
 } from '../store.js'
-import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
+import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
@@ -37,7 +37,7 @@ export function Home({ nav }) {
   const immersing = running.some((e) => (e.contentType === PODCAST || e.contentType === READING) && e.languageProfileId != null)
 
   const sortedCards = s.profiles
-    .filter((p) => (p.isAnki ? s.settings.showAnkiOnHome : hasGoal(p)))
+    .filter((p) => !p.isAnki && hasGoal(p))
     .sort((a, b) => a.sortOrder - b.sortOrder)
   const drag = useGoalCardDrag(sortedCards, saveGoalCardLayout)
   const cards = drag.order
@@ -58,9 +58,8 @@ export function Home({ nav }) {
     if (isWide(p)) { blocks.push({ wide: p }); continue }
     let run = blocks[blocks.length - 1]
     if (!run || run.wide) blocks.push(run = { columns: [[], []], weights: [0, 0] })
-    // Roughly the card's height: the name row plus each ring (about twice as tall). The Anki
-    // card's time-only ring counts too, or every card after it piled into one column.
-    const w = 1 + 2 * ((listeningGoalOf(p) > 0) + (readingGoalOf(p) > 0) + (generalGoalOf(p) > 0) + (p.isAnki ? 1 : 0))
+    // Roughly the card's height: the name row plus each ring (about twice as tall), Anki's too.
+    const w = 1 + 2 * ((listeningGoalOf(p) > 0) + (readingGoalOf(p) > 0) + (generalGoalOf(p) > 0) + (ankiGoalOf(p) > 0))
     const i = run.weights[0] <= run.weights[1] ? 0 : 1
     run.columns[i].push(p)
     run.weights[i] += w
@@ -68,7 +67,8 @@ export function Home({ nav }) {
   const languages = s.profiles.filter((p) => !p.isAnki)
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])
   const recent = sorted.filter((e) => e.languageProfileId != null).slice(0, 5)
-  const uncategorized = s.settings.logUncategorized ? sorted.filter((e) => e.languageProfileId == null) : []
+  // Anki without a language (from before Anki was a mode of each language) is always listed.
+  const uncategorized = sorted.filter((e) => e.languageProfileId == null && (s.settings.logUncategorized || e.contentType === ANKI))
   const paused = running.length ? null : pausedEntry()
   const activeProfile = running.map((e) => profileById(e.languageProfileId)).find((p) => p && !p.isAnki)
   // Desktop: Space stops what's running (the newest one), or resumes the last session.
@@ -482,9 +482,9 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
     ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
     : { color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
   const iconColor = light ? '#000' : '#fff'
-  const rings = profile.isAnki
-    ? [[ANKI, 0]]
-    : [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)]].filter(([, g]) => g > 0)
+  // Anki is a third mode, with its own goal - never part of the General one (it isn't immersion).
+  const rings = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]]
+    .filter(([, g]) => g > 0)
   return (
     <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''}`}
       data-goal-id={profile.id} style={{ background: bg, borderColor: outline }} onClick={onOpen} role="button">
@@ -530,6 +530,7 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
 function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
   const [listen, setListen] = useState(String(profile.podcastGoalMinutes))
   const [read, setRead] = useState(String(profile.readingGoalMinutes))
+  const [anki, setAnki] = useState(String(profile.ankiGoalMinutes || 0))
   const [general, setGeneral] = useState(!!profile.generalGoal)
   // Switching to General the first time starts it at the two separate goals added together.
   const [gen, setGen] = useState(String(profile.generalGoalMinutes || (profile.podcastGoalMinutes || 0) + (profile.readingGoalMinutes || 0)))
@@ -537,6 +538,7 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
     upsertProfile({
       ...profile, podcastGoalMinutes: Number(listen) || 0, readingGoalMinutes: Number(read) || 0,
       generalGoal: general, generalGoalMinutes: general ? Number(gen) || 0 : profile.generalGoalMinutes || 0,
+      ankiGoalMinutes: Number(anki) || 0,
     })
     onClose()
   }
@@ -555,8 +557,7 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
           <button class="btn tonal grow" onClick={() => onAdd(PODCAST)}><TypeLabel type={PODCAST}>Add listening</TypeLabel></button>
           <button class="btn tonal grow" onClick={() => onAdd(READING)}><TypeLabel type={READING}>Add reading</TypeLabel></button>
         </div>
-        {/* Anki is tracked without a goal. */}
-        {!profile.isAnki && <>
+        <>
           <div class="divider goal-dialog-divider" />
           <div class="goal-dialog-section">Daily goal</div>
           <GoalModeChoice general={general} onChange={setGeneral} />
@@ -566,7 +567,9 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
                 <label class="field grow"><TypeLabel type={PODCAST}>Listening · min</TypeLabel>{minutes(listen, setListen)}</label>
                 <label class="field grow"><TypeLabel type={READING}>Reading · min</TypeLabel>{minutes(read, setRead)}</label>
               </div>}
-        </>}
+          {/* Anki's own goal, beside either mode - review isn't immersion. */}
+          <label class="field"><TypeLabel type={ANKI}>Anki · min</TypeLabel>{minutes(anki, setAnki)}</label>
+        </>
       </div>
     </Dialog>
   )
@@ -604,10 +607,10 @@ const QUICK_DURATION_MINUTES = [15, 30, 45, 60, 90, 120]
 
 export function ManualSessionDialog({ initialType, initialProfileId, onClose }) {
   const s = useStore()
-  const anki = s.profiles.find((p) => p.isAnki)
+  // Anki is a mode of each language, like listening and reading.
   const languages = s.profiles.filter((p) => !p.isAnki).sort((a, b) => a.sortOrder - b.sortOrder)
   const allowUncategorized = s.settings.logUncategorized
-  const [type, setType] = useState(initialProfileId != null && initialProfileId === anki?.id ? ANKI : initialType || PODCAST)
+  const [type, setType] = useState(initialType || PODCAST)
   const [profileId, setProfileId] = useState(() =>
     (initialProfileId != null && languages.some((p) => p.id === initialProfileId) ? initialProfileId : null) ??
     languages.find((p) => p.isMain)?.id ?? (allowUncategorized ? null : languages[0]?.id ?? null))
@@ -639,17 +642,16 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
     return out
   }, [s.entries, initialProfileId])
 
-  const langFor = (t) => (t === ANKI ? anki?.id ?? null : profileId)
   const canSubmit = millis > 0 || !isPast
   const submit = () => {
     if (!canSubmit) return
     const name = s.profiles.find((p) => p.id === profileId)?.name ?? 'Uncategorized'
     const t = title.trim() || `Manual ${name} session`
     if (millis > 0) {
-      logCompletedManualEntry(type, langFor(type), t, millis, day)
+      logCompletedManualEntry(type, profileId, t, millis, day)
       toast(`${formatHm(millis)} logged`)
     } else {
-      startTimer(type, langFor(type), t)
+      startTimer(type, profileId, t)
     }
     onClose()
   }
@@ -701,10 +703,10 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
             <div class="type-pills">
               <TypePill type={PODCAST} label="Listening" selected={type === PODCAST} onClick={() => pickType(PODCAST)} />
               <TypePill type={READING} label="Reading" selected={type === READING} onClick={() => pickType(READING)} />
-              {anki && <TypePill type={ANKI} label="Anki" selected={type === ANKI} onClick={() => pickType(ANKI)} />}
+              <TypePill type={ANKI} label="Anki" selected={type === ANKI} onClick={() => pickType(ANKI)} />
             </div>
           </div>
-          {type !== ANKI && (
+          {(
             <div class="form-group">
               <div class="form-label">Language</div>
               <div class="chips">

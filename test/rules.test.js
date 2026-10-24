@@ -1,7 +1,7 @@
 // Run with: TZ=America/Chicago npm test
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, vouchedEntries } from '../src/model/rules.js'
+import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, vouchedEntries } from '../src/model/rules.js'
 import { goalDayStart } from '../src/model/time.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate, hourMarkAt } from '../src/model/zoo.js'
@@ -218,4 +218,36 @@ test('a certificate\'s hour is total immersion hours at unlock, from the first s
   assert.equal(hourMarkAt(history, start + 506 * HOUR), 306)
   assert.equal(hourMarkAt(history, start + 600 * HOUR), 312)
   assert.equal(hourMarkAt([], start), null)
+})
+
+test('Anki is a mode of each language: its own goal, never immersion, never the General goal', () => {
+  const ja = { id: 1, name: 'Japanese', podcastGoalMinutes: 0, readingGoalMinutes: 0, ankiGoalMinutes: 15 }
+  assert.equal(hasGoal(ja), true)
+  assert.equal(ankiGoalOf(ja), 15)
+  assert.equal(ankiGoalOf({ ...ja, isAnki: true }), 0)
+  assert.equal(hasGoal({ ...ja, ankiGoalMinutes: 0 }), false)
+  assert.equal(counts(ANKI, 1), false)
+  // Toggl: an Anki project goes to the language it names, never the retired Anki profile.
+  const profiles = [{ id: 3, name: 'Japanese', scriptDetectors: ['JAPANESE_KANA'], isAnki: false }, { id: 9, name: 'Anki', isAnki: true }]
+  assert.deepEqual(guessMapping('JP Anki', profiles), { type: ANKI, languageProfileId: 3 })
+  assert.deepEqual(guessMapping('Vocabulary', profiles), { type: ANKI, languageProfileId: null })
+  // An Anki goal streak counts Anki only.
+  const day = at(2026, 10, 1)
+  const entries = [entry(day, 20 * 60000, ANKI), entry(day, 60 * 60000, PODCAST)]
+  const streak = computeStreak(dailyTotalsFor(entries, 1, ANKI, day + HOUR), 15 * 60000, day + HOUR)
+  assert.equal(streak.current, 1)
+})
+
+test('race Anki counts the same whether it is on a language, the old Anki profile or none', () => {
+  const start = at(2026, 10, 1, 8)
+  const event = { id: 'e', startMillis: start, endMillis: start + 48 * HOUR, standings: [] }
+  const now = start + 20 * HOUR
+  const with_ = (lang) => scoreFor(event, [entry(start + HOUR, 8 * HOUR, PODCAST, 1), entry(start + 10 * HOUR, 2 * HOUR, ANKI, lang)], now)
+  const legacy = with_(9)
+  for (const lang of [1, null]) {
+    const score = with_(lang)
+    for (const k of ['millis', 'readingMillis', 'ankiMillis', 'ankiBankedMillis']) assert.equal(score[k], legacy[k], k)
+    assert.deepEqual(score.dailyAnki, legacy.dailyAnki)
+  }
+  assert.equal(legacy.ankiMillis, 8 * HOUR / 10)
 })

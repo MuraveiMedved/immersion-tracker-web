@@ -62,9 +62,6 @@ export function Settings({ params, nav }) {
       </Block>
 
       <Block collapsible icon="timer" title="Tracking">
-        <SettingRow icon={<TypeIcon type="ANKI" size={22} />} title="Show Anki on Home" hint="Today's Anki time as its own card. Anki is still tracked when this is off.">
-          <Switch checked={s.settings.showAnkiOnHome} onChange={(v) => setSetting('showAnkiOnHome', v)} />
-        </SettingRow>
         <SettingRow icon="play_arrow" title="Resume button" hint="How long Home offers your last session again after it ends.">
           <ResumeHideStepper minutes={s.settings.resumeHideMinutes ?? 60} />
         </SettingRow>
@@ -174,7 +171,7 @@ function LanguageEdit({ id, onClose }) {
   const s = useStore()
   const existing = id === 'new' ? null : s.profiles.find((p) => p.id === id)
   const used = new Set(s.profiles.map((p) => p.colorHex))
-  const [p, setP] = useState(() => existing ? { ...existing } : { name: '', colorHex: LANGUAGE_COLORS.find((c) => !used.has(c)) || LANGUAGE_COLORS[0], gradientColors: null, scriptDetectors: [], keywords: [], podcastGoalMinutes: 30, readingGoalMinutes: 30, isMain: !s.profiles.some((x) => x.isMain && !x.isAnki) })
+  const [p, setP] = useState(() => existing ? { ...existing } : { name: '', colorHex: LANGUAGE_COLORS.find((c) => !used.has(c)) || LANGUAGE_COLORS[0], gradientColors: null, scriptDetectors: [], keywords: [], podcastGoalMinutes: 30, readingGoalMinutes: 30, ankiGoalMinutes: 0, isMain: !s.profiles.some((x) => x.isMain && !x.isAnki) })
   const [kw, setKw] = useState('')
   const [del, setDel] = useState(false)
   const set = (k, v) => setP((x) => ({ ...x, [k]: v }))
@@ -221,6 +218,9 @@ function LanguageEdit({ id, onClose }) {
             <label class="field grow"><TypeLabel type="READING" size={14}>Reading · min</TypeLabel><input class="input" inputMode="numeric" value={p.readingGoalMinutes} onInput={(e) => set('readingGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
           </div>
           </>}
+          {/* Anki's own goal, beside either mode - review isn't immersion. Which AnkiDroid decks
+              count is picked on the phone. */}
+          <label class="field"><TypeLabel type="ANKI" size={14}>Anki · min</TypeLabel><input class="input" inputMode="numeric" value={p.ankiGoalMinutes || 0} onInput={(e) => set('ankiGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
         </div>
         <details>
           <summary class="form-label clickable">Detection</summary>
@@ -435,7 +435,6 @@ function ImportDialog({ kind, files, onClose }) {
     return [...by.values()].sort((a, b) => b.ms - a.ms)
   }, [rows])
   const languages = s.profiles.filter((p) => !p.isAnki)
-  const anki = s.profiles.find((p) => p.isAnki)
   const entries = rows ? toEntries(rows, mapping) : []
   const run = () => {
     const added = importEntries(entries)
@@ -457,9 +456,9 @@ function ImportDialog({ kind, files, onClose }) {
               <div key={p.name} class="card" style="padding:12px">
                 <div class="row"><b class="grow ellipsis">{p.name || '(No project)'}</b><span class="muted small">{p.count} entries · {formatHm(p.ms)}</span></div>
                 <div class="chips" style="margin-top:8px">
-                  {TYPE_OPTIONS.map(([t, l]) => <button key={String(t)} class={`chip ${m.type === t ? 'on' : ''}`} onClick={() => setM({ type: t, languageProfileId: t === ANKI ? anki?.id ?? null : m.languageProfileId })}>{t && <TypeIcon type={t} size={15} />}{l}</button>)}
+                  {TYPE_OPTIONS.map(([t, l]) => <button key={String(t)} class={`chip ${m.type === t ? 'on' : ''}`} onClick={() => setM({ type: t, languageProfileId: m.languageProfileId })}>{t && <TypeIcon type={t} size={15} />}{l}</button>)}
                 </div>
-                {m.type && m.type !== ANKI && (
+                {m.type && (
                   <div class="chips" style="margin-top:8px">
                     {languages.map((l) => <button key={l.id} class={`chip ${m.languageProfileId === l.id ? 'on' : ''}`} onClick={() => setM({ languageProfileId: l.id })}><span class="dot" style={{ background: l.colorHex }} />{l.name}</button>)}
                     <button class={`chip ${m.languageProfileId == null ? 'on' : ''}`} onClick={() => setM({ languageProfileId: null })}>Uncategorized</button>

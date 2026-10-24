@@ -12,7 +12,8 @@ export const MANUAL_APP = 'manual'
  *  synced ones (the phone shows it as the session's source). */
 export const WEB_APP = 'web'
 export const ANKI_COLOR = '#2E7DD7'
-/** The one Anki profile has the same id on every device, so synced devices share it. */
+/** The retired Anki profile's id on every device (from when Anki was a language of its own -
+ *  see retireAnkiProfile), so synced devices share it. */
 export const ANKI_ID = 1
 
 let lastUid = 0
@@ -154,7 +155,7 @@ function migrate(saved) {
 export async function loadState() {
   const saved = await readSaved()
   if (saved) state = migrate(saved)
-  ensureAnkiProfile()
+  if (uncategorizeLegacyAnki(state)) writeSaved(state)
   try { navigator.storage?.persist?.() } catch { /* not supported */ }
   version++
   listeners.forEach((l) => l())
@@ -200,8 +201,7 @@ export function flush() {
 
 export function replaceState(next) {
   state = migrate(next)
-  ensureAnkiProfile()
-  update(() => {})
+  update((s) => uncategorizeLegacyAnki(s))
 }
 
 export function useStore() {
@@ -228,11 +228,28 @@ export function useNow(ms = 1000) {
  * Tracking actions - the same rules as the phone's TrackingRepository.
  * --------------------------------------------------------------------------------------------- */
 
-function ensureAnkiProfile() {
-  if (state.profiles.some((p) => p.isAnki)) return
-  const id = state.profiles.some((p) => p.id === ANKI_ID) ? uid() : ANKI_ID
-  state.profiles.push(newProfile({ id, name: 'Anki', colorHex: ANKI_COLOR, isAnki: true, sortOrder: 9999 }))
+/** Anki used to be a language of its own (the isAnki profile); now it's a mode of every language,
+ *  with each language's own Anki goal. The old profile is never created any more, and is kept but
+ *  hidden where it exists (older versions on the same account still know it). Its sessions say
+ *  nothing about which language they were, so they lose their language - still Anki, so race
+ *  totals (which count Anki by type) don't change. Run on load and after each sync, the same as
+ *  the phone's TrackingRepository.uncategorizeLegacyAnki. Returns whether anything changed. */
+export function uncategorizeLegacyAnki(s) {
+  const legacy = new Set(s.profiles.filter((p) => p.isAnki).map((p) => p.id))
+  let changed = false
+  if (!legacy.size) return changed
+  for (const e of s.entries) {
+    if (e.languageProfileId != null && legacy.has(e.languageProfileId)) {
+      e.languageProfileId = null
+      e.detectionReason = null
+      changed = true
+    }
+  }
+  return changed
 }
+
+/** Every language - without the retired Anki profile, which is shown nowhere. */
+export const languagesOf = (s) => s.profiles.filter((p) => !p.isAnki)
 
 export function newProfile(fields = {}) {
   const id = uid()
@@ -248,6 +265,8 @@ export function newProfile(fields = {}) {
     readingGoalMinutes: 0,
     generalGoal: false,
     generalGoalMinutes: 0,
+    // This language's daily Anki goal (0: none) - Anki is a third mode of each language.
+    ankiGoalMinutes: 0,
     isMain: false,
     isAnki: false,
     // Home card's layout: true = half width, rings stacked; false = full width, rings beside the
@@ -479,7 +498,8 @@ export function deleteEntries(ids) {
 }
 
 export function deleteAllUncategorized() {
-  update((s) => { s.entries = s.entries.filter((e) => e.languageProfileId != null || e.endTimeMillis == null) })
+  // Anki is kept: it counts in races with or without a language (as on the phone).
+  update((s) => { s.entries = s.entries.filter((e) => e.languageProfileId != null || e.endTimeMillis == null || e.contentType === ANKI) })
 }
 
 /** Adds finished entries, skipping any whose exact start and end are already there for the same
