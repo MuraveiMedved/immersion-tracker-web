@@ -4,6 +4,7 @@ import { durationOf, typeLabel } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
 import { Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, Seg, toast } from './common.jsx'
 import { Stats } from './Stats.jsx'
+import { HomeMenu } from './Home.jsx'
 
 /** The phone's EntryRow: the language's mark (by the "Entry language label" setting), the title and
  *  artist, and a grey pill with the duration. */
@@ -140,10 +141,11 @@ const PAGE = 120
 /** Stats or All entries, like the phone: two pages of their own, each opened from Home's menu
  *  ([params].tab). All entries is the uncategorized folder, then each day; a selection bar shows
  *  while rows are picked. */
-export function Entries({ params }) {
+export function Entries({ params, nav }) {
   const s = useStore()
   const now = useNow(1000)
   const tab = params?.tab === 'entries' ? 'entries' : 'stats'
+  const [menuOpen, setMenuOpen] = useState(false)
   const [limit, setLimit] = useState(PAGE)
   const [selected, setSelected] = useState(new Set())
   const [details, setDetails] = useState(null)
@@ -164,7 +166,12 @@ export function Entries({ params }) {
 
   return (
     <>
-      <h1 class="page-title">{tab === 'stats' ? 'Stats' : 'All entries'}</h1>
+      {menuOpen && <HomeMenu nav={nav} current={tab} onClose={() => setMenuOpen(false)} />}
+      {/* The menu button where Home has it: the header's right-hand end. */}
+      <div class="row page-head">
+        <h1 class="page-title grow">{tab === 'stats' ? 'Stats' : 'All entries'}</h1>
+        <button class="icon-btn" title="Menu: stats and all entries" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
+      </div>
       {selecting && (
         <div class="sel-bar">
           <button class="icon-btn" title="Cancel" onClick={() => setSelected(new Set())}><Icon name="close" /></button>

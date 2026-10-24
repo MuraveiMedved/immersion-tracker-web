@@ -64,7 +64,7 @@ function App() {
       </nav>
       <main class="page">
         {tab === 'home' && <Home nav={nav} />}
-        {tab === 'entries' && <Entries params={route.params} />}
+        {tab === 'entries' && <Entries params={route.params} nav={nav} />}
         {tab === 'challenges' && <Challenges nav={nav} />}
         {tab === 'social' && <Social />}
         {tab === 'zoo' && <Zoo nav={nav} />}

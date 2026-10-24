@@ -469,6 +469,26 @@ function useGoalCardDrag(cards, onSave) {
   }
 }
 
+/** Home's side menu (the phone's HomeDrawerScaffold): the app's name, then Stats and All entries,
+ *  each its own page - [current] marks the one it's open over. A tap outside or Escape closes it. */
+export function HomeMenu({ nav, onClose, current = null }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+  const go = (tab) => { onClose(); if (tab !== current) nav('entries', { tab }) }
+  return (
+    <div class="side-menu-scrim" onClick={onClose}>
+      <nav class="side-menu" onClick={(e) => e.stopPropagation()}>
+        <div class="side-menu-title">Immersion Tracker</div>
+        <button class={`side-menu-item ${current === 'stats' ? 'on' : ''}`} onClick={() => go('stats')}><Icon name="bar_chart" />Stats</button>
+        <button class={`side-menu-item ${current === 'entries' ? 'on' : ''}`} onClick={() => go('entries')}><Icon name="list" />All entries</button>
+      </nav>
+    </div>
+  )
+}
+
 function GoalCard({ profile, now, running, light, wide, lifted, selected, stacked, onToggleStacked, onOpen }) {
   const s = useStore()
   const todayStart = goalDayStart(now) // goal days run from 4 AM
