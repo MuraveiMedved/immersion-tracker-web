@@ -229,7 +229,7 @@ function ZooFeedButton({ catalog, now }) {
         <Icon name="celebration" />{unseen && <span class="dot-badge" />}
       </button>
       {open && (
-        <Dialog title="Recent finds" onClose={() => setOpen(false)} actions={<button class="btn text" onClick={() => setOpen(false)}>Close</button>}>
+        <Dialog title={<span class="feed-head"><span class="badge-ico"><Icon name="celebration" size={22} /></span>Recent finds</span>} onClose={() => setOpen(false)} actions={<button class="btn text" onClick={() => setOpen(false)}>Close</button>}>
           {!lines.length ? <div class="muted">Nothing yet - when a friend or someone in your races finds an animal, it shows up here.</div> : (
             <div class="col" style="gap:8px">
               {lines.map((l) => {
@@ -238,13 +238,21 @@ function ZooFeedButton({ catalog, now }) {
                 const style = a.rarity === 'RAINBOW'
                   ? { background: RARITY_GRADIENT.RAINBOW, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
                   : { color: RARITY_COLOR[a.rarity] }
+                const frame = a.rarity === 'RAINBOW' ? RARITY_GRADIENT.RAINBOW : RARITY_COLOR[a.rarity]
                 return (
-                  <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="zoo-feed-line">
-                    <span class="grow">
-                      <b>{l.userId == null ? 'You' : l.name || '?'}</b>{l.event.tradeUp ? ' traded up for ' : ' got '}{/^[aeiou]/i.test(named) ? 'an' : 'a'}{' '}
-                      <b style={style}>{named}</b>!
+                  /* One find (the phone's FeedRow): its photo framed in its rarity, the line, its rarity and when. */
+                  <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="feed-row">
+                    <span class="feed-thumb" style={{ background: frame }}><AnimalPhoto animal={a} /></span>
+                    <span class="grow col" style="gap:4px">
+                      <span>
+                        <b>{l.userId == null ? 'You' : l.name || '?'}</b>{l.event.tradeUp ? ' traded up for ' : ' got '}{/^[aeiou]/i.test(named) ? 'an' : 'a'}{' '}
+                        <b style={style}>{named}</b>!
+                      </span>
+                      <span class="row" style="gap:8px;align-items:center">
+                        <span class="rarity-pill" style={{ background: frame }}>{RARITY_LABEL[a.rarity]}</span>
+                        <span class="muted tiny">{agoText(l.event.atMillis, now)}</span>
+                      </span>
                     </span>
-                    <span class="muted tiny" style="flex:none">{agoText(l.event.atMillis, now)}</span>
                   </div>
                 )
               })}

@@ -963,3 +963,10 @@ textarea.input { resize: vertical; }
 /* The Zoo feed's icon: a dot while someone found something since it was last opened. */
 .feed-btn { position: relative; }
 .feed-btn .dot-badge { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--error, #e5484d); }
+/* Recent finds (the phone's ZooFeedDialog): a badge in the title, each find a soft row with its photo. */
+.feed-head { display: inline-flex; align-items: center; gap: 12px; }
+.feed-head .badge-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.feed-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: color-mix(in srgb, var(--on-surface) 6%, transparent); font-size: 14px; line-height: 1.35; }
+.feed-thumb { flex: none; width: 52px; height: 52px; border-radius: 14px; padding: 2px; display: block; overflow: hidden; }
+.feed-thumb > * { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; display: block; }
+.rarity-pill { color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
