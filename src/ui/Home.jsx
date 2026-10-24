@@ -566,7 +566,6 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
                 <label class="field grow"><TypeLabel type={PODCAST}>Listening · min</TypeLabel>{minutes(listen, setListen)}</label>
                 <label class="field grow"><TypeLabel type={READING}>Reading · min</TypeLabel>{minutes(read, setRead)}</label>
               </div>}
-          <div class="muted small">{general ? 'Listening and reading both count. 0 hides the ring.' : '0 hides a ring.'}</div>
         </>}
       </div>
     </Dialog>
