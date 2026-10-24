@@ -97,7 +97,7 @@ export function Home({ nav }) {
   return (
     <>
       {activeProfile && <div class="backdrop-wash" style={{ background: `linear-gradient(${withAlpha(activeProfile.colorHex, light ? 0.18 : 0.28)}, transparent)` }} />}
-      {menuOpen && <HomeMenu nav={nav} onClose={() => setMenuOpen(false)} />}
+      {menuOpen && <HomeMenu nav={nav} active={activeProfile} onClose={() => setMenuOpen(false)} />}
       <div class="home-head">
         <div class="title-col">
           <Title mode={s.settings.titleStyleMode} active={activeProfile} light={light} />
@@ -469,9 +469,13 @@ function useGoalCardDrag(cards, onSave) {
   }
 }
 
-/** Home's side menu (the phone's HomeDrawerScaffold): the app's name, then Stats and All entries,
- *  each its own page - [current] marks the one it's open over. A tap outside or Escape closes it. */
-export function HomeMenu({ nav, onClose, current = null }) {
+/** Home's side menu (the phone's HomeDrawerScaffold): the app's title in Home's own style, then
+ *  Stats and All entries (each its own page) with the app's icon badges - [current] marks the one
+ *  it's open over, [active] is the playing language for that title style. A tap outside or Escape
+ *  closes it. */
+export function HomeMenu({ nav, onClose, current = null, active = null }) {
+  const s = useStore()
+  const light = !isDarkFor(s.settings.uiColorPreset)
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -481,9 +485,12 @@ export function HomeMenu({ nav, onClose, current = null }) {
   return (
     <div class="side-menu-scrim" onClick={onClose}>
       <nav class="side-menu" onClick={(e) => e.stopPropagation()}>
-        <div class="side-menu-title">Immersion Tracker</div>
-        <button class={`side-menu-item ${current === 'stats' ? 'on' : ''}`} onClick={() => go('stats')}><Icon name="bar_chart" />Stats</button>
-        <button class={`side-menu-item ${current === 'entries' ? 'on' : ''}`} onClick={() => go('entries')}><Icon name="list" />All entries</button>
+        <div class="side-menu-head">
+          <Title mode={s.settings.titleStyleMode} active={active} light={light} />
+          <div class="version">web ⚡</div>
+        </div>
+        <button class={`side-menu-item ${current === 'stats' ? 'on' : ''}`} onClick={() => go('stats')}><span class="badge-ico"><Icon name="bar_chart" size={22} /></span>Stats</button>
+        <button class={`side-menu-item ${current === 'entries' ? 'on' : ''}`} onClick={() => go('entries')}><span class="badge-ico"><Icon name="list" size={22} /></span>All entries</button>
       </nav>
     </div>
   )
