@@ -108,9 +108,9 @@ export function Zoo({ nav }) {
       <div class="row" style="align-items:center;margin-bottom:16px">
         <h1 class="page-title grow" style="margin:0">Zoo</h1>
         {/* Weekly/Monthly challenges - their rewards land here, so they live here (a dot while one waits). */}
-        {nav && <ChallengesButton nav={nav} />}
         {/* What friends and racers got lately - an icon beside Challenges (the phone's ZooFeedButton). */}
         <ZooFeedButton catalog={catalog} now={now} />
+        {nav && <ChallengesButton nav={nav} />}
         {/* Nametags held - a currency, spent naming an animal from its card (ZooScreen.kt NametagCount). */}
         <button class="nametag-count" title={`${nametagsOf(s).held} nametags - what are these?`} onClick={() => setNametagInfo(true)}><Icon name="sell" size={15} /><b>{nametagsOf(s).held}</b></button>
       </div>
