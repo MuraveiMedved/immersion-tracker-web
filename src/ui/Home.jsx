@@ -107,8 +107,8 @@ export function Home({ nav }) {
         <div class="side">
           <div class="row" style="gap:0">
             <button class="icon-btn" title="Start a manual session" onClick={() => setManual({})}><Icon name="add" /></button>
-            {/* Home's menu - Stats and All entries - with the other header button, not before the title. */}
-            <button class="icon-btn" title="Menu: stats and all entries" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
+            {/* Home's menu - Entries and Stats - with the other header button, not before the title. */}
+            <button class="icon-btn" title="Menu: entries and stats" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
           </div>
           <div class="today-total">Today: {formatHm(todayTotal)}</div>
         </div>
@@ -509,8 +509,8 @@ export function HomeMenu({ nav, onClose, current = null, active = null }) {
           <Title mode={s.settings.titleStyleMode} active={active} light={light} />
           <div class="version">web ⚡</div>
         </div>
+        <button class={`side-menu-item ${current === 'entries' ? 'on' : ''}`} onClick={() => go('entries')}><span class="badge-ico"><Icon name="list" size={22} /></span>Entries</button>
         <button class={`side-menu-item ${current === 'stats' ? 'on' : ''}`} onClick={() => go('stats')}><span class="badge-ico"><Icon name="bar_chart" size={22} /></span>Stats</button>
-        <button class={`side-menu-item ${current === 'entries' ? 'on' : ''}`} onClick={() => go('entries')}><span class="badge-ico"><Icon name="list" size={22} /></span>All entries</button>
       </nav>
     </div>
   )

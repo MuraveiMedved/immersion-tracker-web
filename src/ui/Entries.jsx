@@ -169,7 +169,7 @@ export function Entries({ params, nav }) {
       {menuOpen && <HomeMenu nav={nav} current={tab} onClose={() => setMenuOpen(false)} />}
       {/* The menu button where Home has it: the header's right-hand end. */}
       <div class="row page-head">
-        <h1 class="page-title grow">{tab === 'stats' ? 'Stats' : 'All entries'}</h1>
+        <h1 class="page-title grow">{tab === 'stats' ? 'Stats' : 'Entries'}</h1>
         <button class="icon-btn" title="Menu: stats and all entries" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
       </div>
       {selecting && (
