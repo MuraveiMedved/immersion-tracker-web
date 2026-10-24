@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry,
-  removeRecentManualSession, isHiddenManualSession,
+  removeRecentManualSession, isHiddenManualSession, setSetting,
 } from '../store.js'
 import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
@@ -241,6 +241,7 @@ function IdleBanner({ now, onOther }) {
 function StartAgain({ now, running, light }) {
   const s = useStore()
   const [removing, setRemoving] = useState(null)
+  const showRecent = s.settings.showRecentManualSessions !== false
   const groups = useMemo(() => [[PODCAST, 'Listening'], [READING, 'Reading']]
     .map(([type, label]) => ({ type, label, items: recentSessions(type) }))
     .filter((g) => g.items.length), [s.entries, s.settings.hiddenManualSessions])
@@ -253,9 +254,10 @@ function StartAgain({ now, running, light }) {
     <aside class="start-again" aria-label="Start again">
       <div class="sa-head">
         <Icon name="restore" size={20} />
-        <span>Start again</span>
+        <span class="grow">Start again</span>
+        <ToggleRecent show={showRecent} count={groups.reduce((n, g) => n + g.items.length, 0)} />
       </div>
-      {groups.map((g) => (
+      {showRecent && groups.map((g) => (
         <section key={g.type} class="sa-group">
           <div class="sa-group-title"><TypeIcon type={g.type} size={18} />{g.label}</div>
           {g.items.map((e) => {
@@ -279,9 +281,19 @@ function StartAgain({ now, running, light }) {
           })}
         </section>
       ))}
-      <p class="sa-tip"><Icon name="info" size={16} />Click any session to start a new timer with the same title and language, or right-click it to remove it. Press Space to resume the last one.</p>
+      {showRecent && <p class="sa-tip"><Icon name="info" size={16} />Click any session to start a new timer with the same title and language, or right-click it to remove it. Press Space to resume the last one.</p>}
       {removing && <RemoveRecentDialog title={removing.mediaTitle} type={removing.contentType} profileId={removing.languageProfileId} onClose={() => setRemoving(null)} />}
     </aside>
+  )
+}
+
+/** Hide / Show for the recent sessions - remembered, and shared by Add a session and Start again
+ *  (the phone's TrackingRepository.showRecentManualSessions). */
+function ToggleRecent({ show, count }) {
+  return (
+    <button class="btn text" style="padding:0 8px;min-height:32px" onClick={() => setSetting('showRecentManualSessions', !show)}>
+      <Icon name={show ? 'visibility_off' : 'visibility'} size={18} />{show ? 'Hide' : `Show (${count})`}
+    </button>
   )
 }
 
@@ -662,6 +674,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
   const [picked, setPicked] = useState(null)
   const [expanded, setExpanded] = useState(false)
   const [removing, setRemoving] = useState(null)
+  const showRecent = s.settings.showRecentManualSessions !== false
   const scroller = useRef(null)
   const today = dayStart(Date.now())
   const millis = hmToMillis(h, m)
@@ -723,8 +736,12 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
       <div ref={scroller} class="manual-body">
         {presets.length > 0 && (
           <div class="col" style="gap:4px">
-            <div class="label-large">Recent sessions</div>
-            <div class="muted small" style="padding-bottom:4px">Tap a session to copy it into the form below, ▶ to start it right away, or hold it (or right-click) to remove it.</div>
+            <div class="row" style="align-items:center">
+              <div class="label-large grow">Recent sessions</div>
+              <ToggleRecent show={showRecent} count={presets.length} />
+            </div>
+            {showRecent && <>
+            <div class="muted small" style="padding-bottom:4px">Select or hit play</div>
             <div class="col" style="gap:8px">
               {visible.map((p) => (
                 <RecentSessionRow key={p.key} preset={p} profile={profileById(p.profileId)} selected={picked?.key === p.key}
@@ -739,6 +756,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
                 <Icon name={expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'} size={18} />
               </button>
             )}
+            </>}
           </div>
         )}
         {presets.length > 0 && <div class="hr" />}

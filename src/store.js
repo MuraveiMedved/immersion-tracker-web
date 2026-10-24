@@ -48,6 +48,9 @@ export function defaultState() {
       // Recent manual sessions taken out of Add a session with their logs kept: key -> when (see
       // manualSessionKey). Per device, not synced, like the phone's.
       hiddenManualSessions: {},
+      // Whether Add a session and Start again show their recent sessions or just a Show button -
+      // the same everywhere they appear. Per device, not synced.
+      showRecentManualSessions: true,
       logUncategorized: true,
       entryThresholdEnabled: false,
       entryThresholdSeconds: 30,
