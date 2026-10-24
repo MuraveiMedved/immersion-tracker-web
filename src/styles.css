@@ -290,7 +290,10 @@ textarea.input { resize: vertical; }
   display: flex; flex-direction: column; align-items: center; text-align: center;
   box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: background .55s, border-color .55s;
 }
-.goal-card.wide { flex-direction: row; justify-content: space-evenly; margin: 6px 0; }
+.goal-card.wide { flex-direction: row; justify-content: space-evenly; margin: 6px 0; align-items: flex-start; }
+/* Rings side by side line up along their tops (a Study ring has no streak line, so centring put it
+   higher); the name stays centred on the card. */
+.goal-card.wide .name { align-self: center; }
 /* Long-press to drag (useGoalCardDrag): no text selection or iOS callout while holding a card. */
 .goal-card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .goal-card { position: relative; }
