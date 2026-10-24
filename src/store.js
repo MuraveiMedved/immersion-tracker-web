@@ -228,19 +228,29 @@ export function useNow(ms = 1000) {
  * Tracking actions - the same rules as the phone's TrackingRepository.
  * --------------------------------------------------------------------------------------------- */
 
+/** Where old Anki sessions go: the main language, else the first in the user's order; null with
+ *  no languages (the phone's AnkiLegacy.homeLanguage). */
+export function ankiHomeLanguage(s) {
+  const languages = s.profiles.filter((p) => !p.isAnki)
+  return languages.find((p) => p.isMain) || [...languages].sort((a, b) => a.sortOrder - b.sortOrder)[0] || null
+}
+
 /** Anki used to be a language of its own (the isAnki profile); now it's a mode of every language,
- *  with each language's own Anki goal. The old profile is never created any more, and is kept but
- *  hidden where it exists (older versions on the same account still know it). Its sessions say
- *  nothing about which language they were, so they lose their language - still Anki, so race
- *  totals (which count Anki by type) don't change. Run on load and after each sync, the same as
- *  the phone's TrackingRepository.uncategorizeLegacyAnki. Returns whether anything changed. */
+ *  with each language's own Study goal. The old profile is never created any more, and is kept but
+ *  hidden where it exists (older versions on the same account still know it). Its sessions don't
+ *  say which language they were, so they go to the main language ([ankiHomeLanguage]) - still
+ *  Study, so race totals (which count it by type) don't change. Run on load and after each sync,
+ *  the same as the phone's TrackingRepository.uncategorizeLegacyAnki (which also, once, moves the
+ *  Study sessions an earlier version left in Uncategorized - and syncs them here). Returns whether
+ *  anything changed. */
 export function uncategorizeLegacyAnki(s) {
   const legacy = new Set(s.profiles.filter((p) => p.isAnki).map((p) => p.id))
   let changed = false
   if (!legacy.size) return changed
+  const home = ankiHomeLanguage(s)
   for (const e of s.entries) {
     if (e.languageProfileId != null && legacy.has(e.languageProfileId)) {
-      e.languageProfileId = null
+      e.languageProfileId = home ? home.id : null
       e.detectionReason = null
       changed = true
     }

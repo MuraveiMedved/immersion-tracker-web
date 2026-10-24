@@ -165,12 +165,13 @@ test('missing records: lost ones are sent again, skipped ones are taken, local e
   assert.deepEqual(take.map((r) => `${r.coll}:${r.id}`), ['entry:3']) // entry 1 was edited here - that goes up instead
 })
 
-test('Anki on the retired Anki profile loses its language; Anki goals survive an older record', async () => {
+test('Anki on the retired Anki profile goes to the main language; Anki goals survive an older record', async () => {
   const { uncategorizeLegacyAnki } = await import('../src/store.js')
   const s = sample()
   s.entries.push({ id: 2, languageProfileId: 1, startTimeMillis: 20, endTimeMillis: 30, contentType: 'ANKI', detectionReason: 'Tracked app' })
   assert.equal(uncategorizeLegacyAnki(s), true)
-  assert.equal(s.entries[1].languageProfileId, null)
+  assert.equal(s.entries[1].languageProfileId, 2) // the only (so the main) language
+  assert.equal(s.entries[1].detectionReason, null)
   assert.equal(s.entries[1].contentType, 'ANKI')
   assert.equal(s.entries[0].languageProfileId, 2)
   assert.equal(uncategorizeLegacyAnki(s), false)
