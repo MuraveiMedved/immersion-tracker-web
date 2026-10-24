@@ -610,6 +610,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
   // Anki is a mode of each language, like listening and reading.
   const languages = s.profiles.filter((p) => !p.isAnki).sort((a, b) => a.sortOrder - b.sortOrder)
   const allowUncategorized = s.settings.logUncategorized
+  const fixedLanguage = initialProfileId != null ? languages.find((p) => p.id === initialProfileId) || null : null
   const [type, setType] = useState(initialType || PODCAST)
   const [profileId, setProfileId] = useState(() =>
     (initialProfileId != null && languages.some((p) => p.id === initialProfileId) ? initialProfileId : null) ??
@@ -672,7 +673,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
   const visible = expanded ? presets : presets.slice(0, RECENT_SESSIONS_PREVIEW_COUNT)
 
   return (
-    <Dialog title="Add a session" sheet={false} onClose={onClose} actions={<>
+    <Dialog title={fixedLanguage ? `Add a session · ${fixedLanguage.name}` : 'Add a session'} sheet={false} onClose={onClose} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
       <button class="btn" disabled={!canSubmit} onClick={submit}><Icon name={saving ? 'check' : 'play_arrow'} size={18} />{saving ? 'Save' : 'Start'}</button>
     </>}>
@@ -706,7 +707,8 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
               <TypePill type={ANKI} label="Study" selected={type === ANKI} onClick={() => pickType(ANKI)} />
             </div>
           </div>
-          {(
+          {/* Opened from a language's goal card, it's that language (named in the title): no picker. */}
+          {!fixedLanguage && (
             <div class="form-group">
               <div class="form-label">Language</div>
               <div class="chips">
