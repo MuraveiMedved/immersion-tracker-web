@@ -215,13 +215,11 @@ function LanguageEdit({ id, onClose }) {
           }))} />
           {p.generalGoal ? <>
             <label class="field"><TypeLabel type="GENERAL" size={14}>General · min</TypeLabel><input class="input" inputMode="numeric" value={p.generalGoalMinutes} onInput={(e) => set('generalGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
-            <div class="muted small">Listening and reading both count. 0 hides the ring.</div>
           </> : <>
           <div class="row">
             <label class="field grow"><TypeLabel type="PODCAST" size={14}>Listening · min</TypeLabel><input class="input" inputMode="numeric" value={p.podcastGoalMinutes} onInput={(e) => set('podcastGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
             <label class="field grow"><TypeLabel type="READING" size={14}>Reading · min</TypeLabel><input class="input" inputMode="numeric" value={p.readingGoalMinutes} onInput={(e) => set('readingGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
           </div>
-          <div class="muted small">0 hides a ring.</div>
           </>}
         </div>
         <details>
