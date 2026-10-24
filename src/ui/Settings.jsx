@@ -191,7 +191,11 @@ function LanguageEdit({ id, onClose }) {
   return (
     // Like the phone's language settings: the language itself, its daily goal, then how it's
     // recognised - short labels, at most one line of help each.
-    <Dialog title={<span style={{ color: p.colorHex }}>{p.name.trim() || (existing ? 'Edit language' : 'New language')}</span>} onClose={onClose} actions={<>
+    // The title is the name, edited in place (no second name box); the star marks the main language.
+    <Dialog title={<span class="lang-title">
+      <input class="lang-title-input" style={{ color: p.colorHex, caretColor: p.colorHex }} aria-label="Language name" placeholder="Language name" value={p.name} autoFocus={!existing} onInput={(e) => set('name', e.currentTarget.value)} />
+      <button class="icon-btn" title={p.isMain ? 'Main language - tap to unmark' : 'Make this the main language'} aria-pressed={!!p.isMain} style={{ color: p.isMain ? p.colorHex : undefined }} onClick={() => set('isMain', !p.isMain)}>{p.isMain ? '★' : '☆'}</button>
+    </span>} onClose={onClose} actions={<>
       {existing && <button class="btn text danger" onClick={() => setDel(true)}>Delete language</button>}
       <span class="spacer" />
       <button class="btn text" onClick={onClose}>Cancel</button>
@@ -199,12 +203,8 @@ function LanguageEdit({ id, onClose }) {
     </>}>
       <div class="col" style="gap:16px">
         <div class="col" style="gap:12px">
-          <input class="input" aria-label="Name" value={p.name} autoFocus={!existing} placeholder="Name, e.g. Japanese" onInput={(e) => set('name', e.currentTarget.value)} />
           <ColorTile colorHex={p.colorHex} gradientColors={p.gradientColors} onChange={(c, g) => setP((x) => ({ ...x, colorHex: c, gradientColors: g }))} />
-          <div class="row" style="gap:10px;align-items:center">
-            <button class={`pill-toggle main-pill ${p.isMain ? 'on' : ''}`} style={p.isMain ? { background: p.colorHex, borderColor: p.colorHex, color: '#fff' } : null} aria-pressed={!!p.isMain} onClick={() => set('isMain', !p.isMain)}>{p.isMain ? '★' : '☆'} Main language</button>
-            <span class="muted small">Picked first when you add a session.</span>
-          </div>
+          {p.isMain && <div class="muted small">★ Main language · picked first when you add a session</div>}
         </div>
         <div class="col">
           <div class="form-label">Daily goal</div>

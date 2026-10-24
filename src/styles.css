@@ -464,6 +464,10 @@ textarea.input { resize: vertical; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-label { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: .1px; color: var(--on-surface-variant); }
 .type-pills { display: flex; gap: 8px; }
+/* The language editor's title: the name itself, edited in place, with the main-language star. */
+.lang-title { display: flex; align-items: center; gap: 4px; width: 100%; }
+.lang-title-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 24px; font-weight: 600; padding: 0; }
+.lang-title-input::placeholder { color: inherit; opacity: .45; }
 /* The add-session title (the phone's TitleField): soft filled and rounded, pencil in front, clear button once typed. */
 .title-field {
   display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 6px 0 14px; border-radius: 14px;
