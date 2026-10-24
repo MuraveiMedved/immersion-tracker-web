@@ -1,9 +1,9 @@
 import { useMemo, useState, useRef, useEffect } from 'preact/hooks'
 import { useStore, useNow } from '../store.js'
-import { RANGES, RANGE_LABEL, windowFor, barsFor, quickStats, heatmap, timeOfDay } from '../model/stats.js'
+import { RANGES, RANGE_LABEL, STATS_TYPES, windowFor, barsFor, quickStats, heatmap, timeOfDay } from '../model/stats.js'
 import { epochDayStart, formatDate, formatHm } from '../model/time.js'
 import { withAlpha, mix, deepened, isDarkFor, gradientStops } from '../model/theme.js'
-import { LanguageFilterChip, Icon } from './common.jsx'
+import { LanguageFilterChip, Icon, TypeIcon } from './common.jsx'
 
 // The phone's chart measures (EntriesStatsSection.kt).
 const CHART_HEIGHT = 140
@@ -19,6 +19,9 @@ export function Stats() {
   const [range, setRange] = useState('WEEK')
   const [offset, setOffset] = useState(0)
   const [hidden, setHidden] = useState(new Set())
+  // Which kind of time: all of it (listening and reading), or just listening, reading or Study.
+  const [typeFilter, setTypeFilter] = useState(null)
+  const types = typeFilter ? STATS_TYPES[typeFilter] : null
   const light = !isDarkFor(s.settings.uiColorPreset)
   const languages = s.profiles.filter((p) => !p.isAnki).sort((a, b) => a.sortOrder - b.sortOrder)
   const visible = languages.filter((p) => !hidden.has(p.id))
@@ -28,17 +31,17 @@ export function Stats() {
 
   const page = (o) => {
     const win = windowFor(range, o, now, firstEntry)
-    return { win, bars: barsFor(s.entries, win, langSet, now) }
+    return { win, bars: barsFor(s.entries, win, langSet, now, types) }
   }
-  const current = useMemo(() => page(offset), [range, offset, minute, firstEntry, s.entries, hidden])
+  const current = useMemo(() => page(offset), [range, offset, minute, firstEntry, s.entries, hidden, typeFilter])
   // The scale is shared with the spans either side (as on the phone), so swiping doesn't jump it.
   const scaleMax = useMemo(() => {
     const pages = [current, page(offset + 1), offset > 0 ? page(offset - 1) : null].filter(Boolean)
     return Math.max(1, ...pages.flatMap((p) => p.bars.flatMap((b) => [...b.values()])))
   }, [current])
-  const stats = useMemo(() => quickStats(s.entries, current.win, langSet, now), [current])
-  const heat = useMemo(() => heatmap(s.entries, langSet, visible, now), [s.entries, hidden, Math.floor(now / 3600000)])
-  const tod = useMemo(() => timeOfDay(s.entries, langSet, now), [s.entries, hidden])
+  const stats = useMemo(() => quickStats(s.entries, current.win, langSet, now, types), [current])
+  const heat = useMemo(() => heatmap(s.entries, langSet, visible, now, types), [s.entries, hidden, typeFilter, Math.floor(now / 3600000)])
+  const tod = useMemo(() => timeOfDay(s.entries, langSet, now, types), [s.entries, hidden, typeFilter])
 
   const zoomTo = (i) => {
     const next = ZOOM_IN[range]
@@ -74,6 +77,12 @@ export function Stats() {
     <div style="margin-top:4px;padding-top:12px">
       <div class="chips scroll" style="gap:6px">
         {RANGES.map((r) => <button key={r} class={`pill-toggle ${range === r ? 'on' : ''}`} onClick={() => { setRange(r); setOffset(0) }}>{RANGE_LABEL[r]}</button>)}
+      </div>
+      <div class="chips scroll" style="gap:6px;margin-top:8px">
+        <button class={`pill-toggle ${typeFilter == null ? 'on' : ''}`} onClick={() => setTypeFilter(null)}>All</button>
+        {[['LISTENING', 'PODCAST', 'Listening'], ['READING', 'READING', 'Reading'], ['STUDY', 'ANKI', 'Study']].map(([key, icon, label]) => (
+          <button key={key} class={`pill-toggle row ${typeFilter === key ? 'on' : ''}`} style="gap:6px;display:inline-flex;align-items:center" onClick={() => setTypeFilter(key)}><TypeIcon type={icon} size={16} />{label}</button>
+        ))}
       </div>
       {languages.length > 1 && (
         <div class="chips scroll" style="margin-top:12px">

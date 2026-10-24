@@ -68,13 +68,20 @@ export function windowFor(range, offset, now = Date.now(), firstEntryMs = now) {
   return { buckets, label, start: buckets[0][0], end: buckets[buckets.length - 1][1] }
 }
 
-const included = (e, langSet) => counts(e.contentType, e.languageProfileId) && (!langSet || langSet.has(e.languageProfileId))
+/** [types]: the stats screen's type filter (STATS_TYPES) - only those kinds of entry, Study
+ *  included when picked; null = immersion as everywhere else (listening and reading). */
+const included = (e, langSet, types = null) =>
+  (types ? e.languageProfileId != null && types.includes(e.contentType) : counts(e.contentType, e.languageProfileId)) &&
+  (!langSet || langSet.has(e.languageProfileId))
+
+/** The stats screen's type filter, as on the phone (EntriesStatsSection's StatsTypeFilter). */
+export const STATS_TYPES = { LISTENING: ['PODCAST', 'LISTENING'], READING: ['READING'], STUDY: ['ANKI'] }
 
 /** Bars: per bucket, millis per language (stacked). */
-export function barsFor(entries, win, langSet, now = Date.now()) {
+export function barsFor(entries, win, langSet, now = Date.now(), types = null) {
   const bars = win.buckets.map(() => new Map())
   for (const e of entries) {
-    if (!included(e, langSet)) continue
+    if (!included(e, langSet, types)) continue
     if ((e.endTimeMillis ?? now) <= win.start || e.startTimeMillis >= win.end) continue
     spread(e, win.buckets, now, (i, ms) => bars[i].set(e.languageProfileId, (bars[i].get(e.languageProfileId) || 0) + ms))
   }
@@ -82,10 +89,10 @@ export function barsFor(entries, win, langSet, now = Date.now()) {
 }
 
 /** Per epoch day immersion totals for everything included. */
-export function dailyTotals(entries, langSet, now = Date.now()) {
+export function dailyTotals(entries, langSet, now = Date.now(), types = null) {
   const totals = new Map()
   for (const e of entries) {
-    if (!included(e, langSet)) continue
+    if (!included(e, langSet, types)) continue
     const end = Math.min(e.endTimeMillis ?? now, now)
     let start = e.startTimeMillis
     while (start < end) {
@@ -98,17 +105,17 @@ export function dailyTotals(entries, langSet, now = Date.now()) {
   return totals
 }
 
-export function quickStats(entries, win, langSet, now = Date.now()) {
-  const daily = dailyTotals(entries, langSet, now)
+export function quickStats(entries, win, langSet, now = Date.now(), types = null) {
+  const daily = dailyTotals(entries, langSet, now, types)
   let total = 0, best = null
   const byLang = new Map()
-  const byType = { PODCAST: 0, READING: 0 }
+  const byType = { PODCAST: 0, READING: 0, LISTENING: 0, ANKI: 0 }
   for (const e of entries) {
-    if (!included(e, langSet)) continue
+    if (!included(e, langSet, types)) continue
     const from = Math.max(e.startTimeMillis, win.start), to = Math.min(e.endTimeMillis ?? now, win.end, now)
     if (to <= from) continue
     total += to - from
-    byLang.set(e.languageProfileId, (byLang.get(e.languageProfileId) || { total: 0, PODCAST: 0, READING: 0 }))
+    byLang.set(e.languageProfileId, (byLang.get(e.languageProfileId) || { total: 0, PODCAST: 0, READING: 0, LISTENING: 0, ANKI: 0 }))
     const l = byLang.get(e.languageProfileId)
     l.total += to - from
     l[e.contentType] += to - from
@@ -137,11 +144,11 @@ export function quickStats(entries, win, langSet, now = Date.now()) {
 /** The phone's YearHeatmap: whole weeks (Monday first) back to the first tracked day, at least
  *  53 of them; each day's total and top language; a week carries a month label (the year at
  *  January) when a month starts in it; [p95] is the busy-day mark opacity is scaled against. */
-export function heatmap(entries, langSet, profiles, now = Date.now()) {
+export function heatmap(entries, langSet, profiles, now = Date.now(), types = null) {
   const byDayLang = new Map()
   let firstDay = epochDay(now)
   for (const e of entries) {
-    if (!included(e, langSet)) continue
+    if (!included(e, langSet, types)) continue
     const end = Math.min(e.endTimeMillis ?? now, now)
     let start = e.startTimeMillis
     while (start < end) {
@@ -193,10 +200,10 @@ export function heatmap(entries, langSet, profiles, now = Date.now()) {
 // arrives with synced entries and phone backups.
 const POLYLOGGER_PACKAGES = new Set(['import:polylogger', 'polylogger-import'])
 
-export function timeOfDay(entries, langSet, now = Date.now()) {
+export function timeOfDay(entries, langSet, now = Date.now(), types = null) {
   const out = new Map()
   for (const e of entries) {
-    if (!included(e, langSet) || POLYLOGGER_PACKAGES.has(e.appPackage)) continue
+    if (!included(e, langSet, types) || POLYLOGGER_PACKAGES.has(e.appPackage)) continue
     const hours = out.get(e.languageProfileId) || new Array(24).fill(0)
     out.set(e.languageProfileId, hours)
     let s = e.startTimeMillis

@@ -7,6 +7,7 @@ import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate, hourMarkAt } from '../src/model/zoo.js'
 import { parsePolyLogger, parseToggl, csvRows, guessMapping } from '../src/model/imports.js'
 import { HOUR } from '../src/model/time.js'
+import { quickStats, windowFor, STATS_TYPES } from '../src/model/stats.js'
 
 const at = (y, m, d, h = 12, min = 0) => new Date(y, m - 1, d, h, min).getTime()
 const entry = (start, ms, type = PODCAST, lang = 1, extra = {}) => ({ startTimeMillis: start, endTimeMillis: start + ms, contentType: type, languageProfileId: lang, mediaTitle: '', ...extra })
@@ -250,4 +251,18 @@ test('race Anki counts the same whether it is on a language, the old Anki profil
     assert.deepEqual(score.dailyAnki, legacy.dailyAnki)
   }
   assert.equal(legacy.ankiMillis, 8 * HOUR / 10)
+})
+
+test('stats type filter keeps only the picked type, Study included', () => {
+  const now = at(2026, 10, 24, 20)
+  const entries = [
+    entry(at(2026, 10, 24, 9), HOUR, PODCAST),
+    entry(at(2026, 10, 24, 10), 2 * HOUR, READING),
+    entry(at(2026, 10, 24, 13), 30 * 60000, ANKI),
+  ]
+  const win = windowFor('DAY', 0, now, entries[0].startTimeMillis)
+  assert.equal(quickStats(entries, win, null, now).total, 3 * HOUR) // immersion: listening + reading
+  assert.equal(quickStats(entries, win, null, now, STATS_TYPES.LISTENING).total, HOUR)
+  assert.equal(quickStats(entries, win, null, now, STATS_TYPES.READING).total, 2 * HOUR)
+  assert.equal(quickStats(entries, win, null, now, STATS_TYPES.STUDY).total, 30 * 60000)
 })
