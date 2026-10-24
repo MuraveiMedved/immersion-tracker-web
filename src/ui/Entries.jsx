@@ -43,7 +43,7 @@ export function UncategorizedFolder({ entries, now, onOpen }) {
         <span class="muted"><Icon name={open ? 'expand_less' : 'expand_more'} /></span>
       </div>
       {open && <div class="list" style="margin:0 20px">{entries.slice(0, 50).map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => onOpen(e.id)} />)}</div>}
-      {confirm && <Confirm title="Delete all uncategorized entries?" text="This deletes everything in this folder with no language assigned, except Anki (it counts in races). This can't be undone." confirmLabel="Delete all" danger onConfirm={deleteAllUncategorized} onClose={() => setConfirm(false)} />}
+      {confirm && <Confirm title="Delete all uncategorized entries?" text="This deletes everything in this folder with no language assigned, except Study (it counts in races). This can't be undone." confirmLabel="Delete all" danger onConfirm={deleteAllUncategorized} onClose={() => setConfirm(false)} />}
     </div>
   )
 }

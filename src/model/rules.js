@@ -140,4 +140,4 @@ export function immersionTotal(entries, now = Date.now()) {
   return t
 }
 
-export const typeLabel = (t) => ({ [PODCAST]: 'Listening', [READING]: 'Reading', [ANKI]: 'Anki', [LISTENING]: 'Music' }[t] || t)
+export const typeLabel = (t) => ({ [PODCAST]: 'Listening', [READING]: 'Reading', [ANKI]: 'Study', [LISTENING]: 'Music' }[t] || t)

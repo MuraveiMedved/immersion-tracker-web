@@ -220,7 +220,7 @@ function LanguageEdit({ id, onClose }) {
           </>}
           {/* Anki's own goal, beside either mode - review isn't immersion. Which AnkiDroid decks
               count is picked on the phone. */}
-          <label class="field"><TypeLabel type="ANKI" size={14}>Anki · min</TypeLabel><input class="input" inputMode="numeric" value={p.ankiGoalMinutes || 0} onInput={(e) => set('ankiGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+          <label class="field"><TypeLabel type="ANKI" size={14}>Study · min</TypeLabel><input class="input" inputMode="numeric" value={p.ankiGoalMinutes || 0} onInput={(e) => set('ankiGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
         </div>
         <details>
           <summary class="form-label clickable">Detection</summary>
@@ -396,7 +396,7 @@ function EntryLabelPreview({ style }) {
   )
 }
 
-const TYPE_OPTIONS = [[null, 'Skip'], [PODCAST, 'Listening'], [READING, 'Reading'], [ANKI, 'Anki'], [LISTENING, 'Music']]
+const TYPE_OPTIONS = [[null, 'Skip'], [PODCAST, 'Listening'], [READING, 'Reading'], [ANKI, 'Study'], [LISTENING, 'Music']]
 
 function ImportDialog({ kind, files, onClose }) {
   const s = useStore()

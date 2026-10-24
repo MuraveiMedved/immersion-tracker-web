@@ -568,7 +568,7 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
                 <label class="field grow"><TypeLabel type={READING}>Reading · min</TypeLabel>{minutes(read, setRead)}</label>
               </div>}
           {/* Anki's own goal, beside either mode - review isn't immersion. */}
-          <label class="field"><TypeLabel type={ANKI}>Anki · min</TypeLabel>{minutes(anki, setAnki)}</label>
+          <label class="field"><TypeLabel type={ANKI}>Study · min</TypeLabel>{minutes(anki, setAnki)}</label>
         </>
       </div>
     </Dialog>
@@ -591,7 +591,7 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
         </p>
         <div class="small muted" style="margin-bottom:6px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}{immersing ? ' · counting now' : ''}</div>
         <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, var(--tier), var(--tier-pale))' }} /></div>
-        <p class="muted small" style="margin:14px 0 8px">1+ hour of immersion every day keeps it going - longer runs reach higher tiers. Every language counts together; music and Anki don't.</p>
+        <p class="muted small" style="margin:14px 0 8px">1+ hour of immersion every day keeps it going - longer runs reach higher tiers. Every language counts together; music and Study don't.</p>
         <MomentumTierTable current={tier} topTierFirst showHolo={false} />
       </div>
     </Dialog>
@@ -703,7 +703,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
             <div class="type-pills">
               <TypePill type={PODCAST} label="Listening" selected={type === PODCAST} onClick={() => pickType(PODCAST)} />
               <TypePill type={READING} label="Reading" selected={type === READING} onClick={() => pickType(READING)} />
-              <TypePill type={ANKI} label="Anki" selected={type === ANKI} onClick={() => pickType(ANKI)} />
+              <TypePill type={ANKI} label="Study" selected={type === ANKI} onClick={() => pickType(ANKI)} />
             </div>
           </div>
           {(

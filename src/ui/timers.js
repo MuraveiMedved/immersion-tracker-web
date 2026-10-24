@@ -6,9 +6,9 @@ import { durationOf } from '../model/rules.js'
 import { formatHm } from '../model/time.js'
 import { toast } from './common.jsx'
 
-const KIND = { [PODCAST]: 'listening', [READING]: 'reading', [ANKI]: 'Anki' }
+const KIND = { [PODCAST]: 'listening', [READING]: 'reading', [ANKI]: 'study' }
 
-/** "Japanese listening", "Japanese Anki", "Uncategorized reading". */
+/** "Japanese listening", "Japanese study", "Uncategorized reading". */
 export function sessionName(type, languageProfileId) {
   return `${profileById(languageProfileId)?.name || 'Uncategorized'} ${KIND[type] || 'music'}`
 }
