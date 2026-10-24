@@ -413,6 +413,47 @@ export function zooSummary(s) {
   return held
 }
 
+/* The Zoo's feed (the phone's ZooFeed): each profile carries its owner's last few animals as
+ * "ze" - [when, animal, 1 = from a trade-up, 1 = holo] each, newest first, sent with the
+ * collection (share.zoo) - and the feed merges friends', racers' and this person's own. */
+export const FEED_SHARED = 10
+export const FEED_MAX_AGE = 14 * DAY
+export const FEED_MAX_LINES = 30
+
+/** The latest FEED_SHARED animals from `openings`, newest first, as feed events. */
+export function recentZooEvents(openings) {
+  return [...(openings || [])]
+    .sort((a, b) => b.atMillis - a.atMillis || String(b.id).localeCompare(String(a.id), undefined, { numeric: true }))
+    .slice(0, FEED_SHARED)
+    .map((o) => ({ atMillis: o.atMillis, animalId: o.animalId, tradeUp: !!o.upgradeKey, holo: !!o.cert?.foil }))
+}
+
+/** Everyone's lines together, newest first: `mine` (userId null), then each person in `people`
+ *  (readProfile shapes) once - the newer profile when someone's both a friend and a racer. */
+export function zooFeed({ mine, myName, myUserId, people, known, now = Date.now() }) {
+  const byId = new Map()
+  for (const p of people) {
+    if (!p?.userId || p.userId === myUserId) continue
+    const had = byId.get(p.userId)
+    if (!had || (p.updatedAt || 0) > (had.updatedAt || 0)) byId.set(p.userId, p)
+  }
+  const lines = [
+    ...mine.map((event) => ({ userId: null, name: myName, event })),
+    ...[...byId.values()].flatMap((p) => (p.zooEvents || []).map((event) => ({ userId: p.userId, name: p.name, event }))),
+  ]
+  return lines
+    .filter((l) => known(l.event.animalId) && Math.abs(now - l.event.atMillis) <= FEED_MAX_AGE)
+    .sort((a, b) => b.event.atMillis - a.event.atMillis)
+    .slice(0, FEED_MAX_LINES)
+}
+
+function readZooEvents(ze) {
+  if (!Array.isArray(ze)) return null
+  return ze.slice(0, FEED_SHARED).map((e) => (Array.isArray(e) ? e : []))
+    .filter((e) => typeof e[1] === 'string' && e[1] && e[1].length <= 80 && Number(e[0]) > 0)
+    .map((e) => ({ atMillis: Number(e[0]), animalId: e[1], tradeUp: e[2] === 1, holo: e[3] === 1 }))
+}
+
 /** This browser's own profile body, as friends and racers see it. */
 export function buildProfileBody(now = Date.now()) {
   const s = getState()
@@ -474,6 +515,10 @@ export function buildProfileBody(now = Date.now()) {
   if (share.trophy || share.zoo) body.zooFound = Object.keys(held).length
   if (share.streaks) body.gd = goldenStreakDays(entries, now)
   if (share.zoo) body.zoo = held
+  if (share.zoo) {
+    const ze = recentZooEvents(s.zoo.openings).map((e) => [e.atMillis, e.animalId, e.tradeUp ? 1 : 0, e.holo ? 1 : 0])
+    if (ze.length) body.ze = ze
+  }
   const certs = bestCertificates(s, held, share, trophy, trophyCase)
   if (Object.keys(certs).length) body.zc = certs
   // Names given with nametags (model/zoo.js nametagsOf - the latest name per animal), for the
@@ -566,6 +611,8 @@ export function readProfile(o) {
     goldenDays: body.gd ?? null,
     zoo: body.zoo || null,
     certs: body.zc || null,
+    // Their last few animals, for the Zoo's feed - null when not shared (or from before the feed).
+    zooEvents: readZooEvents(body.ze),
     names: body.zn && typeof body.zn === 'object'
       ? Object.fromEntries(Object.entries(body.zn).slice(0, 500).map(([id, n]) => [id, String(n || '').trim().slice(0, 24)]).filter(([, n]) => n))
       : {},

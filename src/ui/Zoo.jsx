@@ -6,7 +6,8 @@ import {
   nametagsOf, nameAnimal, NAMETAG_MAX_LENGTH,
 } from '../model/zoo.js'
 import { goldenStreakDays, momentumTier } from '../model/rules.js'
-import { formatDate } from '../model/time.js'
+import { formatDate, agoText } from '../model/time.js'
+import { readProfile, recentZooEvents, zooFeed, raceConfigured, refreshFriends } from '../model/race.js'
 import { Dialog, Seg, toast, Spinner, Bolt, MomentumTierTable, Icon } from './common.jsx'
 import { createPortal } from 'preact/compat'
 import { HoloCelebration, ChallengesButton } from './Sprints.jsx'
@@ -137,6 +138,8 @@ export function Zoo({ nav }) {
           {canTrade && <button class="btn tonal small" onClick={() => startTradeOf(r)}>Trade up</button>}
         </div>
       ))}
+      {/* What friends and racers got lately (the phone's ZooFeedCard). */}
+      <ZooFeed catalog={catalog} now={now} />
       {/* The trophy case, at the top of the collection - the eggs stay above. */}
       {Object.keys(z.copies).some((id) => z.copies[id]?.length) && <div style="margin-top:12px"><TrophyCase catalog={catalog} copies={z.copies} /></div>}
       <div id="zoo-collection" style="margin-top:12px">
@@ -187,6 +190,51 @@ export function Egg({ rarity, width = 84, crack = 0, style, onClick, glow = 0 })
 // [width] is a minimum: the pills line up, but one whose label runs wider (a wider font) grows to fit.
 function RarityPillInline({ rarity, width }) {
   return <span class={`rarity-pill-inline ${rarity === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(rarity), minWidth: width }}>{RARITY_LABEL[rarity]}</span>
+}
+
+const FEED_FOLDED = 3
+
+/** "Trenton got a Fennec Fox!" / "Blake traded up for a Snow Leopard!" - the phone's ZooFeedCard:
+ *  each animal's name in its rarity's colour (Mythic in its gradient, holo marked ✦). Nothing
+ *  shows while there's nothing to show. */
+function ZooFeed({ catalog, now }) {
+  const s = useStore()
+  const [expanded, setExpanded] = useState(false)
+  // Friends' lines are only as new as the last fetch of their profiles - fetch again on opening
+  // the Zoo when that's a while ago (which also sends this person's latest).
+  useEffect(() => { if (raceConfigured() && Date.now() - (s.friends.lastFetch || 0) > 5 * 60000) refreshFriends().catch(() => {}) }, [])
+  const byId = useMemo(() => new Map(catalog.map((a) => [a.id, a])), [catalog])
+  const lines = useMemo(() => zooFeed({
+    mine: recentZooEvents(s.zoo.openings),
+    myName: s.race.name,
+    myUserId: s.race.userId,
+    people: [...s.friends.friends, ...Object.entries(s.race.profiles || {}).map(([userId, p]) => ({ ...p, userId }))].map(readProfile),
+    known: (id) => byId.has(id),
+    now,
+  }), [s.zoo.openings, s.friends.friends, s.race.profiles, byId, Math.floor(now / 60000)])
+  if (!lines.length) return null
+  return (
+    <div class="zoo-feed">
+      <div class="title-small" style="font-weight:700">Recent finds</div>
+      {(expanded ? lines : lines.slice(0, FEED_FOLDED)).map((l) => {
+        const a = byId.get(l.event.animalId)
+        const named = (l.event.holo ? '✦ holo ' : '') + a.name
+        const style = a.rarity === 'RAINBOW'
+          ? { background: RARITY_GRADIENT.RAINBOW, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+          : { color: RARITY_COLOR[a.rarity] }
+        return (
+          <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="zoo-feed-line">
+            <span class="grow">
+              <b>{l.userId == null ? 'You' : l.name || '?'}</b>{l.event.tradeUp ? ' traded up for ' : ' got '}{/^[aeiou]/i.test(named) ? 'an' : 'a'}{' '}
+              <b style={style}>{named}</b>!
+            </span>
+            <span class="muted tiny" style="flex:none">{agoText(l.event.atMillis, now)}</span>
+          </div>
+        )
+      })}
+      {lines.length > FEED_FOLDED && <button class="btn text small" style="align-self:flex-end" onClick={() => setExpanded(!expanded)}>{expanded ? 'Show less' : 'Show more'}</button>}
+    </div>
+  )
 }
 
 /** "Egg hatch rates", like the phone's LootBoxOddsDialog: each tier's chance as a bar in its
