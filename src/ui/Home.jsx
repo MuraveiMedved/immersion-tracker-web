@@ -17,6 +17,7 @@ const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
 /** Home, laid out like the phone's: title and today's total, what's being tracked (or a dashed
  *  "not tracking" box), Today with Momentum, the goal cards, then Recent. */
 export function Home({ nav }) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const s = useStore()
   const now = useNow(1000)
   const [manual, setManual] = useState(null) // {type, profileId}
@@ -96,7 +97,9 @@ export function Home({ nav }) {
   return (
     <>
       {activeProfile && <div class="backdrop-wash" style={{ background: `linear-gradient(${withAlpha(activeProfile.colorHex, light ? 0.18 : 0.28)}, transparent)` }} />}
+      {menuOpen && <HomeMenu nav={nav} onClose={() => setMenuOpen(false)} />}
       <div class="home-head">
+        <button class="icon-btn home-menu-btn" title="Menu: stats and all entries" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
         <div class="title-col">
           <Title mode={s.settings.titleStyleMode} active={activeProfile} light={light} />
           <div class="version">web ⚡</div>
@@ -118,7 +121,6 @@ export function Home({ nav }) {
         <MomentumPill days={goldenDays} progress={goldenToday / GOLDEN_DAILY_MILLIS} onClick={() => setGolden(true)} />
         {/* Rearranging the goal cards (a long press on one starts it): the checkmark saves. */}
         {drag.editing && <button class="icon-btn reorder-done" title="Done rearranging" onClick={drag.confirm}><Icon name="check" /></button>}
-        <button class="icon-btn" title="Entries" onClick={() => nav('entries', { tab: 'entries' })}><Icon name="list" /></button>
       </div>
 
       {!languages.length ? (

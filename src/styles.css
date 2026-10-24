@@ -938,3 +938,20 @@ textarea.input { resize: vertical; }
 /* A card picked as stacked (ringsStacked) keeps its rings stacked even when it's wide enough for
    the row above; picked side by side, it's a .wide card. */
 .goal-card:not(.wide).stacked .rings { flex-direction: column; align-items: center; }
+
+/* Home's side menu (HomeMenu): a rounded panel from the left over a dim scrim, like the phone's. */
+.home-menu-btn { margin-left: -8px; align-self: flex-start; }
+.side-menu-scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.4); animation: fade-in .2s ease; }
+.side-menu {
+  position: absolute; top: 0; bottom: 0; left: 0; width: min(65vw, 300px); padding: 24px 12px;
+  background: var(--surface); color: var(--on-surface); border-radius: 0 28px 28px 0;
+  display: flex; flex-direction: column; gap: 4px; animation: slide-in-left .22s ease;
+}
+.side-menu-title { font-size: 22px; font-weight: 600; padding: 0 12px 16px; }
+.side-menu-item {
+  display: flex; align-items: center; gap: 14px; height: 52px; padding: 0 16px; border-radius: 20px;
+  border: 0; background: transparent; color: var(--on-surface-variant); font: inherit; font-size: 15px; font-weight: 600; text-align: left; cursor: pointer;
+}
+.side-menu-item:hover { background: color-mix(in srgb, var(--on-surface) 8%, transparent); }
+@keyframes slide-in-left { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

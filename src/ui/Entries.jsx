@@ -137,12 +137,13 @@ function TitleEdit({ entry, onClose }) {
 
 const PAGE = 120
 
-/** Entries, like the phone: Stats / All entries in a pill switcher (a selection bar stands in for it
- *  while rows are picked); All entries is the uncategorized folder, then each day. */
+/** Stats or All entries, like the phone: two pages of their own, each opened from Home's menu
+ *  ([params].tab). All entries is the uncategorized folder, then each day; a selection bar shows
+ *  while rows are picked. */
 export function Entries({ params }) {
   const s = useStore()
   const now = useNow(1000)
-  const [tab, setTab] = useState(params?.tab || 'stats')
+  const tab = params?.tab === 'entries' ? 'entries' : 'stats'
   const [limit, setLimit] = useState(PAGE)
   const [selected, setSelected] = useState(new Set())
   const [details, setDetails] = useState(null)
@@ -163,14 +164,14 @@ export function Entries({ params }) {
 
   return (
     <>
-      <h1 class="page-title">Entries</h1>
-      {selecting ? (
+      <h1 class="page-title">{tab === 'stats' ? 'Stats' : 'All entries'}</h1>
+      {selecting && (
         <div class="sel-bar">
           <button class="icon-btn" title="Cancel" onClick={() => setSelected(new Set())}><Icon name="close" /></button>
           <b class="grow">{selected.size} selected</b>
           <button class="icon-btn" title="Delete" onClick={() => setConfirm(true)}><Icon name="delete" /></button>
         </div>
-      ) : <Seg options={[['stats', 'Stats'], ['entries', 'All entries']]} value={tab} onChange={setTab} />}
+      )}
       {tab === 'stats' && !selecting ? <Stats /> : (
         <div style="margin-top:12px">
           {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} />}
