@@ -226,7 +226,7 @@ function ZooFeedButton({ catalog, now }) {
   return (
     <>
       <button class="icon-btn feed-btn" title="Recent finds" onClick={show}>
-        <Icon name="dynamic_feed" />{unseen && <span class="dot-badge" />}
+        <Icon name="celebration" />{unseen && <span class="dot-badge" />}
       </button>
       {open && (
         <Dialog title="Recent finds" onClose={() => setOpen(false)} actions={<button class="btn text" onClick={() => setOpen(false)}>Close</button>}>
