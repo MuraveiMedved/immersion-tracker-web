@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
-  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry
+  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry,
+  removeRecentManualSession, isHiddenManualSession,
 } from '../store.js'
 import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
@@ -239,9 +240,10 @@ function IdleBanner({ now, onOther }) {
  *  nothing. The one running now is marked, and a click on it stops it. */
 function StartAgain({ now, running, light }) {
   const s = useStore()
+  const [removing, setRemoving] = useState(null)
   const groups = useMemo(() => [[PODCAST, 'Listening'], [READING, 'Reading']]
     .map(([type, label]) => ({ type, label, items: recentSessions(type) }))
-    .filter((g) => g.items.length), [s.entries])
+    .filter((g) => g.items.length), [s.entries, s.settings.hiddenManualSessions])
   if (!groups.length) return null
   const ago = (ms) => {
     const d = Math.floor((dayStart(now) - dayStart(ms)) / 86400000)
@@ -262,7 +264,7 @@ function StartAgain({ now, running, light }) {
             const ink = light ? deepened(color, 0.42) : color
             const live = running.find((r) => r.contentType === g.type && r.languageProfileId === e.languageProfileId && r.mediaTitle === e.mediaTitle)
             return (
-              <button key={e.id} class={`sa-item ${live ? 'live' : ''}`}
+              <StartAgainItem key={e.id} class={`sa-item ${live ? 'live' : ''}`} onLongPress={() => setRemoving(e)}
                 style={{ '--sa-color': color, '--sa-fill': profile ? languageFill(profile, 180) : color }}
                 title={live ? 'Running now - click to stop' : `Start "${e.mediaTitle}" again`}
                 onClick={() => (live ? stopTimer(live) : startTimer(g.type, e.languageProfileId, e.mediaTitle))}>
@@ -272,14 +274,20 @@ function StartAgain({ now, running, light }) {
                   <span class="sa-meta"><b style={{ color: ink }}>{profile?.name || 'Uncategorized'}</b> · {live ? `running ${formatClock(durationOf(live, now))}` : ago(e.startTimeMillis)}</span>
                 </span>
                 <span class="sa-go"><Icon name={live ? 'stop' : 'play_arrow'} size={20} /></span>
-              </button>
+              </StartAgainItem>
             )
           })}
         </section>
       ))}
-      <p class="sa-tip"><Icon name="info" size={16} />Click any session to start a new timer with the same title and language. Press Space to resume the last one.</p>
+      <p class="sa-tip"><Icon name="info" size={16} />Click any session to start a new timer with the same title and language, or right-click it to remove it. Press Space to resume the last one.</p>
+      {removing && <RemoveRecentDialog title={removing.mediaTitle} type={removing.contentType} profileId={removing.languageProfileId} onClose={() => setRemoving(null)} />}
     </aside>
   )
+}
+
+/** One Start again button, which can also be held down (or right-clicked) to remove it. */
+function StartAgainItem({ onLongPress, children, ...props }) {
+  return <button {...props} {...useLongPress(onLongPress)}>{children}</button>
 }
 
 /** The running timer in the browser tab's title, so it can be seen from any other tab. */
@@ -653,6 +661,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
   const [day, setDay] = useState(dayStart(Date.now()))
   const [picked, setPicked] = useState(null)
   const [expanded, setExpanded] = useState(false)
+  const [removing, setRemoving] = useState(null)
   const scroller = useRef(null)
   const today = dayStart(Date.now())
   const millis = hmToMillis(h, m)
@@ -669,11 +678,13 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
       const key = `${e.mediaTitle}|${e.contentType}|${e.languageProfileId}`
       if (seen.has(key)) continue
       seen.add(key)
+      // Removed from the list with its logs kept: gone until it's logged again after that.
+      if (isHiddenManualSession(e, s.settings.hiddenManualSessions)) continue
       out.push({ key, title: e.mediaTitle, type: e.contentType, profileId: e.languageProfileId })
       if (out.length >= MAX_RECENT_MANUAL_SESSIONS) break
     }
     return out
-  }, [s.entries, initialProfileId])
+  }, [s.entries, s.settings.hiddenManualSessions, initialProfileId])
 
   const canSubmit = millis > 0 || !isPast
   const submit = () => {
@@ -713,11 +724,12 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
         {presets.length > 0 && (
           <div class="col" style="gap:4px">
             <div class="label-large">Recent sessions</div>
-            <div class="muted small" style="padding-bottom:4px">Tap a session to copy it into the form below, or ▶ to start it right away.</div>
+            <div class="muted small" style="padding-bottom:4px">Tap a session to copy it into the form below, ▶ to start it right away, or hold it (or right-click) to remove it.</div>
             <div class="col" style="gap:8px">
               {visible.map((p) => (
                 <RecentSessionRow key={p.key} preset={p} profile={profileById(p.profileId)} selected={picked?.key === p.key}
                   onClick={() => usePreset(p)}
+                  onLongPress={() => setRemoving(p)}
                   onPlay={() => { startTimer(p.type, p.profileId, p.title); onClose() }} />
               ))}
             </div>
@@ -730,6 +742,8 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
           </div>
         )}
         {presets.length > 0 && <div class="hr" />}
+        {removing && <RemoveRecentDialog title={removing.title} type={removing.type} profileId={removing.profileId}
+          onDone={() => { if (picked?.key === removing.key) setPicked(null) }} onClose={() => setRemoving(null)} />}
         <div class="section-band primary">
           <div class="form-group">
             <div class="form-label">Type</div>
@@ -813,10 +827,11 @@ function sessionColors(profile, selected, alphaLight, alphaDark) {
 
 /** One recent session: a pick mark, type icon + title, its language, and a square play button -
  *  outlined and washed in that language's colour (thicker and stronger once picked). */
-function RecentSessionRow({ preset, profile, selected, onClick, onPlay }) {
+function RecentSessionRow({ preset, profile, selected, onClick, onPlay, onLongPress }) {
   const c = sessionColors(profile, selected, selected ? 0.3 : 0.14, selected ? 0.2 : 0.08)
+  const hold = useLongPress(onLongPress)
   return (
-    <div class="recent-session" onClick={onClick}
+    <div class="recent-session" onClick={onClick} {...hold}
       style={{ '--rs-fill': c.fill, '--rs-outline': c.outline, '--rs-w': selected ? '2px' : '1px' }}>
       <span class="pick" title="Use this session"><GradientIcon name={selected ? 'check_circle' : 'radio_button_unchecked'} size={24} ink={c.ink} brush={stopsOf(profile) && c.inkFill} /></span>
       <div class="grow" style="min-width:0">
@@ -826,6 +841,49 @@ function RecentSessionRow({ preset, profile, selected, onClick, onPlay }) {
       <button class="square-btn" title="Start now" style={{ color: c.ink, background: withAlpha(c.ink, 0.16) }}
         onClick={(ev) => { ev.stopPropagation(); onPlay() }}><Icon name="play_arrow" size={22} /></button>
     </div>
+  )
+}
+
+/** Held down (or right-clicked), a recent session asks to be taken out of the list - see
+ *  RemoveRecentDialog. A press on its own play button doesn't count, and the click that ends a
+ *  long press is swallowed. */
+function useLongPress(onLong) {
+  const timer = useRef(0)
+  const fired = useRef(false)
+  const clear = () => clearTimeout(timer.current)
+  const fire = () => { fired.current = true; navigator.vibrate?.(20); onLong() }
+  return {
+    onPointerDown: (e) => {
+      fired.current = false
+      clear()
+      if (e.button || e.target.closest('.square-btn')) return
+      timer.current = setTimeout(fire, 500)
+    },
+    onPointerUp: clear,
+    onPointerLeave: clear,
+    onPointerCancel: clear,
+    onContextMenu: (e) => { e.preventDefault(); clear(); if (!fired.current) fire() },
+    onClickCapture: (e) => { if (fired.current) { e.stopPropagation(); e.preventDefault(); fired.current = false } },
+  }
+}
+
+/** Taking a recent session out of the list (the phone's StartManualEntryDialog does the same):
+ *  keep the time already logged under it, or delete those logs too. */
+function RemoveRecentDialog({ title, type, profileId, onDone, onClose }) {
+  const remove = (deleteLogs) => {
+    removeRecentManualSession(title, type, profileId, deleteLogs)
+    toast(deleteLogs ? 'Removed, with its logs' : 'Removed from recent sessions')
+    onDone?.()
+    onClose()
+  }
+  return (
+    <Dialog title="Remove from recent sessions?" sheet={false} onClose={onClose} actions={<>
+      <button class="btn text" onClick={onClose}>Cancel</button>
+      <button class="btn text danger" onClick={() => remove(true)}>Delete logs</button>
+      <button class="btn" onClick={() => remove(false)}>Keep logs</button>
+    </>}>
+      <p class="muted" style="margin:0">“{title}” won't be offered here any more. Keep the time already logged under it, or delete those logs too?</p>
+    </Dialog>
   )
 }
 

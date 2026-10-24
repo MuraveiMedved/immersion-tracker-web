@@ -1,7 +1,7 @@
 // Every start / stop / switch / discard of a live timer goes through here, so each one is a single
 // tap with an Undo in its toast instead of a confirm dialog - timers get started and stopped many
 // times a day, and a mis-tap should cost one more tap, not a trip into the entry list.
-import { getState, startManualEntry, stopRunningEntry, deleteRunningEntry, reopenEntry, discardEntry, profileById, runningEntry, pauseRunningEntry, resumePaused, dismissPaused, discardPaused, restorePaused, WEB_APP, PODCAST, READING, ANKI } from '../store.js'
+import { getState, isHiddenManualSession, startManualEntry, stopRunningEntry, deleteRunningEntry, reopenEntry, discardEntry, profileById, runningEntry, pauseRunningEntry, resumePaused, dismissPaused, discardPaused, restorePaused, WEB_APP, PODCAST, READING, ANKI } from '../store.js'
 import { durationOf } from '../model/rules.js'
 import { formatHm } from '../model/time.js'
 import { toast } from './common.jsx'
@@ -19,16 +19,17 @@ export function defaultTitle(languageProfileId) {
   return `Manual ${profileById(languageProfileId)?.name || 'Uncategorized'} session`
 }
 
-/** The last few distinct sessions of [type] (by title + language), newest first - each one a
- *  one-click way to start it again. */
+/** The last few distinct manual sessions of [type] (by title + language), newest first - each one
+ *  a one-click way to start it again. Tracked ones (from the phone or a computer) aren't offered. */
 export function recentSessions(type, limit = 4) {
   const seen = new Set()
   const out = []
   for (const e of [...getState().entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis)) {
-    if (e.contentType !== type || !e.mediaTitle) continue
+    if (e.contentType !== type || !e.mediaTitle || !e.isManual) continue
     const key = `${e.mediaTitle}|${e.languageProfileId}`
     if (seen.has(key)) continue
     seen.add(key)
+    if (isHiddenManualSession(e)) continue
     out.push(e)
     if (out.length >= limit) break
   }

@@ -45,6 +45,9 @@ export function defaultState() {
       zooColumns: 4,
       showAnkiOnHome: true,
       resumeHideMinutes: 60,
+      // Recent manual sessions taken out of Add a session with their logs kept: key -> when (see
+      // manualSessionKey). Per device, not synced, like the phone's.
+      hiddenManualSessions: {},
       logUncategorized: true,
       entryThresholdEnabled: false,
       entryThresholdSeconds: 30,
@@ -574,6 +577,25 @@ export function deleteProfile(id) {
   update((s) => {
     s.profiles = s.profiles.filter((p) => p.id !== id)
     s.entries.forEach((e) => { if (e.languageProfileId === id) { e.languageProfileId = null; e.detectionReason = null } })
+  })
+}
+
+/** One recent manual session's identity - its title, type and language (the phone's TrackingRepository.manualSessionKey). */
+export const manualSessionKey = (title, type, languageProfileId) => `${type}|${languageProfileId ?? ''}|${title}`
+
+/** Whether [e] is a manual session that's been taken out of the recent lists (and not logged again since). */
+export function isHiddenManualSession(e, hidden = state.settings.hiddenManualSessions || {}) {
+  const at = hidden[manualSessionKey(e.mediaTitle, e.contentType, e.languageProfileId)]
+  return at != null && e.startTimeMillis <= at
+}
+
+/** Takes a recent manual session out of the recent lists; [deleteLogs] also deletes every finished
+ *  manual session logged under it, otherwise that time is kept and only the shortcut goes. */
+export function removeRecentManualSession(title, type, languageProfileId, deleteLogs) {
+  update((s) => {
+    const key = manualSessionKey(title, type, languageProfileId)
+    s.settings.hiddenManualSessions = { ...(s.settings.hiddenManualSessions || {}), [key]: Date.now() }
+    if (deleteLogs) s.entries = s.entries.filter((e) => !(e.isManual && e.endTimeMillis != null && manualSessionKey(e.mediaTitle, e.contentType, e.languageProfileId) === key))
   })
 }
 
