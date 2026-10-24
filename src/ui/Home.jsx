@@ -99,13 +99,16 @@ export function Home({ nav }) {
       {activeProfile && <div class="backdrop-wash" style={{ background: `linear-gradient(${withAlpha(activeProfile.colorHex, light ? 0.18 : 0.28)}, transparent)` }} />}
       {menuOpen && <HomeMenu nav={nav} onClose={() => setMenuOpen(false)} />}
       <div class="home-head">
-        <button class="icon-btn home-menu-btn" title="Menu: stats and all entries" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
         <div class="title-col">
           <Title mode={s.settings.titleStyleMode} active={activeProfile} light={light} />
           <div class="version">web ⚡</div>
         </div>
         <div class="side">
-          <button class="icon-btn" title="Start a manual session" onClick={() => setManual({})}><Icon name="add" /></button>
+          <div class="row" style="gap:0">
+            <button class="icon-btn" title="Start a manual session" onClick={() => setManual({})}><Icon name="add" /></button>
+            {/* Home's menu - Stats and All entries - with the other header button, not before the title. */}
+            <button class="icon-btn" title="Menu: stats and all entries" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
+          </div>
           <div class="today-total">Today: {formatHm(todayTotal)}</div>
         </div>
       </div>
