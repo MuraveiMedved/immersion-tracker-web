@@ -236,9 +236,9 @@ function ZooFeedButton({ catalog, now }) {
                 const a = byId.get(l.event.animalId)
                 const named = (l.event.holo ? '✦ holo ' : '') + a.name
                 const style = a.rarity === 'RAINBOW'
-                  ? { background: RARITY_GRADIENT.RAINBOW, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+                  ? { backgroundImage: rarityBrush('RAINBOW'), WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
                   : { color: RARITY_COLOR[a.rarity] }
-                const frame = a.rarity === 'RAINBOW' ? RARITY_GRADIENT.RAINBOW : RARITY_COLOR[a.rarity]
+                const frame = a.rarity === 'RAINBOW' ? rarityBrush('RAINBOW') : RARITY_COLOR[a.rarity]
                 return (
                   /* One find (the phone's FeedRow): its photo framed in its rarity, the line, its rarity and when. */
                   <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="feed-row">
