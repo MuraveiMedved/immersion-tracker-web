@@ -109,6 +109,8 @@ export function Zoo({ nav }) {
         <h1 class="page-title grow" style="margin:0">Zoo</h1>
         {/* Weekly/Monthly challenges - their rewards land here, so they live here (a dot while one waits). */}
         {nav && <ChallengesButton nav={nav} />}
+        {/* What friends and racers got lately - an icon beside Challenges (the phone's ZooFeedButton). */}
+        <ZooFeedButton catalog={catalog} now={now} />
         {/* Nametags held - a currency, spent naming an animal from its card (ZooScreen.kt NametagCount). */}
         <button class="nametag-count" title={`${nametagsOf(s).held} nametags - what are these?`} onClick={() => setNametagInfo(true)}><Icon name="sell" size={15} /><b>{nametagsOf(s).held}</b></button>
       </div>
@@ -138,8 +140,6 @@ export function Zoo({ nav }) {
           {canTrade && <button class="btn tonal small" onClick={() => startTradeOf(r)}>Trade up</button>}
         </div>
       ))}
-      {/* What friends and racers got lately (the phone's ZooFeedCard). */}
-      <ZooFeed catalog={catalog} now={now} />
       {/* The trophy case, at the top of the collection - the eggs stay above. */}
       {Object.keys(z.copies).some((id) => z.copies[id]?.length) && <div style="margin-top:12px"><TrophyCase catalog={catalog} copies={z.copies} /></div>}
       <div id="zoo-collection" style="margin-top:12px">
@@ -192,14 +192,18 @@ function RarityPillInline({ rarity, width }) {
   return <span class={`rarity-pill-inline ${rarity === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(rarity), minWidth: width }}>{RARITY_LABEL[rarity]}</span>
 }
 
-const FEED_FOLDED = 3
+/** When the feed was last opened, on this device - the icon's dot means someone found something since. */
+const FEED_SEEN_KEY = 'zooFeedSeenAt'
+const feedSeenAt = () => { try { return Number(localStorage.getItem(FEED_SEEN_KEY)) || 0 } catch { return 0 } }
 
-/** "Trenton got a Fennec Fox!" / "Blake traded up for a Snow Leopard!" - the phone's ZooFeedCard:
- *  each animal's name in its rarity's colour (Mythic in its gradient, holo marked ✦). Nothing
- *  shows while there's nothing to show. */
-function ZooFeed({ catalog, now }) {
+/** "Trenton got a Fennec Fox!" / "Blake traded up for a Snow Leopard!" - the phone's ZooFeedButton
+ *  and ZooFeedDialog: an icon beside Challenges (a dot while someone else found something since
+ *  it was last opened) opening the list, each animal's name in its rarity's colour (Mythic in its
+ *  gradient, holo marked ✦). */
+function ZooFeedButton({ catalog, now }) {
   const s = useStore()
-  const [expanded, setExpanded] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [seenAt, setSeenAt] = useState(feedSeenAt)
   // Friends' lines are only as new as the last fetch of their profiles - fetch again on opening
   // the Zoo when that's a while ago (which also sends this person's latest).
   useEffect(() => { if (raceConfigured() && Date.now() - (s.friends.lastFetch || 0) > 5 * 60000) refreshFriends().catch(() => {}) }, [])
@@ -212,28 +216,43 @@ function ZooFeed({ catalog, now }) {
     known: (id) => byId.has(id),
     now,
   }), [s.zoo.openings, s.friends.friends, s.race.profiles, byId, Math.floor(now / 60000)])
-  if (!lines.length) return null
+  const unseen = lines.some((l) => l.userId != null && l.event.atMillis > seenAt)
+  const show = () => {
+    const t = Date.now()
+    try { localStorage.setItem(FEED_SEEN_KEY, String(t)) } catch {}
+    setSeenAt(t)
+    setOpen(true)
+  }
   return (
-    <div class="zoo-feed">
-      <div class="title-small" style="font-weight:700">Recent finds</div>
-      {(expanded ? lines : lines.slice(0, FEED_FOLDED)).map((l) => {
-        const a = byId.get(l.event.animalId)
-        const named = (l.event.holo ? '✦ holo ' : '') + a.name
-        const style = a.rarity === 'RAINBOW'
-          ? { background: RARITY_GRADIENT.RAINBOW, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
-          : { color: RARITY_COLOR[a.rarity] }
-        return (
-          <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="zoo-feed-line">
-            <span class="grow">
-              <b>{l.userId == null ? 'You' : l.name || '?'}</b>{l.event.tradeUp ? ' traded up for ' : ' got '}{/^[aeiou]/i.test(named) ? 'an' : 'a'}{' '}
-              <b style={style}>{named}</b>!
-            </span>
-            <span class="muted tiny" style="flex:none">{agoText(l.event.atMillis, now)}</span>
-          </div>
-        )
-      })}
-      {lines.length > FEED_FOLDED && <button class="btn text small" style="align-self:flex-end" onClick={() => setExpanded(!expanded)}>{expanded ? 'Show less' : 'Show more'}</button>}
-    </div>
+    <>
+      <button class="icon-btn feed-btn" title="Recent finds" onClick={show}>
+        <Icon name="dynamic_feed" />{unseen && <span class="dot-badge" />}
+      </button>
+      {open && (
+        <Dialog title="Recent finds" onClose={() => setOpen(false)} actions={<button class="btn text" onClick={() => setOpen(false)}>Close</button>}>
+          {!lines.length ? <div class="muted">Nothing yet - when a friend or someone in your races finds an animal, it shows up here.</div> : (
+            <div class="col" style="gap:8px">
+              {lines.map((l) => {
+                const a = byId.get(l.event.animalId)
+                const named = (l.event.holo ? '✦ holo ' : '') + a.name
+                const style = a.rarity === 'RAINBOW'
+                  ? { background: RARITY_GRADIENT.RAINBOW, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+                  : { color: RARITY_COLOR[a.rarity] }
+                return (
+                  <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="zoo-feed-line">
+                    <span class="grow">
+                      <b>{l.userId == null ? 'You' : l.name || '?'}</b>{l.event.tradeUp ? ' traded up for ' : ' got '}{/^[aeiou]/i.test(named) ? 'an' : 'a'}{' '}
+                      <b style={style}>{named}</b>!
+                    </span>
+                    <span class="muted tiny" style="flex:none">{agoText(l.event.atMillis, now)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Dialog>
+      )}
+    </>
   )
 }
 

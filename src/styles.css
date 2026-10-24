@@ -960,3 +960,6 @@ textarea.input { resize: vertical; }
 /* A page title with the menu button at its right end, level with Home's (margin as .home-head .side). */
 .page-head { align-items: flex-start; margin-right: -8px; }
 .page-head .page-title { margin-bottom: 16px; }
+/* The Zoo feed's icon: a dot while someone found something since it was last opened. */
+.feed-btn { position: relative; }
+.feed-btn .dot-badge { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--error, #e5484d); }
