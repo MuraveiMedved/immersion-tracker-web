@@ -6,7 +6,7 @@ import { formatHm } from '../model/time.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
 import { AccountSection } from './Account.jsx'
 import { RESUME_HIDE_CHOICES, resumeHideLabel } from './timers.js'
-import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorPicker, GoalModeChoice, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
+import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorTile, GoalModeChoice, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
 
 const SCRIPTS = [
   ['CYRILLIC_RUSSIAN', 'Russian', 'Cyrillic script'], ['CYRILLIC_UKRAINIAN', 'Ukrainian', 'і, ї, є, ґ'], ['JAPANESE_KANA', 'Japanese', 'hiragana / katakana'],
@@ -198,7 +198,7 @@ function LanguageEdit({ id, onClose }) {
     </>}>
       <div class="col" style="gap:16px">
         <label class="field">Name<input class="input" value={p.name} autoFocus={!existing} placeholder="e.g. Japanese, Spanish, Korean…" onInput={(e) => set('name', e.currentTarget.value)} /></label>
-        <div class="col"><div style="font-weight:600">Color</div><ColorPicker colorHex={p.colorHex} gradientColors={p.gradientColors} onChange={(c, g) => setP((x) => ({ ...x, colorHex: c, gradientColors: g }))} /></div>
+        <ColorTile colorHex={p.colorHex} gradientColors={p.gradientColors} onChange={(c, g) => setP((x) => ({ ...x, colorHex: c, gradientColors: g }))} />
         <div class="col">
           <div style="font-weight:600">Daily goals</div>
           <GoalModeChoice general={!!p.generalGoal} onChange={(v) => setP((x) => ({

@@ -315,6 +315,28 @@ export function TypeBadge({ type, profile }) {
 }
 
 /** Solid colours (muted + vivid rows) and gradients. */
+/** A language's colour as one collapsed tile (the phone's LanguageColorTile): a swatch of the
+ *  current colour, "Color", a chevron and an outline in that colour; tapping it opens the
+ *  [ColorPicker] underneath. */
+export function ColorTile({ colorHex, gradientColors, onChange }) {
+  const [open, setOpen] = useState(false)
+  const stops = gradientColors ? gradientColors.split(',').map((x) => x.trim()).filter(Boolean) : null
+  const outline = stops && stops.length > 1 ? `linear-gradient(180deg, ${stops.join(', ')})` : colorHex
+  return (
+    <div class="col" style="gap:12px">
+      <button type="button" class="color-tile" aria-expanded={open} onClick={() => setOpen(!open)} style={{ '--tile-outline': outline }}>
+        <span class="swatch-preview" style={{ background: languageFill({ colorHex, gradientColors }, 135) }} />
+        <span class="grow col" style="gap:0">
+          <span>Color</span>
+          <span class="small muted" style="font-weight:400">Tap to change</span>
+        </span>
+        <Icon name="expand_more" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .25s' }} />
+      </button>
+      {open && <ColorPicker colorHex={colorHex} gradientColors={gradientColors} onChange={onChange} />}
+    </div>
+  )
+}
+
 export function ColorPicker({ colorHex, gradientColors, onChange }) {
   const current = gradientColors || colorHex
   return (

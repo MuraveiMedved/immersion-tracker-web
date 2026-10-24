@@ -305,7 +305,12 @@ textarea.input { resize: vertical; }
 .goal-dialog-title .icon-btn { margin: -8px -8px -8px 0; }
 .goal-dialog-divider { margin: 4px 0; }
 .goal-dialog-section { font-weight: 700; font-size: 14px; }
-.goal-dialog-color { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--outline-variant); background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; text-align: left; }
+/* A language's colour, folded away (ColorTile): outlined in the language's own colour(s). */
+.color-tile {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 14px;
+  border: 1.5px solid transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; text-align: left;
+  background: linear-gradient(color-mix(in srgb, var(--on-surface) 5%, var(--surface)), color-mix(in srgb, var(--on-surface) 5%, var(--surface))) padding-box, var(--tile-outline) border-box;
+}
 .swatch-preview { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; flex: none; }
 .goal-card .name { font-size: 16px; line-height: 24px; font-weight: 600; }
 .ring-stat { display: flex; flex-direction: column; align-items: center; }

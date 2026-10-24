@@ -7,7 +7,7 @@ import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, fillsG
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, ColorPicker, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
+import { Dialog, Confirm, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
@@ -533,27 +533,20 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
   const [general, setGeneral] = useState(!!profile.generalGoal)
   // Switching to General the first time starts it at the two separate goals added together.
   const [gen, setGen] = useState(String(profile.generalGoalMinutes || (profile.podcastGoalMinutes || 0) + (profile.readingGoalMinutes || 0)))
-  const [color, setColor] = useState({ colorHex: profile.colorHex, gradientColors: profile.gradientColors })
-  const [colorsOpen, setColorsOpen] = useState(false)
   const save = () => {
     upsertProfile({
       ...profile, podcastGoalMinutes: Number(listen) || 0, readingGoalMinutes: Number(read) || 0,
-      generalGoal: general, generalGoalMinutes: general ? Number(gen) || 0 : profile.generalGoalMinutes || 0, ...color,
+      generalGoal: general, generalGoalMinutes: general ? Number(gen) || 0 : profile.generalGoalMinutes || 0,
     })
     onClose()
   }
-  // Clicking outside (or Escape) keeps a colour that was picked - only the colour; Cancel drops it.
-  const dismissKeepingColor = () => {
-    if (color.colorHex !== profile.colorHex || (color.gradientColors ?? null) !== (profile.gradientColors ?? null)) upsertProfile({ ...profile, ...color })
-    onClose()
-  }
   const minutes = (value, set) => <input class="input" inputMode="numeric" value={value} onInput={(e) => set(e.currentTarget.value.replace(/\D/g, ''))} />
-  // Like the phone's GoalEditDialog: the language and its settings, logging time, its daily goal,
-  // then its colour (folded away until wanted) - three sections split by a line.
+  // Like the phone's GoalEditDialog: the language and its settings, logging time, then its daily
+  // goal, split by a line. Its colour is set in the language's settings (the gear).
   return (
     <Dialog title={<span class="goal-dialog-title"><span class="grow">{profile.name}</span>
       <button class="icon-btn" title="Language settings" onClick={onSettings}><Icon name="settings" /></button></span>}
-    onClose={dismissKeepingColor} actions={<>
+    onClose={onClose} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
       <button class="btn" onClick={save}>Save</button>
     </>}>
@@ -575,13 +568,6 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
               </div>}
           <div class="muted small">{general ? 'Listening and reading both count. 0 hides the ring.' : '0 hides a ring.'}</div>
         </>}
-        <div class="divider goal-dialog-divider" />
-        <button type="button" class="goal-dialog-color" aria-expanded={colorsOpen} onClick={() => setColorsOpen(!colorsOpen)}>
-          <span class="swatch-preview" style={{ background: languageFill(color, 135) }} />
-          <span class="grow">Color</span>
-          <Icon name="expand_more" style={{ transform: colorsOpen ? 'rotate(180deg)' : 'none', transition: 'transform .25s' }} />
-        </button>
-        {colorsOpen && <ColorPicker colorHex={color.colorHex} gradientColors={color.gradientColors} onChange={(c, g) => setColor({ colorHex: c, gradientColors: g })} />}
       </div>
     </Dialog>
   )
