@@ -518,14 +518,15 @@ export function deleteAllUncategorized() {
   update((s) => { s.entries = s.entries.filter((e) => e.languageProfileId != null || e.endTimeMillis == null || e.contentType === ANKI) })
 }
 
-/** Adds finished entries, skipping any whose exact start and end are already there for the same
- *  source - so importing the same file twice is safe. Returns how many were added. */
+/** Adds finished entries, skipping any session already here (same start, end and type), however it
+ *  got here - so importing the same file twice, or here and on the phone (which tags its Toggl
+ *  imports differently), is safe. Returns how many were added. */
 export function importEntries(list) {
   let added = 0
   update((s) => {
-    const have = new Set(s.entries.map((e) => `${e.appPackage}:${e.startTimeMillis}:${e.endTimeMillis}`))
+    const have = new Set(s.entries.map((e) => `${e.startTimeMillis}:${e.endTimeMillis}:${e.contentType}`))
     for (const e of list) {
-      const key = `${e.appPackage}:${e.startTimeMillis}:${e.endTimeMillis}`
+      const key = `${e.startTimeMillis}:${e.endTimeMillis}:${e.contentType}`
       if (have.has(key)) continue
       have.add(key)
       addEntry(s, e)

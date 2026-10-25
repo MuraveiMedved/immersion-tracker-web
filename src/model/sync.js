@@ -130,6 +130,27 @@ export function applyRecords(s, records) {
   }
 }
 
+/** How many of [changes]' deletes are records really gone from [cur] - not ones still here under
+ *  another id (a duplicate paired with the account's copy, e.g. a Toggl file imported on the
+ *  phone and here: its old id going is how the pair becomes one). The phone's
+ *  WebSyncDiff.checkDeletes counts the same way. */
+export function missingCount(changes, cur, snapshot) {
+  const here = {}
+  for (const [coll, map] of Object.entries(cur)) {
+    here[coll] = new Set()
+    for (const [id, json] of map) {
+      const k = naturalKey(coll, id, JSON.parse(json))
+      if (k != null) here[coll].add(k)
+    }
+  }
+  return changes.filter((c) => {
+    if (!c.deleted || c.coll === 'prefs') return false
+    const json = snapshot[c.coll]?.[c.id]
+    const k = json ? naturalKey(c.coll, c.id, JSON.parse(json)) : null
+    return k == null || !here[c.coll]?.has(k)
+  }).length
+}
+
 /** What makes two records the same thing under different ids - a phone backup imported here
  *  before the phone joined the account gives every session a second id. Same rules as the phone's
  *  WebSyncCodec.naturalKey. */
@@ -332,7 +353,7 @@ async function round() {
   const changes = diff(cur, snapshot)
   // Never let one device empty the account: if most of the history suddenly looks deleted here
   // (storage cleared, a broken load), don't send that - stop and say so.
-  const deletes = changes.filter((c) => c.deleted && c.coll !== 'prefs').length
+  const deletes = missingCount(changes, cur, snapshot)
   const known = Object.entries(snapshot).filter(([c]) => c !== 'prefs').reduce((t, [, m]) => t + Object.keys(m).length, 0)
   if (deletes > 20 && deletes > known / 2) {
     throw new Error(`Sync paused: ${deletes} records are missing on this device. Sign out and back in here to get your data back from the account.`)

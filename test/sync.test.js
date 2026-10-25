@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { defaultState, ANKI_ID } from '../src/store.js'
-import { collect, diff, applyRecords } from '../src/model/sync.js'
+import { collect, diff, applyRecords, missingCount } from '../src/model/sync.js'
 import { remapIds } from '../src/model/ids.js'
 
 function sample() {
@@ -182,4 +182,16 @@ test('Anki on the retired Anki profile goes to the main language; Anki goals sur
   assert.equal(ja.ankiGoalMinutes, 20)
   applyRecords(s, [{ coll: 'profile', id: '2', deleted: false, data: { id: 2, name: 'Japanese', isAnki: false, ankiGoalMinutes: 5 } }])
   assert.equal(s.profiles.find((p) => p.id === 2).ankiGoalMinutes, 5)
+})
+
+test('duplicates paired under new ids are not counted as missing', () => {
+  const entry = (i) => JSON.stringify({ startTimeMillis: i * 1000, endTimeMillis: i * 1000 + 500, contentType: 'PODCAST' })
+  const snapshot = { entry: Object.fromEntries([...Array(100).keys()].map((i) => [String(i), entry(i)])) }
+  // Every session still here, under another id (the account's copy).
+  const paired = { entry: new Map([...Array(100).keys()].map((i) => [String(i + 1000), entry(i)])) }
+  const deletes = Object.keys(snapshot.entry).map((id) => ({ coll: 'entry', id, deleted: true }))
+  assert.equal(missingCount(deletes, paired, snapshot), 0)
+  // Really gone: counted.
+  const lost = { entry: new Map([...Array(30).keys()].map((i) => [String(i), entry(i)])) }
+  assert.equal(missingCount(deletes.slice(30), lost, snapshot), 70)
 })
