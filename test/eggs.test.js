@@ -37,3 +37,28 @@ test('taking eggs back never counts as missing records', () => {
   const deletes = [...Array(35).keys()].map((i) => ({ coll: 'opening', id: String(i + 5), deleted: true }))
   assert.equal(missingCount(deletes, { opening: new Map() }, snapshot), 0)
 })
+
+test('a Toggl import of old history loses the eggs it hatched, once, and says so for other devices', async () => {
+  const { defaultState, replaceState, getState } = await import('../src/store.js')
+  const { takeBackEarlyEggs } = await import('../src/model/zoo.js')
+  const from = new Date(2026, 9, 2).getTime()
+  const s = defaultState()
+  s.profiles = [{ id: 1, name: 'Japanese', isAnki: false }]
+  // 25 h tracked since 2 Oct (two eggs' worth), then a Toggl file with 600 h from 2024.
+  s.entries = [
+    { id: 1, startTimeMillis: from + HOUR, endTimeMillis: from + 26 * HOUR, contentType: 'PODCAST', languageProfileId: 1, appPackage: 'web' },
+    ...[...Array(60).keys()].map((i) => ({ id: 100 + i, startTimeMillis: from - (400 - i) * 24 * HOUR, endTimeMillis: from - (400 - i) * 24 * HOUR + 10 * HOUR, contentType: 'PODCAST', languageProfileId: 1, appPackage: 'import:toggl' })),
+  ]
+  // Two eggs hatched before the import, then 58 straight after it.
+  s.zoo.openings = [...Array(60).keys()].map((i) => ({ id: i + 1, rarity: 'BOX', animalId: `a${i}`, atMillis: from + (i < 2 ? i : 100 + i) * HOUR, upgradeKey: false }))
+  s.zoo.eggs = Object.fromEntries([...Array(60).keys()].map((i) => [`box:${i + 1}`, { earnedAt: from }]))
+  s.sync.token = null
+  replaceState(s)
+  assert.equal(takeBackEarlyEggs(), true)
+  const after = getState()
+  assert.deepEqual(after.zoo.openings.map((o) => o.id), [1, 2])
+  assert.deepEqual(Object.keys(after.zoo.eggs).sort(), ['box:1', 'box:2'])
+  assert.equal(after.zoo.eggsTakenBack, true)
+  // Never again - here, or on a device that heard about it through sync.
+  assert.equal(takeBackEarlyEggs(), false)
+})
