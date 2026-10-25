@@ -6,7 +6,7 @@
 import { getState, update, uid, isImported } from '../store.js'
 import { counts, immersionTotal, vouchedEntries, goldenStreakDays, momentumTier, GOLDEN_DAYS } from './rules.js'
 import { HOUR } from './time.js'
-import { myLiveRaceMillis, bestFirst } from './race.js'
+import { myLiveRaceMillis, bestFirst, raceConfigured, sync as raceSync, refreshFriends } from './race.js'
 
 export const RARITIES = ['GREEN', 'BLUE', 'PURPLE', 'ORANGE', 'RAINBOW']
 export const RARITY_LABEL = { GREEN: 'Common', BLUE: 'Rare', PURPLE: 'Epic', ORANGE: 'Legendary', RAINBOW: 'Mythic' }
@@ -352,6 +352,11 @@ export function takeBackEarlyEggs() {
     st.settings.earlyEggsTakenBack = true
     st.zoo.eggsTakenBack = true
   })
+  // Friends' Recent finds (and profiles) show what was sent last - send the corrected one now.
+  if (gone.openings.size && raceConfigured()) {
+    raceSync().catch(() => {})
+    refreshFriends().catch(() => {})
+  }
   return gone.openings.size > 0
 }
 
