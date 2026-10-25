@@ -7220,6 +7220,1786 @@
   }
  },
  {
+  "id": "fox_squirrel",
+  "rarity": "green",
+  "name": "Fox squirrel",
+  "scientific": "Sciurus niger",
+  "blurb": "Species of mammal",
+  "fact": "Its bones glow pink under ultraviolet light, from a harmless pigment build-up.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "0.5–1 kg"
+   },
+   {
+    "label": "Leap",
+    "value": "Up to ~4.5 m"
+   },
+   {
+    "label": "Bones",
+    "value": "Pink under UV light"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/fox_squirrel.webp",
+  "credit": "USFWS Mountain-Prairie · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Fox_squirrel"
+ },
+ {
+  "id": "northern_cardinal",
+  "rarity": "green",
+  "name": "Northern cardinal",
+  "scientific": "Cardinalis cardinalis",
+  "blurb": "Species of North American bird",
+  "fact": "Will spend hours attacking its own reflection in a window, sure it is a rival.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~45 g"
+   },
+   {
+    "label": "Songs",
+    "value": "Both sexes sing"
+   },
+   {
+    "label": "Odd habit",
+    "value": "Fights its reflection"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/northern_cardinal.webp",
+  "credit": "Rhododendrites · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Northern_cardinal",
+  "frame": {
+   "x": 0.5,
+   "y": 0.334,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "american_robin",
+  "rarity": "green",
+  "name": "American robin",
+  "scientific": "Turdus migratorius",
+  "blurb": "Species of bird",
+  "fact": "Finds worms mostly by sight, tilting its head to watch the soil for movement.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~77 g"
+   },
+   {
+    "label": "Eggs",
+    "value": "Famous 'robin's-egg blue'"
+   },
+   {
+    "label": "Worms",
+    "value": "Up to ~4 m a day"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/american_robin.webp",
+  "credit": "Rhododendrites · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/American_robin"
+ },
+ {
+  "id": "barn_swallow",
+  "rarity": "green",
+  "name": "Barn swallow",
+  "scientific": "Hirundo rustica",
+  "blurb": "Species of bird",
+  "fact": "Drinks and even bathes by skimming the surface of a pond in mid-flight.",
+  "stats": [
+   {
+    "label": "Migration",
+    "value": "Up to ~11,000 km"
+   },
+   {
+    "label": "Weight",
+    "value": "~19 g"
+   },
+   {
+    "label": "Drinks",
+    "value": "Skimming water in flight"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/barn_swallow.webp",
+  "credit": "Andreas Trepte · CC BY-SA 2.5",
+  "url": "https://en.wikipedia.org/wiki/Barn_swallow"
+ },
+ {
+  "id": "eurasian_blue_tit",
+  "rarity": "green",
+  "name": "Eurasian blue tit",
+  "scientific": "Cyanistes caeruleus",
+  "blurb": "Species of bird",
+  "fact": "In 20th-century Britain, blue tits learned to peck open milk bottle tops - and the trick spread across the country.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~11 g"
+   },
+   {
+    "label": "Clutch",
+    "value": "Up to ~16 eggs"
+   },
+   {
+    "label": "Famous for",
+    "value": "Opening milk bottles"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/eurasian_blue_tit.webp",
+  "credit": "Francis Franklin · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Eurasian_blue_tit"
+ },
+ {
+  "id": "eurasian_magpie",
+  "rarity": "green",
+  "name": "Eurasian magpie",
+  "scientific": "Pica pica",
+  "blurb": "Species of bird",
+  "fact": "One of the few non-mammals known to recognise itself in a mirror.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~200 g"
+   },
+   {
+    "label": "Mirror test",
+    "value": "Passes it"
+   },
+   {
+    "label": "Nest",
+    "value": "Domed, with a roof"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/eurasian_magpie.webp",
+  "credit": "Alexis Lours · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Eurasian_magpie",
+  "frame": {
+   "x": 0.445,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "wood_duck",
+  "rarity": "green",
+  "name": "Wood duck",
+  "scientific": "Aix sponsa",
+  "blurb": "Species of bird",
+  "fact": "A day after hatching, its ducklings leap from their tree hole - sometimes over 15 m - and bounce unharmed.",
+  "stats": [
+   {
+    "label": "Nests",
+    "value": "In tree holes up to ~20 m up"
+   },
+   {
+    "label": "Ducklings",
+    "value": "Jump out at 1 day old"
+   },
+   {
+    "label": "Weight",
+    "value": "~0.7 kg"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/wood_duck.webp",
+  "credit": "Chuck Homler d/b/a FocusOnwWildlife · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Wood_duck"
+ },
+ {
+  "id": "mandarin_duck",
+  "rarity": "green",
+  "name": "Mandarin duck",
+  "scientific": "Aix galericulata",
+  "blurb": "Species of bird",
+  "fact": "Pairs were given as wedding gifts in China as a symbol of a loyal marriage.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~0.6 kg"
+   },
+   {
+    "label": "Wings",
+    "value": "Orange 'sails' on the back"
+   },
+   {
+    "label": "Symbol of",
+    "value": "Faithful love in China"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/mandarin_duck.webp",
+  "credit": "Francis C. Franklin · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Mandarin_duck"
+ },
+ {
+  "id": "common_kingfisher",
+  "rarity": "green",
+  "name": "Common kingfisher",
+  "scientific": "Alcedo atthis",
+  "blurb": "Species of bird",
+  "fact": "Its beak's shape inspired the nose of Japan's 500 Series bullet train, which made it quieter.",
+  "stats": [
+   {
+    "label": "Dive",
+    "value": "Head-first into water"
+   },
+   {
+    "label": "Weight",
+    "value": "~40 g"
+   },
+   {
+    "label": "Inspired",
+    "value": "The Shinkansen nose"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/common_kingfisher.webp",
+  "credit": "Tony Wood · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Common_kingfisher"
+ },
+ {
+  "id": "northern_mockingbird",
+  "rarity": "green",
+  "name": "Northern mockingbird",
+  "scientific": "Mimus polyglottos",
+  "blurb": "Species of bird",
+  "fact": "Can learn hundreds of songs, including car alarms and squeaky gates.",
+  "stats": [
+   {
+    "label": "Songs",
+    "value": "~200 learned"
+   },
+   {
+    "label": "Mimics",
+    "value": "Car alarms, frogs, other birds"
+   },
+   {
+    "label": "Weight",
+    "value": "~50 g"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/northern_mockingbird.webp",
+  "credit": "Rhododendrites · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Northern_mockingbird"
+ },
+ {
+  "id": "american_goldfinch",
+  "rarity": "green",
+  "name": "American goldfinch",
+  "scientific": "Spinus tristis",
+  "blurb": "Species of bird",
+  "fact": "One of the few birds that changes its whole plumage twice a year - bright yellow in summer, olive in winter.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~13 g"
+   },
+   {
+    "label": "Diet",
+    "value": "Almost only seeds"
+   },
+   {
+    "label": "Moults",
+    "value": "Twice a year"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/american_goldfinch.webp",
+  "credit": "Rodney Campbell · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/American_goldfinch"
+ },
+ {
+  "id": "indian_peafowl",
+  "rarity": "green",
+  "name": "Indian peafowl",
+  "scientific": "Pavo cristatus",
+  "blurb": "Species of bird",
+  "fact": "The peacock rattles its whole train to make a low rumble females can feel.",
+  "stats": [
+   {
+    "label": "Train",
+    "value": "Up to ~200 feathers"
+   },
+   {
+    "label": "Eye spots",
+    "value": "~170 on a full train"
+   },
+   {
+    "label": "Weight",
+    "value": "4–6 kg"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/indian_peafowl.webp",
+  "credit": "Kandukuru Nagarjun from Bangalore, India · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Indian_peafowl",
+  "frame": {
+   "x": 0.5,
+   "y": 0.367,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "european_rabbit",
+  "rarity": "green",
+  "name": "European rabbit",
+  "scientific": "Oryctolagus cuniculus",
+  "blurb": "Species of mammal",
+  "fact": "The wild ancestor of every pet rabbit - and it eats its own soft droppings to get a second go at its food.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "1.2–2 kg"
+   },
+   {
+    "label": "Warrens",
+    "value": "Home to dozens of rabbits"
+   },
+   {
+    "label": "Litters",
+    "value": "Up to ~7 a year"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/european_rabbit.webp",
+  "credit": "euqirneto · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/European_rabbit",
+  "frame": {
+   "x": 0.5,
+   "y": 0.344,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "european_hare",
+  "rarity": "green",
+  "name": "European hare",
+  "scientific": "Lepus europaeus",
+  "blurb": "Large species of hare native to Europe and parts of Asia",
+  "fact": "The famous 'mad March hares' boxing in spring are usually females fending off pushy males.",
+  "stats": [
+   {
+    "label": "Top speed",
+    "value": "~70 km/h"
+   },
+   {
+    "label": "Weight",
+    "value": "3–5 kg"
+   },
+   {
+    "label": "Boxing",
+    "value": "Females fend off males"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/european_hare.webp",
+  "credit": "Nagusb · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/European_hare"
+ },
+ {
+  "id": "snowshoe_hare",
+  "rarity": "green",
+  "name": "Snowshoe hare",
+  "scientific": "Lepus americanus",
+  "blurb": "Species of mammal",
+  "fact": "Its giant furry hind feet work like snowshoes, so it can run on top of deep snow.",
+  "stats": [
+   {
+    "label": "Coat",
+    "value": "Brown in summer, white in winter"
+   },
+   {
+    "label": "Feet",
+    "value": "Huge, furry snowshoes"
+   },
+   {
+    "label": "Weight",
+    "value": "1.2–1.6 kg"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/snowshoe_hare.webp",
+  "credit": "Lepus_americanus_5459.JPG: Walter Siegmund (talk) derivative work: Wsiegmund · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Snowshoe_hare"
+ },
+ {
+  "id": "groundhog",
+  "rarity": "green",
+  "name": "Groundhog",
+  "scientific": "Marmota monax",
+  "blurb": "Species of rodent",
+  "fact": "In hibernation its heart drops from ~80 beats a minute to about 5 - and 'Groundhog Day' asks it to forecast spring.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "2–6 kg"
+   },
+   {
+    "label": "Hibernation",
+    "value": "Heart slows to ~5 beats/min"
+   },
+   {
+    "label": "Burrow",
+    "value": "Up to ~20 m of tunnels"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/groundhog.webp",
+  "credit": "Cephas · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Groundhog"
+ },
+ {
+  "id": "red_backed_salamander",
+  "rarity": "green",
+  "name": "Red-backed salamander",
+  "scientific": "Plethodon cinereus",
+  "blurb": "Species of amphibian",
+  "fact": "Has no lungs at all - it breathes through its skin - and in some eastern US forests the salamanders' total weight beats that of the birds.",
+  "stats": [
+   {
+    "label": "Lungs",
+    "value": "None"
+   },
+   {
+    "label": "Length",
+    "value": "~8 cm"
+   },
+   {
+    "label": "Numbers",
+    "value": "Outweigh all birds in some forests"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/red_backed_salamander.webp",
+  "credit": "Alex Karasoulos · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Red-backed_salamander"
+ },
+ {
+  "id": "spotted_salamander",
+  "rarity": "green",
+  "name": "Spotted salamander",
+  "scientific": "Ambystoma maculatum",
+  "blurb": "Species of amphibian",
+  "fact": "Green algae grow inside its eggs - and even inside the embryos - feeding them oxygen.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "15–25 cm"
+   },
+   {
+    "label": "Lifespan",
+    "value": "~20 years"
+   },
+   {
+    "label": "Partner",
+    "value": "Algae live inside its eggs"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/spotted_salamander.webp",
+  "credit": "D. Gordon E. Robertson · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Spotted_salamander",
+  "frame": {
+   "x": 0.44,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "eastern_newt",
+  "rarity": "green",
+  "name": "Eastern newt",
+  "scientific": "Notophthalmus viridescens",
+  "blurb": "Species of amphibian",
+  "fact": "Spends a few years on land as a bright orange 'red eft' before returning to water as an adult.",
+  "stats": [
+   {
+    "label": "Stages",
+    "value": "3 - larva, red eft, adult"
+   },
+   {
+    "label": "Lifespan",
+    "value": "Up to ~15 years"
+   },
+   {
+    "label": "Skin",
+    "value": "Toxic"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/eastern_newt.webp",
+  "credit": "Brian Gratwicke · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Eastern_newt"
+ },
+ {
+  "id": "wood_frog",
+  "rarity": "green",
+  "name": "Wood frog",
+  "scientific": "Lithobates sylvaticus",
+  "blurb": "Species of amphibian",
+  "fact": "Freezes solid in winter - heart stopped, no breathing - then thaws and hops off in spring.",
+  "stats": [
+   {
+    "label": "Freezes",
+    "value": "Solid in winter"
+   },
+   {
+    "label": "Heartbeat",
+    "value": "Stops when frozen"
+   },
+   {
+    "label": "Range",
+    "value": "Into the Arctic Circle"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/wood_frog.webp",
+  "credit": "Brian Gratwicke · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Wood_frog",
+  "frame": {
+   "x": 0.457,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "common_garter_snake",
+  "rarity": "green",
+  "name": "Common garter snake",
+  "scientific": "Thamnophis sirtalis",
+  "blurb": "Species of snake",
+  "fact": "In Manitoba, tens of thousands emerge from dens together in spring - the largest snake gathering on Earth.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "~0.5–1.3 m"
+   },
+   {
+    "label": "Mating balls",
+    "value": "Up to ~100 males on 1 female"
+   },
+   {
+    "label": "Venom",
+    "value": "Very mild"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/common_garter_snake.webp",
+  "credit": "Wilson44691 · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Common_garter_snake"
+ },
+ {
+  "id": "painted_turtle",
+  "rarity": "green",
+  "name": "Painted turtle",
+  "scientific": "Chrysemys picta",
+  "blurb": "Species of reptile",
+  "fact": "Hatchlings can spend their first winter in the nest, partly frozen, and survive.",
+  "stats": [
+   {
+    "label": "Shell",
+    "value": "~10–25 cm"
+   },
+   {
+    "label": "Survives",
+    "value": "Months under ice, little oxygen"
+   },
+   {
+    "label": "Range",
+    "value": "Most widespread US turtle"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/painted_turtle.webp",
+  "credit": "MH Herpetology · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Painted_turtle"
+ },
+ {
+  "id": "diamondback_terrapin",
+  "rarity": "green",
+  "name": "Diamondback terrapin",
+  "scientific": "Malaclemys terrapin",
+  "blurb": "Species of reptile",
+  "fact": "The only US turtle that lives in salty tidal marshes - it has a gland to cry out the extra salt.",
+  "stats": [
+   {
+    "label": "Habitat",
+    "value": "Brackish marshes"
+   },
+   {
+    "label": "Shell",
+    "value": "Each one patterned differently"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~0.7 kg"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/diamondback_terrapin.webp",
+  "credit": "Ryan Hagerty · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Diamondback_terrapin",
+  "frame": {
+   "x": 0.465,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "bombus_impatiens",
+  "rarity": "green",
+  "name": "Common eastern bumblebee",
+  "scientific": "Bombus impatiens",
+  "blurb": "Species of insect",
+  "fact": "'Buzz pollinates' tomatoes by vibrating its flight muscles until the pollen shakes out.",
+  "stats": [
+   {
+    "label": "Buzz",
+    "value": "Shakes pollen loose"
+   },
+   {
+    "label": "Colony",
+    "value": "Up to ~450 bees"
+   },
+   {
+    "label": "Weight",
+    "value": "~0.2 g"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/bombus_impatiens.webp",
+  "credit": "USGS Bee Inventory and Monitoring Lab from Beltsville, Maryland, USA · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Bombus_impatiens"
+ },
+ {
+  "id": "nymphalis_antiopa",
+  "rarity": "green",
+  "name": "Mourning cloak",
+  "scientific": "Nymphalis antiopa",
+  "blurb": "Species of butterfly",
+  "fact": "One of the longest-lived butterflies - it freezes into a sort of hibernation and flies on warm winter days.",
+  "stats": [
+   {
+    "label": "Wingspan",
+    "value": "~7–10 cm"
+   },
+   {
+    "label": "Lifespan",
+    "value": "Up to ~11 months"
+   },
+   {
+    "label": "Winter",
+    "value": "Hibernates as an adult"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/nymphalis_antiopa.webp",
+  "credit": "Pavel Kirillov from St.Petersburg, Russia · CC BY-SA 2.0",
+  "url": "https://en.wikipedia.org/wiki/Nymphalis_antiopa"
+ },
+ {
+  "id": "long_tailed_tit",
+  "rarity": "green",
+  "name": "Long-tailed tit",
+  "scientific": "Aegithalos caudatus",
+  "blurb": "Species of bird in Europe and Asia",
+  "fact": "Builds a stretchy dome nest of moss and spider silk, lined with up to ~2,000 feathers - and on cold nights a flock huddles in a row on one branch.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~7–9 g"
+   },
+   {
+    "label": "Tail",
+    "value": "Longer than its body"
+   },
+   {
+    "label": "Nest",
+    "value": "~2,000 feathers inside"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/long_tailed_tit.webp",
+  "credit": "Ігор Червоненко · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Long-tailed_tit"
+ },
+ {
+  "id": "vanessa_atalanta",
+  "rarity": "green",
+  "name": "Red admiral",
+  "scientific": "Vanessa atalanta",
+  "blurb": "Species of butterfly",
+  "fact": "Gets tipsy on fermenting fruit and becomes so slow you can pick it up.",
+  "stats": [
+   {
+    "label": "Wingspan",
+    "value": "~5–6 cm"
+   },
+   {
+    "label": "Migration",
+    "value": "Crosses the Alps"
+   },
+   {
+    "label": "Diet",
+    "value": "Rotting fruit, tree sap"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/vanessa_atalanta.webp",
+  "credit": "Christian Fischer · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Vanessa_atalanta",
+  "frame": {
+   "x": 0.512,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "green_darner",
+  "rarity": "green",
+  "name": "Green darner",
+  "scientific": "Anax junius",
+  "blurb": "Species of dragonfly",
+  "fact": "Migrates down North America in huge swarms - and the trip takes 3 generations.",
+  "stats": [
+   {
+    "label": "Wingspan",
+    "value": "~8 cm"
+   },
+   {
+    "label": "Migration",
+    "value": "Up to ~2,500 km"
+   },
+   {
+    "label": "Eyes",
+    "value": "~28,000 lenses each"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/green_darner.webp",
+  "credit": "JeffreyGammon · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Green_darner"
+ },
+ {
+  "id": "silverfish",
+  "rarity": "green",
+  "name": "Silverfish",
+  "scientific": "Lepisma saccharina",
+  "blurb": "Small land insect in the order Zygentoma",
+  "fact": "Can live a year without food, nibbling the glue out of book bindings when it does eat.",
+  "stats": [
+   {
+    "label": "Age of lineage",
+    "value": "~400 million years"
+   },
+   {
+    "label": "Fasting",
+    "value": "Up to ~1 year"
+   },
+   {
+    "label": "Diet",
+    "value": "Glue, paper, starch"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/silverfish.webp",
+  "credit": "Christian Fischer · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Silverfish"
+ },
+ {
+  "id": "pyrrharctia_isabella",
+  "rarity": "green",
+  "name": "Isabella tiger moth",
+  "scientific": "Pyrrharctia isabella",
+  "blurb": "Species of insect",
+  "fact": "Its caterpillar, the 'woolly bear', freezes solid in winter and thaws in spring - and folklore says its stripes predict the winter.",
+  "stats": [
+   {
+    "label": "Larva",
+    "value": "The fuzzy 'woolly bear'"
+   },
+   {
+    "label": "Winter",
+    "value": "Freezes solid"
+   },
+   {
+    "label": "Folklore",
+    "value": "Its stripes forecast winter"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/pyrrharctia_isabella.webp",
+  "credit": "Andy Reago & Chrissy McClarren · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Pyrrharctia_isabella"
+ },
+ {
+  "id": "koi",
+  "rarity": "green",
+  "name": "Koi",
+  "scientific": "Cyprinus rubrofuscus",
+  "blurb": "Colored varieties of Amur carp",
+  "fact": "A single prize koi sold for about $1.8 million in 2018.",
+  "stats": [
+   {
+    "label": "Lifespan",
+    "value": "~50 years (record 226 claimed)"
+   },
+   {
+    "label": "Price",
+    "value": "Record ~$1.8 million"
+   },
+   {
+    "label": "Origin",
+    "value": "Niigata, Japan"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/koi.webp",
+  "credit": "Asturio Cantabrio · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Koi"
+ },
+ {
+  "id": "common_carp",
+  "rarity": "green",
+  "name": "Common carp",
+  "scientific": "Cyprinus carpio",
+  "blurb": "Species of fish",
+  "fact": "Has no teeth in its mouth - it chews with teeth in its throat.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Record ~50 kg"
+   },
+   {
+    "label": "Teeth",
+    "value": "In its throat"
+   },
+   {
+    "label": "Lifespan",
+    "value": "20+ years"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/common_carp.webp",
+  "credit": "George Chernilevsky · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Common_carp",
+  "frame": {
+   "x": 0.67,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "rainbow_trout",
+  "rarity": "green",
+  "name": "Rainbow trout",
+  "scientific": "Oncorhynchus mykiss",
+  "blurb": "Fresh-water species of fish",
+  "fact": "Some rainbow trout go to sea and come back huge, as 'steelhead'.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~25 kg (sea-run)"
+   },
+   {
+    "label": "Sea-run form",
+    "value": "'Steelhead'"
+   },
+   {
+    "label": "Water",
+    "value": "Needs it cold"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/rainbow_trout.webp",
+  "credit": "Engbretson Eric, U.S. Fish and Wildlife Service · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Rainbow_trout"
+ },
+ {
+  "id": "atlantic_salmon",
+  "rarity": "green",
+  "name": "Atlantic salmon",
+  "scientific": "Salmo salar",
+  "blurb": "Species of fish",
+  "fact": "Finds its way back to the very stream it hatched in - by smell - to spawn.",
+  "stats": [
+   {
+    "label": "Leap",
+    "value": "Up to ~3.7 m"
+   },
+   {
+    "label": "Navigation",
+    "value": "Smells its home river"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~40 kg"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/atlantic_salmon.webp",
+  "credit": "User:Wolfgang Striewski · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Atlantic_salmon",
+  "frame": {
+   "x": 0.767,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "northern_pike",
+  "rarity": "green",
+  "name": "Northern pike",
+  "scientific": "Esox lucius",
+  "blurb": "Species of fish",
+  "fact": "An ambush hunter with hundreds of backward-pointing teeth - it eats ducklings from below.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~1.5 m"
+   },
+   {
+    "label": "Teeth",
+    "value": "~700"
+   },
+   {
+    "label": "Ambush speed",
+    "value": "Strikes in a fraction of a second"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/northern_pike.webp",
+  "credit": "Jik jik · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Northern_pike"
+ },
+ {
+  "id": "channel_catfish",
+  "rarity": "green",
+  "name": "Channel catfish",
+  "scientific": "Ictalurus punctatus",
+  "blurb": "Species of fish",
+  "fact": "Covered in taste buds - it's basically a swimming tongue.",
+  "stats": [
+   {
+    "label": "Taste buds",
+    "value": "~100,000 over its body"
+   },
+   {
+    "label": "Weight",
+    "value": "Record ~26 kg"
+   },
+   {
+    "label": "Whiskers",
+    "value": "8 barbels"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/channel_catfish.webp",
+  "credit": "USFWS Mountain Prairie · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Channel_catfish",
+  "frame": {
+   "x": 0.222,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "neon_tetra",
+  "rarity": "green",
+  "name": "Neon tetra",
+  "scientific": "Paracheirodon innesi",
+  "blurb": "Species of fish",
+  "fact": "Its glowing stripe dims at night when it rests, and brightens when it wakes.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "~3 cm"
+   },
+   {
+    "label": "Stripe",
+    "value": "Glows blue-green"
+   },
+   {
+    "label": "Home",
+    "value": "Amazon blackwater"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/neon_tetra.webp",
+  "credit": "Holger Krisp · CC BY 3.0",
+  "url": "https://en.wikipedia.org/wiki/Neon_tetra"
+ },
+ {
+  "id": "hypostomus_plecostomus",
+  "rarity": "green",
+  "name": "Suckermouth catfish",
+  "scientific": "Hypostomus plecostomus",
+  "blurb": "Species of fish",
+  "fact": "Clings to rocks - and aquarium glass - with a suction-cup mouth while it scrapes off algae.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~50 cm"
+   },
+   {
+    "label": "Mouth",
+    "value": "A sucker"
+   },
+   {
+    "label": "Armour",
+    "value": "Bony plates"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/hypostomus_plecostomus.webp",
+  "credit": "Raphaël Covain, Natural History Museum of Geneva · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Hypostomus_plecostomus"
+ },
+ {
+  "id": "holstein_friesian",
+  "rarity": "green",
+  "name": "Holstein Friesian",
+  "scientific": "Bos taurus",
+  "blurb": "Breed of dairy cattle",
+  "fact": "The black-and-white dairy cow - no two have the same pattern of patches.",
+  "stats": [
+   {
+    "label": "Milk",
+    "value": "~10,000 L a year"
+   },
+   {
+    "label": "Weight",
+    "value": "~680 kg (cow)"
+   },
+   {
+    "label": "Spots",
+    "value": "Each pattern unique"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/holstein_friesian.webp",
+  "credit": "Hayden Soloviev · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Holstein_Friesian"
+ },
+ {
+  "id": "dalmatian_dog",
+  "rarity": "green",
+  "name": "Dalmatian",
+  "scientific": "Canis familiaris",
+  "blurb": "Croatian dog breed",
+  "fact": "Born completely white - the spots appear over the first few weeks.",
+  "stats": [
+   {
+    "label": "Puppies",
+    "value": "Born pure white"
+   },
+   {
+    "label": "Weight",
+    "value": "16–32 kg"
+   },
+   {
+    "label": "Job",
+    "value": "Ran beside fire carriages"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/dalmatian_dog.webp",
+  "credit": "Bradlien · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Dalmatian_dog",
+  "frame": {
+   "x": 0.5,
+   "y": 0.314,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "poodle",
+  "rarity": "green",
+  "name": "Poodle",
+  "scientific": "Canis familiaris",
+  "blurb": "Dog breed",
+  "fact": "Its fancy haircut began as practical swim gear - fur left only to keep joints and organs warm in cold water.",
+  "stats": [
+   {
+    "label": "Sizes",
+    "value": "Toy, miniature, standard"
+   },
+   {
+    "label": "Bred for",
+    "value": "Retrieving ducks"
+   },
+   {
+    "label": "Coat",
+    "value": "Curly, barely sheds"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/poodle.webp",
+  "credit": "Tim Wilson from Blaine, MN, USA · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Poodle"
+ },
+ {
+  "id": "labrador_retriever",
+  "rarity": "green",
+  "name": "Labrador Retriever",
+  "scientific": "Canis familiaris",
+  "blurb": "British breed of retriever gun dog",
+  "fact": "Uses its thick tail like a rudder when it swims.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "25–36 kg"
+   },
+   {
+    "label": "Coats",
+    "value": "Black, yellow, chocolate"
+   },
+   {
+    "label": "Tail",
+    "value": "'Otter tail' rudder"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/labrador_retriever.webp",
+  "credit": "IDS.photos from Tiverton, UK · CC BY-SA 2.0",
+  "url": "https://en.wikipedia.org/wiki/Labrador_Retriever",
+  "frame": {
+   "x": 0.462,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "golden_retriever",
+  "rarity": "green",
+  "name": "Golden Retriever",
+  "scientific": "Canis familiaris",
+  "blurb": "Scottish breed of dog",
+  "fact": "Bred for such a 'soft mouth' that it can carry a raw egg without cracking it.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "25–34 kg"
+   },
+   {
+    "label": "Mouth",
+    "value": "So soft it carries eggs unbroken"
+   },
+   {
+    "label": "Origin",
+    "value": "Scotland, 1860s"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/golden_retriever.webp",
+  "credit": "Dukedestiny01.jpg: \"Janneke Vreugdenhil\" derivative work: Anka Friedrich ([[User · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Golden_Retriever"
+ },
+ {
+  "id": "beagle",
+  "rarity": "green",
+  "name": "Beagle",
+  "scientific": "Canis familiaris",
+  "blurb": "Breed of small scent hound",
+  "fact": "Its nose is so good that airports use it to sniff out food in luggage.",
+  "stats": [
+   {
+    "label": "Scent receptors",
+    "value": "~220 million"
+   },
+   {
+    "label": "Weight",
+    "value": "9–11 kg"
+   },
+   {
+    "label": "Job",
+    "value": "Sniffing luggage at airports"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/beagle.webp",
+  "credit": "CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Beagle"
+ },
+ {
+  "id": "siberian_husky",
+  "rarity": "green",
+  "name": "Siberian Husky",
+  "scientific": "Canis familiaris",
+  "blurb": "Dog breed",
+  "fact": "Huskies helped carry diphtheria medicine 1,000 km to Nome, Alaska, in 1925.",
+  "stats": [
+   {
+    "label": "Eyes",
+    "value": "Often blue, or one of each"
+   },
+   {
+    "label": "Sled run",
+    "value": "1925 serum run to Nome"
+   },
+   {
+    "label": "Weight",
+    "value": "16–27 kg"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/siberian_husky.webp",
+  "credit": "xJaM (talk · contribs) · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Siberian_Husky"
+ },
+ {
+  "id": "persian_cat",
+  "rarity": "green",
+  "name": "Persian cat",
+  "scientific": "Felis catus",
+  "blurb": "Breed of cat",
+  "fact": "Its flat face makes it pick up food with the underside of its tongue.",
+  "stats": [
+   {
+    "label": "Coat",
+    "value": "Long - daily brushing"
+   },
+   {
+    "label": "Face",
+    "value": "Flat"
+   },
+   {
+    "label": "Popularity",
+    "value": "Bred since the 1600s"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/persian_cat.webp",
+  "credit": "The original uploader was Lajoma at Finnish Wikipedia. · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Persian_cat",
+  "frame": {
+   "x": 0.614,
+   "y": 0.543,
+   "zoom": 2.86
+  }
+ },
+ {
+  "id": "bengal_cat",
+  "rarity": "green",
+  "name": "Bengal cat",
+  "scientific": "Felis catus",
+  "blurb": "Breed of cat",
+  "fact": "Many Bengals have a 'glitter' coat that sparkles in the sun - and they often like water.",
+  "stats": [
+   {
+    "label": "Ancestor",
+    "value": "Asian leopard cat"
+   },
+   {
+    "label": "Coat",
+    "value": "Some glitter"
+   },
+   {
+    "label": "Loves",
+    "value": "Water"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/bengal_cat.webp",
+  "credit": "User:Lightburst · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Bengal_cat",
+  "frame": {
+   "x": 0.5,
+   "y": 0.365,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "clydesdale_horse",
+  "rarity": "green",
+  "name": "Clydesdale horse",
+  "scientific": "Equus caballus",
+  "blurb": "Horse breed",
+  "fact": "Its 'feathered' feet are the size of dinner plates.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~800–1,000 kg"
+   },
+   {
+    "label": "Height",
+    "value": "~1.8 m at the shoulder"
+   },
+   {
+    "label": "Feet",
+    "value": "Hooves like dinner plates"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/clydesdale_horse.webp",
+  "credit": "Bonnie U. Gruenberg · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Clydesdale_horse"
+ },
+ {
+  "id": "nigerian_dwarf",
+  "rarity": "green",
+  "name": "Nigerian Dwarf goat",
+  "scientific": "Capra hircus",
+  "blurb": "American breed of goat",
+  "fact": "A tiny goat whose milk is so creamy it is prized for cheese and soap.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~35 kg"
+   },
+   {
+    "label": "Milk",
+    "value": "Very rich - ~6–10% fat"
+   },
+   {
+    "label": "Eyes",
+    "value": "Sometimes blue"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/nigerian_dwarf.webp",
+  "credit": "Jmkarohl · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Nigerian_Dwarf",
+  "frame": {
+   "x": 0.5,
+   "y": 0.426,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "ayam_cemani",
+  "rarity": "green",
+  "name": "Ayam Cemani",
+  "scientific": "Gallus gallus domesticus",
+  "blurb": "Breed of chicken from Indonesia",
+  "fact": "Black feathers, skin, beak, tongue, organs and bones - due to a gene that floods its tissues with pigment.",
+  "stats": [
+   {
+    "label": "Colour",
+    "value": "Black inside and out"
+   },
+   {
+    "label": "Bones",
+    "value": "Black"
+   },
+   {
+    "label": "Origin",
+    "value": "Java, Indonesia"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/ayam_cemani.webp",
+  "credit": "Thomon · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Ayam_Cemani"
+ },
+ {
+  "id": "sauromalus_ater",
+  "rarity": "green",
+  "name": "Common chuckwalla",
+  "scientific": "Sauromalus ater",
+  "blurb": "Large lizard native to the Sonoran and Mojave Deserts",
+  "fact": "Wedges itself into a rock crack and inflates its lungs, so nothing can pull it out.",
+  "stats": [
+   {
+    "label": "Defence",
+    "value": "Inflates in rock cracks"
+   },
+   {
+    "label": "Length",
+    "value": "~40 cm"
+   },
+   {
+    "label": "Diet",
+    "value": "Desert flowers"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/sauromalus_ater.webp",
+  "credit": "Kaldari · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Sauromalus_ater",
+  "frame": {
+   "x": 0.5,
+   "y": 0.38,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "superb_fairywren",
+  "rarity": "green",
+  "name": "Superb fairywren",
+  "scientific": "Malurus cyaneus",
+  "blurb": "Species of bird",
+  "fact": "Mothers sing a password to their eggs, and chicks must call it back to be fed - cuckoo chicks can't.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~10 g"
+   },
+   {
+    "label": "Password",
+    "value": "Teaches eggs a call"
+   },
+   {
+    "label": "Gift",
+    "value": "Males bring petals"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/superb_fairywren.webp",
+  "credit": "JJ Harrison (https://www.jjharrison.com.au/) · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Superb_fairywren"
+ },
+ {
+  "id": "northern_gannet",
+  "rarity": "green",
+  "name": "Northern gannet",
+  "scientific": "Morus bassanus",
+  "blurb": "Species of bird",
+  "fact": "Plunge-dives into the sea at about 100 km/h, cushioned by air sacs under its skin.",
+  "stats": [
+   {
+    "label": "Dive speed",
+    "value": "~100 km/h"
+   },
+   {
+    "label": "Air sacs",
+    "value": "Cushion the impact"
+   },
+   {
+    "label": "Wingspan",
+    "value": "~1.8 m"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/northern_gannet.webp",
+  "credit": "Andreas Trepte · CC BY-SA 2.5",
+  "url": "https://en.wikipedia.org/wiki/Northern_gannet"
+ },
+ {
+  "id": "bohemian_waxwing",
+  "rarity": "green",
+  "name": "Bohemian waxwing",
+  "scientific": "Bombycilla garrulus",
+  "blurb": "Passerine bird from Eurasia and North America",
+  "fact": "Eats so many fermented berries that it sometimes gets drunk - its liver is unusually large to cope.",
+  "stats": [
+   {
+    "label": "Wing tips",
+    "value": "Red waxy blobs"
+   },
+   {
+    "label": "Diet",
+    "value": "Berries - gets drunk"
+   },
+   {
+    "label": "Weight",
+    "value": "~55 g"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/bohemian_waxwing.webp",
+  "credit": "Tatiana Bulyonkova from Novosibirsk, Russia · CC BY-SA 2.0",
+  "url": "https://en.wikipedia.org/wiki/Bohemian_waxwing"
+ },
+ {
+  "id": "nicobar_pigeon",
+  "rarity": "green",
+  "name": "Nicobar pigeon",
+  "scientific": "Caloenas nicobarica",
+  "blurb": "Species of bird",
+  "fact": "The dodo's closest living relative.",
+  "stats": [
+   {
+    "label": "Closest living kin",
+    "value": "Of the dodo"
+   },
+   {
+    "label": "Feathers",
+    "value": "Iridescent hackles"
+   },
+   {
+    "label": "Weight",
+    "value": "~0.5 kg"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/nicobar_pigeon.webp",
+  "credit": "ziggypop74 · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Nicobar_pigeon"
+ },
+ {
+  "id": "green_sea_turtle",
+  "rarity": "green",
+  "name": "Green sea turtle",
+  "scientific": "Chelonia mydas",
+  "blurb": "Species of large sea reptile",
+  "fact": "Named for the green colour of its fat, from a diet of seagrass.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~300 kg"
+   },
+   {
+    "label": "Migration",
+    "value": "~2,600 km to nest"
+   },
+   {
+    "label": "Colour",
+    "value": "Its fat, not shell"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/green_sea_turtle.webp",
+  "credit": "Charles J. Sharp · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Green_sea_turtle"
+ },
+ {
+  "id": "moorish_idol",
+  "rarity": "green",
+  "name": "Moorish idol",
+  "scientific": "Zanclus cornutus",
+  "blurb": "Species of fish",
+  "fact": "The model for Gill in Finding Nemo.",
+  "stats": [
+   {
+    "label": "Captivity",
+    "value": "Hard to keep"
+   },
+   {
+    "label": "Fin",
+    "value": "A long white streamer"
+   },
+   {
+    "label": "Famous as",
+    "value": "Gill in 'Finding Nemo'"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/moorish_idol.webp",
+  "credit": "Diego Delso · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Moorish_idol"
+ },
+ {
+  "id": "hellbender",
+  "rarity": "green",
+  "name": "Hellbender",
+  "scientific": "Cryptobranchus alleganiensis",
+  "blurb": "Species of amphibian",
+  "fact": "Breathes through its baggy, wrinkled skin - hence nicknames like 'snot otter'.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~74 cm"
+   },
+   {
+    "label": "Breathes",
+    "value": "Through wrinkly skin"
+   },
+   {
+    "label": "Nicknames",
+    "value": "'Snot otter'"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/hellbender.webp",
+  "credit": "Brian Gratwicke · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Hellbender"
+ },
+ {
+  "id": "morpho_menelaus",
+  "rarity": "green",
+  "name": "Menelaus blue morpho",
+  "scientific": "Morpho menelaus",
+  "blurb": "Species of butterfly",
+  "fact": "Its electric blue has no pigment at all - just nanostructures bending light.",
+  "stats": [
+   {
+    "label": "Wingspan",
+    "value": "~15 cm"
+   },
+   {
+    "label": "Blue",
+    "value": "Structural, no pigment"
+   },
+   {
+    "label": "Underside",
+    "value": "Brown, with eye spots"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/morpho_menelaus.webp",
+  "credit": "Didier Descouens · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Morpho_menelaus"
+ },
+ {
+  "id": "atta_cephalotes",
+  "rarity": "green",
+  "name": "Leafcutter ant",
+  "scientific": "Atta cephalotes",
+  "blurb": "Species of ant",
+  "fact": "Doesn't eat the leaves it carries - it farms a fungus on them.",
+  "stats": [
+   {
+    "label": "Farmers",
+    "value": "Grow fungus"
+   },
+   {
+    "label": "Colony",
+    "value": "Millions of ants"
+   },
+   {
+    "label": "Load",
+    "value": "Leaves 20× their weight"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/atta_cephalotes.webp",
+  "credit": "Pjt56 · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Atta_cephalotes"
+ },
+ {
+  "id": "oecophylla_smaragdina",
+  "rarity": "green",
+  "name": "Weaver ant",
+  "scientific": "Oecophylla smaragdina",
+  "blurb": "Species of ant",
+  "fact": "Workers hold larvae like glue guns, using their silk to stitch leaves into nests.",
+  "stats": [
+   {
+    "label": "Nests",
+    "value": "Leaves sewn with larval silk"
+   },
+   {
+    "label": "Use",
+    "value": "Pest control since 304 AD"
+   },
+   {
+    "label": "Bite",
+    "value": "Sprays acid"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/oecophylla_smaragdina.webp",
+  "credit": "Muhammad Mahdi Karim · GFDL 1.2",
+  "url": "https://en.wikipedia.org/wiki/Oecophylla_smaragdina"
+ },
+ {
+  "id": "sunflower_sea_star",
+  "rarity": "green",
+  "name": "Sunflower sea star",
+  "scientific": "Pycnopodia helianthoides",
+  "blurb": "Species of echinoderm",
+  "fact": "One of the fastest sea stars - and it has up to 24 arms.",
+  "stats": [
+   {
+    "label": "Arms",
+    "value": "Up to 24"
+   },
+   {
+    "label": "Width",
+    "value": "Up to ~1 m"
+   },
+   {
+    "label": "Speed",
+    "value": "~1 m/min"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/sunflower_sea_star.webp",
+  "credit": "Jerry Kirkhart from Los Osos, Calif. · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Sunflower_sea_star"
+ },
+ {
+  "id": "greater_bilby",
+  "rarity": "green",
+  "name": "Greater bilby",
+  "scientific": "Macrotis lagotis",
+  "blurb": "Species of marsupial",
+  "fact": "Its pouch faces backwards so it does not fill with soil when it digs.",
+  "stats": [
+   {
+    "label": "Ears",
+    "value": "Rabbit-like, giant"
+   },
+   {
+    "label": "Pouch",
+    "value": "Opens backwards"
+   },
+   {
+    "label": "Easter",
+    "value": "Australia's 'Easter bilby'"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/greater_bilby.webp",
+  "credit": "Dcoetzee · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Greater_bilby"
+ },
+ {
+  "id": "humphead_wrasse",
+  "rarity": "green",
+  "name": "Humphead wrasse",
+  "scientific": "Cheilinus undulatus",
+  "blurb": "Species of fish",
+  "fact": "One of few fish that eats crown-of-thorns starfish and boxfish, toxins and all.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~2 m"
+   },
+   {
+    "label": "Sex change",
+    "value": "Female to male"
+   },
+   {
+    "label": "Diet",
+    "value": "Toxic crown-of-thorns starfish"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/humphead_wrasse.webp",
+  "credit": "Julien Bidet for MDC Seamarc · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Humphead_wrasse"
+ },
+ {
+  "id": "clione_limacina",
+  "rarity": "green",
+  "name": "Sea angel",
+  "scientific": "Clione limacina",
+  "blurb": "Species of gastropod",
+  "fact": "A see-through 'sea angel' snail that flaps wing-like fins - and grabs prey with tentacles from its head.",
+  "stats": [
+   {
+    "label": "Called",
+    "value": "'Sea angel'"
+   },
+   {
+    "label": "Size",
+    "value": "~3 cm"
+   },
+   {
+    "label": "Hunt",
+    "value": "Six tentacles shoot from its head"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/clione_limacina.webp",
+  "credit": "Kevin Raskoff, Hidden Ocean 2005 Expedition: NOAA Office of Ocean Exploration. · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Clione_limacina",
+  "frame": {
+   "x": 0.5,
+   "y": 0.3,
+   "zoom": 1.0
+  }
+ },
+ {
   "id": "eastern_hognose_snake",
   "rarity": "blue",
   "name": "Eastern hognose snake",
@@ -9052,7 +10832,12 @@
   "status": "Least concern",
   "image": "zoo/img/frilled_shark.webp",
   "credit": "This illustration was made by Citron You must credit this : Citron / CC-BY-SA-3. · CC BY-SA 3.0",
-  "url": "https://en.wikipedia.org/wiki/Frilled_shark"
+  "url": "https://en.wikipedia.org/wiki/Frilled_shark",
+  "frame": {
+   "x": 0.267,
+   "y": 0.5,
+   "zoom": 1.0
+  }
  },
  {
   "id": "alligator_snapping_turtle",
@@ -9337,7 +11122,12 @@
   "status": "",
   "image": "zoo/img/deinonychus.webp",
   "credit": "Emily Willoughby (e.deinonychus@gmail.com http://emilywilloughby.artworkfolio.co · CC BY-SA 3.0",
-  "url": "https://en.wikipedia.org/wiki/Deinonychus"
+  "url": "https://en.wikipedia.org/wiki/Deinonychus",
+  "frame": {
+   "x": 0.347,
+   "y": 0.5,
+   "zoom": 1.0
+  }
  },
  {
   "id": "deinocheirus",
@@ -9363,7 +11153,12 @@
   "status": "",
   "image": "zoo/img/deinocheirus.webp",
   "credit": "Johnson Mortimer · CC BY 3.0",
-  "url": "https://en.wikipedia.org/wiki/Deinocheirus"
+  "url": "https://en.wikipedia.org/wiki/Deinocheirus",
+  "frame": {
+   "x": 0.349,
+   "y": 0.465,
+   "zoom": 1.08
+  }
  },
  {
   "id": "inland_taipan",
@@ -9581,7 +11376,12 @@
   "status": "Data Deficient",
   "image": "zoo/img/black_marlin.webp",
   "credit": "Queensland State Archives from Runcorn, Queensland, Australia · Public domain",
-  "url": "https://en.wikipedia.org/wiki/Black_marlin"
+  "url": "https://en.wikipedia.org/wiki/Black_marlin",
+  "frame": {
+   "x": 0.5,
+   "y": 0.309,
+   "zoom": 1.0
+  }
  },
  {
   "id": "chironex_fleckeri",
@@ -11337,6 +13137,1546 @@
   }
  },
  {
+  "id": "red_fox",
+  "rarity": "blue",
+  "name": "Red fox",
+  "scientific": "Vulpes vulpes",
+  "blurb": "Species of mammal",
+  "fact": "Pounces on mice under snow, and seems to aim using the Earth's magnetic field - jumps facing north-east land far more often.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "3–14 kg"
+   },
+   {
+    "label": "Range",
+    "value": "Every continent but Antarctica & S. America"
+   },
+   {
+    "label": "Hears",
+    "value": "Rodents squeaking under snow"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/red_fox.webp",
+  "credit": "ClaudiaTen · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Red_fox",
+  "frame": {
+   "x": 0.527,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "white_tailed_deer",
+  "rarity": "blue",
+  "name": "White-tailed deer",
+  "scientific": "Odocoileus virginianus",
+  "blurb": "Species of deer",
+  "fact": "Raises its white tail like a flag when it bolts, so the rest of the herd knows to run.",
+  "stats": [
+   {
+    "label": "Top speed",
+    "value": "~48 km/h"
+   },
+   {
+    "label": "Jump",
+    "value": "~2.5 m high"
+   },
+   {
+    "label": "Signal",
+    "value": "Flashes its white tail"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/white_tailed_deer.webp",
+  "credit": "USDA photo by Scott Bauer · Public domain",
+  "url": "https://en.wikipedia.org/wiki/White-tailed_deer",
+  "frame": {
+   "x": 0.5,
+   "y": 0.493,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "mute_swan",
+  "rarity": "blue",
+  "name": "Mute swan",
+  "scientific": "Cygnus olor",
+  "blurb": "Large species of waterfowl",
+  "fact": "Unmarked mute swans on open water in England belong to the monarch, and are counted each July.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~15 kg"
+   },
+   {
+    "label": "Wingspan",
+    "value": "2–2.4 m"
+   },
+   {
+    "label": "Owned by",
+    "value": "The British Crown (some)"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/mute_swan.webp",
+  "credit": "Sanchezn · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Mute_swan"
+ },
+ {
+  "id": "siamese_cat",
+  "rarity": "blue",
+  "name": "Siamese cat",
+  "scientific": "Felis catus",
+  "blurb": "Breed of domestic cat",
+  "fact": "Its dark points are where the body is coolest - a temperature-sensitive pigment gene.",
+  "stats": [
+   {
+    "label": "Colour",
+    "value": "Set by body temperature"
+   },
+   {
+    "label": "Eyes",
+    "value": "Blue"
+   },
+   {
+    "label": "Voice",
+    "value": "Very loud"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/siamese_cat.webp",
+  "credit": "Meekahoo · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Siamese_cat",
+  "frame": {
+   "x": 0.5,
+   "y": 0.301,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "alpine_ibex",
+  "rarity": "blue",
+  "name": "Alpine ibex",
+  "scientific": "Capra ibex",
+  "blurb": "Species of mammal",
+  "fact": "Climbs the near-vertical walls of Italian dams to lick the salt off the stones.",
+  "stats": [
+   {
+    "label": "Horns",
+    "value": "Up to ~1 m"
+   },
+   {
+    "label": "Climbs",
+    "value": "Near-vertical dams"
+   },
+   {
+    "label": "Comeback",
+    "value": "From ~100 animals"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/alpine_ibex.webp",
+  "credit": "Giles Laurent · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Alpine_ibex",
+  "frame": {
+   "x": 0.5,
+   "y": 0.489,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "red_deer",
+  "rarity": "blue",
+  "name": "Red deer",
+  "scientific": "Cervus elaphus",
+  "blurb": "Species of hoofed mammal",
+  "fact": "Grows its antlers from scratch every year - one of the fastest-growing tissues known.",
+  "stats": [
+   {
+    "label": "Antlers",
+    "value": "Regrown every year"
+   },
+   {
+    "label": "Roar",
+    "value": "Heard for kilometres"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~240 kg"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/red_deer.webp",
+  "credit": "Lviatour · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Red_deer",
+  "frame": {
+   "x": 0.513,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "elk",
+  "rarity": "blue",
+  "name": "Elk",
+  "scientific": "Cervus canadensis",
+  "blurb": "Species of deer",
+  "fact": "Its 'bugle' is a surprisingly squeaky, whistling scream for such a huge animal.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~500 kg"
+   },
+   {
+    "label": "Bugle",
+    "value": "High-pitched scream"
+   },
+   {
+    "label": "Antlers",
+    "value": "~18 kg a pair"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/elk.webp",
+  "credit": "Membeth · CC0",
+  "url": "https://en.wikipedia.org/wiki/Elk",
+  "frame": {
+   "x": 0.5,
+   "y": 0.401,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "wild_boar",
+  "rarity": "blue",
+  "name": "Wild boar",
+  "scientific": "Sus scrofa",
+  "blurb": "Species of mammal",
+  "fact": "Its upper and lower tusks grind against each other, keeping them razor sharp.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~200 kg"
+   },
+   {
+    "label": "Top speed",
+    "value": "~48 km/h"
+   },
+   {
+    "label": "Tusks",
+    "value": "Self-sharpening"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/wild_boar.webp",
+  "credit": "Valentin Panzirsch · CC BY-SA 3.0 at",
+  "url": "https://en.wikipedia.org/wiki/Wild_boar"
+ },
+ {
+  "id": "white_nosed_coati",
+  "rarity": "blue",
+  "name": "White-nosed coati",
+  "scientific": "Nasua narica",
+  "blurb": "Species of mammal",
+  "fact": "Can turn its ankles backwards to climb down trees head-first.",
+  "stats": [
+   {
+    "label": "Tail",
+    "value": "Held straight up"
+   },
+   {
+    "label": "Groups",
+    "value": "'Bands' of up to ~30"
+   },
+   {
+    "label": "Ankles",
+    "value": "Turn backwards"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/white_nosed_coati.webp",
+  "credit": "Chuck Homler, Focus On Wildlife · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/White-nosed_coati",
+  "frame": {
+   "x": 0.5,
+   "y": 0.636,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "ringtail",
+  "rarity": "blue",
+  "name": "Ringtail",
+  "scientific": "Bassariscus astutus",
+  "blurb": "Species of mammal",
+  "fact": "Was kept by miners as a mouser - the 'miner's cat' - though it's a raccoon relative.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~1 kg"
+   },
+   {
+    "label": "Tail",
+    "value": "14–16 rings"
+   },
+   {
+    "label": "State animal",
+    "value": "Arizona"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/ringtail.webp",
+  "credit": "Robertbody at en.wikipedia · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Ringtail"
+ },
+ {
+  "id": "fisher_animal",
+  "rarity": "blue",
+  "name": "Fisher",
+  "scientific": "Martes pennanti",
+  "blurb": "Species of small, carnivorous mammal native to North America",
+  "fact": "One of the few predators that kills porcupines - it attacks the face, again and again, avoiding the quills.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "2–5.5 kg"
+   },
+   {
+    "label": "Hunts",
+    "value": "Porcupines"
+   },
+   {
+    "label": "Ankles",
+    "value": "Rotate 180°"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/fisher_animal.webp",
+  "credit": "Mount Rainier National Park from Ashford, WA, United States · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Fisher_(animal)"
+ },
+ {
+  "id": "eurasian_otter",
+  "rarity": "blue",
+  "name": "Eurasian otter",
+  "scientific": "Lutra lutra",
+  "blurb": "Species of carnivore",
+  "fact": "Its droppings, called spraint, are said to smell like jasmine tea.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~7–12 kg"
+   },
+   {
+    "label": "Fur",
+    "value": "~70,000 hairs per cm²"
+   },
+   {
+    "label": "Spraint",
+    "value": "Smells of jasmine tea"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/eurasian_otter.webp",
+  "credit": "Bernard Landgraf · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Eurasian_otter"
+ },
+ {
+  "id": "north_american_river_otter",
+  "rarity": "blue",
+  "name": "North American river otter",
+  "scientific": "Lontra canadensis",
+  "blurb": "Species of semi-aquatic mammal",
+  "fact": "Slides down muddy and snowy banks on its belly, seemingly just for fun.",
+  "stats": [
+   {
+    "label": "Breath-hold",
+    "value": "~8 minutes"
+   },
+   {
+    "label": "Weight",
+    "value": "5–14 kg"
+   },
+   {
+    "label": "Slides",
+    "value": "For fun"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/north_american_river_otter.webp",
+  "credit": "USFWS Mountain-Prairie · Public domain",
+  "url": "https://en.wikipedia.org/wiki/North_American_river_otter"
+ },
+ {
+  "id": "california_sea_lion",
+  "rarity": "blue",
+  "name": "California sea lion",
+  "scientific": "Zalophus californianus",
+  "blurb": "Species of carnivore",
+  "fact": "A sea lion named Ronan learned to bob her head to the beat of music - the first non-human mammal shown to.",
+  "stats": [
+   {
+    "label": "Top speed",
+    "value": "~40 km/h"
+   },
+   {
+    "label": "Rhythm",
+    "value": "Can keep a beat"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~350 kg"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/california_sea_lion.webp",
+  "credit": "(c) Jonathan Eisen, some rights reserved (CC BY) · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/California_sea_lion"
+ },
+ {
+  "id": "roseate_spoonbill",
+  "rarity": "blue",
+  "name": "Roseate spoonbill",
+  "scientific": "Platalea ajaja",
+  "blurb": "Species of bird",
+  "fact": "Gets its pink from carotenoids in the crustaceans it sweeps up with its spoon-shaped beak.",
+  "stats": [
+   {
+    "label": "Colour",
+    "value": "From the shrimp it eats"
+   },
+   {
+    "label": "Beak",
+    "value": "Sweeps side to side"
+   },
+   {
+    "label": "Weight",
+    "value": "~1.5 kg"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/roseate_spoonbill.webp",
+  "credit": "User:Mwanner · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Roseate_spoonbill",
+  "frame": {
+   "x": 0.5,
+   "y": 0.373,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "scarlet_ibis",
+  "rarity": "blue",
+  "name": "Scarlet ibis",
+  "scientific": "Eudocimus ruber",
+  "blurb": "Species of bird",
+  "fact": "Hatches dull brown and turns scarlet by eating red crustaceans.",
+  "stats": [
+   {
+    "label": "Colour",
+    "value": "Brightest red of any bird"
+   },
+   {
+    "label": "Starts",
+    "value": "Grey-brown as chicks"
+   },
+   {
+    "label": "National bird",
+    "value": "Trinidad"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/scarlet_ibis.webp",
+  "credit": "Rafa Esteve · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Scarlet_ibis",
+  "frame": {
+   "x": 0.5,
+   "y": 0.25,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "toco_toucan",
+  "rarity": "blue",
+  "name": "Toco toucan",
+  "scientific": "Ramphastos toco",
+  "blurb": "Species of bird",
+  "fact": "Its giant beak is a radiator - it pumps blood into it to dump heat.",
+  "stats": [
+   {
+    "label": "Beak",
+    "value": "A third of its length"
+   },
+   {
+    "label": "Beak weight",
+    "value": "Light as foam"
+   },
+   {
+    "label": "Use",
+    "value": "A radiator"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/toco_toucan.webp",
+  "credit": "Giles Laurent · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Toco_toucan"
+ },
+ {
+  "id": "rainbow_lorikeet",
+  "rarity": "blue",
+  "name": "Rainbow lorikeet",
+  "scientific": "Trichoglossus moluccanus",
+  "blurb": "Species of bird",
+  "fact": "Has a brush-tipped tongue for mopping up nectar and pollen.",
+  "stats": [
+   {
+    "label": "Tongue",
+    "value": "A brush tip for nectar"
+   },
+   {
+    "label": "Weight",
+    "value": "~120 g"
+   },
+   {
+    "label": "Noise",
+    "value": "Very loud flocks"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/rainbow_lorikeet.webp",
+  "credit": "Charles J. Sharp · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Rainbow_lorikeet",
+  "frame": {
+   "x": 0.5,
+   "y": 0.325,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "king_penguin",
+  "rarity": "blue",
+  "name": "King penguin",
+  "scientific": "Aptenodytes patagonicus",
+  "blurb": "Species of bird",
+  "fact": "Has no nest - it carries its egg on its feet under a fold of warm belly skin.",
+  "stats": [
+   {
+    "label": "Height",
+    "value": "~90 cm"
+   },
+   {
+    "label": "Dive",
+    "value": "Up to ~300 m"
+   },
+   {
+    "label": "Egg",
+    "value": "Carried on its feet"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/king_penguin.webp",
+  "credit": "Godot13 · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/King_penguin",
+  "frame": {
+   "x": 0.5,
+   "y": 0.365,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "victoria_crowned_pigeon",
+  "rarity": "blue",
+  "name": "Victoria crowned pigeon",
+  "scientific": "Goura victoria",
+  "blurb": "Species of bird",
+  "fact": "One of the largest pigeons on Earth, with a lace-like crown.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~3.5 kg"
+   },
+   {
+    "label": "Crest",
+    "value": "Lacy blue fan"
+   },
+   {
+    "label": "Size",
+    "value": "Turkey-sized"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/victoria_crowned_pigeon.webp",
+  "credit": "Jörg Hempel · CC BY-SA 3.0 de",
+  "url": "https://en.wikipedia.org/wiki/Victoria_crowned_pigeon",
+  "frame": {
+   "x": 0.5,
+   "y": 0.399,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "hawksbill_sea_turtle",
+  "rarity": "blue",
+  "name": "Hawksbill sea turtle",
+  "scientific": "Eretmochelys imbricata",
+  "blurb": "Species of reptile",
+  "fact": "Eats sponges full of glass-like spicules and toxins - and was filmed glowing red and green.",
+  "stats": [
+   {
+    "label": "Diet",
+    "value": "Toxic sponges"
+   },
+   {
+    "label": "Shell",
+    "value": "The old 'tortoiseshell'"
+   },
+   {
+    "label": "Glows",
+    "value": "Biofluorescent"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/hawksbill_sea_turtle.webp",
+  "credit": "Thierry Caro · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Hawksbill_sea_turtle"
+ },
+ {
+  "id": "paracanthurus",
+  "rarity": "blue",
+  "name": "Blue tang",
+  "scientific": "Paracanthurus hepatus",
+  "blurb": "Genus of fishes",
+  "fact": "Hides a scalpel-sharp spine by its tail.",
+  "stats": [
+   {
+    "label": "Spine",
+    "value": "A scalpel by the tail"
+   },
+   {
+    "label": "Length",
+    "value": "~30 cm"
+   },
+   {
+    "label": "Famous as",
+    "value": "'Dory'"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/paracanthurus.webp",
+  "credit": "DerHans04 · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Paracanthurus"
+ },
+ {
+  "id": "panther_chameleon",
+  "rarity": "blue",
+  "name": "Panther chameleon",
+  "scientific": "Furcifer pardalis",
+  "blurb": "Species of lizard",
+  "fact": "Changes colour by tuning tiny crystals in its skin, not by moving pigment.",
+  "stats": [
+   {
+    "label": "Colour",
+    "value": "Changed by nanocrystals"
+   },
+   {
+    "label": "Tongue",
+    "value": "Up to ~2× body length"
+   },
+   {
+    "label": "Home",
+    "value": "Madagascar"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/panther_chameleon.webp",
+  "credit": "Charles J. Sharp · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Panther_chameleon"
+ },
+ {
+  "id": "jacksons_chameleon",
+  "rarity": "blue",
+  "name": "Jackson's chameleon",
+  "scientific": "Trioceros jacksonii",
+  "blurb": "Species of lizard",
+  "fact": "Males carry three horns and joust with them like tiny triceratopses.",
+  "stats": [
+   {
+    "label": "Horns",
+    "value": "3, like a triceratops"
+   },
+   {
+    "label": "Birth",
+    "value": "Live young"
+   },
+   {
+    "label": "Length",
+    "value": "~30 cm"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/jacksons_chameleon.webp",
+  "credit": "Movingsaletoday edited by Muhammad · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Jackson's_chameleon"
+ },
+ {
+  "id": "crested_gecko",
+  "rarity": "blue",
+  "name": "Crested gecko",
+  "scientific": "Rhacodactylus ciliatus",
+  "blurb": "Species of gecko",
+  "fact": "Was thought extinct until it was found again after a tropical storm in 1994.",
+  "stats": [
+   {
+    "label": "Rediscovered",
+    "value": "1994, thought extinct"
+   },
+   {
+    "label": "Tail",
+    "value": "Drops off - doesn't regrow"
+   },
+   {
+    "label": "Feet",
+    "value": "Sticky toe pads"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/crested_gecko.webp",
+  "credit": "Lennart Hudel · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Crested_gecko"
+ },
+ {
+  "id": "green_tree_python",
+  "rarity": "blue",
+  "name": "Green tree python",
+  "scientific": "Morelia viridis",
+  "blurb": "Species of snake",
+  "fact": "Born yellow or red, it turns green as it grows.",
+  "stats": [
+   {
+    "label": "Babies",
+    "value": "Yellow or red, then green"
+   },
+   {
+    "label": "Rest",
+    "value": "Coils over a branch"
+   },
+   {
+    "label": "Length",
+    "value": "~1.5 m"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/green_tree_python.webp",
+  "credit": "TarnishedPath · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Green_tree_python"
+ },
+ {
+  "id": "strawberry_poison_dart_frog",
+  "rarity": "blue",
+  "name": "Strawberry poison dart frog",
+  "scientific": "Oophaga pumilio",
+  "blurb": "Species of amphibian",
+  "fact": "The mother carries each tadpole up a tree to its own puddle in a plant, then feeds it unfertilised eggs.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "~2 cm"
+   },
+   {
+    "label": "Babies",
+    "value": "Carried up trees one by one"
+   },
+   {
+    "label": "Toxins",
+    "value": "From ants and mites"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/strawberry_poison_dart_frog.webp",
+  "credit": "Rhododendrites · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Strawberry_poison_dart_frog"
+ },
+ {
+  "id": "dyeing_poison_dart_frog",
+  "rarity": "blue",
+  "name": "Dyeing poison dart frog",
+  "scientific": "Dendrobates tinctorius",
+  "blurb": "Species of amphibian",
+  "fact": "Legend says rubbing its toxins on a parrot made its feathers grow yellow.",
+  "stats": [
+   {
+    "label": "Colours",
+    "value": "Blue, yellow - many forms"
+   },
+   {
+    "label": "Length",
+    "value": "~5 cm"
+   },
+   {
+    "label": "Myth",
+    "value": "Changes parrots' colours"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/dyeing_poison_dart_frog.webp",
+  "credit": "H. Zell · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Dyeing_poison_dart_frog"
+ },
+ {
+  "id": "extatosoma_tiaratum",
+  "rarity": "blue",
+  "name": "Spiny leaf insect",
+  "scientific": "giant stick insect",
+  "blurb": "Species of stick insect native to Australia",
+  "fact": "Its eggs look like seeds, so ants carry them home - where they hatch safely.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~20 cm"
+   },
+   {
+    "label": "Mimics",
+    "value": "A scorpion"
+   },
+   {
+    "label": "Eggs",
+    "value": "Carried by ants"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/extatosoma_tiaratum.webp",
+  "credit": "Rosa Pineda · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Extatosoma_tiaratum"
+ },
+ {
+  "id": "gasteracantha_cancriformis",
+  "rarity": "blue",
+  "name": "Spiny orb-weaver",
+  "scientific": "Gasteracantha cancriformis",
+  "blurb": "Species of spider",
+  "fact": "Looks like a tiny spiky crab, and rebuilds its web every night, decorated with silk tufts that may warn birds away.",
+  "stats": [
+   {
+    "label": "Spines",
+    "value": "6 on the abdomen"
+   },
+   {
+    "label": "Web",
+    "value": "Rebuilt nightly"
+   },
+   {
+    "label": "Width",
+    "value": "~1.3 cm"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/gasteracantha_cancriformis.webp",
+  "credit": "Sam Fraser-Smith from Brisbane, Australia · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Gasteracantha_cancriformis"
+ },
+ {
+  "id": "jaguarundi",
+  "rarity": "blue",
+  "name": "Jaguarundi",
+  "scientific": "Puma yagouaroundi",
+  "blurb": "Species of felid",
+  "fact": "A long, low cat that looks more like an otter or weasel - and chirps like a bird.",
+  "stats": [
+   {
+    "label": "Look",
+    "value": "Like a weasel-cat"
+   },
+   {
+    "label": "Calls",
+    "value": "13 different calls"
+   },
+   {
+    "label": "Weight",
+    "value": "~3.5–9 kg"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/jaguarundi.webp",
+  "credit": "Vassil · CC0",
+  "url": "https://en.wikipedia.org/wiki/Jaguarundi"
+ },
+ {
+  "id": "commersons_dolphin",
+  "rarity": "blue",
+  "name": "Commerson's dolphin",
+  "scientific": "Cephalorhynchus commersonii",
+  "blurb": "Species of mammal",
+  "fact": "Often called the 'panda dolphin' for its black-and-white pattern.",
+  "stats": [
+   {
+    "label": "Colour",
+    "value": "Black and white like a panda"
+   },
+   {
+    "label": "Length",
+    "value": "~1.5 m"
+   },
+   {
+    "label": "Spins",
+    "value": "While swimming"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/commersons_dolphin.webp",
+  "credit": "Sebastián Saiter V. · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Commerson's_dolphin",
+  "frame": {
+   "x": 0.443,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "common_seadragon",
+  "rarity": "blue",
+  "name": "Common seadragon",
+  "scientific": "Phyllopteryx taeniolatus",
+  "blurb": "Species of fish",
+  "fact": "Males carry the eggs stuck to their tails until they hatch.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "~45 cm"
+   },
+   {
+    "label": "Dads",
+    "value": "Carry the eggs"
+   },
+   {
+    "label": "Home",
+    "value": "Southern Australia"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/common_seadragon.webp",
+  "credit": "Richard Ling <wikipedia@rling.com> -->Rling · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Common_seadragon"
+ },
+ {
+  "id": "zebra_shark",
+  "rarity": "blue",
+  "name": "Zebra shark",
+  "scientific": "Stegostoma fasciatum",
+  "blurb": "Species of carpet sharks",
+  "fact": "Striped as a baby and spotted as an adult - and females have had pups without a male.",
+  "stats": [
+   {
+    "label": "Babies",
+    "value": "Striped - adults spotted"
+   },
+   {
+    "label": "Virgin births",
+    "value": "Yes"
+   },
+   {
+    "label": "Length",
+    "value": "~2.5 m"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/zebra_shark.webp",
+  "credit": "Felix Frost-Savage · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Zebra_shark",
+  "frame": {
+   "x": 0.646,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "grapsus_grapsus",
+  "rarity": "blue",
+  "name": "Sally Lightfoot crab",
+  "scientific": "Grapsus grapsus",
+  "blurb": "Species of crab",
+  "fact": "The 'Sally Lightfoot' crab dances across Galápagos rocks so nimbly it seems to skip over waves.",
+  "stats": [
+   {
+    "label": "Speed",
+    "value": "Very fast sideways"
+   },
+   {
+    "label": "Colour",
+    "value": "Bright red-orange"
+   },
+   {
+    "label": "Named after",
+    "value": "A dancer"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/grapsus_grapsus.webp",
+  "credit": "Nosferattus · CC0",
+  "url": "https://en.wikipedia.org/wiki/Grapsus_grapsus"
+ },
+ {
+  "id": "hymenocera",
+  "rarity": "blue",
+  "name": "Harlequin shrimp",
+  "scientific": "Hymenocera",
+  "blurb": "Genus of crustaceans",
+  "fact": "Pairs flip starfish over and eat them alive, a tube foot at a time, over days.",
+  "stats": [
+   {
+    "label": "Diet",
+    "value": "Only starfish"
+   },
+   {
+    "label": "Length",
+    "value": "~5 cm"
+   },
+   {
+    "label": "Pairs",
+    "value": "Monogamous"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/hymenocera.webp",
+  "credit": "Nathalie Rodrigues · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Hymenocera"
+ },
+ {
+  "id": "ruppells_vulture",
+  "rarity": "blue",
+  "name": "Rüppell's vulture",
+  "scientific": "Gyps rueppelli",
+  "blurb": "Species of bird",
+  "fact": "One was hit by a plane at 11,300 m over Côte d'Ivoire - the highest-flying bird ever recorded.",
+  "stats": [
+   {
+    "label": "Record",
+    "value": "Flew at ~11,300 m"
+   },
+   {
+    "label": "Wingspan",
+    "value": "~2.5 m"
+   },
+   {
+    "label": "Blood",
+    "value": "Special high-altitude haemoglobin"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/ruppells_vulture.webp",
+  "credit": "Charles J. Sharp · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/R%C3%BCppell's_vulture"
+ },
+ {
+  "id": "resplendent_quetzal",
+  "rarity": "blue",
+  "name": "Resplendent quetzal",
+  "scientific": "Pharomachrus mocinno",
+  "blurb": "Species of bird",
+  "fact": "Guatemala's currency is named after it - and it swallows wild avocados whole.",
+  "stats": [
+   {
+    "label": "Tail streamers",
+    "value": "Up to ~1 m"
+   },
+   {
+    "label": "Currency",
+    "value": "Guatemala's 'quetzal'"
+   },
+   {
+    "label": "Diet",
+    "value": "Wild avocados"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/resplendent_quetzal.webp",
+  "credit": "lwolfartist · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Resplendent_quetzal",
+  "frame": {
+   "x": 0.5,
+   "y": 0.363,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "bongo_antelope",
+  "rarity": "blue",
+  "name": "Bongo",
+  "scientific": "Tragelaphus eurycerus",
+  "blurb": "Species of mammal",
+  "fact": "Licks burnt wood after lightning strikes, likely for the salts and minerals.",
+  "stats": [
+   {
+    "label": "Stripes",
+    "value": "10–15 white stripes"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~400 kg"
+   },
+   {
+    "label": "Horns",
+    "value": "Spiralled, on both sexes"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/bongo_antelope.webp",
+  "credit": "Charles Miller from Basingstoke, United Kingdom · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Bongo_(antelope)"
+ },
+ {
+  "id": "short_beaked_echidna",
+  "rarity": "blue",
+  "name": "Short-beaked echidna",
+  "scientific": "Tachyglossus aculeatus",
+  "blurb": "Spiny furred egg-laying mammal from Australia",
+  "fact": "A spiny mammal that lays eggs - its babies are called puggles.",
+  "stats": [
+   {
+    "label": "Lays",
+    "value": "Eggs"
+   },
+   {
+    "label": "Tongue",
+    "value": "Up to 18 cm"
+   },
+   {
+    "label": "Babies",
+    "value": "Called 'puggles'"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/short_beaked_echidna.webp",
+  "credit": "User:Fir0002 · GFDL 1.2",
+  "url": "https://en.wikipedia.org/wiki/Short-beaked_echidna"
+ },
+ {
+  "id": "flat_headed_cat",
+  "rarity": "blue",
+  "name": "Flat-headed cat",
+  "scientific": "Prionailurus planiceps",
+  "blurb": "Small wild cat",
+  "fact": "Has webbed toes and backward-pointing teeth for catching slippery fish.",
+  "stats": [
+   {
+    "label": "Head",
+    "value": "Long and flat"
+   },
+   {
+    "label": "Diet",
+    "value": "Mostly fish"
+   },
+   {
+    "label": "Weight",
+    "value": "~1.5–2.5 kg"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/flat_headed_cat.webp",
+  "credit": "Jim Sanderson · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Flat-headed_cat"
+ },
+ {
+  "id": "irrawaddy_dolphin",
+  "rarity": "blue",
+  "name": "Irrawaddy dolphin",
+  "scientific": "Orcaella brevirostris",
+  "blurb": "Species of mammal",
+  "fact": "Spits jets of water to herd fish - and in Myanmar used to cooperate with fishers.",
+  "stats": [
+   {
+    "label": "Spits",
+    "value": "Water to herd fish"
+   },
+   {
+    "label": "Face",
+    "value": "Round, no beak"
+   },
+   {
+    "label": "Fishing",
+    "value": "Works with fishers"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/irrawaddy_dolphin.webp",
+  "credit": "Stefan Brending (2eight) · CC BY-SA 3.0 de",
+  "url": "https://en.wikipedia.org/wiki/Irrawaddy_dolphin",
+  "frame": {
+   "x": 0.443,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "macropinna",
+  "rarity": "blue",
+  "name": "Barreleye",
+  "scientific": "Macropinna",
+  "blurb": "Genus of ray-finned fishes",
+  "fact": "The 'barreleye' has a transparent head with green eyes that swivel inside it.",
+  "stats": [
+   {
+    "label": "Head",
+    "value": "See-through"
+   },
+   {
+    "label": "Eyes",
+    "value": "Rotate inside its head"
+   },
+   {
+    "label": "Depth",
+    "value": "~600–800 m"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/macropinna.webp",
+  "credit": "Unknown authorUnknown author · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Macropinna"
+ },
+ {
+  "id": "atolla_jellyfish",
+  "rarity": "blue",
+  "name": "Atolla jellyfish",
+  "scientific": "Atolla wyvillei",
+  "blurb": "Species of jellyfish",
+  "fact": "The 'alarm jellyfish' flashes a spinning ring of blue lights when caught - a burglar alarm to bring bigger predators.",
+  "stats": [
+   {
+    "label": "Alarm",
+    "value": "A spinning light show"
+   },
+   {
+    "label": "Depth",
+    "value": "~500–4,000 m"
+   },
+   {
+    "label": "Width",
+    "value": "Up to ~17 cm"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/atolla_jellyfish.webp",
+  "credit": "NOAA Ocean Explorer from USA · CC BY-SA 2.0",
+  "url": "https://en.wikipedia.org/wiki/Atolla_jellyfish"
+ },
+ {
+  "id": "lybia_tessellata",
+  "rarity": "blue",
+  "name": "Pom-pom crab",
+  "scientific": "Lybia tessellata",
+  "blurb": "Species of crab",
+  "fact": "Waves tiny sea anemones in its claws like pom-poms to sting off attackers.",
+  "stats": [
+   {
+    "label": "Holds",
+    "value": "Sea anemones like pom-poms"
+   },
+   {
+    "label": "Width",
+    "value": "~2.5 cm"
+   },
+   {
+    "label": "Clones",
+    "value": "Splits anemones"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/lybia_tessellata.webp",
+  "credit": "Eliot Ferguson · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Lybia_tessellata"
+ },
+ {
+  "id": "lappet_faced_vulture",
+  "rarity": "blue",
+  "name": "Lappet-faced vulture",
+  "scientific": "Torgos tracheliotos",
+  "blurb": "Species of bird",
+  "fact": "The most powerful African vulture - others wait for it to open a carcass.",
+  "stats": [
+   {
+    "label": "Wingspan",
+    "value": "Up to ~2.9 m"
+   },
+   {
+    "label": "Beak",
+    "value": "Biggest of any vulture"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~9 kg"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/lappet_faced_vulture.webp",
+  "credit": "Yathin sk · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Lappet-faced_vulture",
+  "frame": {
+   "x": 0.5,
+   "y": 0.397,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "andean_cock_of_the_rock",
+  "rarity": "blue",
+  "name": "Andean cock-of-the-rock",
+  "scientific": "Rupicola peruvianus",
+  "blurb": "Species of bird",
+  "fact": "Males gather and bob, squawk and bow together to show off to watching females.",
+  "stats": [
+   {
+    "label": "Colour",
+    "value": "Blazing orange-red"
+   },
+   {
+    "label": "Lek",
+    "value": "Males dance in groups"
+   },
+   {
+    "label": "National bird",
+    "value": "Peru"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/andean_cock_of_the_rock.webp",
+  "credit": "Charles J. Sharp · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Andean_cock-of-the-rock"
+ },
+ {
+  "id": "black_and_white_ruffed_lemur",
+  "rarity": "blue",
+  "name": "Black-and-white ruffed lemur",
+  "scientific": "Varecia variegata",
+  "blurb": "Species of lemur",
+  "fact": "One of the loudest primates - and one of the few that parks its babies in a nest.",
+  "stats": [
+   {
+    "label": "Calls",
+    "value": "One of the loudest primates"
+   },
+   {
+    "label": "Weight",
+    "value": "~3.5 kg"
+   },
+   {
+    "label": "Babies",
+    "value": "Left in nests"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/black_and_white_ruffed_lemur.webp",
+  "credit": "Chensiyuan · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Black-and-white_ruffed_lemur"
+ },
+ {
+  "id": "golden_lion_tamarin",
+  "rarity": "blue",
+  "name": "Golden lion tamarin",
+  "scientific": "Leontopithecus rosalia",
+  "blurb": "Species of New World monkey",
+  "fact": "Dads and older siblings do most of the baby-carrying.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~600 g"
+   },
+   {
+    "label": "Twins",
+    "value": "Usually"
+   },
+   {
+    "label": "Comeback",
+    "value": "From ~200 in the wild"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/golden_lion_tamarin.webp",
+  "credit": "Daderot · CC0",
+  "url": "https://en.wikipedia.org/wiki/Golden_lion_tamarin",
+  "frame": {
+   "x": 0.5,
+   "y": 0.261,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "arabian_oryx",
+  "rarity": "blue",
+  "name": "Arabian oryx",
+  "scientific": "Oryx leucoryx",
+  "blurb": "Species of antelope",
+  "fact": "Was extinct in the wild, then brought back from zoo herds - the first animal ever moved from Extinct in the Wild to Vulnerable.",
+  "stats": [
+   {
+    "label": "Extinct in wild",
+    "value": "1972 - 1982"
+   },
+   {
+    "label": "Smells",
+    "value": "Rain from afar"
+   },
+   {
+    "label": "Weight",
+    "value": "~70 kg"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/arabian_oryx.webp",
+  "credit": "Charles J. Sharp · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Arabian_oryx",
+  "frame": {
+   "x": 0.5,
+   "y": 0.435,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "addax",
+  "rarity": "blue",
+  "name": "Addax",
+  "scientific": "Addax nasomaculatus",
+  "blurb": "Species of antelope native to the Sahara",
+  "fact": "Can go almost its whole life without drinking, getting water from plants.",
+  "stats": [
+   {
+    "label": "Water",
+    "value": "Almost never drinks"
+   },
+   {
+    "label": "Horns",
+    "value": "Spiral, up to ~1 m"
+   },
+   {
+    "label": "Left in wild",
+    "value": "Fewer than ~100"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/addax.webp",
+  "credit": "HaytemBouchri93 · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Addax"
+ },
+ {
+  "id": "atlantic_blue_marlin",
+  "rarity": "blue",
+  "name": "Atlantic blue marlin",
+  "scientific": "Makaira nigricans",
+  "blurb": "Species of fish",
+  "fact": "Its stripes light up electric blue when it's hunting or excited.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~800 kg"
+   },
+   {
+    "label": "Females",
+    "value": "Up to ~4× heavier than males"
+   },
+   {
+    "label": "Colour",
+    "value": "Changes when excited"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/atlantic_blue_marlin.webp",
+  "credit": "NOAA · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Atlantic_blue_marlin"
+ },
+ {
+  "id": "pteranodon",
+  "rarity": "blue",
+  "name": "Pteranodon",
+  "scientific": "Pteranodon",
+  "blurb": "Genus of pterosaur of the Late Cretaceous",
+  "fact": "Not a dinosaur - a flying reptile with a wingspan wider than a car.",
+  "stats": [
+   {
+    "label": "Wingspan",
+    "value": "Over ~6 m"
+   },
+   {
+    "label": "Teeth",
+    "value": "None"
+   },
+   {
+    "label": "Crest",
+    "value": "Long, backwards"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/pteranodon.webp",
+  "credit": "NobuTamura email:nobu.tamura@yahoo.com www.palaeocritti.com · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Pteranodon",
+  "frame": {
+   "x": 0.489,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "titanoboa",
+  "rarity": "blue",
+  "name": "Titanoboa",
+  "scientific": "Titanoboa",
+  "blurb": "Extinct genus of snakes",
+  "fact": "The biggest snake ever found - longer than a bus and heavy as a small car.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "~13 m"
+   },
+   {
+    "label": "Weight",
+    "value": "~1 tonne"
+   },
+   {
+    "label": "Prey",
+    "value": "Crocodile relatives"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/titanoboa.webp",
+  "credit": "Nobu Tamura email:nobu.tamura@yahoo.com www.palaeocritti.com · CC BY 3.0",
+  "url": "https://en.wikipedia.org/wiki/Titanoboa",
+  "frame": {
+   "x": 0.424,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "dodo",
+  "rarity": "blue",
+  "name": "Dodo",
+  "scientific": "Raphus cucullatus",
+  "blurb": "Extinct species of bird",
+  "fact": "A giant flightless pigeon from Mauritius, gone within a century of humans arriving.",
+  "stats": [
+   {
+    "label": "Height",
+    "value": "~1 m"
+   },
+   {
+    "label": "Extinct",
+    "value": "By ~1690"
+   },
+   {
+    "label": "Kin",
+    "value": "A giant pigeon"
+   }
+  ],
+  "status": "Extinct",
+  "image": "zoo/img/dodo.webp",
+  "credit": "Julian P. Hume · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Dodo",
+  "frame": {
+   "x": 0.5,
+   "y": 0.286,
+   "zoom": 1.0
+  }
+ },
+ {
   "id": "raccoon",
   "rarity": "purple",
   "name": "Raccoon",
@@ -12701,7 +16041,12 @@
   "status": "",
   "image": "zoo/img/stegosaurus.webp",
   "credit": "ABelov2014 (https://abelov2014.deviantart.com/) · CC BY-SA 3.0",
-  "url": "https://en.wikipedia.org/wiki/Stegosaurus"
+  "url": "https://en.wikipedia.org/wiki/Stegosaurus",
+  "frame": {
+   "x": 0.583,
+   "y": 0.5,
+   "zoom": 1.0
+  }
  },
  {
   "id": "velociraptor",
@@ -12784,7 +16129,12 @@
   "status": "",
   "image": "zoo/img/carnotaurus.webp",
   "credit": "Lida Xing and Yi Liu · CC BY 2.5",
-  "url": "https://en.wikipedia.org/wiki/Carnotaurus"
+  "url": "https://en.wikipedia.org/wiki/Carnotaurus",
+  "frame": {
+   "x": 0.5,
+   "y": 0.423,
+   "zoom": 1.0
+  }
  },
  {
   "id": "mamenchisaurus",
@@ -13921,6 +17271,451 @@
   }
  },
  {
+  "id": "greater_blue_ringed_octopus",
+  "rarity": "purple",
+  "name": "Greater blue-ringed octopus",
+  "scientific": "Hapalochlaena lunulata",
+  "blurb": "Species of venomous cephalopod",
+  "fact": "One of the most venomous animals in the sea, yet it fits in your palm.",
+  "stats": [
+   {
+    "label": "Size",
+    "value": "~10 cm"
+   },
+   {
+    "label": "Venom",
+    "value": "Tetrodotoxin"
+   },
+   {
+    "label": "Antivenom",
+    "value": "None"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/greater_blue_ringed_octopus.webp",
+  "credit": "Rickard Zerpe · CC BY-SA 2.0",
+  "url": "https://en.wikipedia.org/wiki/Greater_blue-ringed_octopus"
+ },
+ {
+  "id": "great_grey_owl",
+  "rarity": "purple",
+  "name": "Great grey owl",
+  "scientific": "Strix nebulosa",
+  "blurb": "Species of owl",
+  "fact": "Can hear a vole under deep snow and punch through to grab it.",
+  "stats": [
+   {
+    "label": "Hears",
+    "value": "Prey under 60 cm of snow"
+   },
+   {
+    "label": "Height",
+    "value": "~70 cm"
+   },
+   {
+    "label": "Mostly",
+    "value": "Feathers"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/great_grey_owl.webp",
+  "credit": "Dion Art · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Great_grey_owl",
+  "frame": {
+   "x": 0.5,
+   "y": 0.33,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "sumatran_orangutan",
+  "rarity": "purple",
+  "name": "Sumatran orangutan",
+  "scientific": "Pongo abelii",
+  "blurb": "Species of ape",
+  "fact": "Uses sticks to pry seeds from spiky fruit, and leaves as umbrellas.",
+  "stats": [
+   {
+    "label": "Tools",
+    "value": "Sticks for honey and seeds"
+   },
+   {
+    "label": "Arms",
+    "value": "Span ~2 m"
+   },
+   {
+    "label": "Birth gap",
+    "value": "~9 years"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/sumatran_orangutan.webp",
+  "credit": "Fiver, der Hellseher · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Sumatran_orangutan",
+  "frame": {
+   "x": 0.424,
+   "y": 0.482,
+   "zoom": 1.32
+  }
+ },
+ {
+  "id": "siamang",
+  "rarity": "purple",
+  "name": "Siamang",
+  "scientific": "Symphalangus syndactylus",
+  "blurb": "Species of ape",
+  "fact": "Mated pairs sing loud duets with throat sacs that blow up like balloons.",
+  "stats": [
+   {
+    "label": "Call",
+    "value": "Heard ~3 km away"
+   },
+   {
+    "label": "Throat sac",
+    "value": "Inflates to its head size"
+   },
+   {
+    "label": "Pairs",
+    "value": "Duet every morning"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/siamang.webp",
+  "credit": "Rufus46 · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Siamang",
+  "frame": {
+   "x": 0.5,
+   "y": 0.464,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "indri",
+  "rarity": "purple",
+  "name": "Indri",
+  "scientific": "Indri indri",
+  "blurb": "Genus of lemurs",
+  "fact": "The largest living lemur - families sing eerie songs that carry across the forest.",
+  "stats": [
+   {
+    "label": "Song",
+    "value": "Haunting, heard ~2 km away"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~9.5 kg"
+   },
+   {
+    "label": "Tail",
+    "value": "Barely any"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/indri.webp",
+  "credit": "Charles J. Sharp · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Indri",
+  "frame": {
+   "x": 0.5,
+   "y": 0.441,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "verreauxs_sifaka",
+  "rarity": "purple",
+  "name": "Verreaux's sifaka",
+  "scientific": "Propithecus verreauxi",
+  "blurb": "Species of lemur",
+  "fact": "On the ground it dances sideways on its back legs, arms waving.",
+  "stats": [
+   {
+    "label": "Moves",
+    "value": "Sideways dance-hops"
+   },
+   {
+    "label": "Leap",
+    "value": "~10 m"
+   },
+   {
+    "label": "Weight",
+    "value": "~3–3.5 kg"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/verreauxs_sifaka.webp",
+  "credit": "JialiangGao www.peace-on-earth.org · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Verreaux's_sifaka",
+  "frame": {
+   "x": 0.5,
+   "y": 0.464,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "grevys_zebra",
+  "rarity": "purple",
+  "name": "Grévy's zebra",
+  "scientific": "Equus grevyi",
+  "blurb": "Species of zebra",
+  "fact": "The largest zebra, with the thinnest stripes.",
+  "stats": [
+   {
+    "label": "Stripes",
+    "value": "Thin and close"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~450 kg"
+   },
+   {
+    "label": "Ears",
+    "value": "Big and round"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/grevys_zebra.webp",
+  "credit": "Rainbirder · CC BY-SA 2.0",
+  "url": "https://en.wikipedia.org/wiki/Gr%C3%A9vy's_zebra"
+ },
+ {
+  "id": "numbat",
+  "rarity": "purple",
+  "name": "Numbat",
+  "scientific": "Myrmecobius fasciatus",
+  "blurb": "Species of Australian marsupial",
+  "fact": "Eats about 20,000 termites a day with a tongue half its body length.",
+  "stats": [
+   {
+    "label": "Termites",
+    "value": "~20,000 a day"
+   },
+   {
+    "label": "Tongue",
+    "value": "~10 cm"
+   },
+   {
+    "label": "Teeth",
+    "value": "Up to 50"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/numbat.webp",
+  "credit": "JJ Harrison · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Numbat",
+  "frame": {
+   "x": 0.586,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "goodfellows_tree_kangaroo",
+  "rarity": "purple",
+  "name": "Goodfellow's tree-kangaroo",
+  "scientific": "Dendrolagus goodfellowi",
+  "blurb": "Species of marsupial",
+  "fact": "A kangaroo that lives in trees and can jump down 18 m without getting hurt.",
+  "stats": [
+   {
+    "label": "Lives",
+    "value": "In trees"
+   },
+   {
+    "label": "Leap",
+    "value": "Up to ~18 m down"
+   },
+   {
+    "label": "Weight",
+    "value": "~7–10 kg"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/goodfellows_tree_kangaroo.webp",
+  "credit": "Tim Williams · CC BY 2.0",
+  "url": "https://en.wikipedia.org/wiki/Goodfellow's_tree-kangaroo",
+  "frame": {
+   "x": 0.5,
+   "y": 0.273,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "iberian_lynx",
+  "rarity": "purple",
+  "name": "Iberian lynx",
+  "scientific": "Lynx pardinus",
+  "blurb": "Species of mammal",
+  "fact": "Was down to about 94 in 2002 - now over 2,000 thanks to conservation.",
+  "stats": [
+   {
+    "label": "Diet",
+    "value": "Mostly rabbits"
+   },
+   {
+    "label": "Low point",
+    "value": "~94 left in 2002"
+   },
+   {
+    "label": "Weight",
+    "value": "~9–15 kg"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/iberian_lynx.webp",
+  "credit": "Diego Delso · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Iberian_lynx",
+  "frame": {
+   "x": 0.5,
+   "y": 0.4,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "gray_whale",
+  "rarity": "purple",
+  "name": "Gray whale",
+  "scientific": "Eschrichtius robustus",
+  "blurb": "Species of baleen whale",
+  "fact": "Rolls onto its side and sucks up mud from the seabed, sieving out tiny crustaceans.",
+  "stats": [
+   {
+    "label": "Migration",
+    "value": "~16,000–22,000 km a year"
+   },
+   {
+    "label": "Weight",
+    "value": "~30 tonnes"
+   },
+   {
+    "label": "Feeds",
+    "value": "Sucking up sea-floor mud"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/gray_whale.webp",
+  "credit": "José Eugenio Gómez Rodríguez · CC BY 3.0",
+  "url": "https://en.wikipedia.org/wiki/Gray_whale",
+  "frame": {
+   "x": 0.446,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "southern_right_whale",
+  "rarity": "purple",
+  "name": "Southern right whale",
+  "scientific": "Eubalaena australis",
+  "blurb": "Species of whale",
+  "fact": "Raises its tail into the wind and 'sails' - seemingly just for fun.",
+  "stats": [
+   {
+    "label": "Head",
+    "value": "A quarter of its length"
+   },
+   {
+    "label": "Callosities",
+    "value": "Unique patterns"
+   },
+   {
+    "label": "Sails",
+    "value": "Tail up in the wind"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/southern_right_whale.webp",
+  "credit": "Michaël CATANZARITI · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Southern_right_whale"
+ },
+ {
+  "id": "haasts_eagle",
+  "rarity": "purple",
+  "name": "Haast's eagle",
+  "scientific": "Harpagornis moorei",
+  "blurb": "Extinct species of bird",
+  "fact": "The largest eagle ever known - it hunted moa birds 15 times its own weight in New Zealand.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~15 kg"
+   },
+   {
+    "label": "Prey",
+    "value": "Giant moa"
+   },
+   {
+    "label": "Talons",
+    "value": "Tiger-sized"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/haasts_eagle.webp",
+  "credit": "John Megahan · CC BY 2.5",
+  "url": "https://en.wikipedia.org/wiki/Haast's_eagle",
+  "frame": {
+   "x": 0.5,
+   "y": 0.48,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "thylacine",
+  "rarity": "purple",
+  "name": "Thylacine",
+  "scientific": "Thylacinus cynocephalus",
+  "blurb": "Extinct species of mammal from Australasia",
+  "fact": "The 'Tasmanian tiger' was a striped marsupial - the last known one died in a zoo in 1936.",
+  "stats": [
+   {
+    "label": "Last one",
+    "value": "Died 1936"
+   },
+   {
+    "label": "Jaw",
+    "value": "Opened ~80°"
+   },
+   {
+    "label": "Pouch",
+    "value": "Both sexes had one"
+   }
+  ],
+  "status": "Extinct",
+  "image": "zoo/img/thylacine.webp",
+  "credit": "E.J. Keller · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Thylacine"
+ },
+ {
+  "id": "livyatan",
+  "rarity": "purple",
+  "name": "Livyatan",
+  "scientific": "Livyatan",
+  "blurb": "Extinct genus of sperm whale from the Miocene epoch",
+  "fact": "A sperm whale with the biggest biting teeth of any animal known (tusks aside) - it competed with megalodon for whales.",
+  "stats": [
+   {
+    "label": "Teeth",
+    "value": "Up to ~36 cm"
+   },
+   {
+    "label": "Length",
+    "value": "~14–17 m"
+   },
+   {
+    "label": "Name",
+    "value": "After the Leviathan"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/livyatan.webp",
+  "credit": "Jfstudiospaleoart · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Livyatan",
+  "frame": {
+   "x": 0.458,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
   "id": "emperor_penguin",
   "rarity": "orange",
   "name": "Emperor penguin",
@@ -14498,7 +18293,12 @@
   "status": "",
   "image": "zoo/img/giganotosaurus.webp",
   "credit": "Ryanz720 · Public domain",
-  "url": "https://en.wikipedia.org/wiki/Giganotosaurus"
+  "url": "https://en.wikipedia.org/wiki/Giganotosaurus",
+  "frame": {
+   "x": 0.327,
+   "y": 0.5,
+   "zoom": 1.0
+  }
  },
  {
   "id": "black_rhinoceros",
@@ -14667,6 +18467,244 @@
   "url": "https://en.wikipedia.org/wiki/American_crocodile"
  },
  {
+  "id": "jaguar",
+  "rarity": "orange",
+  "name": "Jaguar",
+  "scientific": "Panthera onca",
+  "blurb": "Large cat native to the Americas",
+  "fact": "Kills with a single bite straight through the skull - and stalks caimans in rivers.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~150 kg"
+   },
+   {
+    "label": "Bite",
+    "value": "Pierces skulls and turtle shells"
+   },
+   {
+    "label": "Swims",
+    "value": "Happily"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/jaguar.webp",
+  "credit": "USFWS · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Jaguar",
+  "frame": {
+   "x": 0.593,
+   "y": 0.466,
+   "zoom": 1.13
+  }
+ },
+ {
+  "id": "shortfin_mako_shark",
+  "rarity": "orange",
+  "name": "Shortfin mako shark",
+  "scientific": "Isurus oxyrinchus",
+  "blurb": "Species of shark",
+  "fact": "The fastest shark in the sea - it can launch itself many metres out of the water.",
+  "stats": [
+   {
+    "label": "Top speed",
+    "value": "~70 km/h"
+   },
+   {
+    "label": "Leap",
+    "value": "Up to ~9 m"
+   },
+   {
+    "label": "Record",
+    "value": "Fastest shark"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/shortfin_mako_shark.webp",
+  "credit": "Fábio Olmos · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Shortfin_mako_shark"
+ },
+ {
+  "id": "malayan_tiger",
+  "rarity": "orange",
+  "name": "Malayan tiger",
+  "scientific": "Panthera tigris jacksoni",
+  "blurb": "Tiger population in Malayan Peninsula",
+  "fact": "Malaysia's national animal - and on its coat of arms.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~130 kg"
+   },
+   {
+    "label": "Left in wild",
+    "value": "~150"
+   },
+   {
+    "label": "National animal",
+    "value": "Malaysia"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/malayan_tiger.webp",
+  "credit": "Tu7uh · CC BY 3.0",
+  "url": "https://en.wikipedia.org/wiki/Malayan_tiger"
+ },
+ {
+  "id": "woolly_mammoth",
+  "rarity": "orange",
+  "name": "Woolly mammoth",
+  "scientific": "Mammuthus primigenius",
+  "blurb": "Extinct species of mammoth",
+  "fact": "The last mammoths lived on Wrangel Island when the Great Pyramid was being built.",
+  "stats": [
+   {
+    "label": "Tusks",
+    "value": "Up to ~4 m"
+   },
+   {
+    "label": "Last ones",
+    "value": "~4,000 years ago"
+   },
+   {
+    "label": "Coat",
+    "value": "Hair up to 90 cm"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/woolly_mammoth.webp",
+  "credit": "Charles Robert Knight · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Woolly_mammoth",
+  "frame": {
+   "x": 0.775,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "smilodon",
+  "rarity": "orange",
+  "name": "Smilodon",
+  "scientific": "Smilodon",
+  "blurb": "Extinct genus of saber-toothed cat",
+  "fact": "Its sabre teeth were up to 28 cm long - its jaw opened twice as wide as a lion's.",
+  "stats": [
+   {
+    "label": "Canines",
+    "value": "Up to ~28 cm"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~400 kg"
+   },
+   {
+    "label": "Jaw",
+    "value": "Opened ~110°"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/smilodon.webp",
+  "credit": "Sergiodlarosa (Sergio De La Rosa) · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Smilodon",
+  "frame": {
+   "x": 0.587,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "woolly_rhinoceros",
+  "rarity": "orange",
+  "name": "Woolly rhinoceros",
+  "scientific": "Coelodonta antiquitatis",
+  "blurb": "Extinct species of mammal",
+  "fact": "Painted by Ice Age humans on cave walls in France - and calves are found frozen in Siberian permafrost.",
+  "stats": [
+   {
+    "label": "Horn",
+    "value": "Up to ~1 m"
+   },
+   {
+    "label": "Cave art",
+    "value": "Painted at Chauvet"
+   },
+   {
+    "label": "Weight",
+    "value": "~2 tonnes"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/woolly_rhinoceros.webp",
+  "credit": "Mauricio Antón · CC BY 2.5",
+  "url": "https://en.wikipedia.org/wiki/Woolly_rhinoceros",
+  "frame": {
+   "x": 0.407,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "deinosuchus",
+  "rarity": "orange",
+  "name": "Deinosuchus",
+  "scientific": "Deinosuchus",
+  "blurb": "Genus of a giant crocodylian",
+  "fact": "A giant alligator relative that bit dinosaurs - bite marks have been found on their bones.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~10–12 m"
+   },
+   {
+    "label": "Prey",
+    "value": "Dinosaurs"
+   },
+   {
+    "label": "Teeth",
+    "value": "Banana-sized"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/deinosuchus.webp",
+  "credit": "Andrey Atuchin · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Deinosuchus",
+  "frame": {
+   "x": 0.796,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "sarcosuchus",
+  "rarity": "orange",
+  "name": "Sarcosuchus",
+  "scientific": "Sarcosuchus",
+  "blurb": "Extinct genus of pholidosaurid crocodylomorph",
+  "fact": "'SuperCroc' was as long as a bus and kept growing all its life.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "~9–9.5 m"
+   },
+   {
+    "label": "Weight",
+    "value": "~8 tonnes"
+   },
+   {
+    "label": "Nickname",
+    "value": "'SuperCroc'"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/sarcosuchus.webp",
+  "credit": "Rhunevild · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Sarcosuchus",
+  "frame": {
+   "x": 0.5,
+   "y": 0.315,
+   "zoom": 1.0
+  }
+ },
+ {
   "id": "clouded_leopard",
   "rarity": "rainbow",
   "name": "Clouded leopard",
@@ -14722,32 +18760,6 @@
    "y": 0.399,
    "zoom": 1.0
   }
- },
- {
-  "id": "greater_blue_ringed_octopus",
-  "rarity": "rainbow",
-  "name": "Greater blue-ringed octopus",
-  "scientific": "Hapalochlaena lunulata",
-  "blurb": "Species of venomous cephalopod",
-  "fact": "One of the most venomous animals in the sea, yet it fits in your palm.",
-  "stats": [
-   {
-    "label": "Size",
-    "value": "~10 cm"
-   },
-   {
-    "label": "Venom",
-    "value": "Tetrodotoxin"
-   },
-   {
-    "label": "Antivenom",
-    "value": "None"
-   }
-  ],
-  "status": "Least concern",
-  "image": "zoo/img/greater_blue_ringed_octopus.webp",
-  "credit": "Rickard Zerpe · CC BY-SA 2.0",
-  "url": "https://en.wikipedia.org/wiki/Greater_blue-ringed_octopus"
  },
  {
   "id": "siberian_tiger",
@@ -14926,37 +18938,6 @@
   }
  },
  {
-  "id": "jaguar",
-  "rarity": "rainbow",
-  "name": "Jaguar",
-  "scientific": "Panthera onca",
-  "blurb": "Large cat native to the Americas",
-  "fact": "Kills with a single bite straight through the skull - and stalks caimans in rivers.",
-  "stats": [
-   {
-    "label": "Weight",
-    "value": "Up to ~150 kg"
-   },
-   {
-    "label": "Bite",
-    "value": "Pierces skulls and turtle shells"
-   },
-   {
-    "label": "Swims",
-    "value": "Happily"
-   }
-  ],
-  "status": "Near threatened",
-  "image": "zoo/img/jaguar.webp",
-  "credit": "USFWS · Public domain",
-  "url": "https://en.wikipedia.org/wiki/Jaguar",
-  "frame": {
-   "x": 0.593,
-   "y": 0.558,
-   "zoom": 1.13
-  }
- },
- {
   "id": "bengal_tiger",
   "rarity": "rainbow",
   "name": "Bengal tiger",
@@ -15007,32 +18988,6 @@
   "image": "zoo/img/black_panther.webp",
   "credit": "Davidvraju · CC BY-SA 4.0",
   "url": "https://en.wikipedia.org/wiki/Black_panther"
- },
- {
-  "id": "shortfin_mako_shark",
-  "rarity": "rainbow",
-  "name": "Shortfin mako shark",
-  "scientific": "Isurus oxyrinchus",
-  "blurb": "Species of shark",
-  "fact": "The fastest shark in the sea - it can launch itself many metres out of the water.",
-  "stats": [
-   {
-    "label": "Top speed",
-    "value": "~70 km/h"
-   },
-   {
-    "label": "Leap",
-    "value": "Up to ~9 m"
-   },
-   {
-    "label": "Record",
-    "value": "Fastest shark"
-   }
-  ],
-  "status": "Endangered",
-  "image": "zoo/img/shortfin_mako_shark.webp",
-  "credit": "Fábio Olmos · CC BY 4.0",
-  "url": "https://en.wikipedia.org/wiki/Shortfin_mako_shark"
  },
  {
   "id": "amur_leopard",
@@ -15162,7 +19117,12 @@
   "status": "",
   "image": "zoo/img/tyrannosaurus.webp",
   "credit": "DerpyDuckAnimation · CC BY 4.0",
-  "url": "https://en.wikipedia.org/wiki/Tyrannosaurus"
+  "url": "https://en.wikipedia.org/wiki/Tyrannosaurus",
+  "frame": {
+   "x": 0.412,
+   "y": 0.5,
+   "zoom": 1.0
+  }
  },
  {
   "id": "spinosaurus",
@@ -15250,6 +19210,120 @@
    "x": 0.48,
    "y": 0.525,
    "zoom": 1.05
+  }
+ },
+ {
+  "id": "white_tiger",
+  "rarity": "rainbow",
+  "name": "White tiger",
+  "scientific": "Panthera tigris tigris",
+  "blurb": "Tiger morph",
+  "fact": "Not an albino - one gene switches off its orange but keeps the stripes, and most white tigers in zoos descend from one cub, Mohan, caught in India in 1951.",
+  "stats": [
+   {
+    "label": "Colour",
+    "value": "White with dark stripes"
+   },
+   {
+    "label": "Eyes",
+    "value": "Usually blue"
+   },
+   {
+    "label": "Famous ancestor",
+    "value": "Mohan, caught in 1951"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/white_tiger.webp",
+  "credit": "Basile Morin · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/White_tiger"
+ },
+ {
+  "id": "asian_black_bear",
+  "rarity": "rainbow",
+  "name": "Asian black bear",
+  "scientific": "Ursus thibetanus",
+  "blurb": "Species of bear",
+  "fact": "Builds 'nests' of bent branches high in the trees to feed and rest.",
+  "stats": [
+   {
+    "label": "Chest",
+    "value": "White V-shaped mark"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~200 kg"
+   },
+   {
+    "label": "Climbs",
+    "value": "Builds tree nests"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/asian_black_bear.webp",
+  "credit": "Guérin Nicolas (messages) · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Asian_black_bear",
+  "frame": {
+   "x": 0.5,
+   "y": 0.281,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "paraceratherium",
+  "rarity": "rainbow",
+  "name": "Paraceratherium",
+  "scientific": "Paraceratherium",
+  "blurb": "Extinct genus of hornless rhinocerotoids from Eurasia",
+  "fact": "One of the largest land mammals ever - a hornless rhino that browsed like a giraffe.",
+  "stats": [
+   {
+    "label": "Height",
+    "value": "~4.8 m at shoulder"
+   },
+   {
+    "label": "Weight",
+    "value": "~15–20 tonnes"
+   },
+   {
+    "label": "Kin",
+    "value": "Hornless rhino"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/paraceratherium.webp",
+  "credit": "ABelov2014 (https://abelov2014.deviantart.com/) · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Paraceratherium"
+ },
+ {
+  "id": "quetzalcoatlus",
+  "rarity": "rainbow",
+  "name": "Quetzalcoatlus",
+  "scientific": "Quetzalcoatlus",
+  "blurb": "Genus of azhdarchid pterosaurs from the Late Cretaceous",
+  "fact": "One of the biggest flying animals ever - a pterosaur as tall as a giraffe when standing.",
+  "stats": [
+   {
+    "label": "Wingspan",
+    "value": "~10–11 m"
+   },
+   {
+    "label": "Height standing",
+    "value": "As tall as a giraffe"
+   },
+   {
+    "label": "Take-off",
+    "value": "Probably vaulted on its arms"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/quetzalcoatlus.webp",
+  "credit": "Mark Witton and Darren Naish · CC BY 3.0",
+  "url": "https://en.wikipedia.org/wiki/Quetzalcoatlus",
+  "frame": {
+   "x": 0.5,
+   "y": 0.493,
+   "zoom": 1.0
   }
  }
 ]
