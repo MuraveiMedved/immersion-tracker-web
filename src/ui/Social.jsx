@@ -1239,13 +1239,6 @@ function MyProfileSheet({ onClose }) {
   const bannerStops = (s.friends.banner || '').split(',').filter(Boolean)
   return (
     <Dialog hideScrollbar title="Your profile" onClose={onClose} actions={<button class="btn" onClick={onClose}>Done</button>}>
-      <div class="card row" style="margin:0 0 12px">
-        <div class="grow clickable" onClick={() => s.friends.code && copyText(s.friends.code, 'Friend code copied')}>
-          <div class="muted small">Your friend code · tap to copy</div>
-          <div style="font-family:ui-monospace,monospace;font-size:28px;font-weight:900;letter-spacing:4px">{s.friends.code || '······'}</div>
-        </div>
-        <button class="icon-btn" title="Share code" disabled={!s.friends.code} onClick={() => share(`Add me as a friend in Immersion Tracker (Social → Friends): ${s.friends.code}`)}><Icon name="share" /></button>
-      </div>
       <ProfileFrame p={me}><ProfileBanner p={me} light={light} /><ProfileSections p={me} /></ProfileFrame>
 
       <div class="row" style="margin-top:16px;gap:8px">
@@ -1287,6 +1280,14 @@ function MyProfileSheet({ onClose }) {
       {[['trophy', 'Trophy animal'], ['zoo', 'Animal collection'], ['rings', "Today's rings"], ['goals', 'Daily goals'], ['streaks', 'Streaks'], ['records', 'Records']].map(([k, l]) => (
         <SettingRow key={k} title={l}><Switch checked={share[k]} onChange={(v) => setF((st) => { st.friends.share[k] = v })} /></SettingRow>
       ))}
+      {/* Your code - last, under everything about your profile (as on the phone). */}
+      <div class="card row" style="margin:16px 0 0">
+        <div class="grow clickable" onClick={() => s.friends.code && copyText(s.friends.code, 'Friend code copied')}>
+          <div class="muted small">Your friend code · tap to copy</div>
+          <div style="font-family:ui-monospace,monospace;font-size:28px;font-weight:900;letter-spacing:4px">{s.friends.code || '······'}</div>
+        </div>
+        <button class="icon-btn" title="Share code" disabled={!s.friends.code} onClick={() => share(`Add me as a friend in Immersion Tracker (Social → Friends): ${s.friends.code}`)}><Icon name="share" /></button>
+      </div>
     </Dialog>
   )
 }
