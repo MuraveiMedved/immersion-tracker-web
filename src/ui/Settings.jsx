@@ -86,7 +86,7 @@ export function Settings({ params, nav }) {
 
       {/* The optional parts of the app, each its own tab, switched on here (the phone's Extras;
           the reader and Player are phone-only). */}
-      <Block collapsible icon="extension" title="Extras">
+      <Block collapsible icon="extension" title="Extras" glance={['groups', 'pets']}>
         <SettingRow icon="groups" title="Social" hint="Show races and friends as a tab in the bottom bar.">
           <Switch checked={s.settings.showRaceTab} onChange={(v) => setSetting('showRaceTab', v)} />
         </SettingRow>

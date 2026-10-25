@@ -974,3 +974,6 @@ textarea.input { resize: vertical; }
 .rarity-pill { color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
 /* Recent sessions can be held down to remove them - no text selection or callout on a long press. */
 .recent-session, .sa-item { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* A section's contents at a glance (Extras): its features' icons, small, before the chevron. */
+.fold-glance { display: inline-flex; gap: 6px; margin-right: 4px; color: var(--on-surface-variant); }

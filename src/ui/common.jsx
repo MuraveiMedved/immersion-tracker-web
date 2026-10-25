@@ -191,7 +191,8 @@ const openBlocks = new Set()
  *  [collapsible] one is instead a card like the phone's "What's new" - its name over [summary]
  *  (what's inside), with a chevron - that opens its rows in place, inside that same card. */
 // [onOpen]: a section that's just a way into its own screen - its row goes straight there, no dropdown.
-export function Block({ title, action, collapsible = false, summary, onOpen, icon, children }) {
+/** [glance]: icon names shown small before the chevron - what's inside, at a glance (Extras). */
+export function Block({ title, action, collapsible = false, summary, onOpen, icon, glance, children }) {
   const [open, setOpen] = useState(() => openBlocks.has(title))
   if (!collapsible) {
     return (
@@ -215,6 +216,7 @@ export function Block({ title, action, collapsible = false, summary, onOpen, ico
         </div>
         {/* The row's own action (the "+") mustn't also open or close it. */}
         {action && <span onClick={(e) => e.stopPropagation()}>{action}</span>}
+        {glance && <span class="fold-glance">{glance.map((name) => <Icon key={name} name={name} size={18} />)}</span>}
         {onOpen ? <span class="block-chev"><Icon name="chevron_right" /></span> : <span class={`block-chev${open ? ' open' : ''}`}><Icon name="expand_more" /></span>}
       </div>
       {open && !onOpen && <div class="fold-body">{children}</div>}
