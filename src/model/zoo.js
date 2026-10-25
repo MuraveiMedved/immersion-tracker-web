@@ -58,11 +58,24 @@ export const animalById = (id) => catalog?.find((a) => a.id === id)
 
 /* ------------------------------------------------------------------------------------------------ */
 
-/** Credits (hours) earned: the head start fixed once, plus one per hour of immersion since. */
+/** Only immersion from this day on (local time) earns eggs - nothing tracked or imported from
+ *  before it, and no head start. The phone's ZooRules.EGG_HOURS_FROM is the same day. */
+export const eggHoursFrom = () => new Date(2026, 9, 2).getTime()
+
+/** The immersion in `entries` that earns eggs: sessions from `from` on, one that started before
+ *  it counting only from then. */
+export function eggEntries(entries, from = eggHoursFrom()) {
+  return entries
+    .filter((e) => counts(e.contentType, e.languageProfileId) && (e.endTimeMillis ?? Infinity) > from)
+    .map((e) => (e.startTimeMillis < from ? { ...e, startTimeMillis: from } : e))
+}
+
+/** Immersion earning eggs, as of `now`. */
+export const eggImmersion = (entries, now = Date.now()) => immersionTotal(eggEntries(vouchedEntries(entries)), now)
+
+/** Credits (hours) earned: one per hour of immersion from eggHoursFrom on. */
 export function earnedHours(s, immersion) {
-  const base = s.zoo.base
-  if (!base) return 0
-  return base.credits + Math.floor(Math.max(0, immersion - base.immersionMillis) / HOUR)
+  return Math.floor(immersion / HOUR)
 }
 
 /** Fixes this browser's starting point the first time the Zoo runs: hours in a live race count as
@@ -76,9 +89,9 @@ export function ensureBase() {
 }
 
 export function zooState(s, now = Date.now()) {
-  const immersion = immersionTotal(vouchedEntries(s.entries), now)
+  const immersion = eggImmersion(s.entries, now)
   const earned = earnedHours(s, immersion)
-  const progressMs = s.zoo.base ? Math.max(0, immersion - s.zoo.base.immersionMillis) % HOUR : 0
+  const progressMs = immersion % HOUR
   const boxesOpened = s.zoo.openings.filter((o) => o.rarity === 'BOX').length
   const boxesReady = Math.max(0, Math.floor(earned / HOURS_PER_BOX) - boxesOpened)
   const doneMinutes = (earned % HOURS_PER_BOX) * 60 + Math.floor(progressMs / 60000)
@@ -163,10 +176,7 @@ export function computeCertificate(entries, profiles, at) {
 }
 
 function eggEarnedAt(s, n, now) {
-  const base = s.zoo.base
-  const needed = n * HOURS_PER_BOX
-  const target = base.immersionMillis + Math.max(0, (needed - base.credits) * HOUR)
-  return immersionReachedAt(s.entries, target, now) ?? now
+  return immersionReachedAt(eggEntries(vouchedEntries(s.entries)), n * HOURS_PER_BOX * HOUR, now) ?? now
 }
 
 function snapshotEgg(s, earnedAt) {
@@ -179,9 +189,8 @@ function snapshotEgg(s, earnedAt) {
  *  editing history later can't change what an egg hatches as. */
 export function recordEarnedEggs() {
   const s = getState()
-  if (!s.zoo.base) return
   const now = Date.now()
-  const earned = Math.floor(earnedHours(s, immersionTotal(vouchedEntries(s.entries), now)) / HOURS_PER_BOX)
+  const earned = Math.floor(earnedHours(s, eggImmersion(s.entries, now)) / HOURS_PER_BOX)
   const hatched = s.zoo.openings.filter((o) => o.rarity === 'BOX').length
   const missing = []
   for (let n = hatched + 1; n <= earned; n++) if (!s.zoo.eggs[`box:${n}`]) missing.push(n)
@@ -266,6 +275,67 @@ export function backfillHoloMomentum() {
       const o = st.zoo.openings.find((x) => x.id === id)
       if (o?.cert) o.cert = { ...o.cert, momentumDays: days }
     }
+  })
+}
+
+/**
+ * Loot-box openings to take back because the hours behind them weren't earned from eggHoursFrom
+ * on: with `allowedBoxes` earned, the first ones opened stay and the rest go - and so does every
+ * trade-up that used a copy that goes (the copy it made goes too, and anything traded up from
+ * that; the other copies given up come back). The phone's ZooRules.eggsToTakeBack, same rules.
+ */
+export function eggsToTakeBack(allowedBoxes, openings, grants, tradeIns) {
+  const order = (a, b) => a.atMillis - b.atMillis || a.id - b.id
+  const boxes = openings.filter((o) => o.rarity === 'BOX').sort(order)
+  const none = { openings: new Set(), grants: new Set(), tradeIns: new Set() }
+  if (boxes.length <= allowedBoxes) return none
+  const tier = (r) => rarityOf(r) || r
+  const goneOpenings = new Set()
+  const goneGrants = new Set()
+  const pending = boxes.slice(allowedBoxes).map((o) => o.id)
+  while (pending.length) {
+    const openingId = pending.shift()
+    if (goneOpenings.has(openingId)) continue
+    goneOpenings.add(openingId)
+    for (const grantId of new Set(tradeIns.filter((t) => t.openingId === openingId).map((t) => t.grantId))) {
+      if (goneGrants.has(grantId)) continue
+      goneGrants.add(grantId)
+      const grant = grants.find((g) => g.id === grantId)
+      if (!grant) continue
+      // Coloured eggs hatch in the order they were given: the trade-up's own copy is the one at
+      // its place among that tier's trade-up grants.
+      const place = grants.filter((g) => g.source === 'trade' && tier(g.rarity) === tier(grant.rarity)).sort((a, b) => a.id - b.id).indexOf(grant)
+      const hatched = openings.filter((o) => o.upgradeKey && tier(o.rarity) === tier(grant.rarity)).sort(order)[place]
+      if (hatched) pending.push(hatched.id)
+    }
+  }
+  return { openings: goneOpenings, grants: goneGrants, tradeIns: new Set(tradeIns.filter((t) => goneGrants.has(t.grantId)).map((t) => t.id)) }
+}
+
+/** Once per device: loot boxes opened beyond what hours from eggHoursFrom on earned are taken back
+ *  (eggsToTakeBack), with any trade-ups they went into, and eggs recorded past that count are
+ *  forgotten. Synced like any other change. Waits for a finished sync on an account, so it never
+ *  judges from half-arrived history. */
+export function takeBackEarlyEggs() {
+  const s = getState()
+  if (s.settings.earlyEggsTakenBack) return
+  if (s.sync.token && !s.sync.lastSync) return
+  const allowed = Math.floor(earnedHours(s, eggImmersion(s.entries)) / HOURS_PER_BOX)
+  const gone = eggsToTakeBack(allowed, s.zoo.openings, s.zoo.grants, s.zoo.tradeIns)
+  update((st) => {
+    if (gone.openings.size) {
+      st.zoo.tradeIns = st.zoo.tradeIns.filter((t) => !gone.tradeIns.has(t.id))
+      st.zoo.grants = st.zoo.grants.filter((g) => !gone.grants.has(g.id))
+      st.zoo.openings = st.zoo.openings.filter((o) => !gone.openings.has(o.id))
+      for (const key of Object.keys(st.zoo.eggs)) {
+        const [kind, n] = key.split(':')
+        if ((kind === 'box' && Number(n) > allowed) || (kind === 'grant' && gone.grants.has(Number(n)))) delete st.zoo.eggs[key]
+      }
+      const held = copiesHeld(st)
+      st.zoo.trophyIds = normalizeTrophies((st.zoo.trophyIds || []).map((id) => (held[id] ? id : '')))
+      st.zoo.trophyId = st.zoo.trophyIds.find(Boolean) || null
+    }
+    st.settings.earlyEggsTakenBack = true
   })
 }
 
