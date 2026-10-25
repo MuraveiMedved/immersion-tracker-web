@@ -3,7 +3,7 @@
 // a coloured egg of the next tier, birth certificates on Epic+ copies and a holo chance on eggs
 // earned while Momentum is Bronze or better - 10/20/25/30% by tier. Everything is an append-only
 // log, like on the phone. (Holo is stored as `foil`, the same as the phone and older records.)
-import { getState, update, uid } from '../store.js'
+import { getState, update, uid, isImported } from '../store.js'
 import { counts, immersionTotal, vouchedEntries, goldenStreakDays, momentumTier, GOLDEN_DAYS } from './rules.js'
 import { HOUR } from './time.js'
 import { myLiveRaceMillis, bestFirst } from './race.js'
@@ -278,6 +278,10 @@ export function backfillHoloMomentum() {
   })
 }
 
+/** Whether `entries` hold CSV-imported sessions (Toggl Track, PolyLogger - from either app) from
+ *  before eggHoursFrom: the only way hours from before it ever earned eggs. */
+export const hasEarlyImports = (entries, from = eggHoursFrom()) => entries.some((e) => e.startTimeMillis < from && isImported(e.appPackage))
+
 /**
  * Loot-box openings to take back because the hours behind them weren't earned from eggHoursFrom
  * on: with `allowedBoxes` earned, the first ones opened stay and the rest go - and so does every
@@ -324,6 +328,12 @@ export function eggsToTakeBack(allowedBoxes, openings, grants, tradeIns) {
 export function takeBackEarlyEggs() {
   const s = getState()
   if (s.zoo.eggsTakenBack || s.settings.earlyEggsTakenBack) return false
+  // Only a Zoo that a CSV import of older history fed is touched - how extra eggs came about.
+  // Anyone else keeps every animal, whatever their hours.
+  if (!hasEarlyImports(s.entries)) {
+    update((st) => { st.settings.earlyEggsTakenBack = true; st.zoo.eggsTakenBack = true })
+    return false
+  }
   const allowed = Math.floor(earnedHours(s, immersionTotal(eggEntries(s.entries))) / HOURS_PER_BOX)
   const gone = eggsToTakeBack(allowed, s.zoo.openings, s.zoo.grants, s.zoo.tradeIns)
   update((st) => {

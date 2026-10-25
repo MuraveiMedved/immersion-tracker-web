@@ -62,3 +62,21 @@ test('a Toggl import of old history loses the eggs it hatched, once, and says so
   // Never again - here, or on a device that heard about it through sync.
   assert.equal(takeBackEarlyEggs(), false)
 })
+
+test('a Zoo with no imported old history is never touched', async () => {
+  const { defaultState, replaceState, getState } = await import('../src/store.js')
+  const { takeBackEarlyEggs } = await import('../src/model/zoo.js')
+  const from = new Date(2026, 9, 2).getTime()
+  const s = defaultState()
+  s.profiles = [{ id: 1, name: 'Japanese', isAnki: false }]
+  // Only 5 h since 2 Oct, but 3 eggs (a race head start, say) and old hours tracked by hand.
+  s.entries = [
+    { id: 1, startTimeMillis: from + HOUR, endTimeMillis: from + 6 * HOUR, contentType: 'PODCAST', languageProfileId: 1, appPackage: 'web' },
+    { id: 2, startTimeMillis: from - 30 * 24 * HOUR, endTimeMillis: from - 30 * 24 * HOUR + 50 * HOUR, contentType: 'PODCAST', languageProfileId: 1, appPackage: 'web' },
+  ]
+  s.zoo.openings = [1, 2, 3].map((i) => ({ id: i, rarity: 'BOX', animalId: `a${i}`, atMillis: from + i * HOUR, upgradeKey: false }))
+  s.sync.token = null
+  replaceState(s)
+  assert.equal(takeBackEarlyEggs(), false)
+  assert.equal(getState().zoo.openings.length, 3)
+})
