@@ -513,6 +513,20 @@ export function deleteEntries(ids) {
   update((s) => { s.entries = s.entries.filter((e) => !set.has(e.id)) })
 }
 
+/** Every tag a CSV importer's sessions carry - this app's and the phone's (TrackingRepository). */
+export const IMPORT_TAGS = { toggl: ['import:toggl', 'toggl-import'], polylogger: ['import:polylogger', 'polylogger-import'] }
+export const isImported = (appPackage) => Object.values(IMPORT_TAGS).some((tags) => tags.includes(appPackage)) || String(appPackage || '').startsWith('import:')
+
+/** How many sessions came from [source]'s CSV imports ('toggl' / 'polylogger'). */
+export const importedCount = (s, source) => s.entries.filter((e) => IMPORT_TAGS[source].includes(e.appPackage)).length
+
+/** Undoes [source]'s CSV imports: every session they brought in goes, here and (synced) on the
+ *  other devices. Which file a session came from isn't kept, so it's all of them - the files can
+ *  be imported again. */
+export function removeImported(source) {
+  update((s) => { s.entries = s.entries.filter((e) => !IMPORT_TAGS[source].includes(e.appPackage)) })
+}
+
 export function deleteAllUncategorized() {
   // Anki is kept: it counts in races with or without a language (as on the phone).
   update((s) => { s.entries = s.entries.filter((e) => e.languageProfileId != null || e.endTimeMillis == null || e.contentType === ANKI) })

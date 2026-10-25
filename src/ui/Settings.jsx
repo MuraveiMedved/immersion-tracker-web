@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
-import { useStore, getState, upsertProfile, deleteProfile, newProfile, setSetting, importEntries, replaceState, PODCAST, READING, ANKI, LISTENING } from '../store.js'
+import { useStore, getState, upsertProfile, deleteProfile, newProfile, setSetting, importEntries, replaceState, importedCount, removeImported, PODCAST, READING, ANKI, LISTENING } from '../store.js'
 import { PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS, GRADIENTS, mix, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntries, exportBackup, readJsonBackup, readPhoneBackup } from '../model/imports.js'
 import { formatHm } from '../model/time.js'
@@ -23,6 +23,7 @@ export function Settings({ params, nav }) {
   const [importKind, setImportKind] = useState(null)
   const [phone, setPhone] = useState(null)
   const [restore, setRestore] = useState(null)
+  const [removing, setRemoving] = useState(null)
   const languages = s.profiles.filter((p) => !p.isAnki).sort((a, b) => a.sortOrder - b.sortOrder)
 
   useEffect(() => {
@@ -108,6 +109,11 @@ export function Settings({ params, nav }) {
         })} />
         <SettingRow icon="file_upload" title="Import from Toggl Track" hint="Reports → Detailed → Export CSV (one year per file). Pick several at once." onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'toggl', files }))} />
         <SettingRow icon="file_upload" title="Import from PolyLogger" hint="The CSV PolyLogger exports." onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'polylogger', files }))} />
+        {/* Undoing an import - shown only while there's one to undo. */}
+        {[['toggl', 'Toggl Track'], ['polylogger', 'PolyLogger']].map(([source, name]) => {
+          const n = importedCount(s, source)
+          return n > 0 && <SettingRow key={source} icon="delete" title={`Remove ${name} imports`} hint={`${n} sessions - imported here or on the phone`} onClick={() => setRemoving({ source, name, n })} />
+        })}
       </Block>
 
       <Block collapsible icon="settings" title="App">
@@ -120,6 +126,7 @@ export function Settings({ params, nav }) {
       {editing != null && <LanguageEdit id={editing} onClose={() => setEditing(null)} />}
       {importKind && <ImportDialog kind={importKind.kind} files={importKind.files} onClose={() => setImportKind(null)} />}
       {phone && <PhoneImportDialog data={phone} onClose={() => setPhone(null)} />}
+      {removing && <Confirm title={`Remove ${removing.n} imported sessions?`} text={`Every session imported from ${removing.name} is deleted, here and on your other devices. Your CSV files aren't touched - you can import them again.`} confirmLabel="Remove" danger onConfirm={() => { removeImported(removing.source); toast(`${removing.n} sessions removed`) }} onClose={() => setRemoving(null)} />}
       {restore && <Confirm title="Restore this backup?" text="Everything in this browser will be replaced with the backup." confirmLabel="Restore" danger onConfirm={() => { replaceState(restore); toast('Backup restored') }} onClose={() => setRestore(null)} />}
     </>
   )

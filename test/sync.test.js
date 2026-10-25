@@ -195,3 +195,11 @@ test('duplicates paired under new ids are not counted as missing', () => {
   const lost = { entry: new Map([...Array(30).keys()].map((i) => [String(i), entry(i)])) }
   assert.equal(missingCount(deletes.slice(30), lost, snapshot), 70)
 })
+
+test('removing CSV imports is not counted as missing', () => {
+  const entry = (i, app) => JSON.stringify({ startTimeMillis: i * 1000, endTimeMillis: i * 1000 + 500, contentType: 'PODCAST', appPackage: app })
+  const snapshot = { entry: Object.fromEntries([...Array(100).keys()].map((i) => [String(i), entry(i, i < 80 ? 'toggl-import' : 'manual')])) }
+  const cur = { entry: new Map([...Array(20).keys()].map((i) => [String(i + 80), entry(i + 80, 'manual')])) }
+  const deletes = [...Array(80).keys()].map((i) => ({ coll: 'entry', id: String(i), deleted: true }))
+  assert.equal(missingCount(deletes, cur, snapshot), 0)
+})

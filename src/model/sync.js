@@ -5,7 +5,7 @@
 // pushes whatever differs from it (new, changed, or gone = a tombstone), then pulls everything the
 // server has after the last revision this device saw and applies it. The newest edit wins per
 // record, decided on the server.
-import { getState, update, readExtra, writeExtra, subscribe, uncategorizeLegacyAnki } from '../store.js'
+import { getState, update, readExtra, writeExtra, subscribe, uncategorizeLegacyAnki, isImported } from '../store.js'
 import { remapIds } from './ids.js'
 
 /** The built-in sync server (sync-backend/Code.gs, deployed 2026-10-16 - see its SETUP.md). A
@@ -146,7 +146,10 @@ export function missingCount(changes, cur, snapshot) {
   return changes.filter((c) => {
     if (!c.deleted || c.coll === 'prefs') return false
     const json = snapshot[c.coll]?.[c.id]
-    const k = json ? naturalKey(c.coll, c.id, JSON.parse(json)) : null
+    const old = json ? JSON.parse(json) : null
+    // A CSV import's session: removing those is a choice the files can undo (Remove … imports).
+    if (c.coll === 'entry' && old && isImported(old.appPackage)) return false
+    const k = old ? naturalKey(c.coll, c.id, old) : null
     return k == null || !here[c.coll]?.has(k)
   }).length
 }
