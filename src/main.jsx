@@ -116,7 +116,8 @@ function startBackgroundWork() {
       lastSync = now
       sync()
     }
-    if (!syncModule.syncStatus.busy) takeBackEarlyEggs()
+    // With an account, early eggs are taken back only after a sync round (sync.js).
+    if (!s.sync.token) takeBackEarlyEggs()
     recordEarnedEggs()
     backfillHoloMomentum()
   }

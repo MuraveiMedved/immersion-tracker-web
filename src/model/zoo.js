@@ -312,15 +312,19 @@ export function eggsToTakeBack(allowedBoxes, openings, grants, tradeIns) {
   return { openings: goneOpenings, grants: goneGrants, tradeIns: new Set(tradeIns.filter((t) => goneGrants.has(t.grantId)).map((t) => t.id)) }
 }
 
-/** Once per device: loot boxes opened beyond what hours from eggHoursFrom on earned are taken back
- *  (eggsToTakeBack), with any trade-ups they went into, and eggs recorded past that count are
- *  forgotten. Synced like any other change. Waits for a finished sync on an account, so it never
- *  judges from half-arrived history. */
+/**
+ * Once per account: loot boxes opened beyond what hours from eggHoursFrom on earned are taken back
+ * (eggsToTakeBack), with any trade-ups they went into, and eggs recorded past that count are
+ * forgotten. Synced like any other change, and only this person's own Zoo is read or changed. On
+ * an account it's called only straight after a finished sync round (sync.js), so it never judges
+ * from half-arrived history and sees whether another device already did it (zoo.eggsTakenBack).
+ * Every session counts, running ones up to now, wherever they're tracked - so an egg opened on
+ * any device always finds the hours that earned it. Returns whether anything changed.
+ */
 export function takeBackEarlyEggs() {
   const s = getState()
-  if (s.settings.earlyEggsTakenBack) return
-  if (s.sync.token && !s.sync.lastSync) return
-  const allowed = Math.floor(earnedHours(s, eggImmersion(s.entries)) / HOURS_PER_BOX)
+  if (s.zoo.eggsTakenBack || s.settings.earlyEggsTakenBack) return false
+  const allowed = Math.floor(earnedHours(s, immersionTotal(eggEntries(s.entries))) / HOURS_PER_BOX)
   const gone = eggsToTakeBack(allowed, s.zoo.openings, s.zoo.grants, s.zoo.tradeIns)
   update((st) => {
     if (gone.openings.size) {
@@ -336,7 +340,9 @@ export function takeBackEarlyEggs() {
       st.zoo.trophyId = st.zoo.trophyIds.find(Boolean) || null
     }
     st.settings.earlyEggsTakenBack = true
+    st.zoo.eggsTakenBack = true
   })
+  return gone.openings.size > 0
 }
 
 /** Hatches the oldest egg from immersion. Returns {animal, copies, cert} or null. */

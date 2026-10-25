@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { eggEntries, eggsToTakeBack } from '../src/model/zoo.js'
+import { missingCount } from '../src/model/sync.js'
 
 const HOUR = 3600000
 const session = (start, end) => ({ startTimeMillis: start, endTimeMillis: end, contentType: 'PODCAST', languageProfileId: 1 })
@@ -29,4 +30,10 @@ test('the latest extra eggs, and trade-ups made from them, are taken back', () =
   assert.deepEqual([...gone.grants].sort(), [1, 2])
   assert.deepEqual([...gone.tradeIns].sort((a, b) => a - b), [1, 2, 3, 4, 5, 20])
   assert.equal(eggsToTakeBack(6, openings, grants, tradeIns).openings.size, 0)
+})
+
+test('taking eggs back never counts as missing records', () => {
+  const snapshot = { opening: Object.fromEntries([...Array(40).keys()].map((i) => [String(i), JSON.stringify({ animalId: `a${i}`, atMillis: i })])) }
+  const deletes = [...Array(35).keys()].map((i) => ({ coll: 'opening', id: String(i + 5), deleted: true }))
+  assert.equal(missingCount(deletes, { opening: new Map() }, snapshot), 0)
 })

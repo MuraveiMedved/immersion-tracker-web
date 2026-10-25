@@ -7,6 +7,7 @@
 // record, decided on the server.
 import { getState, update, readExtra, writeExtra, subscribe, uncategorizeLegacyAnki, isImported } from '../store.js'
 import { remapIds } from './ids.js'
+import { takeBackEarlyEggs } from './zoo.js'
 
 /** The built-in sync server (sync-backend/Code.gs, deployed 2026-10-16 - see its SETUP.md). A
  *  different one can still be pasted in Settings. */
@@ -46,7 +47,8 @@ export function collect(s) {
   out.prefs.set('settings', JSON.stringify(pick(s.settings, SETTINGS_KEYS)))
   out.prefs.set('race', JSON.stringify(pick(s.race, RACE_KEYS)))
   out.prefs.set('friends', JSON.stringify(pick(s.friends, FRIEND_KEYS)))
-  out.prefs.set('zoo', JSON.stringify({ base: s.zoo.base, trophyId: s.zoo.trophyId, trophyIds: s.zoo.trophyIds || [] }))
+  // eggsTakenBack: early eggs taken back (zoo.js takeBackEarlyEggs) - so no other device does it again.
+  out.prefs.set('zoo', JSON.stringify({ base: s.zoo.base, trophyId: s.zoo.trophyId, trophyIds: s.zoo.trophyIds || [], ...(s.zoo.eggsTakenBack ? { eggsTakenBack: true } : {}) }))
   out.prefs.set('paused', JSON.stringify(s.paused || {}))
   return out
 }
@@ -107,7 +109,7 @@ export function applyRecords(s, records) {
           // The whole trophy case; a record from an older version only has its first (trophyId).
           // '' is an empty slot - slots keep their places.
           const trophyIds = Array.isArray(r.data.trophyIds) ? r.data.trophyIds.map((x) => (typeof x === 'string' ? x : '')) : (r.data.trophyId ? [r.data.trophyId] : [])
-          s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyIds, trophyId: trophyIds.find(Boolean) || null }
+          s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyIds, trophyId: trophyIds.find(Boolean) || null, eggsTakenBack: !!(r.data.eggsTakenBack || s.zoo.eggsTakenBack) }
         }
         if (r.id === 'paused') s.paused = r.data || {}
         if (r.id.startsWith(NAMETAG_PREFIX) && (r.data.kind === 'earned' || r.data.kind === 'spent')) {
@@ -144,7 +146,9 @@ export function missingCount(changes, cur, snapshot) {
     }
   }
   return changes.filter((c) => {
-    if (!c.deleted || c.coll === 'prefs') return false
+    // The Zoo's records: its own rules take some back (takeBackEarlyEggs), and a real loss would
+    // take the history with it, which this still catches.
+    if (!c.deleted || c.coll === 'prefs' || ['opening', 'grant', 'tradeIn', 'egg'].includes(c.coll)) return false
     const json = snapshot[c.coll]?.[c.id]
     const old = json ? JSON.parse(json) : null
     // A CSV import's session: removing those is a choice the files can undo (Remove … imports).
@@ -332,6 +336,9 @@ export function syncNow() {
         job.again = false
         await round()
       } while (job.again)
+      // With this round's history in (and word of whether another device already did it), eggs
+      // from before the Zoo's hours start are taken back once - and sent straight away.
+      if (takeBackEarlyEggs()) await round()
       update((s) => { s.sync.lastSync = Date.now(); s.sync.error = '' })
     } catch (err) {
       update((s) => { s.sync.error = err.message })
