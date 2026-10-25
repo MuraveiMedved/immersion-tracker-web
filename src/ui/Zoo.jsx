@@ -229,7 +229,7 @@ function ZooFeedButton({ catalog, now }) {
         <Icon name="celebration" />{unseen && <span class="dot-badge" />}
       </button>
       {open && (
-        <Dialog title={<span class="feed-head"><span class="badge-ico"><Icon name="celebration" size={22} /></span>Recent finds</span>} onClose={() => setOpen(false)} actions={<button class="btn text" onClick={() => setOpen(false)}>Close</button>}>
+        <Dialog title={<span class="feed-head"><span class="badge-ico"><Icon name="celebration" size={22} /></span>Recent finds</span>} hideScrollbar onClose={() => setOpen(false)} actions={<button class="btn text" onClick={() => setOpen(false)}>Close</button>}>
           {!lines.length ? <div class="muted">Nothing yet - when a friend or someone in your races finds an animal, it shows up here.</div> : (
             <div class="col" style="gap:8px">
               {lines.map((l) => {
