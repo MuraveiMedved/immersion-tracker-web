@@ -43,6 +43,9 @@ export function defaultState() {
       showZooTab: true,
       // Cards per row in the Zoo collection, 2-5 (the phone's ZooRepository.columns) - per device, not synced.
       zooColumns: 4,
+      // Whether the Zoo collection also lists animals found but no longer held (the eye button; the
+      // phone's ZooRepository.showLost) - per device, not synced.
+      zooShowLost: false,
       showAnkiOnHome: true,
       resumeHideMinutes: 60,
       // Recent manual sessions taken out of Add a session with their logs kept: key -> when (see

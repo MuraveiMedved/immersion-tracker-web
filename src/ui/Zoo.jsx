@@ -803,15 +803,18 @@ export function GlowPill({ rarity, onClick, children, disabled, solid }) {
   )
 }
 
-/** Only animals found so far (no silhouettes of the rest), rarest first - like the phone. A
- *  long-press (or right-click) on one starts a trade-up of its tier. */
+/** Only animals held (no silhouettes of the rest), rarest first - like the phone; the eye button
+ *  adds the ones found but since traded away, greyed out. A long-press (or right-click) on one
+ *  starts a trade-up of its tier. */
 function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   const names = nametagsOf(useStore()).names
   const columns = Math.min(5, Math.max(2, useStore().settings.zooColumns || 4))
+  const showLost = !!useStore().settings.zooShowLost
   const [open, setOpen] = useState(null)
   const held = Object.keys(copies).length
+  const anyLost = catalog.some((a) => found.has(a.id) && !copies[a.id])
   const list = catalog
-    .filter((a) => found.has(a.id))
+    .filter((a) => copies[a.id] || (showLost && found.has(a.id)))
     .filter((a) => !trade || a.rarity === trade.from)
     .sort((a, b) => RARITIES.indexOf(b.rarity) - RARITIES.indexOf(a.rarity) || a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
 
@@ -839,6 +842,14 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
     <>
       <div class="row collection-head">
         <div class="section-header grow">Collection · {held}</div>
+        {/* Show or hide the animals found before but no longer held - only once there are some. */}
+        {anyLost && (
+          <button class="col-pick lost-toggle" title={showLost ? 'Hide animals you no longer have' : 'Show animals you no longer have'}
+            aria-label={showLost ? 'Hide animals you no longer have' : 'Show animals you no longer have'} aria-pressed={showLost}
+            onClick={() => setSetting('zooShowLost', !showLost)}>
+            <Icon name={showLost ? 'visibility' : 'visibility_off'} size={16} />
+          </button>
+        )}
         {/* Cards per row, 2 to 5. */}
         <label class="col-pick" title="Cards per row">
           <Icon name="grid_view" size={16} />
