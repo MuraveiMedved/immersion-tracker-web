@@ -950,7 +950,6 @@ function TrophyCase({ catalog, copies }) {
   return (
     <div class="trophy-case">
       <div class="section-header" style="margin-top:0">Trophy case</div>
-      <div class="muted small" style="margin:-6px 0 8px">Three animals to show off - the first is the one on your profile.</div>
       <TrophySlots catalog={catalog} onFilled={(_, a) => setOpen(a)} onEmpty={setPickingSlot} />
       {pickingSlot != null && (
         <Dialog title="Pick an animal" onClose={() => setPickingSlot(null)} actions={<button class="btn text" onClick={() => setPickingSlot(null)}>Close</button>}>

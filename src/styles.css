@@ -371,8 +371,9 @@ textarea.input { resize: vertical; }
 .collection-head { align-items: center; }
 /* Cards per row: one pill like the app's chips - icon, "4 per row", an arrow (the phone's ColumnsPicker). */
 .col-pick { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 10px; border-radius: 999px; background: var(--c-high); color: var(--on-surface-variant); cursor: pointer; }
-.col-pick select { appearance: none; -webkit-appearance: none; border: 0; background: transparent; color: var(--on-surface); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; padding: 0; }
-.col-pick select:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 4px; }
+/* The select covers the whole pill invisibly: only the icons show, its options still open on tap. */
+.col-pick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; appearance: none; -webkit-appearance: none; border: 0; margin: 0; padding: 0; font: inherit; font-size: 13px; cursor: pointer; }
+.col-pick:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
 .col-pick option { color: initial; }
 .lost-toggle { border: 0; padding: 7px 10px; margin-right: 8px; font: inherit; }
 .tile-animal { position: relative; border-radius: 16px; overflow: hidden; aspect-ratio: 1; background: var(--surface-variant); cursor: pointer; border: 2px solid transparent; user-select: none; -webkit-user-select: none; }
