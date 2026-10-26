@@ -40,6 +40,9 @@ function App() {
     history.replaceState(null, '', '#' + tab)
     window.scrollTo(0, 0)
   }
+  // Each nav bar tap opens the tab's main page afresh - even the tab already open, so a page a
+  // level in (Settings > Appearance, say) goes back to the top.
+  const [visit, setVisit] = useState(0)
   useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset])
   useEffect(() => {
     const onHash = () => setRoute({ tab: location.hash.slice(1) || 'home', params: null })
@@ -59,10 +62,10 @@ function App() {
     <div class="shell">
       <nav class="nav" style={navTint(s)}>
         {tabs.map(([t, ico, label]) => (
-          <button key={t} class={tab === t ? 'on' : ''} onClick={() => nav(t)} title={label} aria-label={label}><NavIcon name={ico} /></button>
+          <button key={t} class={tab === t ? 'on' : ''} onClick={() => { nav(t); setVisit((v) => v + 1) }} title={label} aria-label={label}><NavIcon name={ico} /></button>
         ))}
       </nav>
-      <main class="page">
+      <main class="page" key={visit}>
         {tab === 'home' && <Home nav={nav} />}
         {tab === 'entries' && <Entries params={route.params} nav={nav} />}
         {tab === 'challenges' && <Challenges nav={nav} />}
