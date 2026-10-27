@@ -91,62 +91,86 @@ test('server: the first stop of a running session stands', async () => {
 
   // The web stopped it at 300; the phone, not having heard, stops it at 900 - the web's stop stays.
   let doc = docWith({ ...entry(300), updatedAt: 1000 })
-  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000), 0)
+  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000).length, 0)
   assert.equal(doc.records['entry:7'].data.endTimeMillis, 300)
   // Discarded in the web app: the phone's stop doesn't bring it back.
   doc = docWith({ coll: 'entry', id: '7', deleted: true, data: null, updatedAt: 1000 })
-  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000), 0)
+  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000).length, 0)
   assert.equal(doc.records['entry:7'].deleted, true)
   // The phone stopped it earlier than the web did: the phone's stop is taken (and stored unmarked).
   doc = docWith({ ...entry(300), updatedAt: 1000 })
-  assert.equal(ctx.merge_(doc, [{ ...entry(200, { closes: true }), updatedAt: 2000 }], 3000), 1)
+  assert.equal(ctx.merge_(doc, [{ ...entry(200, { closes: true }), updatedAt: 2000 }], 3000).length, 1)
   assert.equal(doc.records['entry:7'].data.endTimeMillis, 200)
   assert.equal('closes' in doc.records['entry:7'], false)
   // Still running on the account: the stop is taken.
   doc = docWith({ ...entry(null), updatedAt: 1000 })
-  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000), 1)
+  assert.equal(ctx.merge_(doc, [{ ...entry(900, { closes: true }), updatedAt: 2000 }], 3000).length, 1)
   // An older app (no mark) merges as before: newest edit wins.
   doc = docWith({ ...entry(300), updatedAt: 1000 })
-  assert.equal(ctx.merge_(doc, [{ ...entry(900), updatedAt: 2000 }], 3000), 1)
+  assert.equal(ctx.merge_(doc, [{ ...entry(900), updatedAt: 2000 }], 3000).length, 1)
   assert.equal(doc.records['entry:7'].data.endTimeMillis, 900)
 })
 
-test('server: a stale read of the account file loses nothing and never moves revisions back', async () => {
+test('server: a stale read of the account or its journal loses nothing and never moves revisions back', async () => {
   const vm = await import('node:vm')
   const { readFileSync } = await import('node:fs')
   const props = new Map()
-  let file = JSON.stringify({ rev: 0, records: {} })
-  let stale = null // what Drive hands back for the next few reads, if set
-  let staleReads = 0
+  const files = new Map([['f', JSON.stringify({ rev: 0, records: {} })]])
+  const stale = new Map() // id -> [what Drive hands back, for how many more reads]
+  let made = 0
+  const fileOf = (id) => ({
+    getId: () => id,
+    getBlob: () => ({ getDataAsString: () => { const s = stale.get(id); if (s && s[1]-- > 0) return s[0]; return files.get(id) } }),
+    setContent: (t) => { files.set(id, t) },
+  })
   const ctx = vm.createContext({
     Date, JSON, Math, Number, String, Object, Array, Error, isFinite,
     PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props.get(k) ?? null, setProperty: (k, v) => props.set(k, String(v)) }) },
-    DriveApp: { getFileById: () => ({ getBlob: () => ({ getDataAsString: () => (staleReads-- > 0 ? stale : file) }), setContent: (t) => { file = t } }) },
+    DriveApp: {
+      getFileById: (id) => fileOf(id),
+      getFolderById: () => ({ createFile: (name, text) => { const id = `j${++made}`; files.set(id, text); return fileOf(id) } }),
+    },
     Utilities: { sleep: () => {} },
   })
+  props.set('folderId', 'folder')
   vm.runInContext(readFileSync(new URL('../sync-backend/Code.gs', import.meta.url), 'utf8'), ctx)
   const device = { accountId: 'a', fileId: 'f' }
   const rec = (id) => ({ coll: 'entry', id, updatedAt: 1000, deleted: false, data: { id, startTimeMillis: 1, endTimeMillis: 2, contentType: 'PODCAST' } })
+  const all = () => ctx.fullDoc_(device, false).doc
 
   ctx.pushInto_(device, { changes: [rec('1'), rec('2')] }, 2000)
-  const before = file
+  const journal = props.get('journal:a')
+  const before = files.get(journal)
   ctx.pushInto_(device, { changes: [rec('3')] }, 2000)
-  // Drive returns the copy from before '3' for two reads: the push waits it out and keeps '3'.
-  stale = before
-  staleReads = 2
+  // Drive returns the journal from before '3' for two reads: the push waits it out and keeps '3'.
+  stale.set(journal, [before, 2])
   ctx.pushInto_(device, { changes: [rec('4')] }, 2000)
-  let doc = JSON.parse(file)
+  let doc = all()
   assert.deepEqual(Object.keys(doc.records).sort(), ['entry:1', 'entry:2', 'entry:3', 'entry:4'])
   assert.equal(doc.rev, 4)
   // Stale for longer than it waits: revisions still go forward, and the noted one never drops.
-  staleReads = 99
+  stale.set(journal, [before, 99])
   ctx.pushInto_(device, { changes: [rec('5')] }, 2000)
-  doc = JSON.parse(file)
+  stale.delete(journal)
+  doc = all()
   assert.equal(doc.records['entry:5'].rev, 5)
   assert.equal(props.get('rev:a'), '5')
-  staleReads = 99
+  stale.set(journal, [before, 99])
   ctx.pushInto_(device, { changes: [] }, 2000)
   assert.equal(props.get('rev:a'), '5')
+  stale.delete(journal)
+  // The account file read stale after a fold: waited out the same way.
+  for (let i = 6; i < 6 + 400; i++) ctx.pushInto_(device, { changes: [rec(String(i))] }, 2000)
+  assert.ok(Number(props.get('baseRev:a')) > 0)
+  const folded = files.get('f')
+  ctx.pushInto_(device, { changes: [rec('x')] }, 2000)
+  stale.set('f', [JSON.stringify({ rev: 0, records: {} }), 2])
+  ctx.pushInto_(device, { changes: [rec('y')] }, 2000)
+  // 1, 2, 5 (3 and 4 went with the read that stayed stale - devices send them again), 400 more, x, y.
+  const keys = Object.keys(all().records)
+  assert.equal(keys.length, 405)
+  assert.ok(keys.includes('entry:x') && keys.includes('entry:y') && keys.includes('entry:6'))
+  assert.ok(JSON.parse(folded).rev >= 400)
 })
 
 test('missing records: lost ones are sent again, skipped ones are taken, local edits win', async () => {
@@ -202,4 +226,22 @@ test('removing CSV imports is not counted as missing', () => {
   const cur = { entry: new Map([...Array(20).keys()].map((i) => [String(i + 80), entry(i + 80, 'manual')])) }
   const deletes = [...Array(80).keys()].map((i) => ({ coll: 'entry', id: String(i), deleted: true }))
   assert.equal(missingCount(deletes, cur, snapshot), 0)
+})
+
+test('the daily check fetches only records whose revision changed since seen here', async () => {
+  const { unseen, notePushed, reconcile } = await import('../src/model/sync.js')
+  const seen = { entry: { 1: 4, 2: 2 } }
+  assert.deepEqual(unseen({ entry: { 1: 4, 2: 5, 3: 6 }, profile: { 7: 1 } }, seen).sort(), ['entry:2', 'entry:3', 'profile:7'])
+  // A push the server took moves the revision on; one it didn't is forgotten (so it's fetched).
+  notePushed(seen, [{ coll: 'entry', id: '1' }, { coll: 'entry', id: '2' }, { coll: 'entry', id: '8' }], { revs: { 'entry:1': 9, 'entry:8': 10 } })
+  assert.deepEqual(seen, { entry: { 1: 9, 8: 10 } })
+  // From an older server (no 'revs') nothing is known, so nothing changes.
+  notePushed(seen, [{ coll: 'entry', id: '1' }], { rev: 11 })
+  assert.deepEqual(seen, { entry: { 1: 9, 8: 10 } })
+  // Missing on the server is judged from every key it has, not just the records fetched.
+  const snap = { entry: { 1: '{"a":1}', 5: '{"a":5}' } }
+  const cur = { entry: new Map([['1', '{"a":1}'], ['5', '{"a":5}']]) }
+  const { lost, take } = reconcile([], cur, snap, new Set(['entry:1']))
+  assert.deepEqual(lost, [['entry', '5']])
+  assert.deepEqual(take, [])
 })

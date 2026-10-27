@@ -12,6 +12,28 @@ export const ANKI_RACE_SHARE = 0.1
 const RESEND_UNCHANGED_MILLIS = 10 * 60 * 1000
 const RECENT_FINISH_KEEP = 14 * DAY
 export const SERVER_VERSION_STATE = 11
+/** Profiles only when changed ('profilesKnown' / stubs marked 'same'), 'profileSame', and
+ *  profiles up to 45,000 characters (RaceRepository / ProfileStubs.kt). */
+export const SERVER_VERSION_STUBS = 17
+/** How long an unchanged profile goes as 'profileSame' before it's sent whole again anyway. */
+const PROFILE_SAME_FOR_MILLIS = 6 * 60 * 60 * 1000
+
+/** {userId: changedAt} for the profiles held whole - sent as 'profilesKnown'. */
+export function knownProfiles(list) {
+  const out = {}
+  for (const p of list) if (p && p.changedAt > 0 && !p.same && p.profile) out[p.userId] = p.changedAt
+  return out
+}
+
+/** A profile as the server sent it, or - a stub ('same') - the copy held in [byId] with the new
+ *  updatedAt; null for a stub with no copy (not asked for, so it doesn't happen). */
+export function fillProfile(o, byId) {
+  if (!o?.same) return o
+  const copy = byId[o.userId]
+  return copy ? { ...copy, updatedAt: o.updatedAt } : null
+}
+
+const stubsOn = () => (getState().race.serverVersion || 0) >= SERVER_VERSION_STUBS
 
 export const serverUrl = () => getState().race.serverUrl || DEFAULT_RACE_URL
 export const raceConfigured = () => !!getState().race.name.trim()
@@ -199,6 +221,8 @@ async function postOnce(body) {
 
 let lastReport = null
 let lastReportAt = 0
+let lastProfileSent = null
+let lastProfileSentAt = 0
 let inFlight = Promise.resolve()
 
 /** Runs requests one at a time, so an older response can never land last. */
@@ -271,6 +295,8 @@ function cleanDays(o) {
 }
 
 async function request(body, activity, retry = false) {
+  // The racers' profiles held here, so those that haven't changed come back as stubs.
+  if (stubsOn()) body.profilesKnown = knownProfiles(Object.values(getState().race.profiles || {}))
   return serial(async () => {
     setStatus({ activity })
     let json
@@ -296,7 +322,15 @@ async function request(body, activity, retry = false) {
       s.race.cachedEvents = events
       s.race.lastSync = now
       s.race.serverVersion = Number(json.serverVersion) || 0
-      if (json.profiles) s.race.profiles = json.profiles
+      if (json.profiles) {
+        const held = s.race.profiles || {}
+        const filled = {}
+        for (const [id, p] of Object.entries(json.profiles)) {
+          const f = fillProfile(p, held)
+          if (f) filled[id] = f
+        }
+        s.race.profiles = filled
+      }
     })
     setStatus({ activity: null, error: null })
     return json
@@ -329,8 +363,17 @@ export async function sync({ joinEventId = null, followUp = true } = {}) {
   const fingerprint = JSON.stringify(report)
   const readOnly = !joinEventId && followUp && (s.race.serverVersion || 1) >= SERVER_VERSION_STATE &&
     fingerprint === lastReport && now - lastReportAt < RESEND_UNCHANGED_MILLIS
-  const res = await request(readOnly ? { action: 'state' } : report, joinEventId ? 'JOINING' : followUp ? 'REFRESHING' : 'SENDING_FINAL', true)
-  if (res && !readOnly) { lastReport = fingerprint; lastReportAt = now }
+  // The same profile as last delivered isn't sent again: the server keeps it and notes it as sent.
+  const profileText = profile ? JSON.stringify(profile) : null
+  const profileSame = profileText != null && profileText === lastProfileSent && now - lastProfileSentAt < PROFILE_SAME_FOR_MILLIS && stubsOn()
+  const sent = profileSame ? { ...report, profileSame: true } : report
+  if (profileSame) delete sent.profile
+  const res = await request(readOnly ? { action: 'state' } : sent, joinEventId ? 'JOINING' : followUp ? 'REFRESHING' : 'SENDING_FINAL', true)
+  if (res && !readOnly) {
+    lastReport = fingerprint
+    lastReportAt = now
+    if (!profileSame) { lastProfileSent = profileText; lastProfileSentAt = now }
+  }
   const st = getState()
   const owesFinal = st.race.cachedEvents.some((e) => ended(e, Date.now()) && e.standings.some((x) => x.userId === st.race.userId && !x.final))
   if (res && followUp && owesFinal) await sync({ followUp: false })
@@ -538,9 +581,11 @@ export function buildProfileBody(now = Date.now()) {
       daysTracked: [...immersionByDay.values()].filter((v) => v > 0).length,
     }
   }
-  // The server keeps the old profile if a new one is over 20k characters - leave the certificates
-  // off rather than have nothing new saved.
-  if (JSON.stringify(body).length > 17000) delete body.zc
+  // The server keeps the old profile if a new one is over its limit (20k characters, 45k from
+  // v17) - leave the certificates off, then the recent finds, rather than have nothing new saved.
+  const limit = stubsOn() ? 42000 : 17000
+  if (JSON.stringify(body).length > limit) delete body.zc
+  if (JSON.stringify(body).length > limit) delete body.ze
   return body
 }
 
@@ -571,10 +616,13 @@ export function bestFirst(a, b) {
 
 async function friendsRequest(body) {
   const s = getState()
-  const json = await post({ ...body, name: s.race.name, emoji: s.race.emoji, color: s.race.chartColor, profile: buildProfileBody() })
+  // The friends' profiles held here, so those that haven't changed come back as stubs.
+  const known = stubsOn() ? { profilesKnown: knownProfiles(s.friends.friends || []) } : {}
+  const json = await post({ ...body, ...known, name: s.race.name, emoji: s.race.emoji, color: s.race.chartColor, profile: buildProfileBody() })
   update((st) => {
+    const held = Object.fromEntries((st.friends.friends || []).map((f) => [f.userId, f]))
     st.friends.code = json.code || st.friends.code
-    st.friends.friends = json.friends || []
+    st.friends.friends = (json.friends || []).map((f) => fillProfile(f, held)).filter(Boolean)
     st.friends.incoming = json.incoming || []
     st.friends.outgoing = json.outgoing || []
     st.friends.lastFetch = Date.now()

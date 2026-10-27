@@ -18,3 +18,9 @@ Notes
   limit before announcing it publicly.
 - Try changes locally first: `node test/fake-sync-server.mjs`, then use http://localhost:8798/exec
   as the sync server link.
+- Version 5 (lighter syncs): each account gets a second Drive file, `<accountId>.journal.json`,
+  holding what was pushed since the account file was last rewritten (folded in every 400
+  records). Don't roll back to version 4 once 5 has run: v4 doesn't read the journal, so records
+  in it would look missing until devices sent them again. Older apps keep working with v5.
+  Tests: `npm test` runs `test/sync-server.test.js`, which checks v5 against v4
+  (`test/sync-backend-v4.gs`), including an account v4 wrote.

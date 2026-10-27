@@ -13,6 +13,10 @@ import { takeBackEarlyEggs } from './zoo.js'
  *  different one can still be pasted in Settings. */
 export const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbyUSUQGINveSTIe7dHbXphSkEUe6QWcH2q8kUoE4ls5M-PORVKO9ZQ6B-XueUnjYO1v/exec'
 const SNAPSHOT_KEY = 'syncSnapshot'
+// The revision each record had when this device last saw it (coll -> {id: rev}) - what the daily
+// check for missing records compares the server's manifest with (sync server v5).
+const REVS_KEY = 'syncRevs'
+const GET_BATCH = 2000
 const NAMETAG_PREFIX = 'nametag:'
 const PUSH_CHUNK = 1500
 const AUTO_DELAY = 4000
@@ -228,12 +232,34 @@ async function call(body, url = syncUrl()) {
 }
 
 let snapshot = null
+let revs = {}
 async function loadSnapshot() {
-  if (!snapshot) snapshot = (await readExtra(SNAPSHOT_KEY)) || {}
+  if (!snapshot) {
+    snapshot = (await readExtra(SNAPSHOT_KEY)) || {}
+    revs = (await readExtra(REVS_KEY)) || {}
+  }
   return snapshot
 }
 async function saveSnapshot() {
   await writeExtra(SNAPSHOT_KEY, snapshot)
+  await writeExtra(REVS_KEY, revs)
+}
+
+/** Notes the revision of each record seen from the server. */
+function noteRevs(records) {
+  for (const r of records) if (r.rev != null) (revs[r.coll] ||= {})[r.id] = r.rev
+}
+
+/** After a push: the revision each change got - or, one the server didn't take (another
+ *  device's copy is newer), forgotten, so the next daily check fetches the account's. Only from a
+ *  server that says ('revs', v5). */
+export function notePushed(seen, changes, reply) {
+  if (!reply?.revs) return
+  for (const c of changes) {
+    const rev = reply.revs[`${c.coll}:${c.id}`]
+    if (rev != null) (seen[c.coll] ||= {})[c.id] = rev
+    else if (seen[c.coll]) delete seen[c.coll][c.id]
+  }
 }
 
 const deviceName = () => {
@@ -251,6 +277,14 @@ async function pullAll(token, cur, first = null) {
   for (;;) {
     const res = first || await call({ action: 'pull', token, sinceRev: since })
     first = null
+    noteRevs(res.records)
+    if (!res.records.length) {
+      // Nothing new (a sync reply no longer brings back what was just sent): just move on.
+      since = res.rev
+      update((s) => { s.sync.sinceRev = since })
+      if (!res.more) break
+      continue
+    }
     const now = collect(getState())
     const take = res.records.filter((r) => {
       const local = now[r.coll]?.get(r.id)
@@ -279,8 +313,7 @@ async function pullAll(token, cur, first = null) {
  *  there (sync-backend/Code.gs freshDoc_) - it's dropped from the snapshot, so the next push sends
  *  it again. A record the account has in another version than agreed here (one this device's pulls
  *  skipped) is taken, unless it was edited here since - that edit goes up instead. */
-export function reconcile(records, cur, snap) {
-  const onServer = new Set(records.map((r) => `${r.coll}:${r.id}`))
+export function reconcile(records, cur, snap, onServer = new Set(records.map((r) => `${r.coll}:${r.id}`))) {
   const lost = []
   for (const [coll, m] of Object.entries(snap)) {
     for (const id of Object.keys(m)) if (!onServer.has(`${coll}:${id}`)) lost.push([coll, id])
@@ -295,16 +328,50 @@ export function reconcile(records, cur, snap) {
 
 const RECONCILE_EVERY = 24 * 60 * 60 * 1000
 
-async function reconcileWithAccount(token) {
-  const records = []
-  let since = 0
-  for (;;) {
-    const res = await call({ action: 'pull', token, sinceRev: since })
-    records.push(...res.records)
-    since = res.rev
-    if (!res.more) break
+/** The records whose revision on the server ([manifest], coll -> {id: rev}) isn't the one last
+ *  seen here ([seen]) - the only ones the daily check needs to look at. */
+export function unseen(manifest, seen) {
+  const out = []
+  for (const [coll, m] of Object.entries(manifest)) {
+    for (const [id, rev] of Object.entries(m)) if (seen[coll]?.[id] !== rev) out.push(`${coll}:${id}`)
   }
-  const { lost, take } = reconcile(records, collect(getState()), snapshot)
+  return out
+}
+
+/** The whole account, or (a v5 server) just the records not seen here as they are, and every key
+ *  it holds. */
+async function readAccount(token) {
+  let m = null
+  try {
+    m = await call({ action: 'manifest', token })
+  } catch (err) {
+    if (!/Unknown action/.test(err.message)) throw err
+  }
+  const records = []
+  if (!m) {
+    let since = 0
+    for (;;) {
+      const res = await call({ action: 'pull', token, sinceRev: since })
+      records.push(...res.records)
+      since = res.rev
+      if (!res.more) break
+    }
+    return { records, keys: new Set(records.map((r) => `${r.coll}:${r.id}`)), rev: since }
+  }
+  const want = unseen(m.manifest, revs)
+  for (let i = 0; i < want.length; i += GET_BATCH) {
+    records.push(...(await call({ action: 'get', token, keys: want.slice(i, i + GET_BATCH) })).records)
+  }
+  // Records no longer there aren't worth remembering a revision for.
+  for (const [coll, ids] of Object.entries(revs)) for (const id of Object.keys(ids)) if (m.manifest[coll]?.[id] == null) delete ids[id]
+  const keys = new Set(Object.entries(m.manifest).flatMap(([coll, ids]) => Object.keys(ids).map((id) => `${coll}:${id}`)))
+  return { records, keys, rev: m.rev }
+}
+
+async function reconcileWithAccount(token) {
+  const { records, keys, rev: since } = await readAccount(token)
+  noteRevs(records)
+  const { lost, take } = reconcile(records, collect(getState()), snapshot, keys)
   for (const [coll, id] of lost) delete snapshot[coll][id]
   update((s) => {
     dedupeAgainst(s, take)
@@ -381,7 +448,8 @@ async function round() {
         noCombined = true
       }
     }
-    if (!first) await call({ action: 'push', token, changes: chunk })
+    if (!first) notePushed(revs, chunk, await call({ action: 'push', token, changes: chunk }))
+    else notePushed(revs, chunk, first)
     for (const c of chunk) {
       const m = (snapshot[c.coll] ||= {})
       if (c.deleted) delete m[c.id]
@@ -396,6 +464,7 @@ async function round() {
 export async function createAccount(url) {
   const res = await call({ action: 'create', name: getState().race.name, deviceName: deviceName() }, url || syncUrl())
   snapshot = {}
+  revs = {}
   update((s) => {
     remapIds(s)
     s.sync = { ...s.sync, url: url || s.sync.url, token: res.token, accountId: res.accountId, sinceRev: 0, error: '' }
@@ -417,6 +486,7 @@ export async function joinAccount({ code, key, url }) {
   }
   if (!token) throw new Error('Enter a code or your recovery key')
   snapshot = {}
+  revs = {}
   update((s) => {
     remapIds(s)
     s.sync = { ...s.sync, url: url || s.sync.url, token, accountId, sinceRev: 0, error: '' }
@@ -446,6 +516,7 @@ export async function unlinkDevice(deviceId) {
 export async function signOut({ tellServer = true } = {}) {
   if (tellServer) { try { await call({ action: 'unlink', token: getState().sync.token }) } catch { /* offline - still sign out here */ } }
   snapshot = {}
+  revs = {}
   await saveSnapshot()
   update((s) => { s.sync = { ...s.sync, token: '', accountId: '', sinceRev: 0, lastSync: 0, lastReconcile: 0, error: '' } })
 }

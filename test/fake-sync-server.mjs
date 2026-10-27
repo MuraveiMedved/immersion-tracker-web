@@ -1,12 +1,13 @@
 // Runs sync-backend/Code.gs locally against in-memory fakes of Sheets, Drive and the other Apps
 // Script services, so account sync can be tried without deploying anything.
 //   node test/fake-sync-server.mjs     -> http://localhost:8798/exec
+//   SYNC_CODE=test/sync-backend-v4.gs node test/fake-sync-server.mjs   -> the version before (v4)
 import { createServer } from 'node:http'
 import { readFileSync } from 'node:fs'
 import { randomUUID, createHash } from 'node:crypto'
 import vm from 'node:vm'
 
-const code = readFileSync(new URL('../sync-backend/Code.gs', import.meta.url), 'utf8')
+const code = readFileSync(process.env.SYNC_CODE || new URL('../sync-backend/Code.gs', import.meta.url), 'utf8')
 const sheets = new Map()
 const files = new Map()
 const props = new Map()

@@ -13,7 +13,8 @@
  * revision number; a pull returns everything after the revision a device last saw. Deletes are kept
  * as tombstones so they reach every device.
  *
- * Actions (POST, JSON body): ping, create, push, pull, sync, linkCode, linkClaim, devices, unlink.
+ * Actions (POST, JSON body): ping, create, push, pull, sync, manifest, get, linkCode, linkClaim,
+ * devices, unlink.
  * See SETUP.md for deploying.
  *
  * Speed (v2): every call used to queue for one script-wide lock and read the whole account file
@@ -29,9 +30,22 @@
  * sends it stopped marks the change 'closes'; if the account already has that session stopped
  * earlier (or discarded), that's kept and the device takes it on its pull. Older devices don't
  * send the mark and are merged as before.
+ *
+ * Lighter (v5):
+ * - A journal: a push used to rewrite the whole account file, however little it added. Records
+ *   pushed since the file was last written now go into a small second file (its id in script
+ *   properties, 'journal:<accountId>'), folded into the account file once it holds JOURNAL_FOLD
+ *   records. The account file then holds everything up to revision 'baseRev:<accountId>', and a
+ *   pull from at or after that reads only the journal. Accounts without one carry on as before
+ *   until their next push makes it.
+ * - No echo: the reply to 'sync' leaves out the records that very call took (the device has them
+ *   as it sent them), and 'push'/'sync' replies list the revision each one got ('revs').
+ * - The daily check for missing records: 'manifest' answers each record's revision (no data) and
+ *   'get' the records a device asks for, so it fetches only what it hasn't seen rather than the
+ *   whole account. Older devices still read everything with 'pull', which works as before.
  */
 
-var SYNC_VERSION = 4;
+var SYNC_VERSION = 5;
 var ACCOUNTS_SHEET = 'Accounts';
 var ACCOUNT_HEADERS = ['accountId', 'fileId', 'name', 'createdAt', 'lastSeen'];
 var DEVICES_SHEET = 'Devices';
@@ -45,11 +59,15 @@ var LINK_CODE_MILLIS = 10 * 60 * 1000;
 var MAX_RECORD_CHARS = 30000;
 var MAX_PUSH = 3000;
 var PULL_PAGE = 4000;
+/** Records the journal holds before they're folded into the account file (see v5 above). */
+var JOURNAL_FOLD = 400;
+/** Most records one 'get' returns. */
+var GET_MAX = 2000;
 /** A device's "last seen" (Settings > Your devices) is noted at most this often. */
 var SEEN_EVERY_MILLIS = 10 * 60 * 1000;
 /** How long a token -> account lookup is cached (CacheService's longest). */
 var DEVICE_CACHE_SECONDS = 6 * 60 * 60;
-/** Re-reads of an account file that comes back older than its last write (see freshDoc_). */
+/** Re-reads of an account file that comes back older than its last write (see fullDoc_). */
 var STALE_RETRIES = 4;
 var STALE_WAIT_MILLIS = 1500;
 
@@ -63,8 +81,10 @@ function doPost(e) {
     var req = JSON.parse(e.postData.contents);
     var now = Date.now();
     if (req.action === 'ping') return json_({ ok: true, version: SYNC_VERSION });
-    // Only reads, so it doesn't queue behind another device's push.
+    // Only reads, so they don't queue behind another device's push.
     if (req.action === 'pull') return json_(pull_(req, now));
+    if (req.action === 'manifest') return json_(manifest_(req, now));
+    if (req.action === 'get') return json_(get_(req, now));
     lock = LockService.getScriptLock();
     lock.waitLock(25000);
     switch (req.action) {
@@ -214,9 +234,9 @@ function stoppedFirst_(old, r) {
   return end != null && r.data && r.data.endTimeMillis != null && Number(end) <= Number(r.data.endTimeMillis);
 }
 
-/** Merges [changes] into [doc], newest edit winning; returns how many were taken. */
+/** Merges [changes] into [doc], newest edit winning; returns the records taken. */
 function merge_(doc, changes, now) {
-  var accepted = 0;
+  var accepted = [];
   changes.forEach(function (raw) {
     var r = cleanRecord_(raw);
     if (!r) return;
@@ -232,46 +252,104 @@ function merge_(doc, changes, now) {
     doc.rev += 1;
     r.rev = doc.rev;
     doc.records[key] = r;
-    accepted++;
+    accepted.push(r);
   });
   return accepted;
 }
 
-/** Merges the device's records into its account (under the lock). The file is written before the
- *  revision is noted, so a pull that sees the new revision always finds the file that has it. */
-function pushInto_(device, req, now) {
-  var doc = freshDoc_(device);
-  var changes = Array.isArray(req.changes) ? req.changes.slice(0, MAX_PUSH) : [];
-  var accepted = merge_(doc, changes, now);
-  if (accepted) writeDoc_(device.fileId, doc);
-  var saved = savedRev_(device.accountId);
-  if (saved == null || doc.rev > saved) PropertiesService.getScriptProperties().setProperty('rev:' + device.accountId, String(doc.rev));
-  return { doc: doc, accepted: accepted, taken: changes.length };
+/** The account's journal - {rev, records} pushed since the account file was last written - and
+ *  its file id; null when it has none yet (an account last pushed to before v5). */
+function journal_(accountId) {
+  var id = PropertiesService.getScriptProperties().getProperty('journal:' + accountId);
+  if (!id) return null;
+  var doc = readDoc_(id);
+  return { id: id, rev: doc.rev, records: doc.records };
 }
 
-/** The account file for a push. Drive can hand back the copy from before the last write for a
- *  moment; merging into that and writing it back loses what that write added, and numbers new
- *  records with revisions devices have already pulled past (so they never see them). The revision
- *  noted after each write tells a stale copy apart: read again for a few seconds, and if it's still
- *  behind, at least never let revisions go backwards (devices re-send anything lost - 'Missing
- *  records' in sync.js / WebSyncRepository). */
-function freshDoc_(device) {
+/** The revision the account file holds everything up to, or null without a journal. */
+function baseRev_(accountId) {
+  var v = PropertiesService.getScriptProperties().getProperty('baseRev:' + accountId);
+  return v == null ? null : Number(v);
+}
+
+/**
+ * The whole account: the account file with the journal's records over it, and the journal (null
+ * if none). Drive can hand back a copy from before its last write for a moment; merging into that
+ * and writing it back loses what that write added, and numbers new records with revisions devices
+ * have already pulled past (so they never see them). With [retry] (a push), a copy older than the
+ * revision noted after each write is read again for a few seconds, and if it's still behind,
+ * revisions are at least never let go backwards (devices re-send anything lost - 'Missing
+ * records' in sync.js / WebSyncRepository).
+ */
+function fullDoc_(device, retry) {
   var saved = savedRev_(device.accountId);
+  var journal = journal_(device.accountId);
+  // With a journal, the account file only has to be as new as its last fold.
+  var fileWant = journal ? baseRev_(device.accountId) : saved;
+  var behind = function (doc, want) { return retry && want != null && doc.rev < want; };
   var doc = readDoc_(device.fileId);
-  for (var tries = 0; saved != null && doc.rev < saved && tries < STALE_RETRIES; tries++) {
+  for (var tries = 0; behind(doc, fileWant) && tries < STALE_RETRIES; tries++) {
     Utilities.sleep(STALE_WAIT_MILLIS);
     doc = readDoc_(device.fileId);
   }
-  if (saved != null && doc.rev < saved) doc.rev = saved;
-  return doc;
+  for (var t = 0; journal && behind(journal, saved) && t < STALE_RETRIES; t++) {
+    Utilities.sleep(STALE_WAIT_MILLIS);
+    journal = journal_(device.accountId);
+  }
+  if (journal) {
+    Object.keys(journal.records).forEach(function (key) { doc.records[key] = journal.records[key]; });
+    doc.rev = Math.max(doc.rev, journal.rev);
+  }
+  if (retry && saved != null && doc.rev < saved) doc.rev = saved;
+  return { doc: doc, journal: journal };
 }
 
-/** One page of the records in [doc] changed after [since], oldest first. */
-function page_(doc, since, accountId) {
+/** Merges the device's records into its account (under the lock). What it takes goes into the
+ *  journal, folded into the account file once that's big enough (see v5 above). Files are written
+ *  before the revision is noted, so a pull that sees the new revision always finds what has it. */
+function pushInto_(device, req, now) {
+  var account = fullDoc_(device, true);
+  var doc = account.doc;
+  var changes = Array.isArray(req.changes) ? req.changes.slice(0, MAX_PUSH) : [];
+  var before = doc.rev;
+  var taken = merge_(doc, changes, now);
+  if (taken.length) {
+    var props = PropertiesService.getScriptProperties();
+    var journal = account.journal;
+    if (!journal) {
+      // The account file holds everything up to before this push; what follows goes in the journal.
+      props.setProperty('baseRev:' + device.accountId, String(before));
+      journal = { id: null, rev: 0, records: {} };
+    }
+    taken.forEach(function (r) { journal.records[r.coll + ':' + r.id] = r; });
+    journal.rev = doc.rev;
+    if (Object.keys(journal.records).length >= JOURNAL_FOLD) {
+      writeDoc_(device.fileId, doc);
+      props.setProperty('baseRev:' + device.accountId, String(doc.rev));
+      journal.records = {};
+    }
+    var text = JSON.stringify({ rev: journal.rev, records: journal.records });
+    if (journal.id) {
+      DriveApp.getFileById(journal.id).setContent(text);
+    } else {
+      var file = folder_().createFile(device.accountId + '.journal.json', text, 'application/json');
+      props.setProperty('journal:' + device.accountId, file.getId());
+    }
+  }
+  var saved = savedRev_(device.accountId);
+  if (saved == null || doc.rev > saved) PropertiesService.getScriptProperties().setProperty('rev:' + device.accountId, String(doc.rev));
+  var revs = {};
+  taken.forEach(function (r) { revs[r.coll + ':' + r.id] = r.rev; });
+  return { doc: doc, accepted: taken.length, taken: changes.length, revs: revs };
+}
+
+/** One page of the records in [doc] changed after [since], oldest first - leaving out those in
+ *  [skip] ({key: rev} a 'sync' just took from the device asking). */
+function page_(doc, since, accountId, skip) {
   var out = [];
   Object.keys(doc.records).forEach(function (key) {
     var r = doc.records[key];
-    if (r.rev > since) out.push(r);
+    if (r.rev > since && !(skip && skip[key] === r.rev)) out.push(r);
   });
   out.sort(function (a, b) { return a.rev - b.rev; });
   var more = out.length > PULL_PAGE;
@@ -284,28 +362,59 @@ function page_(doc, since, accountId) {
 function push_(req, now) {
   var device = device_(req.token, now);
   var result = pushInto_(device, req, now);
-  return { ok: true, version: SYNC_VERSION, rev: result.doc.rev, accepted: result.accepted, taken: result.taken };
+  return { ok: true, version: SYNC_VERSION, rev: result.doc.rev, accepted: result.accepted, taken: result.taken, revs: result.revs };
 }
 
-/** A push and the first page of what the device hasn't seen (its own records included), from one
- *  read of the file. If 'more' is set, the device carries on with 'pull'. */
+/** A push and the first page of what the device hasn't seen - without what it just sent - from
+ *  one read of the account. If 'more' is set, the device carries on with 'pull'. */
 function sync_(req, now) {
   var device = device_(req.token, now);
   var result = pushInto_(device, req, now);
-  var reply = page_(result.doc, Number(req.sinceRev) || 0, device.accountId);
+  var reply = page_(result.doc, Number(req.sinceRev) || 0, device.accountId, result.revs);
   reply.accepted = result.accepted;
   reply.taken = result.taken;
+  reply.revs = result.revs;
   return reply;
 }
 
 /** Every record changed after req.sinceRev, oldest first, a page at a time. Takes no lock; a device
- *  already up to date gets its answer without the file being opened. */
+ *  already up to date gets its answer without a file being opened, and one behind by only what's
+ *  in the journal gets it from the journal alone. */
 function pull_(req, now) {
   var device = device_(req.token, now);
   var since = Number(req.sinceRev) || 0;
   var rev = savedRev_(device.accountId);
   if (rev != null && since >= rev) return { ok: true, version: SYNC_VERSION, rev: since, more: false, records: [], accountId: device.accountId };
-  return page_(readDoc_(device.fileId), since, device.accountId);
+  var baseRev = baseRev_(device.accountId);
+  if (baseRev != null && since >= baseRev) {
+    var journal = journal_(device.accountId);
+    if (journal) return page_({ rev: journal.rev, records: journal.records }, since, device.accountId);
+  }
+  return page_(fullDoc_(device, false).doc, since, device.accountId);
+}
+
+/** Every record's revision, tombstones included, as {coll: {id: rev}} - no data. With 'get',
+ *  what a device's daily check for missing records uses instead of pulling everything. */
+function manifest_(req, now) {
+  var device = device_(req.token, now);
+  var doc = fullDoc_(device, false).doc;
+  var out = {};
+  Object.keys(doc.records).forEach(function (key) {
+    var r = doc.records[key];
+    (out[r.coll] = out[r.coll] || {})[r.id] = r.rev;
+  });
+  return { ok: true, version: SYNC_VERSION, rev: doc.rev, manifest: out };
+}
+
+/** The records req.keys ('coll:id', at most GET_MAX) name, as they are now - any it hasn't are
+ *  left out. */
+function get_(req, now) {
+  var device = device_(req.token, now);
+  var doc = fullDoc_(device, false).doc;
+  var keys = Array.isArray(req.keys) ? req.keys.slice(0, GET_MAX) : [];
+  var out = [];
+  keys.forEach(function (key) { if (doc.records[String(key)]) out.push(doc.records[String(key)]); });
+  return { ok: true, version: SYNC_VERSION, rev: doc.rev, records: out };
 }
 
 function linkCode_(req, now) {
