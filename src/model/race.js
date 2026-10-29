@@ -460,19 +460,23 @@ export function zooSummary(s) {
  * "ze" - [when, animal, 1 = from a trade-up, 1 = holo] each, newest first, sent with the
  * collection (share.zoo) - and the feed merges friends', racers' and this person's own. */
 export const FEED_SHARED = 10
+/** And how many earlier holo finds besides, after those (the phone's ZooFeed.SHARED_HOLO) - so a
+ *  holo stays in friends' feeds after newer finds push it out. Older versions read only the first FEED_SHARED. */
+export const FEED_SHARED_HOLO = 10
 export const FEED_MAX_AGE = 14 * DAY
 export const FEED_MAX_LINES = 30
 
-/** The latest FEED_SHARED animals from `openings`, newest first, as feed events. */
+/** The latest FEED_SHARED animals from `openings`, newest first, then up to FEED_SHARED_HOLO earlier holo ones, as feed events. */
 export function recentZooEvents(openings) {
-  return [...(openings || [])]
+  const sorted = [...(openings || [])]
     .sort((a, b) => b.atMillis - a.atMillis || String(b.id).localeCompare(String(a.id), undefined, { numeric: true }))
-    .slice(0, FEED_SHARED)
+  return [...sorted.slice(0, FEED_SHARED), ...sorted.slice(FEED_SHARED).filter((o) => o.cert?.foil).slice(0, FEED_SHARED_HOLO)]
     .map((o) => ({ atMillis: o.atMillis, animalId: o.animalId, tradeUp: !!o.upgradeKey, holo: !!o.cert?.foil }))
 }
 
 /** Everyone's lines together, newest first: `mine` (userId null), then each person in `people`
- *  (readProfile shapes) once - the newer profile when someone's both a friend and a racer. */
+ *  (readProfile shapes) once - the newer profile when someone's both a friend and a racer. Old lines
+ *  drop out, and past FEED_MAX_LINES - except holo finds, which always stay. */
 export function zooFeed({ mine, myName, myUserId, people, known, now = Date.now() }) {
   const byId = new Map()
   for (const p of people) {
@@ -485,14 +489,14 @@ export function zooFeed({ mine, myName, myUserId, people, known, now = Date.now(
     ...[...byId.values()].flatMap((p) => (p.zooEvents || []).map((event) => ({ userId: p.userId, name: p.name, event }))),
   ]
   return lines
-    .filter((l) => known(l.event.animalId) && Math.abs(now - l.event.atMillis) <= FEED_MAX_AGE)
+    .filter((l) => known(l.event.animalId) && (l.event.holo || Math.abs(now - l.event.atMillis) <= FEED_MAX_AGE))
     .sort((a, b) => b.event.atMillis - a.event.atMillis)
-    .slice(0, FEED_MAX_LINES)
+    .filter((l, i) => i < FEED_MAX_LINES || l.event.holo)
 }
 
 function readZooEvents(ze) {
   if (!Array.isArray(ze)) return null
-  return ze.slice(0, FEED_SHARED).map((e) => (Array.isArray(e) ? e : []))
+  return ze.slice(0, FEED_SHARED + FEED_SHARED_HOLO).map((e) => (Array.isArray(e) ? e : []))
     .filter((e) => typeof e[1] === 'string' && e[1] && e[1].length <= 80 && Number(e[0]) > 0)
     .map((e) => ({ atMillis: Number(e[0]), animalId: e[1], tradeUp: e[2] === 1, holo: e[3] === 1 }))
 }

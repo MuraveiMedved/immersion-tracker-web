@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readProfile, recentZooEvents, zooFeed, FEED_SHARED } from '../src/model/race.js'
+import { readProfile, recentZooEvents, zooFeed, FEED_SHARED, FEED_MAX_LINES } from '../src/model/race.js'
 import { DAY } from '../src/model/time.js'
 
 const now = 100 * DAY
@@ -38,4 +38,18 @@ test('the feed merges, orders, dedupes and drops old or unknown animals', () => 
     now,
   })
   assert.deepEqual(lines.map((l) => [l.userId, l.event.animalId]), [[null, 'orca'], ['b', 'snow_leopard'], ['t', 'fennec_fox']])
+})
+
+test('earlier holo finds come after the latest few and stay in the feed', () => {
+  const openings = Array.from({ length: 15 }, (_, i) => ({ id: String(i + 1), animalId: `a${i + 1}`, atMillis: (i + 1) * 1000, cert: i === 1 ? { foil: true } : null }))
+  const events = recentZooEvents(openings)
+  assert.equal(events.length, FEED_SHARED + 1)
+  assert.deepEqual(events.at(-1), { atMillis: 2000, animalId: 'a2', tradeUp: false, holo: true })
+  const ze = events.map((e) => [e.atMillis, e.animalId, e.tradeUp ? 1 : 0, e.holo ? 1 : 0])
+  assert.equal(readProfile({ userId: 't', profile: { v: 1, ze } }).zooEvents.length, FEED_SHARED + 1)
+  const ev = (atMillis, animalId, holo = false) => ({ atMillis, animalId, tradeUp: false, holo })
+  const recent = Array.from({ length: FEED_MAX_LINES }, (_, i) => ev(now - (i + 1) * 1000, 'fennec_fox'))
+  const lines = zooFeed({ mine: [...recent, ev(now - 40 * DAY, 'okapi', true), ev(now - 40 * DAY, 'orca')], myName: 'Me', myUserId: 'me', people: [], known: () => true, now })
+  assert.equal(lines.length, FEED_MAX_LINES + 1)
+  assert.equal(lines.at(-1).event.animalId, 'okapi')
 })

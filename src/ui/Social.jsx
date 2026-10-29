@@ -218,9 +218,26 @@ function bestDayOf(st) {
   return best
 }
 
-function RankMedal({ rank }) {
+function RankMedal({ rank, big = false }) {
   const medal = rank === 1 ? GOLD : rank === 2 ? SILVER : rank === 3 ? BRONZE : null
-  return <span class="rank-medal" style={medal ? { background: medal, color: '#1A1B3A' } : {}}>{rank}</span>
+  return <span class={`rank-medal ${big ? 'big' : ''}`} style={medal ? { background: medal, color: '#1A1B3A' } : {}}>{rank}</span>
+}
+
+/** How much of the race goal is done: a ring that fills round to `fraction`, with `label` inside (the phone's GoalRing). */
+function GoalRing({ fraction, label }) {
+  const r = 41
+  const c = 2 * Math.PI * r
+  return (
+    <span class="goal-ring">
+      <svg viewBox="0 0 92 92" width="92" height="92">
+        <defs><linearGradient id="goal-ring-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--primary)" /><stop offset="1" stop-color="var(--tertiary)" /></linearGradient></defs>
+        <circle cx="46" cy="46" r={r} fill="none" stroke="color-mix(in srgb, var(--on-surface) 8%, transparent)" stroke-width="10" />
+        {fraction > 0 && <circle cx="46" cy="46" r={r} fill="none" stroke="url(#goal-ring-grad)" stroke-width="10" stroke-linecap="round"
+          stroke-dasharray={`${c * fraction} ${c}`} transform="rotate(-90 46 46)" />}
+      </svg>
+      <b>{label}</b>
+    </span>
+  )
 }
 
 function LiveBadge({ kind }) {
@@ -867,39 +884,37 @@ function PersonSheet({ event, standing: st, now, onClose, onOpenMe }) {
   const diff = mine ? st.millis - mine.millis : 0
   return (
     <Dialog hideScrollbar onClose={onClose} actions={<button class="btn" onClick={onClose}>Close</button>}>
-      {/* Who: medal, name and place, with being friends as a small action on the right. */}
-      <div class="row" style="gap:12px">
-        <RankMedal rank={rank} />
-        <div class="grow" style="min-width:0">
-          <div class="row" style="gap:8px"><span class="title-large ellipsis">{withEmoji(st.emoji, st.name)}</span>{isLiveAt(st, now) && <LiveBadge kind={st.activeKind} />}</div>
-          <div class="muted small">{ordinal(rank)} of {event.standings.length}</div>
+      {/* The race at a glance, on one card (the phone's PersonSheet): who and where they stand, a
+          ring filling toward the goal with their total beside it, against you, and their clock. */}
+      <div class="person-hero">
+        <div class="row" style="gap:12px">
+          <RankMedal rank={rank} big />
+          <div class="grow" style="min-width:0">
+            <div class="row" style="gap:8px"><span class="title-large ellipsis">{withEmoji(st.emoji, st.name)}</span>{isLiveAt(st, now) && <LiveBadge kind={st.activeKind} />}</div>
+            <span class="place-pill">{ordinal(rank)} of {event.standings.length}</span>
+          </div>
+          {isMe && onOpenMe && <button class="btn tonal small" onClick={onOpenMe}><Icon name="edit" size={16} />Profile</button>}
+          {!isMe && (isFriend ? <span class="label-large" style="color:var(--primary)">Friends ✓</span>
+            : incoming ? <button class="btn small" onClick={() => friendAction(() => respondFriend(st.userId, true), `You and ${st.name} are now friends!`)}>Accept</button>
+              : outgoing ? <span class="label-large muted">Requested</span>
+                : <button class="btn tonal small" disabled={busy} onClick={() => friendAction(() => addFriendById(st.userId), `Friend request sent to ${st.name}`)}>{busy ? 'Sending…' : 'Add friend'}</button>)}
         </div>
-        {isMe && onOpenMe && <button class="btn tonal small" onClick={onOpenMe}><Icon name="edit" size={16} />Profile</button>}
-        {!isMe && (isFriend ? <span class="label-large" style="color:var(--primary)">Friends ✓</span>
-          : incoming ? <button class="btn small" onClick={() => friendAction(() => respondFriend(st.userId, true), `You and ${st.name} are now friends!`)}>Accept</button>
-            : outgoing ? <span class="label-large muted">Requested</span>
-              : <button class="btn tonal small" disabled={busy} onClick={() => friendAction(() => addFriendById(st.userId), `Friend request sent to ${st.name}`)}>{busy ? 'Sending…' : 'Add friend'}</button>)}
-      </div>
-      {/* The total against the goal: the number, then a bar instead of a sentence. */}
-      <div class="row" style="align-items:baseline;gap:8px;margin-top:18px">
-        <span class="person-total" style="margin:0">{formatHm(st.millis)}</span>
-        <span class="muted" style="font-size:16px;font-weight:500">/ {event.goalHours}h</span>
-      </div>
-      <div class="row" style="gap:10px;margin-top:8px">
-        <div class="goal-bar grow"><div style={{ width: `${Math.min(100, goal > 0 ? (st.millis * 100) / goal : 0)}%` }} /></div>
-        <span class="muted" style="font-size:12px;font-weight:500">{percentText(st.millis, goal)}%</span>
-      </div>
-      {/* Against me, then their clock and how fresh the number is - one line. */}
-      {((!isMe && mine) || localTime || report) && (
-        <div class="row" style="gap:10px;margin-top:10px">
-          {!isMe && mine && (
-            <span class="diff-chip" style={{ '--c': diff > 0 ? 'var(--danger)' : 'var(--primary)' }}>
-              {diff > 0 ? `${formatHm(diff)} ahead of you` : diff < 0 ? `${formatHm(-diff)} behind you` : 'Tied with you'}
-            </span>
-          )}
-          <span class="muted grow" style="font-size:11px;line-height:15px">{[localTime && `${localTime} their time`, report].filter(Boolean).join(' · ')}</span>
+        <div class="row" style="gap:18px;margin-top:18px">
+          <GoalRing fraction={goal > 0 ? Math.min(1, st.millis / goal) : 0} label={`${percentText(st.millis, goal)}%`} />
+          <div class="grow" style="min-width:0">
+            <div class="person-total" style="margin:0">{formatHm(st.millis)}</div>
+            <div class="muted" style="font-size:14px;font-weight:500">of {event.goalHours}h goal</div>
+            {!isMe && mine && (
+              <span class="diff-chip" style={{ '--c': diff > 0 ? 'var(--danger)' : 'var(--primary)', display: 'inline-block', marginTop: '8px' }}>
+                {diff > 0 ? `${formatHm(diff)} ahead of you` : diff < 0 ? `${formatHm(-diff)} behind you` : 'Tied with you'}
+              </span>
+            )}
+          </div>
         </div>
-      )}
+        {(localTime || report) && (
+          <div class="row muted" style="gap:6px;margin-top:14px;font-size:12px"><Icon name="schedule" size={14} />{[localTime && `${localTime} their time`, report].filter(Boolean).join(' · ')}</div>
+        )}
+      </div>
       {profile && <>
         <div class="title-small" style="margin:24px 0 8px">Profile</div>
         <ProfileFrame p={profile}><ProfileSections p={profile} /></ProfileFrame>
