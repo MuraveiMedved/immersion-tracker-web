@@ -246,9 +246,9 @@ function ZooFeedButton({ catalog, now }) {
                   /* One find (the phone's FeedRow): its photo framed in its rarity, the line, its rarity and when. */
                   <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="feed-row tappable" role="button" tabIndex={0}
                     onClick={() => setOpenLine(l)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenLine(l) }}>
-                    {/* A holo find shows it: the foil's finish and shimmer, its pearly border and a Holo pill. */}
+                    {/* A holo find shows it: the foil's finish, its pearly border and a Holo pill. */}
                     <span class={`feed-thumb ${holo ? 'foil-border' : ''}`} style={holo ? { backgroundImage: FOIL_BORDER } : { background: frame }}>
-                      <span style="position:relative"><AnimalPhoto animal={a} />{holo && <FoilSheen seed={a.id} />}{holo && <span class="foil-shimmer" />}</span>
+                      <span style="position:relative"><AnimalPhoto animal={a} />{holo && <FoilSheen seed={a.id} />}</span>
                     </span>
                     <span class="grow col" style="gap:4px">
                       <span>
@@ -523,10 +523,11 @@ function seeded(str) {
 /* Foil - a port of the phone's foilSheen (AnimalCard.kt): a 9-column grid of triangular facets,
    each throwing its own rainbow colour (screened over the photo), faint facet edges, a spectrum
    band (overlay) and a soft vignette, with the photo itself a little punchier (CSS). The phone
-   drives it by tilt; here a slow, constant loop stands in for the tilt, through the same formulas. */
+   drives it by tilt; here a constant loop stands in for the tilt, through the same formulas - on a
+   figure-eight path, so the facets never sit still at either end of a swing. */
 
 const PRISM_COLUMNS = 9
-const FOIL_LOOP_MS = 12000
+const FOIL_LOOP_MS = 8000
 const foilDrawers = new Set()
 let foilFrame = 0
 let foilLast = 0
@@ -536,7 +537,7 @@ function foilTick(t) {
   if (t - foilLast >= 33) { // ~30 fps is plenty for a slow shimmer
     foilLast = t
     const turn = ((t % FOIL_LOOP_MS) / FOIL_LOOP_MS) * Math.PI * 2
-    const tilt = { x: 0.6 * Math.sin(turn), y: 0.4 * Math.cos(turn) }
+    const tilt = { x: 0.6 * Math.sin(turn), y: 0.45 * Math.sin(2 * turn + 0.7) }
     foilDrawers.forEach((draw) => draw(tilt))
   }
   foilFrame = requestAnimationFrame(foilTick)
@@ -893,7 +894,6 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
                 onPointerUp={() => clearTimeout(timer)} onPointerLeave={() => clearTimeout(timer)}>
                 <AnimalPhoto animal={a} />
                 {foil && <FoilSheen seed={a.id} />}
-                {foil && <span class="foil-shimmer" />}
                 {picked && <span class="count pick">✓</span>}
                 {a.id === trophyId && first && <span class="count pick">🏆</span>}
                 <div class="cap">{names[a.id] ? `“${names[a.id]}”` : a.name}</div>

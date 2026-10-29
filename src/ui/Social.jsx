@@ -1471,7 +1471,7 @@ function ProfileSections({ p }) {
           <div class="profile-zoo">
             {(all ? cards : cards.slice(0, 12)).map((c) => (
               <button key={c.key} class="tile-animal" style={{ borderColor: RARITY_COLOR[c.a.rarity] }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}” · ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c) })}>
-                <AnimalPhoto animal={c.a} />{c.foil && <FoilSheen seed={c.a.id} />}{c.foil && <span class="foil-shimmer" />}{c.n > 1 && <span class="count">×{c.n}</span>}
+                <AnimalPhoto animal={c.a} />{c.foil && <FoilSheen seed={c.a.id} />}{c.n > 1 && <span class="count">×{c.n}</span>}
               </button>
             ))}
           </div>

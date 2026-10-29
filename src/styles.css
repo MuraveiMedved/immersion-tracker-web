@@ -382,13 +382,6 @@ textarea.input { resize: vertical; }
 .tile-animal .count { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
 .tile-animal .count.pick { left: 5px; right: auto; }
 .tile-animal.gone { opacity: .4; filter: grayscale(1); }
-/* A holo copy in the collection: a pearly band sweeping corner to corner every few seconds (the
-   phone's foilShimmer). */
-.foil-shimmer { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
-  background: linear-gradient(135deg, transparent 35%, rgba(191,233,255,.22) 44%, rgba(255,255,255,.45) 50%, rgba(255,214,245,.22) 56%, transparent 65%) no-repeat;
-  background-size: 300% 300%; animation: foil-shimmer 3.2s linear infinite; }
-@keyframes foil-shimmer { 0% { background-position: 100% 100%; } 45%, 100% { background-position: 0% 0%; } }
-@media (prefers-reduced-motion: reduce) { .foil-shimmer { animation: none; opacity: 0; } }
 .tile-animal.picked { outline: 3px solid var(--primary); outline-offset: -3px; }
 .egg-card { background: var(--block); border: 1px solid var(--block-line); border-radius: 26px; padding: 20px; margin: 8px 0; }
 .egg-stage { position: relative; width: 140px; height: 140px; margin: 0 auto; display: grid; place-items: center; cursor: pointer; }
