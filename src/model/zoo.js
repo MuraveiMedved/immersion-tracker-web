@@ -405,22 +405,32 @@ export async function hatchColouredEgg(rarity) {
   return result
 }
 
-/** Gives up exactly 5 copies of one tier (ids may repeat) for an egg of the next tier - the least
- *  special copies of each picked animal go. */
-export function tradeUp(from, animalIds) {
+/** Gives up exactly 5 copies of one tier (ids may repeat) for an egg of the next tier. [copyIds],
+ *  when given, names the exact copy (opening id) each of [animalIds] gives up - the cards tapped in
+ *  the collection; otherwise the least special copies of each picked animal go. */
+export function tradeUp(from, animalIds, copyIds = null) {
   const to = nextRarity(from)
   if (!to || animalIds.length !== TRADE_UP_COUNT) return false
   if (animalIds.some((id) => animalById(id)?.rarity !== from)) return false
   const s = getState()
   const held = copiesHeld(s)
-  const taken = {}
   const copies = []
-  for (const id of animalIds) {
-    taken[id] = (taken[id] || 0) + 1
-    const list = held[id] || []
-    const copy = list[list.length - taken[id]]
-    if (!copy) return false
-    copies.push(copy)
+  if (copyIds) {
+    if (copyIds.length !== animalIds.length || new Set(copyIds).size !== copyIds.length) return false
+    for (let i = 0; i < animalIds.length; i++) {
+      const copy = (held[animalIds[i]] || []).find((c) => c.id === copyIds[i])
+      if (!copy) return false
+      copies.push(copy)
+    }
+  } else {
+    const taken = {}
+    for (const id of animalIds) {
+      taken[id] = (taken[id] || 0) + 1
+      const list = held[id] || []
+      const copy = list[list.length - taken[id]]
+      if (!copy) return false
+      copies.push(copy)
+    }
   }
   const now = Date.now()
   update((st) => {

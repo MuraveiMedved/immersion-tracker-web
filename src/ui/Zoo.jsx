@@ -204,6 +204,8 @@ function ZooFeedButton({ catalog, now }) {
   const s = useStore()
   const [open, setOpen] = useState(false)
   const [seenAt, setSeenAt] = useState(feedSeenAt)
+  // A find tapped - its animal's card shown over the list (holo if that copy was).
+  const [openLine, setOpenLine] = useState(null)
   // Friends' lines are only as new as the last fetch of their profiles - fetch again on opening
   // the Zoo when that's a while ago (which also sends this person's latest).
   useEffect(() => { if (raceConfigured() && Date.now() - (s.friends.lastFetch || 0) > 5 * 60000) refreshFriends().catch(() => {}) }, [])
@@ -241,7 +243,8 @@ function ZooFeedButton({ catalog, now }) {
                 const frame = a.rarity === 'RAINBOW' ? rarityBrush('RAINBOW') : RARITY_COLOR[a.rarity]
                 return (
                   /* One find (the phone's FeedRow): its photo framed in its rarity, the line, its rarity and when. */
-                  <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="feed-row">
+                  <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="feed-row tappable" role="button" tabIndex={0}
+                    onClick={() => setOpenLine(l)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenLine(l) }}>
                     <span class="feed-thumb" style={{ background: frame }}><AnimalPhoto animal={a} /></span>
                     <span class="grow col" style="gap:4px">
                       <span>
@@ -259,6 +262,12 @@ function ZooFeedButton({ catalog, now }) {
             </div>
           )}
         </Dialog>
+      )}
+      {openLine && byId.get(openLine.event.animalId) && (
+        <CardStage rarity={byId.get(openLine.event.animalId).rarity} onClose={() => setOpenLine(null)}>
+          <Floaty><AnimalCardView animal={byId.get(openLine.event.animalId)} cert={openLine.event.holo ? { foil: true } : null} /></Floaty>
+          <GlowPill rarity={byId.get(openLine.event.animalId).rarity} onClick={() => setOpenLine(null)}>Close</GlowPill>
+        </CardStage>
       )}
     </>
   )
@@ -811,28 +820,33 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   const columns = Math.min(5, Math.max(2, useStore().settings.zooColumns || 4))
   const showLost = !!useStore().settings.zooShowLost
   const [open, setOpen] = useState(null)
+  // The copy whose card was tapped - the dialog opens on it.
+  const [openCopy, setOpenCopy] = useState(null)
   const held = Object.keys(copies).length
   const anyLost = catalog.some((a) => found.has(a.id) && !copies[a.id])
   const list = catalog
     .filter((a) => copies[a.id] || (showLost && found.has(a.id)))
     .filter((a) => !trade || a.rarity === trade.from)
     .sort((a, b) => RARITIES.indexOf(b.rarity) - RARITIES.indexOf(a.rarity) || a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+  // Duplicates don't stack (the phone's ZooScreen cards): every copy held is its own card, best
+  // first; an animal no longer held, however many copies it once had, is one grey card.
+  const cards = list.flatMap((a) => (copies[a.id]?.length ? copies[a.id].map((c, i) => ({ a, c, first: i === 0 })) : [{ a, c: null, first: true }]))
 
-  const startTrade = (a) => {
-    if (nextRarity(a.rarity) && copies[a.id]) setTrade({ from: a.rarity, picks: [a.id] })
+  // A trade-up's picks are copies: { animalId, copyId } - a tap picks that card, or unpicks it.
+  const startTrade = (a, c) => {
+    if (nextRarity(a.rarity) && c) setTrade({ from: a.rarity, picks: [{ animalId: a.id, copyId: c.id }] })
   }
-  const pick = (a) => {
-    if (!trade) { setOpen(a); return }
-    if (a.rarity !== trade.from || !copies[a.id]) return
-    const n = trade.picks.filter((x) => x === a.id).length
-    if (n < copies[a.id].length && trade.picks.length < TRADE_UP_COUNT) setTrade({ ...trade, picks: [...trade.picks, a.id] })
-    else setTrade({ ...trade, picks: trade.picks.filter((x) => x !== a.id) })
+  const pick = (a, c) => {
+    if (!trade) { setOpen(a); setOpenCopy(c?.id ?? null); return }
+    if (a.rarity !== trade.from || !c) return
+    if (trade.picks.some((p) => p.copyId === c.id)) setTrade({ ...trade, picks: trade.picks.filter((p) => p.copyId !== c.id) })
+    else if (trade.picks.length < TRADE_UP_COUNT) setTrade({ ...trade, picks: [...trade.picks, { animalId: a.id, copyId: c.id }] })
   }
   const [celebrate, setCelebrate] = useState(null)
   const [hatchNow, setHatchNow] = useState(null)
   const doTrade = () => {
-    const given = trade.picks.map((id) => catalog.find((a) => a.id === id)).filter(Boolean)
-    const to = tradeUp(trade.from, trade.picks)
+    const given = trade.picks.map((p) => catalog.find((a) => a.id === p.animalId)).filter(Boolean)
+    const to = tradeUp(trade.from, trade.picks.map((p) => p.animalId), trade.picks.map((p) => p.copyId))
     if (to) setCelebrate({ from: trade.from, to, given })
     else toast("Couldn't trade those")
     setTrade(null)
@@ -862,22 +876,21 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
       {!trade && held > 0 && <div class="muted" style="font-size:12px;margin:-4px 0 10px">Long-press to trade up</div>}
       {!list.length ? <div class="empty">{!held ? 'No animals yet - hatch an egg to find your first.' : 'None of these yet.'}</div> : (
         <div class={`zoo-grid ${columns <= 3 ? 'roomy' : ''}`} style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
-          {list.map((a) => {
-            const have = copies[a.id]?.length || 0
-            const picks = trade ? trade.picks.filter((x) => x === a.id).length : 0
-            const foil = copies[a.id]?.some((c) => c.cert?.foil)
+          {cards.map(({ a, c, first }) => {
+            const picked = !!c && !!trade?.picks.some((p) => p.copyId === c.id)
+            const foil = !!c?.cert?.foil
             let timer = null
             return (
-              <div key={a.id} class={`tile-animal ${!have ? 'gone' : ''} ${picks ? 'picked' : ''}`} style={{ borderColor: RARITY_COLOR[a.rarity] }}
-                onClick={() => pick(a)}
-                onContextMenu={(e) => { e.preventDefault(); if (!trade) startTrade(a) }}
-                onPointerDown={() => { if (!trade) timer = setTimeout(() => startTrade(a), 500) }}
+              <div key={`${a.id}#${c?.id ?? ''}`} class={`tile-animal ${!c ? 'gone' : ''} ${picked ? 'picked' : ''} ${foil ? 'foil-tile' : ''}`} style={{ borderColor: RARITY_COLOR[a.rarity] }}
+                onClick={() => pick(a, c)}
+                onContextMenu={(e) => { e.preventDefault(); if (!trade) startTrade(a, c) }}
+                onPointerDown={() => { if (!trade) timer = setTimeout(() => startTrade(a, c), 500) }}
                 onPointerUp={() => clearTimeout(timer)} onPointerLeave={() => clearTimeout(timer)}>
                 <AnimalPhoto animal={a} />
                 {foil && <FoilSheen seed={a.id} />}
-                {have > 1 && <span class="count">×{have}</span>}
-                {picks > 0 && <span class="count pick">{picks}</span>}
-                {a.id === trophyId && <span class="count pick">🏆</span>}
+                {foil && <span class="foil-shimmer" />}
+                {picked && <span class="count pick">✓</span>}
+                {a.id === trophyId && first && <span class="count pick">🏆</span>}
                 <div class="cap">{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
               </div>
             )
@@ -897,8 +910,8 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
       )}
       {celebrate && <TradeUpCelebration {...celebrate} onClose={() => setCelebrate(null)} onOpenNow={() => { setHatchNow(celebrate.to); setCelebrate(null) }} />}
       {hatchNow && <HatchDialog kind={hatchNow} onClose={() => setHatchNow(null)} />}
-      {open && <AnimalDialog animal={open} copies={copies[open.id] || []} trophyId={trophyId} onClose={() => setOpen(null)}
-        onTrade={() => { setOpen(null); startTrade(open) }} />}
+      {open && <AnimalDialog animal={open} copies={copies[open.id] || []} initialCopyId={openCopy} trophyId={trophyId} onClose={() => setOpen(null)}
+        onTrade={() => { setOpen(null); startTrade(open, (copies[open.id] || []).at(-1)) }} />}
     </>
   )
 }
@@ -968,8 +981,8 @@ function TrophyCase({ catalog, copies }) {
   )
 }
 
-function AnimalDialog({ animal, copies, trophyId, onClose, onTrade }) {
-  const [i, setI] = useState(0)
+function AnimalDialog({ animal, copies, trophyId, onClose, onTrade, initialCopyId = null }) {
+  const [i, setI] = useState(() => Math.max(0, copies.findIndex((c) => c.id === initialCopyId)))
   const st = useStore()
   const inCase = (st.zoo.trophyIds || []).includes(animal.id)
   const [choosingSlot, setChoosingSlot] = useState(false)
