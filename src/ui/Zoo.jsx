@@ -241,11 +241,15 @@ function ZooFeedButton({ catalog, now }) {
                   ? { backgroundImage: rarityBrush('RAINBOW'), WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
                   : { color: RARITY_COLOR[a.rarity] }
                 const frame = a.rarity === 'RAINBOW' ? rarityBrush('RAINBOW') : RARITY_COLOR[a.rarity]
+                const holo = !!l.event.holo
                 return (
                   /* One find (the phone's FeedRow): its photo framed in its rarity, the line, its rarity and when. */
                   <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="feed-row tappable" role="button" tabIndex={0}
                     onClick={() => setOpenLine(l)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenLine(l) }}>
-                    <span class="feed-thumb" style={{ background: frame }}><AnimalPhoto animal={a} /></span>
+                    {/* A holo find shows it: the foil's finish and shimmer, its pearly border and a Holo pill. */}
+                    <span class={`feed-thumb ${holo ? 'foil-border' : ''}`} style={holo ? { backgroundImage: FOIL_BORDER } : { background: frame }}>
+                      <span style="position:relative"><AnimalPhoto animal={a} />{holo && <FoilSheen seed={a.id} />}{holo && <span class="foil-shimmer" />}</span>
+                    </span>
                     <span class="grow col" style="gap:4px">
                       <span>
                         <b>{l.userId == null ? 'You' : l.name || '?'}</b>{l.event.tradeUp ? ' traded up for ' : ' got '}{/^[aeiou]/i.test(named) ? 'an' : 'a'}{' '}
@@ -253,6 +257,7 @@ function ZooFeedButton({ catalog, now }) {
                       </span>
                       <span class="row" style="gap:8px;align-items:center">
                         <span class="rarity-pill" style={{ background: frame }}>{RARITY_LABEL[a.rarity]}</span>
+                        {holo && <span class="rarity-pill holo-pill">✦ Holo</span>}
                         <span class="muted tiny">{agoText(l.event.atMillis, now)}</span>
                       </span>
                     </span>

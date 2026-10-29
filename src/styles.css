@@ -980,6 +980,7 @@ textarea.input { resize: vertical; }
 .feed-row.tappable { cursor: pointer; }
 .feed-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: color-mix(in srgb, var(--on-surface) 6%, transparent); font-size: 14px; line-height: 1.35; }
 .feed-thumb { flex: none; width: 52px; height: 52px; border-radius: 14px; padding: 2px; display: block; overflow: hidden; }
+.holo-pill { background: rgba(0,0,0,.55); }
 .feed-thumb > * { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; display: block; }
 .rarity-pill { color: #fff; font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
 /* Recent sessions can be held down to remove them - no text selection or callout on a long press. */
