@@ -1425,6 +1425,19 @@ function ProfileSections({ p }) {
   const ORDER = ['RAINBOW', 'ORANGE', 'PURPLE', 'BLUE', 'GREEN']
   const zoo = p.zoo && catalog ? Object.entries(p.zoo).map(([id, n]) => [catalog.find((a) => a.id === id), n]).filter(([a]) => a)
     .sort((a, b) => ORDER.indexOf(a[0].rarity) - ORDER.indexOf(b[0].rarity) || a[0].name.toLowerCase().localeCompare(b[0].name.toLowerCase())) : []
+  // Holo copies aren't stacked with the plain ones (the phone's ZooShowcase): each is a card of its
+  // own, ahead of the animal's plain copies (one card, ×N). Without a holo count (an older version),
+  // a holo best copy still means one holo card.
+  const cards = zoo.flatMap(([a, n]) => {
+    const holo = Math.max(0, Math.min(n, p.holo ? Number(p.holo[a.id]) || 0 : cert(a.id)?.foil ? 1 : 0))
+    return [...Array.from({ length: holo }, (_, i) => ({ a, foil: true, n: 1, key: `${a.id}#h${i}` })), ...(n - holo > 0 ? [{ a, foil: false, n: n - holo, key: a.id }] : [])]
+  })
+  // The best copy's certificate goes with its own kind of card: a holo one on a holo card (a plain
+  // holo mark when it isn't known), a plain one on the plain card.
+  const cardCert = (c) => {
+    const best = cert(c.a.id)
+    return c.foil ? (best?.foil ? best : { foil: true }) : best?.foil ? null : best
+  }
   return (
     <div class="col" style="gap:16px">
       {showCase && p.shows.trophy && (
@@ -1432,7 +1445,7 @@ function ProfileSections({ p }) {
           <div class="row muted" style="gap:4px;font-size:12px;font-weight:500;margin-bottom:10px"><Icon name="emoji_events" size={16} />Trophy case</div>
           <div class="trophy-slots">
             {caseSlots.map((a, i) => (a
-              ? <button key={`${i}${a.id}`} class="trophy-slot" style={{ '--rarity': RARITY_COLOR[a.rarity] }} onClick={() => setOpen(a)}>
+              ? <button key={`${i}${a.id}`} class="trophy-slot" style={{ '--rarity': RARITY_COLOR[a.rarity] }} onClick={() => setOpen({ animal: a, cert: cert(a.id) })}>
                   <div class="photo"><AnimalPhoto animal={a} />{cert(a.id)?.foil && <FoilSheen seed={a.id} />}{i === firstFilled && <span class="count pick">🏆</span>}</div>
                   <div class="name">{p.names?.[a.id] ? `“${p.names[a.id]}”` : a.name}</div>
                 </button>
@@ -1441,7 +1454,7 @@ function ProfileSections({ p }) {
         </div>
       )}
       {!showCase && trophy && p.shows.trophy && (
-        <button class="trophy-card" style={{ '--rarity': RARITY_COLOR[trophy.rarity] }} onClick={() => setOpen(trophy)}>
+        <button class="trophy-card" style={{ '--rarity': RARITY_COLOR[trophy.rarity] }} onClick={() => setOpen({ animal: trophy, cert: cert(trophy.id) })}>
           <div class="photo"><AnimalPhoto animal={trophy} /></div>
           <div class="grow" style="min-width:0;text-align:left">
             <div class="row muted" style="gap:4px;font-size:12px;font-weight:500"><Icon name="emoji_events" size={16} color={RARITY_COLOR[trophy.rarity]} />On display</div>
@@ -1456,13 +1469,13 @@ function ProfileSections({ p }) {
         <div class="profile-card">
           <div class="pc-title">Zoo · {zoo.length}</div>
           <div class="profile-zoo">
-            {(all ? zoo : zoo.slice(0, 12)).map(([a, n]) => (
-              <button key={a.id} class="tile-animal" style={{ borderColor: RARITY_COLOR[a.rarity] }} title={p.names?.[a.id] ? `“${p.names[a.id]}” · ${a.name}` : a.name} onClick={() => setOpen(a)}>
-                <AnimalPhoto animal={a} />{cert(a.id)?.foil && <FoilSheen seed={a.id} />}{n > 1 && <span class="count">×{n}</span>}
+            {(all ? cards : cards.slice(0, 12)).map((c) => (
+              <button key={c.key} class="tile-animal" style={{ borderColor: RARITY_COLOR[c.a.rarity] }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}” · ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c) })}>
+                <AnimalPhoto animal={c.a} />{c.foil && <FoilSheen seed={c.a.id} />}{c.foil && <span class="foil-shimmer" />}{c.n > 1 && <span class="count">×{c.n}</span>}
               </button>
             ))}
           </div>
-          {zoo.length > 12 && <button class="btn text small" onClick={() => setAll(!all)}>{all ? 'Show fewer' : 'Show all'}</button>}
+          {cards.length > 12 && <button class="btn text small" onClick={() => setAll(!all)}>{all ? 'Show fewer' : 'Show all'}</button>}
         </div>
       )}
       {p.languages.length > 0 && (p.shows.rings || p.shows.goals || p.shows.streaks) && <ProfileTodayCard p={p} />}
@@ -1479,9 +1492,9 @@ function ProfileSections({ p }) {
       )}
       {p.updatedAt > 0 && <div class="muted" style="font-size:11px;font-weight:500;letter-spacing:.5px">Updated {agoText(p.updatedAt)}</div>}
       {open && (
-        <CardStage rarity={open.rarity} onClose={() => setOpen(null)}>
-          <Floaty><AnimalCardView animal={open} cert={cert(open.id)} timesFound={p.zoo?.[open.id] || 1} nickname={p.names?.[open.id] || null} /></Floaty>
-          <GlowPill rarity={open.rarity} onClick={() => setOpen(null)}>Close</GlowPill>
+        <CardStage rarity={open.animal.rarity} onClose={() => setOpen(null)}>
+          <Floaty><AnimalCardView animal={open.animal} cert={open.cert} timesFound={p.zoo?.[open.animal.id] || 1} nickname={p.names?.[open.animal.id] || null} /></Floaty>
+          <GlowPill rarity={open.animal.rarity} onClick={() => setOpen(null)}>Close</GlowPill>
         </CardStage>
       )}
     </div>

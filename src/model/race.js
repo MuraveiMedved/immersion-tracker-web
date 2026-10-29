@@ -562,6 +562,13 @@ export function buildProfileBody(now = Date.now()) {
   if (share.trophy || share.zoo) body.zooFound = Object.keys(held).length
   if (share.streaks) body.gd = goldenStreakDays(entries, now)
   if (share.zoo) body.zoo = held
+  // Holo copies held, by animal (only those with any) - shown as cards of their own (the phone's FriendProfile zh).
+  if (share.zoo) {
+    const zh = {}
+    const traded = new Set(s.zoo.tradeIns.map((t) => t.openingId))
+    for (const o of s.zoo.openings) if (!traded.has(o.id) && o.cert?.foil && held[o.animalId]) zh[o.animalId] = Math.min(held[o.animalId], (zh[o.animalId] || 0) + 1)
+    if (Object.keys(zh).length) body.zh = zh
+  }
   if (share.zoo) {
     const ze = recentZooEvents(s.zoo.openings).map((e) => [e.atMillis, e.animalId, e.tradeUp ? 1 : 0, e.holo ? 1 : 0])
     if (ze.length) body.ze = ze
@@ -662,6 +669,8 @@ export function readProfile(o) {
     zooFound: body.zooFound ?? null,
     goldenDays: body.gd ?? null,
     zoo: body.zoo || null,
+    // Holo copies by animal - null from versions before it.
+    holo: body.zh && typeof body.zh === 'object' ? body.zh : null,
     certs: body.zc || null,
     // Their last few animals, for the Zoo's feed - null when not shared (or from before the feed).
     zooEvents: readZooEvents(body.ze),

@@ -53,3 +53,8 @@ test('earlier holo finds come after the latest few and stay in the feed', () => 
   assert.equal(lines.length, FEED_MAX_LINES + 1)
   assert.equal(lines.at(-1).event.animalId, 'okapi')
 })
+
+test('a profile\'s holo counts ("zh") read back; none from older versions', () => {
+  assert.deepEqual(readProfile({ userId: 't', profile: { v: 1, zoo: { okapi: 3 }, zh: { okapi: 2 } } }).holo, { okapi: 2 })
+  assert.equal(readProfile({ userId: 't', profile: { v: 1, zoo: { okapi: 3 } } }).holo, null)
+})
