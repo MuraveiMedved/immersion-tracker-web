@@ -246,8 +246,8 @@ function ZooFeedButton({ catalog, now }) {
                   /* One find (the phone's FeedRow): its photo framed in its rarity, the line, its rarity and when. */
                   <div key={`${l.userId}-${l.event.atMillis}-${l.event.animalId}`} class="feed-row tappable" role="button" tabIndex={0}
                     onClick={() => setOpenLine(l)} onKeyDown={(e) => { if (e.key === 'Enter') setOpenLine(l) }}>
-                    {/* A holo find shows it: the foil's finish, its pearly border and a Holo pill. */}
-                    <span class={`feed-thumb ${holo ? 'foil-border' : ''}`} style={holo ? { backgroundImage: FOIL_BORDER } : { background: frame }}>
+                    {/* A holo find shows it: the foil's finish, a glow in its rarity's colour and a Holo pill. */}
+                    <span class={`feed-thumb ${holo ? holoClass(a.rarity) : ''}`} style={{ background: frame, ...glowColors(a.rarity) }}>
                       <span style="position:relative"><AnimalPhoto animal={a} />{holo && <FoilSheen seed={a.id} />}</span>
                     </span>
                     <span class="grow col" style="gap:4px">
@@ -501,7 +501,6 @@ function TradeUpCelebration({ from, to, given, onOpenNow, onClose }) {
 
 const LOOK = { GREEN: ['#3FBF5F', '#B4F06A'], BLUE: ['#3D8BFF', '#45D4FF'], PURPLE: ['#A64DFF', '#FF5CD6'], ORANGE: ['#FF8A00', '#FFD23F'], RAINBOW: ['#5CF2E6', '#E58CFF'], BOX: ['var(--primary)', 'var(--tertiary)'], NEUTRAL: ['#9AA3AD', '#D9DEE3'] }
 const RAINBOW = ['#5CF2E6', '#6FC8FF', '#A98BFF', '#E58CFF', '#FF8FCB', '#FFD86B', '#9DF5B5']
-const FOIL = ['#9FF7EE', '#B3D9FF', '#D7C2FF', '#FFC2EC', '#FFE9A8', '#C4FFD2']
 const TOP_RARITY = new Set(['ORANGE', 'RAINBOW'])
 const hexA = (c, a) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent)`
 /** What borders, pills and keys are painted with: the rarity's two colours, or for a Mythic a
@@ -509,7 +508,9 @@ const hexA = (c, a) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transpa
 export const rarityBrush = (rarity) => (rarity === 'RAINBOW'
   ? `linear-gradient(115deg, ${[...RAINBOW, ...RAINBOW, RAINBOW[0]].join(', ')})`
   : `linear-gradient(135deg, ${(LOOK[rarity] || LOOK.BOX)[0]}, ${(LOOK[rarity] || LOOK.BOX)[1]})`)
-const FOIL_BORDER = `linear-gradient(115deg, ${[...FOIL, ...FOIL, FOIL[0]].join(', ')})`
+/** A holo tile's glow: these classes, with [glowColors] on its style. */
+export const holoClass = (rarity) => `holo ${TOP_RARITY.has(rarity) ? 'holo-top' : ''}`
+export const glowColors = (rarity) => { const [p, s] = LOOK[rarity] || LOOK.GREEN; return { '--p': p, '--s': s } }
 const STATUS_COLOR = [['extinct', '#B45CFF'], ['critically', '#E53935'], ['endangered', '#FF7A1A'], ['vulnerable', '#E6B800'], ['near threatened', '#9CC23A'], ['least concern', '#3FAF5F']]
 const statusColor = (st) => (STATUS_COLOR.find(([k]) => st.toLowerCase().includes(k)) || [null, '#8A939C'])[1]
 
@@ -884,8 +885,8 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
             const foil = !!c?.cert?.foil
             let timer = null
             return (
-              <div key={`${a.id}#${c?.id ?? ''}`} class={`tile-animal ${picked ? 'picked' : ''} ${foil ? 'holo' : ''} ${foil && TOP_RARITY.has(a.rarity) ? 'holo-top' : ''}`}
-                style={{ borderColor: RARITY_COLOR[a.rarity], '--p': (LOOK[a.rarity] || LOOK.GREEN)[0], '--s': (LOOK[a.rarity] || LOOK.GREEN)[1] }}
+              <div key={`${a.id}#${c?.id ?? ''}`} class={`tile-animal ${picked ? 'picked' : ''} ${foil ? holoClass(a.rarity) : ''}`}
+                style={{ borderColor: RARITY_COLOR[a.rarity], ...glowColors(a.rarity) }}
                 onClick={() => pick(a, c)}
                 onContextMenu={(e) => { e.preventDefault(); if (!trade) startTrade(a, c) }}
                 onPointerDown={() => { if (!trade) timer = setTimeout(() => startTrade(a, c), 500) }}

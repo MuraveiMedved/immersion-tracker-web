@@ -396,8 +396,8 @@ textarea.input { resize: vertical; }
 .tile-animal .count { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
 .tile-animal .count.pick { left: 5px; right: auto; }
 /* A holo copy glows in its rarity's colours - a touch more for Legendary and Mythic - fading to nothing. */
-.tile-animal.holo { box-shadow: 0 0 12px color-mix(in srgb, var(--p) 70%, transparent); }
-.tile-animal.holo-top { box-shadow: 0 0 12px color-mix(in srgb, var(--p) 90%, transparent), 0 0 24px color-mix(in srgb, var(--s) 65%, transparent); }
+.tile-animal.holo, .feed-thumb.holo { box-shadow: 0 0 12px color-mix(in srgb, var(--p) 70%, transparent); }
+.tile-animal.holo-top, .feed-thumb.holo-top { box-shadow: 0 0 12px color-mix(in srgb, var(--p) 90%, transparent), 0 0 24px color-mix(in srgb, var(--s) 65%, transparent); }
 .tile-animal.picked { outline: 3px solid var(--primary); outline-offset: -3px; }
 .egg-card { background: var(--block); border: 1px solid var(--block-line); border-radius: 26px; padding: 20px; margin: 8px 0; }
 .egg-stage { position: relative; width: 140px; height: 140px; margin: 0 auto; display: grid; place-items: center; cursor: pointer; }
@@ -618,7 +618,6 @@ textarea.input { resize: vertical; }
 
 /* ---- Trading cards (the phone's AnimalCard / RarityGlowDialog) ---- */
 .shimmer { background-size: 200% 100%; animation: shimmer 12s linear infinite; }
-.foil-border { background-size: 200% 100%; animation: shimmer 6s linear infinite; }
 @keyframes shimmer { from { background-position: 0% 0; } to { background-position: 100% 0; } }
 .acard-wrap { position: relative; --cut: 54px; }
 .acard-wrap.legendary { filter: drop-shadow(0 0 12px rgba(255, 194, 26, .75)); }

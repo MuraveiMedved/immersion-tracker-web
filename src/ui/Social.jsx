@@ -10,7 +10,7 @@ import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ym
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Bolt, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill, displayEmoji, firstGrapheme } from './common.jsx'
 import { Ring } from './Ring.jsx'
-import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill, FoilSheen } from './Zoo.jsx'
+import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill, FoilSheen, holoClass, glowColors } from './Zoo.jsx'
 import { RARITY_COLOR } from '../model/zoo.js'
 
 const EMOJIS = ['🦊', '🐼', '🐯', '🦁', '🐸', '🐙', '🦉', '🐧', '🐢', '🦄', '🐝', '🦋', '🐳', '🦖', '🐲', '🌸', '⭐', '🔥', '⚡', '🍀', '🍣', '☕', '🎧', '📚']
@@ -1470,7 +1470,7 @@ function ProfileSections({ p }) {
           <div class="pc-title">Zoo · {zoo.length}</div>
           <div class="profile-zoo">
             {(all ? cards : cards.slice(0, 12)).map((c) => (
-              <button key={c.key} class="tile-animal" style={{ borderColor: RARITY_COLOR[c.a.rarity] }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}” · ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c) })}>
+              <button key={c.key} class={`tile-animal ${c.foil ? holoClass(c.a.rarity) : ''}`} style={{ borderColor: RARITY_COLOR[c.a.rarity], ...glowColors(c.a.rarity) }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}” · ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c) })}>
                 <AnimalPhoto animal={c.a} />{c.foil && <FoilSheen seed={c.a.id} />}{c.n > 1 && <span class="count">×{c.n}</span>}
               </button>
             ))}
