@@ -929,24 +929,21 @@ function Discovered({ catalog, copies, onOpen, onClose }) {
   const times = {}
   for (const o of s.zoo.openings) times[o.animalId] = (times[o.animalId] || 0) + 1
   const tiers = [...RARITIES].reverse().map((rarity) => {
-    const all = catalog.filter((a) => a.rarity === rarity)
-    return { rarity, total: all.length, found: all.filter((a) => times[a.id]).sort((a, b) => a.name.localeCompare(b.name)) }
+    return { rarity, found: catalog.filter((a) => a.rarity === rarity && times[a.id]).sort((a, b) => a.name.localeCompare(b.name)) }
   }).filter((t) => t.found.length)
   const found = tiers.reduce((n, t) => n + t.found.length, 0)
   const held = catalog.filter((a) => copies[a.id]).length
   return (
     <Dialog title="Discovered" onClose={onClose} actions={<button class="btn text" onClick={onClose}>Close</button>}>
-      <div class="small muted">{found} of {catalog.length} species discovered · {held} in your collection</div>
-      <div class="discovered-bar">
-        <i style={{ width: `${(found / (catalog.length || 1)) * 100}%`, opacity: 0.35 }} />
-        <i style={{ width: `${(held / (catalog.length || 1)) * 100}%` }} />
-      </div>
-      {tiers.map(({ rarity, total, found: animals }) => (
+      <div class="small muted">{found} discovered · {held} in your collection</div>
+      {/* How much of what's been found is still held - never against the whole catalog. */}
+      <div class="discovered-bar"><i style={{ width: `${(held / (found || 1)) * 100}%` }} /></div>
+      {tiers.map(({ rarity, found: animals }) => (
         <div key={rarity}>
           <div class="discovered-tier">
             <span class={rarity === 'RAINBOW' ? 'shimmer' : ''} style={{ backgroundImage: rarityBrush(rarity) }} />
             <b class="grow">{RARITY_LABEL[rarity]}</b>
-            <span class="small muted">{animals.length} of {total}</span>
+            <span class="small muted">{animals.length}</span>
           </div>
           {animals.map((a) => {
             const copiesHeldNow = copies[a.id]?.length || 0
