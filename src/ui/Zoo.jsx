@@ -920,8 +920,8 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   )
 }
 
-/** Every animal ever found, as a list rather than cards, so it reads as a record and not as what's
- *  held now (ZooDiscovered.kt): rarest first, a heading for each rarity. A row in colour with a tick
+/** Every animal ever found, on a screen of its own - as a list rather than cards, so it reads as a
+ *  record and not as what's held now (ZooDiscovered.kt): rarest first, a heading for each rarity. A row in colour with a tick
  *  is in the collection and opens its card; a grey one was found but isn't held any more. */
 function Discovered({ catalog, copies, onOpen, onClose }) {
   const s = useStore()
@@ -933,8 +933,18 @@ function Discovered({ catalog, copies, onOpen, onClose }) {
   }).filter((t) => t.found.length)
   const found = tiers.reduce((n, t) => n + t.found.length, 0)
   const held = catalog.filter((a) => copies[a.id]).length
-  return (
-    <Dialog title="Discovered" onClose={onClose} actions={<button class="btn text" onClick={onClose}>Close</button>}>
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return createPortal(
+    <div class="discovered-screen">
+      <div class="discovered-page">
+      <div class="row" style="gap:4px;margin:0 0 8px -8px">
+        <button class="icon-btn" title="Back" aria-label="Back" onClick={onClose}><Icon name="arrow_back" /></button>
+        <div class="title-large">Discovered</div>
+      </div>
       <div class="small muted">{found} discovered · {held} in your collection</div>
       {/* How much of what's been found is still held - never against the whole catalog. */}
       <div class="discovered-bar"><i style={{ width: `${(held / (found || 1)) * 100}%` }} /></div>
@@ -964,7 +974,9 @@ function Discovered({ catalog, copies, onOpen, onClose }) {
           })}
         </div>
       ))}
-    </Dialog>
+      </div>
+    </div>,
+    document.body,
   )
 }
 
