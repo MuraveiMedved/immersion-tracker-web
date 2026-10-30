@@ -420,7 +420,7 @@ export function HatchDialog({ kind, onClose, hatch }) {
               <span class={`reveal-banner ${r === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(r), '--p': (LOOK[r] || LOOK.GREEN)[0] }}>
                 {result.copies === 1 ? 'NEW!' : `You now have ×${result.copies}`}{result.cert?.foil ? '  ✦ HOLO!' : ''}
               </span>
-              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} onDisplay={onDisplay} nickname={nametagsOf(s).names[result.animal.id]} /></div>
+              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} onDisplay={onDisplay} nickname={nametagsOf(s).names[result.animal.id]} /></div>
             </div>
           </div>
         </Floaty>

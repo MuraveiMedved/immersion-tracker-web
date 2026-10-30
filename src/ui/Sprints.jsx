@@ -180,7 +180,7 @@ export function PrizeReveal({ result, onClose, onReplay }) {
           <Floaty>
             <div class="col" style="align-items:center">
               <span class="reveal-banner" style={{ backgroundImage: rarityBrush(r), '--p': RARITY_COLOR[r] }}>REWARD!</span>
-              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} onDisplay={onDisplay} /></div>
+              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} onDisplay={onDisplay} /></div>
             </div>
           </Floaty>
         </div>
@@ -284,7 +284,7 @@ export function HoloCelebration({ result, bannerPrefix }) {
       <div class="col" style="align-items:center;position:relative">
         <span class="reveal-banner holo-banner">{bannerPrefix ? `${bannerPrefix}  ` : ''}✦ HOLO! ✦</span>
         <div class="holo-flip">
-          <div class="front"><AnimalCardView animal={result.animal} cert={result.cert} timesFound={result.copies} /></div>
+          <div class="front"><AnimalCardView animal={result.animal} cert={result.cert} /></div>
           <div class="back" />
         </div>
         {tier && <div class={`holo-note tier-${tier.id}`}>{tier.name} Momentum gave it a {tier.holoPercent}% Holo chance</div>}

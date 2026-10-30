@@ -1428,8 +1428,9 @@ function ProfileSections({ p }) {
   // Holo copies aren't stacked with the plain ones (the phone's ZooShowcase): each is a card of its
   // own, ahead of the animal's plain copies (one card, ×N). Without a holo count (an older version),
   // a holo best copy still means one holo card.
+  const holoOf = (id, n) => Math.max(0, Math.min(n, p.holo ? Number(p.holo[id]) || 0 : cert(id)?.foil ? 1 : 0))
   const cards = zoo.flatMap(([a, n]) => {
-    const holo = Math.max(0, Math.min(n, p.holo ? Number(p.holo[a.id]) || 0 : cert(a.id)?.foil ? 1 : 0))
+    const holo = holoOf(a.id, n)
     return [...Array.from({ length: holo }, (_, i) => ({ a, foil: true, n: 1, key: `${a.id}#h${i}` })), ...(n - holo > 0 ? [{ a, foil: false, n: n - holo, key: a.id }] : [])]
   })
   // The best copy's certificate goes with its own kind of card: a holo one on a holo card (a plain
@@ -1470,7 +1471,7 @@ function ProfileSections({ p }) {
           <div class="pc-title">Zoo · {zoo.length}</div>
           <div class="profile-zoo">
             {(all ? cards : cards.slice(0, 12)).map((c) => (
-              <button key={c.key} class={`tile-animal ${c.foil ? holoClass(c.a.rarity) : ''}`} style={{ borderColor: RARITY_COLOR[c.a.rarity], ...glowColors(c.a.rarity) }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}” · ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c) })}>
+              <button key={c.key} class={`tile-animal ${c.foil ? holoClass(c.a.rarity) : ''}`} style={{ borderColor: RARITY_COLOR[c.a.rarity], ...glowColors(c.a.rarity) }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}” · ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c), n: c.n })}>
                 <AnimalPhoto animal={c.a} />{c.foil && <FoilSheen seed={c.a.id} />}{c.n > 1 && <span class="count">×{c.n}</span>}
               </button>
             ))}
@@ -1493,7 +1494,7 @@ function ProfileSections({ p }) {
       {p.updatedAt > 0 && <div class="muted" style="font-size:11px;font-weight:500;letter-spacing:.5px">Updated {agoText(p.updatedAt)}</div>}
       {open && (
         <CardStage rarity={open.animal.rarity} onClose={() => setOpen(null)}>
-          <Floaty><AnimalCardView animal={open.animal} cert={open.cert} timesFound={p.zoo?.[open.animal.id] || 1} nickname={p.names?.[open.animal.id] || null} /></Floaty>
+          <Floaty><AnimalCardView animal={open.animal} cert={open.cert} timesFound={open.n ?? (open.cert?.foil ? 1 : (p.zoo?.[open.animal.id] || 1) - holoOf(open.animal.id, p.zoo?.[open.animal.id] || 1))} nickname={p.names?.[open.animal.id] || null} /></Floaty>
           <GlowPill rarity={open.animal.rarity} onClick={() => setOpen(null)}>Close</GlowPill>
         </CardStage>
       )}
