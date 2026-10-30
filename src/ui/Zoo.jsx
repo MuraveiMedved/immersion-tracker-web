@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow, setSetting } from '../store.js'
 import {
-  loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, backfillHoloMomentum, raiseCertificateHours, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound, setTrophySlot, removeFromTrophyCase, TROPHY_CASE_SIZE,
+  loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, backfillHoloMomentum, raiseCertificateHours, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound, sameFinishCount, setTrophySlot, removeFromTrophyCase, TROPHY_CASE_SIZE,
   RARITIES, RARITY_LABEL, RARITY_COLOR, HOURS_PER_BOX, TRADE_UP_COUNT, LOOT_BOX_ODDS, holoChancePercent, nextRarity, carriesCertificate,
   nametagsOf, nameAnimal, NAMETAG_MAX_LENGTH,
 } from '../model/zoo.js'
@@ -502,6 +502,7 @@ function TradeUpCelebration({ from, to, given, onOpenNow, onClose }) {
 const LOOK = { GREEN: ['#3FBF5F', '#B4F06A'], BLUE: ['#3D8BFF', '#45D4FF'], PURPLE: ['#A64DFF', '#FF5CD6'], ORANGE: ['#FF8A00', '#FFD23F'], RAINBOW: ['#5CF2E6', '#E58CFF'], BOX: ['var(--primary)', 'var(--tertiary)'], NEUTRAL: ['#9AA3AD', '#D9DEE3'] }
 const RAINBOW = ['#5CF2E6', '#6FC8FF', '#A98BFF', '#E58CFF', '#FF8FCB', '#FFD86B', '#9DF5B5']
 const FOIL = ['#9FF7EE', '#B3D9FF', '#D7C2FF', '#FFC2EC', '#FFE9A8', '#C4FFD2']
+const TOP_RARITY = new Set(['ORANGE', 'RAINBOW'])
 const hexA = (c, a) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent)`
 /** What borders, pills and keys are painted with: the rarity's two colours, or for a Mythic a
  *  band of its shimmer sliding along (the .shimmer class moves it). */
@@ -712,7 +713,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
   const hasCert = cert && (cert.hourMark != null || cert.languageName)
   const wrapRef = useRef(null)
   const size = useSize(wrapRef)
-  const border = mythic || foil ? 3 : 2
+  const border = mythic ? 3 : 2
   const tint = usePhotoTint(animal.image)
   // Each card's own wash: its photo's bottom colour running on down into the details and fading,
   // with a faint glow of the rarity in the far corner.
@@ -724,9 +725,10 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
   const outer = mythic && size ? { clipPath: `path('${mythicPath(size[0], size[1])}')` } : {}
   const inner = mythic && size ? { clipPath: `path('${mythicPath(size[0], size[1], border)}')`, borderRadius: 0 } : {}
   return (
-    <div ref={wrapRef} class={`acard-wrap ${animal.rarity === 'ORANGE' ? 'legendary' : ''} ${mythic ? 'mythic' : ''}`} style={{ '--p': p, '--s': s2 }}>
-      <div class={`acard-frame ${mythic ? 'shimmer' : ''} ${foil ? 'foil-border' : ''}`}
-        style={{ backgroundImage: foil ? FOIL_BORDER : rarityBrush(animal.rarity), padding: border, ...outer, ...(mythic ? { borderRadius: 0 } : {}) }}>
+    <div ref={wrapRef} class={`acard-wrap ${animal.rarity === 'ORANGE' ? 'legendary' : ''} ${mythic ? 'mythic' : ''} ${foil ? 'holo' : ''}`} style={{ '--p': p, '--s': s2 }}>
+      {/* A foil copy keeps its rarity's border and glows in that colour instead (.holo). */}
+      <div class={`acard-frame ${mythic ? 'shimmer' : ''}`}
+        style={{ backgroundImage: rarityBrush(animal.rarity), padding: border, ...outer, ...(mythic ? { borderRadius: 0 } : {}) }}>
         <div class="acard" style={inner}>
           <div class="photo">
             <AnimalPhoto animal={animal} />
@@ -818,25 +820,22 @@ export function GlowPill({ rarity, onClick, children, disabled, solid }) {
   )
 }
 
-/** Only animals held (no silhouettes of the rest), rarest first - like the phone; the eye button
- *  adds the ones found but since traded away, greyed out. A long-press (or right-click) on one
- *  starts a trade-up of its tier. */
+/** Only animals held, rarest first - like the phone; everything ever found is in Discovered, behind
+ *  the book button. A long-press (or right-click) on one starts a trade-up of its tier. */
 function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   const names = nametagsOf(useStore()).names
   const columns = Math.min(5, Math.max(2, useStore().settings.zooColumns || 4))
-  const showLost = !!useStore().settings.zooShowLost
   const [open, setOpen] = useState(null)
   // The copy whose card was tapped - the dialog opens on it.
   const [openCopy, setOpenCopy] = useState(null)
-  const held = Object.keys(copies).length
-  const anyLost = catalog.some((a) => found.has(a.id) && !copies[a.id])
+  const [discovered, setDiscovered] = useState(false)
+  const held = catalog.filter((a) => copies[a.id]).length
   const list = catalog
-    .filter((a) => copies[a.id] || (showLost && found.has(a.id)))
+    .filter((a) => copies[a.id])
     .filter((a) => !trade || a.rarity === trade.from)
     .sort((a, b) => RARITIES.indexOf(b.rarity) - RARITIES.indexOf(a.rarity) || a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-  // Duplicates don't stack (the phone's ZooScreen cards): every copy held is its own card, best
-  // first; an animal no longer held, however many copies it once had, is one grey card.
-  const cards = list.flatMap((a) => (copies[a.id]?.length ? copies[a.id].map((c, i) => ({ a, c, first: i === 0 })) : [{ a, c: null, first: true }]))
+  // Duplicates don't stack (the phone's ZooScreen cards): every copy held is its own card, best first.
+  const cards = list.flatMap((a) => copies[a.id].map((c, i) => ({ a, c, first: i === 0 })))
 
   // A trade-up's picks are copies: { animalId, copyId } - a tap picks that card, or unpicks it.
   const startTrade = (a, c) => {
@@ -862,12 +861,10 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
     <>
       <div class="row collection-head">
         <div class="section-header grow">Collection · {held}</div>
-        {/* Show or hide the animals found before but no longer held - only once there are some. */}
-        {anyLost && (
-          <button class="col-pick lost-toggle" title={showLost ? 'Hide animals you no longer have' : 'Show animals you no longer have'}
-            aria-label={showLost ? 'Hide animals you no longer have' : 'Show animals you no longer have'} aria-pressed={showLost}
-            onClick={() => setSetting('zooShowLost', !showLost)}>
-            <Icon name={showLost ? 'visibility' : 'visibility_off'} size={16} />
+        {/* Everything ever found, held or not. */}
+        {found.size > 0 && (
+          <button class="col-pick discovered-btn" title="Discovered" aria-label="Discovered" onClick={() => setDiscovered(true)}>
+            <Icon name="book" size={16} />
           </button>
         )}
         {/* Cards per row, 2 to 5. */}
@@ -887,7 +884,8 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
             const foil = !!c?.cert?.foil
             let timer = null
             return (
-              <div key={`${a.id}#${c?.id ?? ''}`} class={`tile-animal ${!c ? 'gone' : ''} ${picked ? 'picked' : ''} ${foil ? 'foil-tile' : ''}`} style={{ borderColor: RARITY_COLOR[a.rarity] }}
+              <div key={`${a.id}#${c?.id ?? ''}`} class={`tile-animal ${picked ? 'picked' : ''} ${foil ? 'holo' : ''} ${foil && TOP_RARITY.has(a.rarity) ? 'holo-top' : ''}`}
+                style={{ borderColor: RARITY_COLOR[a.rarity], '--p': (LOOK[a.rarity] || LOOK.GREEN)[0], '--s': (LOOK[a.rarity] || LOOK.GREEN)[1] }}
                 onClick={() => pick(a, c)}
                 onContextMenu={(e) => { e.preventDefault(); if (!trade) startTrade(a, c) }}
                 onPointerDown={() => { if (!trade) timer = setTimeout(() => startTrade(a, c), 500) }}
@@ -913,11 +911,63 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
           </div>
         </div>
       )}
+      {discovered && <Discovered catalog={catalog} copies={copies} onOpen={(a) => { setOpen(a); setOpenCopy(null) }} onClose={() => setDiscovered(false)} />}
       {celebrate && <TradeUpCelebration {...celebrate} onClose={() => setCelebrate(null)} onOpenNow={() => { setHatchNow(celebrate.to); setCelebrate(null) }} />}
       {hatchNow && <HatchDialog kind={hatchNow} onClose={() => setHatchNow(null)} />}
       {open && <AnimalDialog animal={open} copies={copies[open.id] || []} initialCopyId={openCopy} trophyId={trophyId} onClose={() => setOpen(null)}
         onTrade={() => { setOpen(null); startTrade(open, (copies[open.id] || []).at(-1)) }} />}
     </>
+  )
+}
+
+/** Every animal ever found, as a list rather than cards, so it reads as a record and not as what's
+ *  held now (ZooDiscovered.kt): rarest first, a heading for each rarity. A row in colour with a tick
+ *  is in the collection and opens its card; a grey one was found but isn't held any more. */
+function Discovered({ catalog, copies, onOpen, onClose }) {
+  const s = useStore()
+  const names = nametagsOf(s).names
+  const times = {}
+  for (const o of s.zoo.openings) times[o.animalId] = (times[o.animalId] || 0) + 1
+  const tiers = [...RARITIES].reverse().map((rarity) => {
+    const all = catalog.filter((a) => a.rarity === rarity)
+    return { rarity, total: all.length, found: all.filter((a) => times[a.id]).sort((a, b) => a.name.localeCompare(b.name)) }
+  }).filter((t) => t.found.length)
+  const found = tiers.reduce((n, t) => n + t.found.length, 0)
+  const held = catalog.filter((a) => copies[a.id]).length
+  return (
+    <Dialog title="Discovered" onClose={onClose} actions={<button class="btn text" onClick={onClose}>Close</button>}>
+      <div class="small muted">{found} of {catalog.length} species discovered · {held} in your collection</div>
+      <div class="discovered-bar">
+        <i style={{ width: `${(found / (catalog.length || 1)) * 100}%`, opacity: 0.35 }} />
+        <i style={{ width: `${(held / (catalog.length || 1)) * 100}%` }} />
+      </div>
+      {tiers.map(({ rarity, total, found: animals }) => (
+        <div key={rarity}>
+          <div class="discovered-tier">
+            <span class={rarity === 'RAINBOW' ? 'shimmer' : ''} style={{ backgroundImage: rarityBrush(rarity) }} />
+            <b class="grow">{RARITY_LABEL[rarity]}</b>
+            <span class="small muted">{animals.length} of {total}</span>
+          </div>
+          {animals.map((a) => {
+            const copiesHeldNow = copies[a.id]?.length || 0
+            const holo = !!copies[a.id]?.some((c) => c.cert?.foil)
+            const [p, s2] = LOOK[a.rarity] || LOOK.GREEN
+            return (
+              <div key={a.id} class={`discovered-row ${copiesHeldNow ? '' : 'gone'}`} role={copiesHeldNow ? 'button' : undefined} onClick={() => copiesHeldNow && onOpen(a)}>
+                <span class="thumb"><AnimalPhoto animal={a} /></span>
+                <div class="grow" style="min-width:0">
+                  <div class="name ellipsis">{holo ? '✦ ' : ''}{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
+                  <div class="tiny muted">{times[a.id] > 1 ? `Found ${times[a.id]} times` : 'Found once'}</div>
+                </div>
+                {copiesHeldNow
+                  ? <span class="status" style={{ background: `linear-gradient(90deg, ${hexA(p, 0.22)}, ${hexA(s2, 0.22)})` }}><Icon name="check" size={13} />In collection{copiesHeldNow > 1 ? ` ×${copiesHeldNow}` : ''}</span>
+                  : <span class="tiny muted">Not held</span>}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </Dialog>
   )
 }
 
@@ -1004,7 +1054,7 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade, initialCopyI
   const confirmName = () => { if (canSave && nameAnimal(animal.id, trimmed)) setPreview(null) }
   return (
     <CardStage rarity={r} onClose={onClose}>
-      <Floaty><AnimalCardView animal={animal} cert={copy?.cert} timesFound={copies.length} onDisplay={trophyId === animal.id}
+      <Floaty><AnimalCardView animal={animal} cert={copy?.cert} timesFound={sameFinishCount(copies, !!copy?.cert?.foil)} onDisplay={trophyId === animal.id}
         nickname={trimmed || nickname || null} onNameClick={copies.length ? () => setPreview(preview ?? nickname ?? '') : null} /></Floaty>
       {preview != null ? (
         <div class="name-form" onClick={(e) => e.stopPropagation()}>

@@ -45,7 +45,6 @@ export function defaultState() {
       zooColumns: 4,
       // Whether the Zoo collection also lists animals found but no longer held (the eye button; the
       // phone's ZooRepository.showLost) - per device, not synced.
-      zooShowLost: false,
       showAnkiOnHome: true,
       resumeHideMinutes: 60,
       // Recent manual sessions taken out of Add a session with their logs kept: key -> when (see

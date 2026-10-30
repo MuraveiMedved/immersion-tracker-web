@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { eggEntries, eggsToTakeBack } from '../src/model/zoo.js'
+import { eggEntries, eggsToTakeBack, sameFinishCount } from '../src/model/zoo.js'
 import { missingCount } from '../src/model/sync.js'
 
 const HOUR = 3600000
@@ -79,4 +79,12 @@ test('a Zoo with no imported old history is never touched', async () => {
   replaceState(s)
   assert.equal(takeBackEarlyEggs(), false)
   assert.equal(getState().zoo.openings.length, 3)
+})
+
+test('a holo and a plain copy are not counted together', () => {
+  const plain = { id: 'a', cert: null }
+  const holo = { id: 'b', cert: { foil: true } }
+  assert.equal(sameFinishCount([holo, plain], true), 1)
+  assert.equal(sameFinishCount([holo, plain], false), 1)
+  assert.equal(sameFinishCount([holo, plain, { id: 'c' }], false), 2)
 })

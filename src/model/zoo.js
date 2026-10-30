@@ -133,6 +133,10 @@ export function copiesHeld(s) {
   return out
 }
 
+/** How many of [copies] are alike: holo or not. A holo and a plain copy are different cards, so a
+ *  card's "×N" counts only its own kind (the phone's sameFinishCount). */
+export const sameFinishCount = (copies, foil) => copies.filter((c) => !!c.cert?.foil === foil).length
+
 export const everFound = (s) => new Set(s.zoo.openings.map((o) => o.animalId))
 
 /* ------------------------------------------------------------------------------------------------
