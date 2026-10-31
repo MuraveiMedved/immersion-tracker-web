@@ -926,7 +926,6 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
  *  is in the collection and opens its card; a grey one was found but isn't held any more. */
 function Discovered({ catalog, copies, onOpen, onClose }) {
   const s = useStore()
-  const names = nametagsOf(s).names
   const times = {}
   for (const o of s.zoo.openings) times[o.animalId] = (times[o.animalId] || 0) + 1
   const tiers = [...RARITIES].reverse().map((rarity) => {
@@ -947,8 +946,6 @@ function Discovered({ catalog, copies, onOpen, onClose }) {
         <div class="title-large">Discovered</div>
       </div>
       <div class="small muted">{found} discovered · {held} in your collection</div>
-      {/* How much of what's been found is still held - never against the whole catalog. */}
-      <div class="discovered-bar"><i style={{ width: `${(held / (found || 1)) * 100}%` }} /></div>
       {tiers.map(({ rarity, found: animals }) => (
         <div key={rarity}>
           <div class="discovered-tier">
@@ -964,7 +961,7 @@ function Discovered({ catalog, copies, onOpen, onClose }) {
               <div key={a.id} class={`discovered-row ${copiesHeldNow ? '' : 'gone'}`} role={copiesHeldNow ? 'button' : undefined} onClick={() => copiesHeldNow && onOpen(a)}>
                 <span class="thumb"><AnimalPhoto animal={a} /></span>
                 <div class="grow" style="min-width:0">
-                  <div class="name ellipsis">{holo ? '✦ ' : ''}{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
+                  <div class="name ellipsis">{holo ? '✦ ' : ''}{a.name}</div>
                   <div class="tiny muted">{times[a.id] > 1 ? `Found ${times[a.id]} times` : 'Found once'}</div>
                 </div>
                 {copiesHeldNow
