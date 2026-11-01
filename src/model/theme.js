@@ -136,6 +136,12 @@ export function applyTheme(preset) {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', vars['--bg'])
 }
 
+/** The experimental Ledger look (ledger.css) - per device, not synced. */
+export function applyLook(ledger) {
+  if (ledger) document.documentElement.dataset.ui = 'ledger'
+  else delete document.documentElement.dataset.ui
+}
+
 export const luminance = (hex) => {
   const [r, g, b] = hexToRgb(hex).map((v) => {
     v /= 255

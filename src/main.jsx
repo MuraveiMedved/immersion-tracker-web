@@ -1,8 +1,9 @@
 import { render } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import './styles.css'
+import './ledger.css'
 import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
-import { applyTheme } from './model/theme.js'
+import { applyTheme, applyLook } from './model/theme.js'
 import { sync, syncIfStale, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
 import { ensureBase, recordEarnedEggs, backfillHoloMomentum, takeBackEarlyEggs } from './model/zoo.js'
 import * as syncModule from './model/sync.js'
@@ -44,6 +45,7 @@ function App() {
   // level in (Settings > Appearance, say) goes back to the top.
   const [visit, setVisit] = useState(0)
   useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset])
+  useEffect(() => applyLook(s.settings.ledgerUi), [s.settings.ledgerUi])
   useEffect(() => {
     const onHash = () => setRoute({ tab: location.hash.slice(1) || 'home', params: null })
     window.addEventListener('hashchange', onHash)
@@ -134,6 +136,7 @@ if (import.meta.env.DEV) window.__tracker = { getState, update, sync: syncModule
 
 loadState().then(() => {
   applyTheme(getState().settings.uiColorPreset)
+  applyLook(getState().settings.ledgerUi)
   ensureBase()
   render(<App />, document.getElementById('app'))
   startBackgroundWork()

@@ -57,6 +57,8 @@ export function defaultState() {
       entryThresholdEnabled: false,
       entryThresholdSeconds: 30,
       uiColorPreset: 'SLATE',
+      // The experimental Ledger look. Per device, not synced.
+      ledgerUi: false,
       ringStyle: 'CLASSIC',
       titleStyleMode: 'DEFAULT',
       goalCardStyleMode: 'LANGUAGE_COLOR',

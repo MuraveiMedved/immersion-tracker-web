@@ -530,6 +530,8 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
     ? `linear-gradient(135deg, ${stops.map((c) => dimColor(c, sat, val, light)).join(', ')})`
     : dimColor(profile.colorHex, sat, val, light)
   const outline = active ? (grey ? 'var(--block-line)' : withAlpha(profile.colorHex, 0.6)) : 'transparent'
+  // Ledger's goal column: the line across its top (ledger.css).
+  const rule = multi ? `linear-gradient(90deg, ${stops.join(', ')})` : profile.colorHex
   const nameStyle = multi
     ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
     : { color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
@@ -539,7 +541,7 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
     .filter(([, g]) => g > 0)
   return (
     <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''}`}
-      data-goal-id={profile.id} style={{ background: bg, borderColor: outline }} onClick={onOpen} role="button">
+      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-rule': rule, '--goal-wash': active ? withAlpha(profile.colorHex, 0.14) : 'transparent' }} onClick={onOpen} role="button">
       {onToggleStacked && (
         <button class="rings-toggle" title={wide ? 'Rings stacked' : 'Rings side by side'} onClick={(ev) => { ev.stopPropagation(); onToggleStacked() }}>
           <Icon name="screen_rotation" size={20} />
