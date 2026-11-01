@@ -749,7 +749,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
   const visible = expanded ? presets : presets.slice(0, RECENT_SESSIONS_PREVIEW_COUNT)
 
   return (
-    <Dialog title={fixedLanguage ? `Add a session · ${fixedLanguage.name}` : 'Add a session'} sheet={false} onClose={onClose} actions={<>
+    <Dialog title={fixedLanguage ? `Add a session · ${fixedLanguage.name}` : 'Add a session'} sheet={false} normalLook onClose={onClose} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
       <button class="btn" disabled={!canSubmit} onClick={submit}><Icon name={saving ? 'check' : 'play_arrow'} size={18} />{saving ? 'Save' : 'Start'}</button>
     </>}>

@@ -132,10 +132,20 @@ function Race({ onEditName, onOpenMe }) {
   const completedOpen = completedChoice ?? !running.length
   const activityText = { REFRESHING: 'Updating standings…', JOINING: 'Joining race…', SENDING_FINAL: 'Sending your final total…', CREATING: 'Creating race…', LEAVING: 'Leaving race…', ENDING: 'Ending race…', EDITING: 'Saving changes…' }[status.activity]
 
+  const raceMenuItems = (close) => <>
+    <button onClick={() => { close(); setJoin(true) }}><Icon name="flag" size={20} />Join with a code</button>
+    <button onClick={() => { close(); setCreate(true) }}><Icon name="add" size={20} />New event</button>
+    <button onClick={() => { close(); sync() }}><Icon name="refresh" size={20} />Refresh</button>
+    <button onClick={() => { close(); setSettings(true) }}><Icon name="brush" size={20} />Race settings</button>
+    <button onClick={() => { close(); onEditName() }}><Icon name="edit" size={20} />Name &amp; emoji</button>
+  </>
+  const foldRacerLine = s.settings.quietUi && !!shownRace
+
   return (
     <div style="margin-top:14px">
-      {/* The phone's header: who you race as (tap to change), how fresh the standings are, then add / settings. */}
-      <div class="row" style="margin-right:-12px">
+      {/* The phone's header: who you race as (tap to change), how fresh the standings are, then add / settings.
+          The redesign folds it into the race's own menu; with no race showing there's no menu to fold it into. */}
+      {!foldRacerLine && <div class="row" style="margin-right:-12px">
         <div class="grow clickable" style="min-width:0" onClick={onEditName}>
           <div class="title-medium ellipsis">Racing as {s.race.emoji ? `${displayEmoji(s.race.emoji)} ` : ''}{s.race.name}</div>
           <div class="muted ellipsis" style="font-size:11px">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)} · tap to change name` : 'Tap to change name'}</div>
@@ -145,15 +155,11 @@ function Race({ onEditName, onOpenMe }) {
           <button class="icon-btn" title="More options" onClick={() => setHeaderMenu(!headerMenu)}><Icon name="more_vert" /></button>
           {headerMenu && (
             <div class="menu" onMouseLeave={() => setHeaderMenu(false)}>
-              <button onClick={() => { setHeaderMenu(false); setJoin(true) }}><Icon name="flag" size={20} />Join with a code</button>
-              <button onClick={() => { setHeaderMenu(false); setCreate(true) }}><Icon name="add" size={20} />New event</button>
-              <button onClick={() => { setHeaderMenu(false); sync() }}><Icon name="refresh" size={20} />Refresh</button>
-              <button onClick={() => { setHeaderMenu(false); setSettings(true) }}><Icon name="brush" size={20} />Race settings</button>
-              <button onClick={() => { setHeaderMenu(false); onEditName() }}><Icon name="edit" size={20} />Name &amp; emoji</button>
+              {raceMenuItems(() => setHeaderMenu(false))}
             </div>
           )}
         </div>
-      </div>
+      </div>}
       {status.error && (
         <div class="notice section">
           {errorText(status.error)} {s.race.lastSync ? 'The standings below are from the last successful update.' : ''}
@@ -177,7 +183,13 @@ function Race({ onEditName, onOpenMe }) {
         </div>
       )}
       {inPlay.length > 1 && <RacePicker events={inPlay} selectedId={shownRace?.id} me={me} now={now} onSelect={setPickedRace} />}
-      {shownRace && <RaceCard key={shownRace.id} event={shownRace} now={now} onOpenMe={onOpenMe} />}
+      {shownRace && <RaceCard key={shownRace.id} event={shownRace} now={now} onOpenMe={onOpenMe} menuExtras={foldRacerLine ? (close) => <>
+        <button onClick={() => { close(); onEditName() }}><span class="grow" style="text-align:left;min-width:0">
+          <span class="ellipsis" style="display:block">Racing as {s.race.emoji ? `${displayEmoji(s.race.emoji)} ` : ''}{s.race.name}</span>
+          {s.race.lastSync && <span class="muted" style="display:block;font-size:12px">Updated {agoText(s.race.lastSync, now)}</span>}
+        </span></button>
+        {raceMenuItems(close)}
+      </> : null} />}
       {done.length > 0 && <>
         <button class="completed-row" onClick={() => setCompletedChoice(!completedOpen)}>
           <Icon name="emoji_events" size={18} color="var(--tertiary)" />
@@ -259,7 +271,7 @@ function bestDayOf(st) {
 
 function RankMedal({ rank, big = false }) {
   const medal = rank === 1 ? GOLD : rank === 2 ? SILVER : rank === 3 ? BRONZE : null
-  return <span class={`rank-medal ${big ? 'big' : ''}`} style={medal ? { background: medal, color: '#1A1B3A' } : {}}>{rank}</span>
+  return <span class={`rank-medal ${big ? 'big' : ''}`} style={medal ? { background: medal, color: '#1A1B3A', '--medal': medal } : {}}>{rank}</span>
 }
 
 /** How much of the race goal is done: a ring that fills round to `fraction`, with `label` inside (the phone's GoalRing). */
@@ -408,7 +420,7 @@ function withMyLive(event, me, entries, now) {
   return { ...event, standings: event.standings.map((x) => (x.userId === me ? { ...x, active: !!running, activeKind: activeKindOf(running), updatedAt: now } : x)) }
 }
 
-function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
+function RaceCard({ event: raw, now: tickNow, completed, onOpenMe, menuExtras }) {
   const s = useStore()
   const me = s.race.userId
   // Ticks every 30s for countdowns; your own live tag follows the store straight away.
@@ -477,16 +489,17 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
         </div>
         {countdown && <CardTag text={countdown} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
         {/* Everything else about the race is occasional, so it's all in the one menu. */}
-        {joined && (
+        {(joined || menuExtras) && (
           <div style="position:relative">
             <button class="icon-btn muted" title="More options" onClick={() => setMenu(!menu)}><Icon name="more_vert" /></button>
             {menu && (
               <div class="menu" onMouseLeave={() => setMenu(false)}>
                 {event.code && <button onClick={() => { setMenu(false); share(`Join my race "${event.name}" in Immersion Tracker: Social → Race → Join with a code → ${event.code}`) }}><Icon name="share" size={20} />Code {event.code}</button>}
                 {isCreator && <button onClick={() => { setMenu(false); setEdit(true) }}>Edit event</button>}
-                <button onClick={() => { setMenu(false); setConfirm('leave') }}>Leave</button>
+                {joined && <button onClick={() => { setMenu(false); setConfirm('leave') }}>Leave</button>}
                 {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('end') }}>End event</button>}
                 {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('deleteAll') }}>Delete for everyone</button>}
+                {menuExtras && <><div class="divider" style="margin:6px 0" />{menuExtras(() => setMenu(false))}</>}
               </div>
             )}
           </div>

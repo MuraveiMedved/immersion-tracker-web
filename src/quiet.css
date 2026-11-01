@@ -16,8 +16,8 @@
 :root[data-ui='quiet'] body { font-size: 13px; line-height: 18px; letter-spacing: .1px; font-variant-numeric: tabular-nums; }
 :root[data-ui='quiet'] h1, :root[data-ui='quiet'] .page-title, :root[data-ui='quiet'] .cos-head { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.2px; }
 :root[data-ui='quiet'] .race-title, :root[data-ui='quiet'] .title-large { font-size: 18px; line-height: 24px; font-weight: 500; }
-:root[data-ui='quiet'] h2, :root[data-ui='quiet'] .title-medium, :root[data-ui='quiet'] .fold-title, :root[data-ui='quiet'] .setting .s-title, :root[data-ui='quiet'] .goal-card .name { font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: 0; }
-:root[data-ui='quiet'] .section-title h2, :root[data-ui='quiet'] .today-row h2, :root[data-ui='quiet'] .section-header, :root[data-ui='quiet'] .day-head {
+:root[data-ui='quiet'] h2:not(.normal-look *), :root[data-ui='quiet'] .title-medium:not(.normal-look *), :root[data-ui='quiet'] .fold-title:not(.normal-look *), :root[data-ui='quiet'] .setting .s-title:not(.normal-look *), :root[data-ui='quiet'] .goal-card .name:not(.normal-look *) { font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: 0; }
+:root[data-ui='quiet'] .section-title h2:not(.normal-look *), :root[data-ui='quiet'] .today-row h2:not(.normal-look *), :root[data-ui='quiet'] .section-header:not(.normal-look *), :root[data-ui='quiet'] .day-head:not(.normal-look *) {
   font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant);
 }
 :root[data-ui='quiet'] .home-head { align-items: center; }
@@ -44,7 +44,7 @@
 }
 
 /* Containers come apart into ruled rows. */
-:root[data-ui='quiet'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row, .friend-row) {
+:root[data-ui='quiet'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row, .friend-row):not(.normal-look *) {
   background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; margin: 0; padding-left: 0; padding-right: 0;
 }
 :root[data-ui='quiet'] .race-card, :root[data-ui='quiet'] .profile-card { border-bottom: 0; }
@@ -56,9 +56,9 @@
 :root[data-ui='quiet'] .section-band { background: transparent; border-top: 1px solid var(--rule); border-radius: 0; padding: 12px 0; }
 :root[data-ui='quiet'] .notice { background: transparent; border-radius: 0; border-bottom: 1px solid var(--rule); padding: 8px 0; }
 :root[data-ui='quiet'] .person-hero { background: transparent; border-bottom: 1px solid var(--rule); border-radius: 0; padding-left: 0; padding-right: 0; }
-:root[data-ui='quiet'] .entry { padding-top: 9px; padding-bottom: 9px; position: relative; }
-:root[data-ui='quiet'] .entry::after { content: ''; position: absolute; left: 50px; right: 20px; bottom: 0; height: 1px; background: var(--rule); }
-:root[data-ui='quiet'] .entry .title { font-size: 15px; line-height: 21px; }
+:root[data-ui='quiet'] .entry:not(.normal-look *) { padding-top: 9px; padding-bottom: 9px; position: relative; }
+:root[data-ui='quiet'] .entry::after:not(.normal-look *) { content: ''; position: absolute; left: 50px; right: 20px; bottom: 0; height: 1px; background: var(--rule); }
+:root[data-ui='quiet'] .entry .title:not(.normal-look *) { font-size: 15px; line-height: 21px; }
 
 /* Goals keep their rounded shape, a thin sheet; only what's being tracked takes any colour. */
 :root[data-ui='quiet'] .goal-card {
@@ -72,16 +72,16 @@
 
 /* Recent, folded under its heading on Home. */
 :root[data-ui='quiet'] .recent-fold { padding: 12px 0; border-bottom: 1px solid var(--rule); }
-:root[data-ui='quiet'] .recent-fold h2 { font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
-:root[data-ui='quiet'] .home-divider, :root[data-ui='quiet'] .divider { background: transparent; margin: 8px 0; }
+:root[data-ui='quiet'] .recent-fold h2:not(.normal-look *) { font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .home-divider:not(.normal-look *), :root[data-ui='quiet'] .divider:not(.normal-look *) { background: transparent; margin: 8px 0; }
 
 /* Race: a ruled table. Places are plain figures, the bar a thread, your line a short accent mark. */
 :root[data-ui='quiet'] .standing-row { position: relative; background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 10px; }
 :root[data-ui='quiet'] .standing-row.me { background: transparent; border: 0; border-bottom: 1px solid var(--rule); padding: 10px; }
 :root[data-ui='quiet'] .standing-row.me::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; background: var(--primary); }
-:root[data-ui='quiet'] .rank-medal { width: 20px; height: auto; background: transparent !important; border: 0; font-size: 15px; font-weight: 500; }
+:root[data-ui='quiet'] .rank-medal { width: 20px; height: auto; background: transparent !important; color: var(--medal, var(--on-surface-variant)) !important; border: 0; font-size: 15px; font-weight: 500; }
 :root[data-ui='quiet'] .split-bar { height: 3px !important; }
-:root[data-ui='quiet'] :is(.live-badge, .stale-badge, .card-tag, .place-pill, .now-tag) { background: transparent; border: 0; padding-left: 0; padding-right: 0; }
+:root[data-ui='quiet'] :is(.live-badge, .stale-badge, .card-tag, .place-pill, .now-tag) { background: transparent !important; border: 0; padding-left: 0; padding-right: 0; }
 :root[data-ui='quiet'] .race-picker { gap: 14px; }
 :root[data-ui='quiet'] .race-picker button { background: transparent; border-radius: 0; padding: 8px 2px; color: var(--on-surface-variant); }
 :root[data-ui='quiet'] .race-picker button.on { background: transparent; color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
@@ -90,22 +90,22 @@
 :root[data-ui='quiet'] :is(.setting .badge-ico, .fold-row .badge-ico, .side-menu-item .badge-ico, .cos-badge, .icon-badge) {
   background: transparent !important; color: var(--on-surface-variant); width: 32px;
 }
-:root[data-ui='quiet'] :is(.entry .dur, .dur-pill, .col-pick, .cert span, .code-pill) { background: transparent; padding-left: 0; padding-right: 0; }
-:root[data-ui='quiet'] .lang-chip { background: transparent !important; border: 0 !important; color: var(--on-surface) !important; height: auto; padding: 0; font-weight: 500; }
+:root[data-ui='quiet'] :is(.entry .dur, .dur-pill, .col-pick, .cert span, .code-pill):not(.normal-look *) { background: transparent; padding-left: 0; padding-right: 0; }
+:root[data-ui='quiet'] .lang-chip:not(.normal-look *) { background: transparent !important; border: 0 !important; color: var(--on-surface) !important; height: auto; padding: 0; font-weight: 500; }
 
 /* Tabs and filters are words; the picked one has a heavier line. */
-:root[data-ui='quiet'] :is(.seg, .standings-switch) { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 0; gap: 0; }
-:root[data-ui='quiet'] :is(.seg, .standings-switch) button { background: transparent; border-radius: 0; color: var(--on-surface-variant); padding: 10px 0; }
-:root[data-ui='quiet'] :is(.seg, .standings-switch) button.on { background: transparent; color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
-:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter) { background: transparent !important; border: 0 !important; border-radius: 0; color: var(--on-surface-variant) !important; padding: 6px 2px; margin-right: 8px; height: auto; font-weight: 500; }
-:root[data-ui='quiet'] :is(.pill-toggle.on, .chip.on, .lang-filter.on) { color: var(--on-surface) !important; box-shadow: inset 0 -2px 0 var(--on-surface); }
+:root[data-ui='quiet'] :is(.seg, .standings-switch):not(.normal-look *) { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 0; gap: 0; }
+:root[data-ui='quiet'] :is(.seg, .standings-switch) button:not(.normal-look *) { background: transparent; border-radius: 0; color: var(--on-surface-variant); padding: 10px 0; }
+:root[data-ui='quiet'] :is(.seg, .standings-switch) button.on:not(.normal-look *) { background: transparent; color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
+:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter):not(.normal-look *) { background: transparent !important; border: 0 !important; border-radius: 0; color: var(--on-surface-variant) !important; padding: 6px 2px; margin-right: 8px; height: auto; font-weight: 500; }
+:root[data-ui='quiet'] :is(.pill-toggle.on, .chip.on, .lang-filter.on):not(.normal-look *) { color: var(--on-surface) !important; box-shadow: inset 0 -2px 0 var(--on-surface); }
 
 /* Even the main action is quiet: a faint fill and plain text, soft small corners. */
-:root[data-ui='quiet'] :is(.btn:not(.text):not(.outline), .glow-pill) { background: var(--quiet-fill); color: var(--on-surface); box-shadow: none; font-weight: 500; }
-:root[data-ui='quiet'] :is(.btn, .glow-pill, .sel-bar, .type-pill) { border-radius: 10px; }
-:root[data-ui='quiet'] .glow-pill { height: 36px; font-size: 13px; }
-:root[data-ui='quiet'] .btn.text { color: var(--on-surface); }
-:root[data-ui='quiet'] .btn.danger:not(.text) { color: var(--danger); }
+:root[data-ui='quiet'] :is(.btn:not(.text):not(.outline), .glow-pill):not(.normal-look *) { background: var(--quiet-fill); color: var(--on-surface); box-shadow: none; font-weight: 500; }
+:root[data-ui='quiet'] :is(.btn, .glow-pill, .sel-bar, .type-pill):not(.normal-look *) { border-radius: 10px; }
+:root[data-ui='quiet'] .glow-pill:not(.normal-look *) { height: 36px; font-size: 13px; }
+:root[data-ui='quiet'] .btn.text:not(.normal-look *) { color: var(--on-surface); }
+:root[data-ui='quiet'] .btn.danger:not(.text):not(.normal-look *) { color: var(--danger); }
 :root[data-ui='quiet'] .egg-glow { display: none; }
 
 /* Appearance: the categories as a row of words, tiles outlined rather than filled. */
@@ -118,24 +118,24 @@
 :root[data-ui='quiet'] .cos-tile.on { background: transparent; border-color: var(--on-surface); }
 
 /* Forms: picked options are a faint grey and the word, not a block of accent. */
-:root[data-ui='quiet'] :is(.type-pill, .type-btn) { background: transparent; border: 1px solid var(--rule); color: var(--on-surface-variant); }
-:root[data-ui='quiet'] :is(.type-pill.on, .type-btn.on) { background: var(--quiet-fill); border-color: var(--rule); color: var(--on-surface); }
-:root[data-ui='quiet'] .recent-session { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--rule) !important; border-radius: 0; }
-:root[data-ui='quiet'] .title-field, :root[data-ui='quiet'] .input { background: transparent; }
-:root[data-ui='quiet'] .icon-btn.filled { background: transparent; border: 1px solid var(--rule); }
-:root[data-ui='quiet'] .color-tile { background: transparent; border-color: var(--rule); }
+:root[data-ui='quiet'] :is(.type-pill, .type-btn):not(.normal-look *) { background: transparent; border: 1px solid var(--rule); color: var(--on-surface-variant); }
+:root[data-ui='quiet'] :is(.type-pill.on, .type-btn.on):not(.normal-look *) { background: var(--quiet-fill); border-color: var(--rule); color: var(--on-surface); }
+:root[data-ui='quiet'] .recent-session:not(.normal-look *) { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--rule) !important; border-radius: 0; }
+:root[data-ui='quiet'] .title-field:not(.normal-look *), :root[data-ui='quiet'] .input:not(.normal-look *) { background: transparent; }
+:root[data-ui='quiet'] .icon-btn.filled:not(.normal-look *) { background: transparent; border: 1px solid var(--rule); }
+:root[data-ui='quiet'] .color-tile:not(.normal-look *) { background: transparent; border-color: var(--rule); }
 
 /* Tiles on a profile or in a pop-up are figures on the page, not boxes. */
 :root[data-ui='quiet'] .profile-banner { background: transparent !important; border-bottom: 1px solid var(--rule); border-radius: 0; }
 :root[data-ui='quiet'] .side-menu-item { background: transparent; }
 
 /* Whatever's small to look at still has a comfortable area to hit (44px, the phone's 44dp). */
-:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter) { min-height: 44px; padding: 6px 8px; margin-right: 0; display: inline-flex; align-items: center; }
+:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter):not(.normal-look *) { min-height: 44px; padding: 6px 8px; margin-right: 0; display: inline-flex; align-items: center; }
 :root[data-ui='quiet'] .momentum { min-height: 44px; padding: 2px 8px; }
 :root[data-ui='quiet'] .col-pick { min-height: 44px; padding: 6px; }
 :root[data-ui='quiet'] .nametag-count { min-height: 44px; padding: 6px 8px; box-sizing: border-box; }
-:root[data-ui='quiet'] .btn, :root[data-ui='quiet'] .btn.small { min-height: 44px; }
-:root[data-ui='quiet'] .icon-btn { min-width: 44px; min-height: 44px; }
+:root[data-ui='quiet'] .btn:not(.normal-look *), :root[data-ui='quiet'] .btn.small:not(.normal-look *) { min-height: 44px; }
+:root[data-ui='quiet'] .icon-btn:not(.normal-look *) { min-width: 44px; min-height: 44px; }
 :root[data-ui='quiet'] .chips { gap: 4px !important; }
 :root[data-ui='quiet'] details > summary { padding: 14px 0; }
 
@@ -147,7 +147,14 @@
 
 /* Small text stays readable. */
 :root[data-ui='quiet'] :is(.version, .ring-stat .val, .bar-label, .label-small, .qtile span, .chart-axis span, .st-figure .sub, .record-tile .k, .fact-tile .k, .tiny) { font-size: 12px; }
-:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter, .col-pick, .swatch) { min-width: 44px; justify-content: center; }
+:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter, .col-pick, .swatch):not(.normal-look *) { min-width: 44px; justify-content: center; }
 :root[data-ui='quiet'] .swatch { min-height: 44px; }
-:root[data-ui='quiet'] .btn.text { min-height: 44px !important; }
-:root[data-ui='quiet'] .pill-toggle.row svg { display: none; }
+:root[data-ui='quiet'] .btn.text:not(.normal-look *) { min-height: 44px !important; }
+:root[data-ui='quiet'] .pill-toggle.row svg:not(.normal-look *) { display: none; }
+
+/* The add-session form stays as it always was (the phone's NormalLook). */
+.normal-look {
+  --block: color-mix(in srgb, var(--surface-variant) 50%, var(--bg)) !important;
+  --block-line: color-mix(in srgb, var(--outline-variant) 60%, transparent) !important;
+  font-size: 14px; line-height: 20px; letter-spacing: .25px;
+}

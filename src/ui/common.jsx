@@ -6,7 +6,7 @@ import { MOMENTUM_TIERS, momentumTier } from '../model/rules.js'
 import { ICONS } from './icons.js'
 
 /** [hideScrollbar]: still scrolls, just without the bar (profiles, which are mostly pictures). */
-export function Dialog({ title, onClose, children, actions, wide, sheet = true, hideScrollbar = false }) {
+export function Dialog({ title, onClose, children, actions, wide, sheet = true, hideScrollbar = false, normalLook = false }) {
   const ref = useRef(null)
   // autofocus only works on page load - focus the dialog's own field when it opens.
   useEffect(() => { ref.current?.querySelector('[autofocus]')?.focus() }, [])
@@ -17,7 +17,7 @@ export function Dialog({ title, onClose, children, actions, wide, sheet = true, 
   }, [onClose])
   return createPortal(
     <div class={`scrim ${sheet ? 'sheet' : ''}`} onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div ref={ref} class={`dialog ${wide ? 'wide' : ''} ${hideScrollbar ? 'no-scrollbar' : ''}`} role="dialog" aria-label={typeof title === 'string' ? title : undefined}>
+      <div ref={ref} class={`dialog ${wide ? 'wide' : ''} ${hideScrollbar ? 'no-scrollbar' : ''} ${normalLook ? 'normal-look' : ''}`} role="dialog" aria-label={typeof title === 'string' ? title : undefined}>
         {title && <h2>{title}</h2>}
         {children}
         {actions && <div class="dialog-actions">{actions}</div>}
