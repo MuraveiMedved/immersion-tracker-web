@@ -84,8 +84,8 @@ export function Settings({ params, nav }) {
 
       <Block collapsible icon="palette" title="Appearance" onOpen={() => setView('appearance')} />
       <Block>
-        <SettingRow icon="palette" title="New look (experimental)" hint="A flatter redesign of the whole app: thin lines instead of cards, square edges, serif headings. Everything works the same.">
-          <Switch checked={!!s.settings.ledgerUi} onChange={(v) => setSetting('ledgerUi', v)} />
+        <SettingRow icon="palette" title="New look (experimental)" hint="A frosted glass redesign of the whole app, over colour bursts from your UI colour. Everything works the same.">
+          <Switch checked={!!s.settings.glassUi} onChange={(v) => setSetting('glassUi', v)} />
         </SettingRow>
       </Block>
 

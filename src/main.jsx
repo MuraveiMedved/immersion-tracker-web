@@ -1,7 +1,7 @@
 import { render } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import './styles.css'
-import './ledger.css'
+import './glass.css'
 import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
 import { applyTheme, applyLook } from './model/theme.js'
 import { sync, syncIfStale, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
@@ -30,7 +30,7 @@ function navTint(s) {
   const order = ['PODCAST', 'LISTENING', 'READING']
   const running = order.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).find((e) => e && e.languageProfileId != null)
   const color = running && s.profiles.find((p) => p.id === running.languageProfileId)?.colorHex
-  return color ? { '--nav-bg': `color-mix(in srgb, ${color} 22%, var(--surface))` } : undefined
+  return color ? { '--nav-bg': `color-mix(in srgb, ${color} 22%, var(--surface))`, '--nav-tint': color } : undefined
 }
 
 function App() {
@@ -45,7 +45,7 @@ function App() {
   // level in (Settings > Appearance, say) goes back to the top.
   const [visit, setVisit] = useState(0)
   useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset])
-  useEffect(() => applyLook(s.settings.ledgerUi), [s.settings.ledgerUi])
+  useEffect(() => applyLook(s.settings.glassUi), [s.settings.glassUi])
   useEffect(() => {
     const onHash = () => setRoute({ tab: location.hash.slice(1) || 'home', params: null })
     window.addEventListener('hashchange', onHash)
@@ -136,7 +136,7 @@ if (import.meta.env.DEV) window.__tracker = { getState, update, sync: syncModule
 
 loadState().then(() => {
   applyTheme(getState().settings.uiColorPreset)
-  applyLook(getState().settings.ledgerUi)
+  applyLook(getState().settings.glassUi)
   ensureBase()
   render(<App />, document.getElementById('app'))
   startBackgroundWork()

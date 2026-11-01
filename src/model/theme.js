@@ -133,12 +133,21 @@ export function applyTheme(preset) {
   const root = document.documentElement
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v)
   root.dataset.theme = dark ? 'dark' : 'light'
+  const strength = dark ? 0.46 : 0.42
+  burstColors(vars['--primary'], dark).forEach((c, i) => root.style.setProperty(`--burst-${i + 1}`, withAlpha(c, strength)))
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', vars['--bg'])
 }
 
-/** The experimental Ledger look (ledger.css) - per device, not synced. */
-export function applyLook(ledger) {
-  if (ledger) document.documentElement.dataset.ui = 'ledger'
+/** Three neighbouring hues around [primary] - the phone's burstColors: each UI theme gets bursts of
+ *  its own, softer and brighter on a light theme. */
+export function burstColors(primary, dark) {
+  const [h] = rgbToHsv(hexToRgb(primary))
+  return [0, 48, -56].map((shift) => rgbToHex(hsvToRgb([(h + shift + 360) % 360, dark ? 0.72 : 0.5, dark ? 0.82 : 0.98])))
+}
+
+/** The experimental Glass look (glass.css) - per device, not synced. */
+export function applyLook(glass) {
+  if (glass) document.documentElement.dataset.ui = 'glass'
   else delete document.documentElement.dataset.ui
 }
 
