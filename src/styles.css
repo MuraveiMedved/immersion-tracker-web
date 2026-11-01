@@ -285,6 +285,12 @@ textarea.input { resize: vertical; }
 /* Goal cards: two columns, rings stacked; the main language full-width with its rings in a row. */
 .goal-cols { display: flex; gap: 12px; margin-top: 6px; }
 .goal-cols > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+/* One gap everywhere on Home: as a flex gap it can't collapse the way margins between cards do. */
+.goal-area { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
+.goal-area .goal-cols { margin-top: 0; }
+.goal-area .goal-card.wide { margin: 0; }
+/* The shorter column's last card stretches, so both end level above whatever comes next. */
+.goal-cols > div > .goal-card:last-child { flex: 1; }
 .goal-card {
   border-radius: 16px; padding: 16px; border: 1px solid transparent; cursor: pointer;
   display: flex; flex-direction: column; align-items: center; text-align: center;
