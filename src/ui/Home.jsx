@@ -51,10 +51,13 @@ export function Home({ nav }) {
   // stacked = half. Unpicked cards are half width, except an odd one out: when the half-width cards
   // add up to an odd number, one unpicked card goes full width - the main language (placed first),
   // else the last unpicked one (left where it is). A card picked as stacked is never widened.
-  const halves = cards.filter((p) => drag.stackedOf(p) !== false)
-  const unpicked = halves.filter((p) => drag.stackedOf(p) == null)
+  // The redesign starts every card full width, so goals are the top of Home rather than all of it -
+  // a choice made on the card still stands.
+  const choiceOf = (p) => drag.stackedOf(p) ?? (s.settings.quietUi ? false : null)
+  const halves = cards.filter((p) => choiceOf(p) !== false)
+  const unpicked = halves.filter((p) => choiceOf(p) == null)
   const oddOne = halves.length % 2 === 1 ? unpicked.find((p) => p.isMain) || unpicked[unpicked.length - 1] || null : null
-  const isWide = (p) => drag.stackedOf(p) === false || p === oddOne
+  const isWide = (p) => choiceOf(p) === false || p === oddOne
   const laidOut = oddOne?.isMain ? [oddOne, ...cards.filter((p) => p !== oddOne)] : cards
   // Full-width cards keep their place and split the half-width ones into separate two-column runs.
   const blocks = []

@@ -139,13 +139,11 @@
 :root[data-ui='quiet'] .chips { gap: 4px !important; }
 :root[data-ui='quiet'] details > summary { padding: 14px 0; }
 
-/* Home: every language a full-width line, rings beside its name, so three don't fill the screen. */
-:root[data-ui='quiet'] .goal-cols { flex-direction: column; gap: 8px; margin-top: 8px; }
-:root[data-ui='quiet'] .goal-cols > div { display: contents; }
-:root[data-ui='quiet'] .goal-card, :root[data-ui='quiet'] .goal-card.wide { flex-direction: row; justify-content: space-evenly; align-items: flex-start; text-align: left; margin: 0; }
-:root[data-ui='quiet'] .goal-card > .name { align-self: center; flex: 1; min-width: 0; }
-:root[data-ui='quiet'] .goal-card .rings, :root[data-ui='quiet'] .goal-card:not(.wide).stacked .rings { display: flex; flex-direction: row; justify-content: flex-end; align-items: flex-start; width: auto; gap: 16px; }
-:root[data-ui='quiet'] .rings-toggle { display: none; }
+/* Home: a full-width card is one line, rings beside its name, so three don't fill the screen. A
+   card can still be switched to half width and stacked rings, which keep their normal layout. */
+:root[data-ui='quiet'] .goal-card.wide { flex-direction: row; justify-content: space-evenly; align-items: flex-start; text-align: left; margin: 8px 0 0; }
+:root[data-ui='quiet'] .goal-card.wide > .name { align-self: center; flex: 1; min-width: 0; }
+:root[data-ui='quiet'] .goal-card.wide .rings { display: flex; flex-direction: row; justify-content: flex-end; align-items: flex-start; width: auto; gap: 16px; }
 
 /* Small text stays readable. */
 :root[data-ui='quiet'] :is(.version, .ring-stat .val, .bar-label, .label-small, .qtile span, .chart-axis span, .st-figure .sub, .record-tile .k, .fact-tile .k, .tiny) { font-size: 12px; }
