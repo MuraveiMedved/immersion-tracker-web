@@ -104,19 +104,32 @@ function RaceSetup({ onDone, first }) {
 
 function Race({ onEditName, onOpenMe }) {
   const s = useStore()
-  const [addMenu, setAddMenu] = useState(false)
+  const [headerMenu, setHeaderMenu] = useState(false)
   const [emptyMenu, setEmptyMenu] = useState(false)
   const status = useRaceStatus()
   const now = useNow(30000)
   const [create, setCreate] = useState(false)
   const [join, setJoin] = useState(false)
   const [settings, setSettings] = useState(false)
+  const [pickedRace, setPickedRace] = useState(null)
+  const [completedChoice, setCompletedChoice] = useState(null)
   useEffect(() => {
     syncIfStale() // joins the sync started as the app came into focus, if there is one
     const t = setInterval(() => document.visibilityState === 'visible' && sync(), 60000)
     return () => clearInterval(t)
   }, [])
   const { running, done } = visibleEvents(s, now)
+  // One race at a time (RaceSection.kt): the ones you're in first, running before still-to-start,
+  // newest first within each; with more than one, the pills above the card switch between them.
+  const me = s.race.userId
+  const inPlay = [...running].sort((a, b) => {
+    const joined = (e) => (e.standings.some((x) => x.userId === me) ? 0 : 1)
+    const waiting = (e) => (now >= e.startMillis ? 0 : 1)
+    return joined(a) - joined(b) || waiting(a) - waiting(b) || b.startMillis - a.startMillis
+  })
+  const shownRace = inPlay.find((e) => e.id === pickedRace) || inPlay[0]
+  // Finished races fold away under one row; with nothing in play they're what there is to see.
+  const completedOpen = completedChoice ?? !running.length
   const activityText = { REFRESHING: 'Updating standings…', JOINING: 'Joining race…', SENDING_FINAL: 'Sending your final total…', CREATING: 'Creating race…', LEAVING: 'Leaving race…', ENDING: 'Ending race…', EDITING: 'Saving changes…' }[status.activity]
 
   return (
@@ -127,17 +140,19 @@ function Race({ onEditName, onOpenMe }) {
           <div class="title-medium ellipsis">Racing as {s.race.emoji ? `${displayEmoji(s.race.emoji)} ` : ''}{s.race.name}</div>
           <div class="muted ellipsis" style="font-size:11px">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)} · tap to change name` : 'Tap to change name'}</div>
         </div>
+        {/* Adding a race, refreshing, its settings and your name are occasional - one menu. */}
         <div style="position:relative">
-          <button class="icon-btn" title="Add a race" onClick={() => setAddMenu(!addMenu)}><Icon name="add" /></button>
-          {addMenu && (
-            <div class="menu" onMouseLeave={() => setAddMenu(false)}>
-              <button onClick={() => { setAddMenu(false); setJoin(true) }}><Icon name="flag" size={20} />Join with a code</button>
-              <button onClick={() => { setAddMenu(false); setCreate(true) }}><Icon name="add" size={20} />New event</button>
+          <button class="icon-btn" title="More options" onClick={() => setHeaderMenu(!headerMenu)}><Icon name="more_vert" /></button>
+          {headerMenu && (
+            <div class="menu" onMouseLeave={() => setHeaderMenu(false)}>
+              <button onClick={() => { setHeaderMenu(false); setJoin(true) }}><Icon name="flag" size={20} />Join with a code</button>
+              <button onClick={() => { setHeaderMenu(false); setCreate(true) }}><Icon name="add" size={20} />New event</button>
+              <button onClick={() => { setHeaderMenu(false); sync() }}><Icon name="refresh" size={20} />Refresh</button>
+              <button onClick={() => { setHeaderMenu(false); setSettings(true) }}><Icon name="brush" size={20} />Race settings</button>
+              <button onClick={() => { setHeaderMenu(false); onEditName() }}><Icon name="edit" size={20} />Name &amp; emoji</button>
             </div>
           )}
         </div>
-        <button class="icon-btn" title="Refresh" onClick={() => sync()}><Icon name="refresh" /></button>
-        <button class="icon-btn" title="Race settings" onClick={() => setSettings(true)}><Icon name="brush" /></button>
       </div>
       {status.error && (
         <div class="notice section">
@@ -161,15 +176,39 @@ function Race({ onEditName, onOpenMe }) {
           </div>
         </div>
       )}
-      {running.map((e) => <RaceCard key={e.id} event={e} now={now} onOpenMe={onOpenMe} />)}
-      {/* Finished races keep their own area below everything still in play, each collapsed. */}
+      {inPlay.length > 1 && <RacePicker events={inPlay} selectedId={shownRace?.id} me={me} now={now} onSelect={setPickedRace} />}
+      {shownRace && <RaceCard key={shownRace.id} event={shownRace} now={now} onOpenMe={onOpenMe} />}
       {done.length > 0 && <>
-        <div class="row" style="gap:6px;margin-top:24px"><Icon name="emoji_events" size={18} color="var(--tertiary)" /><span class="title-small">Completed races</span></div>
-        {done.map((e) => <RaceCard key={e.id} event={e} now={now} completed onOpenMe={onOpenMe} />)}
+        <button class="completed-row" onClick={() => setCompletedChoice(!completedOpen)}>
+          <Icon name="emoji_events" size={18} color="var(--tertiary)" />
+          <span class="title-small grow">Completed races  ·  {done.length}</span>
+          <Icon name={completedOpen ? 'expand_less' : 'expand_more'} size={20} color="var(--tertiary)" />
+        </button>
+        {completedOpen && done.map((e) => <RaceCard key={e.id} event={e} now={now} completed onOpenMe={onOpenMe} />)}
       </>}
       {create && <CreateRaceDialog onClose={() => setCreate(false)} />}
       {join && <JoinDialog onClose={() => setJoin(false)} />}
       {settings && <RaceSettingsDialog onClose={() => setSettings(false)} />}
+    </div>
+  )
+}
+
+/** With more than one race in play: which one is shown - each by name, with your place in it (or a
+ *  clock, until it starts) - so being in several never makes a long scroll. */
+function RacePicker({ events, selectedId, me, now, onSelect }) {
+  return (
+    <div class="race-picker">
+      {events.map((e) => {
+        const started = now >= e.startMillis
+        const place = e.standings.findIndex((x) => x.userId === me)
+        return (
+          <button key={e.id} class={e.id === selectedId ? 'on' : ''} onClick={() => onSelect(e.id)}>
+            {!started && <Icon name="schedule" size={14} />}
+            <span class="ellipsis">{e.name}</span>
+            {started && place >= 0 && <b>#{place + 1}</b>}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -252,10 +291,6 @@ function StaleBadge({ since }) {
 
 function CardTag({ text, color }) {
   return <span class="card-tag" style={{ color, background: `color-mix(in srgb, ${color} 14%, transparent)` }}>{text}</span>
-}
-
-function IconBadge({ icon, color }) {
-  return <span class="icon-badge" style={{ color, background: `color-mix(in srgb, ${color} 16%, transparent)` }}><Icon name={icon} size={22} /></span>
 }
 
 function SplitAmount({ type, color, millis, short }) {
@@ -408,31 +443,25 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
     const winner = event.standings[0]?.millis > 0 ? event.standings[0] : null
     const reason = { goal: 'goal reached', manual: 'ended early' }[event.endReason] || 'time ran out'
     const waiting = event.standings.filter((x) => !x.final).map((x) => x.name)
+    const ended = `Ended ${formatDateTime(event.endMillis || 0)} · ${reason}`
     return (
       <div class="race-card">
-        <div class="row" style="gap:12px">
-          <IconBadge icon="sports_score" color="var(--tertiary)" />
-          <div class="race-title grow">{event.name}</div>
-          <CardTag text="Completed" color="var(--tertiary)" />
-        </div>
-        <div class="muted small" style="margin-top:8px">Ended {formatDateTime(event.endMillis || 0)} · {reason}</div>
-        {winner && (
-          <div class="winner-row">
-            <Icon name="emoji_events" size={26} color="var(--tertiary)" />
-            <span class="grow ellipsis">{winner.name} won</span>
-            <span>{formatHm(winner.millis)}</span>
+        <div class="row clickable" onClick={() => setExpanded(!expanded)}>
+          <div class="grow" style="min-width:0">
+            <div class="title-medium ellipsis">{event.name}</div>
+            <div class="ellipsis" style={`font-size:12px;margin-top:2px;color:${winner ? 'var(--tertiary)' : 'var(--on-surface-variant)'}`}>{winner ? `${winner.name} won  ·  ${formatHm(winner.millis)}` : ended}</div>
           </div>
-        )}
-        {expanded && <>
-          <Standings event={event} now={now} isLive={false} view="total" onPerson={openPerson} />
-          <RaceCharts event={event} now={now} />
-          {waiting.length > 0 && <div class="muted" style="font-size:11px;margin-top:10px">Still waiting for final totals from: {waiting.join(', ')}</div>}
-        </>}
-        <div class="row" style="margin-top:4px">
-          <button class="btn text danger" onClick={() => setConfirm('delete')}>Delete</button>
-          <span class="spacer" />
-          {event.standings.length > 0 && <button class="btn text" onClick={() => setExpanded(!expanded)}>{expanded ? 'Hide results' : 'Show results'}<Icon name={expanded ? 'expand_less' : 'expand_more'} size={18} /></button>}
+          <Icon name={expanded ? 'expand_less' : 'expand_more'} size={22} color="var(--on-surface-variant)" />
         </div>
+        {expanded && <>
+          {winner && <div class="muted small" style="margin-top:8px">{ended}</div>}
+          {event.standings.length > 0 && <>
+            <Standings event={event} now={now} isLive={false} view="total" onPerson={openPerson} />
+            <RaceCharts event={event} now={now} />
+          </>}
+          {waiting.length > 0 && <div class="muted" style="font-size:11px;margin-top:10px">Still waiting for final totals from: {waiting.join(', ')}</div>}
+          <button class="btn text danger" style="margin-top:4px" onClick={() => setConfirm('delete')}>Delete</button>
+        </>}
         {dialogs}
       </div>
     )
@@ -441,14 +470,29 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
   const countdown = !started ? `Starts in ${remaining(event.startMillis - now)}` : event.endMillis != null ? `${remaining(event.endMillis - now)} left` : null
   return (
     <div class={`race-card ${started && joined ? 'live' : ''}`}>
-      <div class="row" style="gap:12px">
-        <IconBadge icon={started ? 'flag' : 'schedule'} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />
+      <div class="row" style="gap:8px">
         <div class="grow" style="min-width:0">
           <div class="race-title">{event.name}</div>
           <RaceFacts event={event} started={started} />
         </div>
         {countdown && <CardTag text={countdown} color={started ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
+        {/* Everything else about the race is occasional, so it's all in the one menu. */}
+        {joined && (
+          <div style="position:relative">
+            <button class="icon-btn muted" title="More options" onClick={() => setMenu(!menu)}><Icon name="more_vert" /></button>
+            {menu && (
+              <div class="menu" onMouseLeave={() => setMenu(false)}>
+                {event.code && <button onClick={() => { setMenu(false); share(`Join my race "${event.name}" in Immersion Tracker: Social → Race → Join with a code → ${event.code}`) }}><Icon name="share" size={20} />Code {event.code}</button>}
+                {isCreator && <button onClick={() => { setMenu(false); setEdit(true) }}>Edit event</button>}
+                <button onClick={() => { setMenu(false); setConfirm('leave') }}>Leave</button>
+                {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('end') }}>End event</button>}
+                {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('deleteAll') }}>Delete for everyone</button>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+      {!joined && <button class="btn" style="width:100%;margin-top:12px" onClick={() => sync({ joinEventId: event.id })}>Join</button>}
       {!event.standings.length ? <div class="muted small" style="margin-top:12px">Nobody has joined yet.</div> : <>
         {canShowToday && (
           <div class="standings-switch">
@@ -458,27 +502,6 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe }) {
         {canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
         <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} />
         {started && <RaceCharts event={event} now={now} />}
-      </>}
-      {!joined ? <button class="btn" style="width:100%;margin-top:14px" onClick={() => sync({ joinEventId: event.id })}>Join</button> : <>
-        <div class="race-rule" />
-        <div class="row" style="justify-content:flex-end">
-          {event.code && (
-            <button class="btn text grow" style="justify-content:flex-start" onClick={() => share(`Join my race "${event.name}" in Immersion Tracker: Social → Race → Join with a code → ${event.code}`)}>
-              <Icon name="share" size={16} />Code {event.code}
-            </button>
-          )}
-          <div style="position:relative">
-            <button class="icon-btn muted" title="More options" onClick={() => setMenu(!menu)}><Icon name="more_vert" /></button>
-            {menu && (
-              <div class="menu" style="top:auto;bottom:46px" onMouseLeave={() => setMenu(false)}>
-                <button onClick={() => { setMenu(false); setConfirm('leave') }}>Leave</button>
-                {isCreator && <button onClick={() => { setMenu(false); setEdit(true) }}>Edit event</button>}
-                {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('end') }}>End event</button>}
-                {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('deleteAll') }}>Delete for everyone</button>}
-              </div>
-            )}
-          </div>
-        </div>
       </>}
       {dialogs}
     </div>
