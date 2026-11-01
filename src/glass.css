@@ -43,6 +43,33 @@
 :root[data-glass] .crate-row { background: var(--glass); box-shadow: var(--glass-shadow); }
 :root[data-glass] .notice { background: color-mix(in srgb, var(--tertiary) 18%, var(--glass)); border: 1px solid var(--glass-edge); }
 
+/* Every other tile and panel, Appearance's included. What a surface shows stays solid - chart bars,
+   previews, photos, medals - since that's content rather than the surface it sits on. */
+:root[data-glass] :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .sprint-row, .lang-tile, .fact-tile, .record-tile, .person-hero, .friend-row, .menu) {
+  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+}
+:root[data-glass] :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .lang-tile, .fact-tile, .record-tile) {
+  background: var(--glass); border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top);
+}
+:root[data-glass] .sprint-row { background: color-mix(in srgb, var(--p) 10%, var(--glass)); border-color: var(--glass-edge); border-top-color: var(--glass-edge-top); }
+:root[data-glass] .sprint-row.current { background: color-mix(in srgb, var(--p) 18%, var(--glass)); border-color: color-mix(in srgb, var(--p) 45%, transparent); }
+:root[data-glass] .person-hero { background: var(--glass); }
+:root[data-glass] .menu { background: color-mix(in srgb, var(--c-high) 78%, transparent); border: 1px solid var(--glass-edge); }
+
+/* Picked stays clearly filled, in the theme's colour through the glass. */
+:root[data-glass] :is(.cos-tile.on, .cos-opt.on, .cos-cat.on) {
+  background: color-mix(in srgb, var(--primary) 34%, var(--glass)); border-color: var(--primary); color: var(--on-surface);
+}
+:root[data-glass] .cos-badge { background: color-mix(in srgb, var(--primary) 18%, transparent); }
+:root[data-glass] .cos-cat.on .cos-badge { background: var(--primary); }
+
+/* Small controls: the same veil, no blur of their own (they sit on a sheet or on the bursts). */
+:root[data-glass] :is(.pill-toggle:not(.on), .entry .dur, .dur-pill, .col-pick, .col-pick select, .chip:not(.on), .icon-btn.filled, .input, .title-field, .btn.tonal, .seg, .standings-switch, .code-pill, .stale-badge, .sel-bar, .type-pill:not(.on), .tier-row:not(.reached)) {
+  background: var(--glass); border-color: var(--glass-edge);
+}
+:root[data-glass] .switch input:not(:checked) + span { background: var(--glass); border-color: var(--glass-edge); }
+:root[data-glass] .sa-item:not(.live) { background: var(--glass); }
+
 /* The bar: a floating sheet of its own. */
 :root[data-glass] .nav {
   background: color-mix(in srgb, var(--nav-tint, transparent) 22%, var(--glass-strong));

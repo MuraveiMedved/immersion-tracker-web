@@ -8,7 +8,7 @@ import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, has
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { Dialog, Confirm, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
+import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
@@ -104,7 +104,16 @@ export function Home({ nav }) {
     <>
       {activeProfile && <div class="backdrop-wash" style={{ background: `linear-gradient(${withAlpha(activeProfile.colorHex, light ? 0.18 : 0.28)}, transparent)` }} />}
       {menuOpen && <HomeMenu nav={nav} active={activeProfile} onClose={() => setMenuOpen(false)} />}
-      <div class="home-head">
+      {/* The redesign's header: the same tabs as Entries and Stats, then what today adds up to. */}
+      {s.settings.quietUi ? <>
+        <HomeTabs current="home" nav={nav}>
+          <button class="icon-btn" title="Start a manual session" onClick={() => setManual({})}><Icon name="add" /></button>
+        </HomeTabs>
+        <div class="quiet-hero">
+          <div class="total">{formatHm(todayTotal)}</div>
+          <div class="sub">Immersion Tracker · web ⚡</div>
+        </div>
+      </> : <div class="home-head">
         <div class="title-col">
           <Title mode={s.settings.titleStyleMode} active={activeProfile} light={light} />
           <div class="version">web ⚡</div>
@@ -117,7 +126,7 @@ export function Home({ nav }) {
           </div>
           <div class="today-total">Today: {formatHm(todayTotal)}</div>
         </div>
-      </div>
+      </div>}
 
       {running.length
         ? running.map((e) => <NowTrackingBanner key={e.id} entry={e} now={now} light={light} mode={s.settings.goalCardStyleMode} />)

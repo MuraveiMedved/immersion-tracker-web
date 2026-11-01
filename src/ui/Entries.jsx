@@ -2,7 +2,7 @@ import { useMemo, useState } from 'preact/hooks'
 import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
 import { durationOf, typeLabel } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
-import { Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, Seg, toast } from './common.jsx'
+import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, Seg, toast } from './common.jsx'
 import { Stats } from './Stats.jsx'
 import { HomeMenu } from './Home.jsx'
 
@@ -168,10 +168,12 @@ export function Entries({ params, nav }) {
     <>
       {menuOpen && <HomeMenu nav={nav} current={tab} onClose={() => setMenuOpen(false)} />}
       {/* The menu button where Home has it: the header's right-hand end. */}
-      <div class="row page-head">
-        <h1 class="page-title grow">{tab === 'stats' ? 'Stats' : 'Entries'}</h1>
-        <button class="icon-btn" title="Menu: stats and all entries" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
-      </div>
+      {s.settings.quietUi ? <HomeTabs current={tab} nav={nav} /> : (
+        <div class="row page-head">
+          <h1 class="page-title grow">{tab === 'stats' ? 'Stats' : 'Entries'}</h1>
+          <button class="icon-btn" title="Menu: stats and all entries" onClick={() => setMenuOpen(true)}><Icon name="menu" /></button>
+        </div>
+      )}
       {selecting && (
         <div class="sel-bar">
           <button class="icon-btn" title="Cancel" onClick={() => setSelected(new Set())}><Icon name="close" /></button>

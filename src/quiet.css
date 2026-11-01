@@ -115,7 +115,9 @@
 :root[data-ui='quiet'] .cos-cat.on { color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
 :root[data-ui='quiet'] .cos-cat .cos-badge, :root[data-ui='quiet'] .cos-cat-value { display: none; }
 :root[data-ui='quiet'] .cos-cat-title { text-align: center; font-weight: 500; font-size: 13px; }
-:root[data-ui='quiet'] .cos-tile:not(.on) { background: transparent; border: 1px solid var(--rule); box-shadow: none; }
+:root[data-ui='quiet'] :is(.cos-tile, .cos-opt):not(.on) { background: transparent; border: 1px solid var(--rule); box-shadow: none; }
+:root[data-ui='quiet'] .cos-group { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 12px 0; margin: 0; }
+:root[data-ui='quiet'] .cos-head { font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: 0; color: var(--on-surface); }
 
 /* Forms: picked options are a faint grey and the word, not a block of accent. */
 :root[data-ui='quiet'] :is(.type-pill, .type-btn):not(.normal-look *) { background: transparent; border: 1px solid var(--rule); color: var(--on-surface-variant); }
@@ -167,3 +169,32 @@
 :root[data-ui='quiet'] .qtile { border-bottom: 1px solid var(--rule); }
 :root[data-ui='quiet'] .qtile + .qtile { position: relative; }
 :root[data-ui='quiet'] .qtile + .qtile::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--rule); }
+
+/* Home and All entries / Stats share one row of tabs at the top (the phone's HomeTabs). */
+:root[data-ui='quiet'] .quiet-tabs { display: flex; align-items: flex-end; gap: 18px; margin-top: -8px; border-bottom: 1px solid var(--rule); }
+:root[data-ui='quiet'] .quiet-tabs button { border: 0; background: transparent; padding: 13px 0 14px; font-size: 15px; line-height: 21px; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .quiet-tabs button.on { color: var(--on-surface); font-weight: 600; box-shadow: inset 0 -2px 0 var(--on-surface); }
+:root[data-ui='quiet'] .quiet-tabs .spacer { flex: 1; }
+:root[data-ui='quiet'] .quiet-tabs .icon-btn { width: 44px; height: 48px; margin-right: -12px; padding: 0; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .quiet-hero { padding: 16px 0 12px; }
+:root[data-ui='quiet'] .quiet-hero .total { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.2px; }
+:root[data-ui='quiet'] .quiet-hero .sub { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
+
+/* Language filters: a dot and the name, dimmed when switched off, as on the phone. */
+:root[data-ui='quiet'] .lang-filter:not(.normal-look *)::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: var(--lang); opacity: .4; vertical-align: 1px; }
+:root[data-ui='quiet'] .lang-filter.on:not(.normal-look *)::before { opacity: 1; }
+:root[data-ui='quiet'] .lang-filter.on:not(.normal-look *) { box-shadow: none; }
+
+/* Start again, beside Home on wide screens: ruled rows like everything else. */
+:root[data-ui='quiet'] .sa-head { color: var(--on-surface-variant); font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; }
+:root[data-ui='quiet'] .sa-group { background: transparent; border: 0; border-radius: 0; padding: 0; gap: 0; }
+:root[data-ui='quiet'] .sa-item, :root[data-ui='quiet'] .sa-item:hover, :root[data-ui='quiet'] .sa-item.live { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; }
+:root[data-ui='quiet'] .sa-go { background: transparent; }
+:root[data-ui='quiet'] .sa-bar { width: 2px; border-radius: 0; }
+
+/* Challenges: ruled rows, the rarity colours kept to the prizes on the line. */
+:root[data-ui='quiet'] .sprint-row, :root[data-ui='quiet'] .sprint-row.current { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 12px 0; }
+:root[data-ui='quiet'] .sprint-claim { background-image: none !important; background-color: var(--quiet-fill); color: var(--on-surface); border-radius: 10px; font-weight: 500; }
+
+/* The race table ends on its last line, not on a second rule under it. */
+:root[data-ui='quiet'] .standing-row:last-child { border-bottom: 0; }

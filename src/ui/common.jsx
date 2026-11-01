@@ -6,6 +6,20 @@ import { MOMENTUM_TIERS, momentumTier } from '../model/rules.js'
 import { ICONS } from './icons.js'
 
 /** [hideScrollbar]: still scrolls, just without the bar (profiles, which are mostly pictures). */
+/** The redesign's way between Today, All entries and Stats: the same words at the top of all three,
+ *  any of them a tap away (the phone's HomeTabs). [current]: 'home', 'entries' or 'stats'. */
+export function HomeTabs({ current, nav, children }) {
+  return (
+    <div class="quiet-tabs" role="tablist">
+      <button role="tab" class={current === 'home' ? 'on' : ''} onClick={() => current !== 'home' && nav('home')}>Today</button>
+      <button role="tab" class={current === 'entries' ? 'on' : ''} onClick={() => current !== 'entries' && nav('entries', { tab: 'entries' })}>All entries</button>
+      <button role="tab" class={current === 'stats' ? 'on' : ''} onClick={() => current !== 'stats' && nav('entries', { tab: 'stats' })}>Stats</button>
+      <span class="spacer" />
+      {children}
+    </div>
+  )
+}
+
 export function Dialog({ title, onClose, children, actions, wide, sheet = true, hideScrollbar = false, normalLook = false }) {
   const ref = useRef(null)
   // autofocus only works on page load - focus the dialog's own field when it opens.
@@ -256,8 +270,8 @@ export function LanguageFilterChip({ profile, selected, onClick }) {
   return (
     <button class={`lang-filter ${selected ? 'on' : ''}`} onClick={onClick}
       style={selected
-        ? { background: fill, color: luminance(profile.colorHex) > 0.45 ? '#16171C' : '#fff', borderColor: profile.colorHex }
-        : { background: wash, color: ink, borderColor: profile.colorHex }}>
+        ? { background: fill, color: luminance(profile.colorHex) > 0.45 ? '#16171C' : '#fff', borderColor: profile.colorHex, '--lang': profile.colorHex }
+        : { background: wash, color: ink, borderColor: profile.colorHex, '--lang': profile.colorHex }}>
       {profile.name}
     </button>
   )
