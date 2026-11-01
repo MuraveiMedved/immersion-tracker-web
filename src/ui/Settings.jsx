@@ -83,11 +83,6 @@ export function Settings({ params, nav }) {
       </Block>
 
       <Block collapsible icon="palette" title="Appearance" onOpen={() => setView('appearance')} />
-      <Block>
-        <SettingRow icon="palette" title="New look (experimental)" hint="A frosted glass redesign of the whole app, over colour bursts from your UI colour. Everything works the same.">
-          <Switch checked={!!s.settings.glassUi} onChange={(v) => setSetting('glassUi', v)} />
-        </SettingRow>
-      </Block>
 
       {/* The optional parts of the app, each its own tab, switched on here (the phone's Extras;
           the reader and Player are phone-only). */}
@@ -282,6 +277,11 @@ function Appearance() {
   const [, label, , hint] = COSMETIC_TABS.find(([k]) => k === tab)
   return (
     <>
+      <Block>
+        <SettingRow icon="palette" title="Glass" hint="Experimental: frosted panels over colour bursts from your UI colour, across the whole app. Everything works the same.">
+          <Switch checked={!!s.settings.glassUi} onChange={(v) => setSetting('glassUi', v)} />
+        </SettingRow>
+      </Block>
       <div class="cos-cats" role="tablist">
         {COSMETIC_TABS.map(([k, l, icon]) => (
           <button key={k} role="tab" aria-selected={tab === k} class={`cos-cat ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>
