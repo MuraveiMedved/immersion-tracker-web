@@ -4,7 +4,7 @@ import './styles.css'
 import './glass.css'
 import './quiet.css'
 import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
-import { applyTheme, applyLook } from './model/theme.js'
+import { applyTheme, applyLook, setCustomThemes } from './model/theme.js'
 import { sync, syncIfStale, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
 import { ensureBase, recordEarnedEggs, backfillHoloMomentum, takeBackEarlyEggs } from './model/zoo.js'
 import * as syncModule from './model/sync.js'
@@ -15,6 +15,7 @@ import { Social } from './ui/Social.jsx'
 import { Zoo } from './ui/Zoo.jsx'
 import { Settings } from './ui/Settings.jsx'
 import { ToastHost, NavIcon } from './ui/common.jsx'
+import { AppBackground } from './ui/CustomLook.jsx'
 
 // Same icons as the phone's bottom bar.
 const TABS = [
@@ -36,6 +37,7 @@ function navTint(s) {
 
 function App() {
   const s = useStore()
+  setCustomThemes(s.settings.customThemes)
   const [route, setRoute] = useState(() => ({ tab: location.hash.slice(1) || 'home', params: null }))
   const nav = (tab, params = null) => {
     setRoute({ tab, params })
@@ -45,7 +47,7 @@ function App() {
   // Each nav bar tap opens the tab's main page afresh - even the tab already open, so a page a
   // level in (Settings > Appearance, say) goes back to the top.
   const [visit, setVisit] = useState(0)
-  useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset])
+  useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset, s.settings.customThemes])
   useEffect(() => applyLook(s.settings.quietUi, s.settings.glassUi), [s.settings.quietUi, s.settings.glassUi])
   useEffect(() => {
     const onHash = () => setRoute({ tab: location.hash.slice(1) || 'home', params: null })
@@ -63,6 +65,7 @@ function App() {
   const tab = route.tab === 'challenges' || tabs.some(([t]) => t === route.tab) ? route.tab : 'home'
   return (
     <div class="shell">
+      <AppBackground />
       <nav class="nav" style={navTint(s)}>
         {tabs.map(([t, ico, label]) => (
           <button key={t} class={tab === t ? 'on' : ''} onClick={() => { nav(t); setVisit((v) => v + 1) }} title={label} aria-label={label}><NavIcon name={ico} /></button>

@@ -67,9 +67,8 @@
 }
 :root[data-ui='quiet'] .goal-card.lifted { background: var(--bg) !important; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
 
-/* What's tracking, and the idle slot: one ruled line each. */
+/* What's tracking: one ruled line. The idle slot (Resume and +) keeps its normal buttons. */
 :root[data-ui='quiet'] .now-banner { background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 12px 0; margin: 0; }
-:root[data-ui='quiet'] .idle-banner { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; place-items: center start; padding: 16px 0; color: var(--on-surface-variant); font-size: 13px; font-weight: 400; }
 
 :root[data-ui='quiet'] .home-divider:not(.normal-look *), :root[data-ui='quiet'] .divider:not(.normal-look *) { background: transparent; margin: 8px 0; }
 
@@ -228,7 +227,7 @@
 /* The Zoo: empty trophy slots are quiet tiles, not dashed boxes, and actions match every other button. */
 :root[data-ui='quiet'] .trophy-empty { background: var(--quiet-sheet); border: 0; border-radius: 12px; color: var(--on-surface-variant); }
 :root[data-ui='quiet'] .glow-pill-soft:not(.normal-look *), :root[data-ui='quiet'] .glow-pill-soft.solid:not(.normal-look *) {
-  height: 44px; border-radius: 10px; border: 0 !important; background: var(--quiet-fill) !important; color: var(--on-surface); font-size: 13px; font-weight: 500; animation: none;
+  height: 44px; border-radius: 10px; border: 1px solid var(--outline) !important; background: var(--c-high) !important; color: var(--on-surface); font-size: 13px; font-weight: 500; animation: none;
 }
 :root[data-ui='quiet'] .glow-pill-soft::before, :root[data-ui='quiet'] .glow-pill-soft::after { display: none; }
 :root[data-ui='quiet'] .bar { height: 3px; }
@@ -251,3 +250,6 @@
 :root[data-ui='quiet'] .feed-row { background: transparent; border-radius: 0; border-bottom: 1px solid var(--rule); padding: 10px 0; }
 :root[data-ui='quiet'] .feed-head .badge-ico { background: transparent; width: 28px; }
 :root[data-ui='quiet'] .feed-row .rarity-pill { background: transparent !important; color: var(--on-surface-variant); padding: 0; letter-spacing: .6px; font-weight: 500; }
+
+/* Over a background image the flat bar stays readable without hiding the picture. */
+:root[data-bgimage][data-ui='quiet'] .nav { background: color-mix(in srgb, var(--bg) 82%, transparent); }

@@ -105,3 +105,7 @@
   :root[data-glass][data-ui='quiet'] .nav { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 :root[data-glass][data-ui='quiet'] .dialog { background: var(--c-high); }
+:root[data-glass][data-ui='quiet'] .idle-banner { background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%); }
+
+/* A background image takes the bursts' place (ui/CustomLook.jsx). */
+:root[data-bgimage] body::before { display: none; }

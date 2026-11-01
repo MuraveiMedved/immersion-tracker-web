@@ -5,6 +5,7 @@ import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntri
 import { formatHm } from '../model/time.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
 import { AccountSection } from './Account.jsx'
+import { BackgroundImage, CustomThemeTiles } from './CustomLook.jsx'
 import { RESUME_HIDE_CHOICES, resumeHideLabel } from './timers.js'
 import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorTile, GoalModeChoice, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
 
@@ -278,7 +279,7 @@ function Appearance() {
   return (
     <>
       <Block>
-        <SettingRow icon="palette" title="Glass" hint="A frosted finish over colour bursts from your UI colour. Only the look changes - everything stays where it is.">
+        <SettingRow icon="glass" title="Glass" hint="A frosted finish over colour bursts from your UI colour. Only the look changes - everything stays where it is.">
           <Switch checked={!!s.settings.glassUi} onChange={(v) => setSetting('glassUi', v)} />
         </SettingRow>
         <SettingRow icon="palette" title="New look (experimental)" hint="A quieter, flatter redesign of the whole app, with thin lines instead of cards and fewer taps to get around.">
@@ -310,8 +311,10 @@ function Appearance() {
             preview={(v) => <EntryLabelPreview style={v} />} />
         </>
       )}
+      {tab === 'ui' && <BackgroundImage />}
       {tab === 'ui' && (
         <div class="cos-grid">
+          <CustomThemeTiles />
           {PRESETS.map((p) => {
             const v = schemeFor(p, isLightPreset(p) ? false : dark !== false)
             return (

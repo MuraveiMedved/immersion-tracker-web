@@ -59,6 +59,11 @@ export function defaultState() {
       uiColorPreset: 'SLATE',
       // The Glass finish and the experimental redesign. Per device, not synced.
       glassUi: false,
+      customThemes: [], // { id, name, page, accent } - synced as the 'uiThemes' prefs record
+      customThemesTouched: false,
+      bgImage: 0, // when the background image was set (it lives apart, under BACKGROUND_KEY); 0 is none
+      bgFit: 'FILL',
+      bgDim: 0.6,
       quietUi: false,
       ringStyle: 'CLASSIC',
       titleStyleMode: 'DEFAULT',

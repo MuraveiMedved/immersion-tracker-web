@@ -5,7 +5,7 @@ export const PRESETS = [
   'OBSIDIAN', 'MIDNIGHT', 'SLATE', 'DUSK', 'FOG', 'AMOLED', 'MAROON', 'OXBLOOD', 'FOREST', 'OCEAN',
   'AMETHYST', 'SAKURA', 'ESPRESSO', 'SYNTHWAVE', 'PAPER', 'IVORY', 'PEARL', 'MINT', 'GREEN_TEA',
 ]
-export const presetLabel = (p) => (p === 'AMOLED' ? 'AMOLED' : p.split('_').map((w) => w[0] + w.slice(1).toLowerCase()).join(' '))
+export const presetLabel = (p) => (isCustomPreset(p) ? customThemeOf(p)?.name || 'Slate' : p === 'AMOLED' ? 'AMOLED' : p.split('_').map((w) => w[0] + w.slice(1).toLowerCase()).join(' '))
 export const isLightPreset = (p) => p === 'PAPER' || p === 'IVORY' || p === 'PEARL' || p === 'MINT' || p === 'GREEN_TEA'
 
 const DELTA = {
@@ -91,6 +91,11 @@ function withTint(hex, hue, satScale = 1, minSat = 0) {
 
 /** CSS custom properties for [preset] in dark or light mode. */
 export function schemeFor(preset, dark) {
+  if (isCustomPreset(preset)) {
+    const theme = customThemeOf(preset)
+    if (theme) return customScheme(theme)
+    return schemeFor('SLATE', dark)
+  }
   const t = TINT[preset] || {}
   const base = dark ? DARK : LIGHT
   let d = DELTA[preset] || 0
@@ -123,6 +128,8 @@ export function schemeFor(preset, dark) {
 }
 
 export function isDarkFor(preset) {
+  const custom = customThemeOf(preset)
+  if (custom) return isDarkCustom(custom)
   if (isLightPreset(preset)) return false
   return !window.matchMedia || window.matchMedia('(prefers-color-scheme: dark)').matches
 }
@@ -143,6 +150,109 @@ export function burstColors(primary, dark) {
   const [h] = rgbToHsv(hexToRgb(primary))
   return [0, 48, -56].map((shift) => rgbToHex(hsvToRgb([(h + shift + 360) % 360, dark ? 0.72 : 0.5, dark ? 0.82 : 0.98])))
 }
+
+// Themes made in Appearance: chosen like a preset, as the preset 'custom:<id>'. Everything comes from
+// the page and accent colours, by the same sums as the phone's ui/theme/CustomTheme.kt - tests hold
+// the two to the same results, so one theme looks the same on both.
+const TEXT_ON_DARK = '#F2F2F7'
+const TEXT_ON_LIGHT = '#1A1B3A'
+const channels = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+const toHex = (rgb) => '#' + rgb.map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase()
+const blend = (a, b, t) => {
+  const y = channels(b)
+  return toHex(channels(a).map((x, i) => Math.round(x + (y[i] - x) * t)))
+}
+const lum = (hex) => {
+  const [r, g, b] = channels(hex).map((v) => {
+    const s = v / 255
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const contrast = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
+
+/** Mid-tone pages have no readable text colour, so a page in that band moves to the nearer edge of it. */
+function usablePage(page) {
+  const l = lum(page)
+  if (l <= 0.12 || l >= 0.55) return page
+  const target = l < 0.3 ? '#000000' : '#FFFFFF'
+  for (let t = 0.05; t < 1; t += 0.05) {
+    const c = blend(page, target, t)
+    const shifted = lum(c)
+    if (shifted <= 0.12 || shifted >= 0.55) return c
+  }
+  return target
+}
+
+/** Every role of a theme, as #RRGGBB, under the same names as the phone. */
+export function customThemeColors(pageHex, accentHex) {
+  const page = usablePage(pageHex.toUpperCase())
+  const dark = lum(page) < 0.5
+  const text = dark ? TEXT_ON_DARK : TEXT_ON_LIGHT
+  const edge = dark ? '#FFFFFF' : '#000000'
+  const lift = (t) => blend(page, edge, t)
+  // The accent, pushed away from the page until it's visible on it.
+  const rawAccent = accentHex.toUpperCase()
+  let accent = rawAccent
+  for (let step = 1; contrast(accent, page) < 3 && step <= 10; step++) accent = blend(rawAccent, edge, step / 10)
+  return {
+    background: page,
+    surface: dark ? lift(0.06) : blend(page, '#FFFFFF', 0.4),
+    surfaceVariant: lift(dark ? 0.11 : 0.09),
+    lowest: dark ? blend(page, '#000000', 0.2) : blend(page, '#FFFFFF', 0.7),
+    low: dark ? lift(0.03) : blend(page, '#FFFFFF', 0.2),
+    container: lift(dark ? 0.05 : 0.02),
+    high: lift(dark ? 0.1 : 0.05),
+    highest: lift(dark ? 0.15 : 0.09),
+    onSurface: text,
+    onSurfaceVariant: blend(text, page, 0.25),
+    outline: lift(0.28),
+    outlineVariant: lift(0.18),
+    primary: accent,
+    onPrimary: lum(accent) > 0.4 ? TEXT_ON_LIGHT : '#FFFFFF',
+    primaryContainer: blend(page, accent, 0.28),
+    onPrimaryContainer: blend(accent, text, 0.6),
+    secondary: blend(accent, text, 0.2),
+    secondaryContainer: blend(page, accent, 0.2),
+    onSecondaryContainer: blend(accent, text, 0.6),
+  }
+}
+
+export const isDarkCustom = (theme) => lum(usablePage(theme.page.toUpperCase())) < 0.5
+
+export function customScheme(theme) {
+  const c = customThemeColors(theme.page, theme.accent)
+  const base = isDarkCustom(theme) ? DARK : LIGHT
+  return {
+    '--bg': c.background,
+    '--surface': c.surface,
+    '--surface-variant': c.surfaceVariant,
+    '--c-lowest': c.lowest,
+    '--c-low': c.low,
+    '--c': c.container,
+    '--c-high': c.high,
+    '--c-highest': c.highest,
+    '--on-surface': c.onSurface,
+    '--on-surface-variant': c.onSurfaceVariant,
+    '--outline': c.outline,
+    '--outline-variant': c.outlineVariant,
+    '--primary': c.primary,
+    '--on-primary': c.onPrimary,
+    '--primary-container': c.primaryContainer,
+    '--on-primary-container': c.onPrimaryContainer,
+    '--secondary': c.secondary,
+    '--secondary-container': c.secondaryContainer,
+    '--tertiary': base.tertiary,
+    '--tertiary-container': base.tertiaryContainer,
+  }
+}
+
+let customThemes = []
+/** The saved themes, kept here so anything holding a preset string can look its theme up. */
+export const setCustomThemes = (themes) => { customThemes = themes || [] }
+export const isCustomPreset = (preset) => typeof preset === 'string' && preset.startsWith('custom:')
+export const customPreset = (theme) => 'custom:' + theme.id
+export const customThemeOf = (preset) => (isCustomPreset(preset) ? customThemes.find((t) => customPreset(t) === preset) || null : null)
 
 /** The experimental redesign (quiet.css) and the Glass finish (glass.css), each on its own - per
  *  device, not synced. */

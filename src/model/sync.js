@@ -49,6 +49,8 @@ export function collect(s) {
     out.prefs.set(NAMETAG_PREFIX + t.id, JSON.stringify({ kind: t.kind, animalId: t.animalId ?? null, name: t.name ?? null, atMillis: t.atMillis }))
   }
   out.prefs.set('settings', JSON.stringify(pick(s.settings, SETTINGS_KEYS)))
+  // Once themes have been touched here, even an empty list means something: the last one deleted.
+  if (s.settings.customThemes?.length || s.settings.customThemesTouched) out.prefs.set('uiThemes', JSON.stringify({ themes: s.settings.customThemes || [] }))
   out.prefs.set('race', JSON.stringify(pick(s.race, RACE_KEYS)))
   out.prefs.set('friends', JSON.stringify(pick(s.friends, FRIEND_KEYS)))
   // eggsTakenBack: early eggs taken back (zoo.js takeBackEarlyEggs) - so no other device does it again.
@@ -107,6 +109,13 @@ export function applyRecords(s, records) {
       for (const r of list) {
         if (r.deleted || !r.data) continue
         if (r.id === 'settings') s.settings = { ...s.settings, ...r.data }
+        if (r.id === 'uiThemes') {
+          const hex = /^#[0-9a-fA-F]{6}$/
+          const themes = (Array.isArray(r.data.themes) ? r.data.themes : []).filter((t) => t?.id && hex.test(t.page) && hex.test(t.accent))
+          s.settings = { ...s.settings, customThemes: themes }
+          // The theme in use went away: back to the plain preset, as on the phone.
+          if (String(s.settings.uiColorPreset).startsWith('custom:') && !themes.some((t) => 'custom:' + t.id === s.settings.uiColorPreset)) s.settings.uiColorPreset = 'SLATE'
+        }
         if (r.id === 'race') s.race = { ...s.race, ...r.data }
         if (r.id === 'friends') s.friends = { ...s.friends, ...r.data }
         if (r.id === 'zoo') {
