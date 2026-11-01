@@ -55,7 +55,16 @@ export function Home({ nav }) {
   const halves = cards.filter((p) => choiceOf(p) !== false)
   const unpicked = halves.filter((p) => choiceOf(p) == null)
   const oddOne = halves.length % 2 === 1 ? unpicked.find((p) => p.isMain) || unpicked[unpicked.length - 1] || null : null
-  const isWide = (p) => choiceOf(p) === false || p === oddOne
+  // The redesign never leaves a hole: a half-width card left without a partner in its run (full width
+  // cards split the runs) fills its row instead.
+  const loneHalves = new Set()
+  if (s.settings.quietUi) {
+    let run = []
+    const endRun = () => { if (run.length % 2 === 1) loneHalves.add(run[run.length - 1]); run = [] }
+    for (const p of cards) { if (choiceOf(p) === false) endRun(); else run.push(p) }
+    endRun()
+  }
+  const isWide = (p) => choiceOf(p) === false || p === oddOne || loneHalves.has(p)
   const laidOut = oddOne?.isMain ? [oddOne, ...cards.filter((p) => p !== oddOne)] : cards
   // Full-width cards keep their place and split the half-width ones into separate two-column runs.
   const blocks = []
@@ -96,7 +105,7 @@ export function Home({ nav }) {
   }, [])
   const card = (p, wide) => <GoalCard key={p.id} profile={p} now={now} running={running} light={light} wide={wide}
     lifted={drag.id === p.id} selected={drag.selected === p.id} stacked={drag.stackedOf(p) === true}
-    onToggleStacked={drag.selected === p.id ? () => drag.toggleStacked(p, wide) : null} onOpen={() => setGoalCard(p.id)} />
+    onToggleStacked={drag.selected === p.id ? () => drag.toggleStacked(p, s.settings.quietUi ? drag.stackedOf(p) !== true : wide) : null} onOpen={() => setGoalCard(p.id)} />
 
   return (
     <>
