@@ -19,8 +19,6 @@ const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
  *  "not tracking" box), Today with Momentum, the goal cards, then Recent. */
 export function Home({ nav }) {
   const [menuOpen, setMenuOpen] = useState(false)
-  // The redesign keeps Recent folded under its heading.
-  const [recentOpen, setRecentOpen] = useState(false)
   const s = useStore()
   const now = useNow(1000)
   const [manual, setManual] = useState(null) // {type, profileId}
@@ -155,19 +153,13 @@ export function Home({ nav }) {
         </div>
       )}
 
-      <div class="divider" />
-      {s.settings.quietUi ? (
-        <div class="row recent-fold clickable" onClick={() => setRecentOpen(!recentOpen)}>
-          <h2 class="grow">Recent</h2>
-          <span class={`block-chev${recentOpen ? ' open' : ''}`}><Icon name="expand_more" /></span>
-        </div>
-      ) : (
+      {/* The redesign's Home ends at the goals: everything recent is a tab away under All entries. */}
+      {!s.settings.quietUi && <>
+        <div class="divider" />
         <div class="row" style="margin-right:-12px">
           <h2 class="grow">Recent</h2>
           <button class="btn text" onClick={() => nav('entries', { tab: 'entries' })}>See all</button>
         </div>
-      )}
-      {(!s.settings.quietUi || recentOpen) && <>
         {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} />}
         {!recent.length && !uncategorized.length
           ? <p class="muted" style="margin:12px 0">Nothing tracked yet. Start a session and it'll show up here.</p>

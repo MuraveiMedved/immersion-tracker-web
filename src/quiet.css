@@ -71,9 +71,6 @@
 :root[data-ui='quiet'] .now-banner { background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 12px 0; margin: 0; }
 :root[data-ui='quiet'] .idle-banner { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; place-items: center start; padding: 16px 0; color: var(--on-surface-variant); font-size: 13px; font-weight: 400; }
 
-/* Recent, folded under its heading on Home. */
-:root[data-ui='quiet'] .recent-fold { padding: 12px 0; border-bottom: 1px solid var(--rule); }
-:root[data-ui='quiet'] .recent-fold h2:not(.normal-look *) { font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
 :root[data-ui='quiet'] .home-divider:not(.normal-look *), :root[data-ui='quiet'] .divider:not(.normal-look *) { background: transparent; margin: 8px 0; }
 
 /* Race: a ruled table. Places are plain figures, the bar a thread, your line a short accent mark. */

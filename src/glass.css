@@ -33,60 +33,75 @@
     radial-gradient(44vmax 44vmax at 85% 100%, var(--burst-1), transparent 70%);
 }
 
+/* Everything below is Glass on the normal layout. With New look on too, that layout's flat rows stay
+   flat: a blur or tint on a row with no corners or edge shows as a hard rectangle of colour. New look
+   takes only the backdrop above and the frosted goal cards and bar at the end of this file. */
+
 /* Panels. The real blur lives here; a browser without it still gets the veil and the lit edge. */
-:root[data-glass] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .goal-card, .now-banner, .idle-banner, .nav, .winner-row, .notice, .person-hero, .trade-bar) {
+:root[data-glass]:not([data-ui='quiet']) :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .goal-card, .now-banner, .idle-banner, .nav, .winner-row, .notice, .person-hero, .trade-bar) {
   -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
 }
-:root[data-glass] :is(.card, .block, .fold, .egg-card, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row) {
+:root[data-glass]:not([data-ui='quiet']) :is(.card, .block, .fold, .egg-card, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row) {
   background: var(--glass); border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top); box-shadow: var(--glass-shadow);
 }
-:root[data-glass] .crate-row { background: var(--glass); box-shadow: var(--glass-shadow); }
-:root[data-glass] .notice { background: color-mix(in srgb, var(--tertiary) 18%, var(--glass)); border: 1px solid var(--glass-edge); }
+:root[data-glass]:not([data-ui='quiet']) .crate-row { background: var(--glass); box-shadow: var(--glass-shadow); }
+:root[data-glass]:not([data-ui='quiet']) .notice { background: color-mix(in srgb, var(--tertiary) 18%, var(--glass)); border: 1px solid var(--glass-edge); }
 
 /* Every other tile and panel, Appearance's included. What a surface shows stays solid - chart bars,
    previews, photos, medals - since that's content rather than the surface it sits on. */
-:root[data-glass] :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .sprint-row, .lang-tile, .fact-tile, .record-tile, .person-hero, .friend-row, .menu) {
+:root[data-glass]:not([data-ui='quiet']) :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .sprint-row, .lang-tile, .fact-tile, .record-tile, .person-hero, .friend-row, .menu) {
   -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
 }
-:root[data-glass] :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .lang-tile, .fact-tile, .record-tile) {
+:root[data-glass]:not([data-ui='quiet']) :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .lang-tile, .fact-tile, .record-tile) {
   background: var(--glass); border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top);
 }
-:root[data-glass] .sprint-row { background: color-mix(in srgb, var(--p) 10%, var(--glass)); border-color: var(--glass-edge); border-top-color: var(--glass-edge-top); }
-:root[data-glass] .sprint-row.current { background: color-mix(in srgb, var(--p) 18%, var(--glass)); border-color: color-mix(in srgb, var(--p) 45%, transparent); }
-:root[data-glass] .person-hero { background: var(--glass); }
-:root[data-glass] .menu { background: color-mix(in srgb, var(--c-high) 78%, transparent); border: 1px solid var(--glass-edge); }
+:root[data-glass]:not([data-ui='quiet']) .sprint-row { background: color-mix(in srgb, var(--p) 10%, var(--glass)); border-color: var(--glass-edge); border-top-color: var(--glass-edge-top); }
+:root[data-glass]:not([data-ui='quiet']) .sprint-row.current { background: color-mix(in srgb, var(--p) 18%, var(--glass)); border-color: color-mix(in srgb, var(--p) 45%, transparent); }
+:root[data-glass]:not([data-ui='quiet']) .person-hero { background: var(--glass); }
+:root[data-glass]:not([data-ui='quiet']) .menu { background: color-mix(in srgb, var(--c-high) 78%, transparent); border: 1px solid var(--glass-edge); }
 
 /* Picked stays clearly filled, in the theme's colour through the glass. */
-:root[data-glass] :is(.cos-tile.on, .cos-opt.on, .cos-cat.on) {
+:root[data-glass]:not([data-ui='quiet']) :is(.cos-tile.on, .cos-opt.on, .cos-cat.on) {
   background: color-mix(in srgb, var(--primary) 34%, var(--glass)); border-color: var(--primary); color: var(--on-surface);
 }
-:root[data-glass] .cos-badge { background: color-mix(in srgb, var(--primary) 18%, transparent); }
-:root[data-glass] .cos-cat.on .cos-badge { background: var(--primary); }
+:root[data-glass]:not([data-ui='quiet']) .cos-badge { background: color-mix(in srgb, var(--primary) 18%, transparent); }
+:root[data-glass]:not([data-ui='quiet']) .cos-cat.on .cos-badge { background: var(--primary); }
 
 /* Small controls: the same veil, no blur of their own (they sit on a sheet or on the bursts). */
-:root[data-glass] :is(.pill-toggle:not(.on), .entry .dur, .dur-pill, .col-pick, .col-pick select, .chip:not(.on), .icon-btn.filled, .input, .title-field, .btn.tonal, .seg, .standings-switch, .code-pill, .stale-badge, .sel-bar, .type-pill:not(.on), .tier-row:not(.reached)) {
+:root[data-glass]:not([data-ui='quiet']) :is(.pill-toggle:not(.on), .entry .dur, .dur-pill, .col-pick, .col-pick select, .chip:not(.on), .icon-btn.filled, .input, .title-field, .btn.tonal, .seg, .standings-switch, .code-pill, .stale-badge, .sel-bar, .type-pill:not(.on), .tier-row:not(.reached)) {
   background: var(--glass); border-color: var(--glass-edge);
 }
-:root[data-glass] .switch input:not(:checked) + span { background: var(--glass); border-color: var(--glass-edge); }
-:root[data-glass] .sa-item:not(.live) { background: var(--glass); }
+:root[data-glass]:not([data-ui='quiet']) .switch input:not(:checked) + span { background: var(--glass); border-color: var(--glass-edge); }
+:root[data-glass]:not([data-ui='quiet']) .sa-item:not(.live) { background: var(--glass); }
 
 /* The bar: a floating sheet of its own. */
-:root[data-glass] .nav {
+:root[data-glass]:not([data-ui='quiet']) .nav {
   background: color-mix(in srgb, var(--nav-tint, transparent) 22%, var(--glass-strong));
   border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top); box-shadow: var(--glass-shadow);
 }
 
 /* Goals: sheets of stained glass in the language's colour. */
-:root[data-glass] .goal-card {
+:root[data-glass]:not([data-ui='quiet']) .goal-card {
   background: var(--goal-stain, var(--glass)) !important; box-shadow: var(--glass-shadow);
   border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top);
 }
-:root[data-glass] .now-banner { background: var(--goal-stain, var(--glass)) !important; box-shadow: var(--glass-shadow); }
-:root[data-glass] .idle-banner { background: var(--glass); }
+:root[data-glass]:not([data-ui='quiet']) .now-banner { background: var(--goal-stain, var(--glass)) !important; box-shadow: var(--glass-shadow); }
+:root[data-glass]:not([data-ui='quiet']) .idle-banner { background: var(--glass); }
 
 /* Race rows: a sheet each on top of the race's panel, or they're lost in it. */
-:root[data-glass] .standing-row { background: var(--glass-strong); border-color: var(--glass-edge); border-top-color: var(--glass-edge-top); }
-:root[data-glass] .standing-row.me { background: color-mix(in srgb, var(--primary) 20%, transparent); border-color: color-mix(in srgb, var(--primary) 80%, transparent); }
+:root[data-glass]:not([data-ui='quiet']) .standing-row { background: var(--glass-strong); border-color: var(--glass-edge); border-top-color: var(--glass-edge-top); }
+:root[data-glass]:not([data-ui='quiet']) .standing-row.me { background: color-mix(in srgb, var(--primary) 20%, transparent); border-color: color-mix(in srgb, var(--primary) 80%, transparent); }
 
 /* Dialogs and sheets stay solid: page text behind them would fight what's in them. */
-:root[data-glass] .dialog { background: var(--c-high); }
+:root[data-glass]:not([data-ui='quiet']) .dialog { background: var(--c-high); }
+
+/* With New look on too: the bursts, and frost on the two things that are still objects on the page. */
+:root[data-glass][data-ui='quiet'] .goal-card { -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%); }
+:root[data-glass][data-ui='quiet'] .nav {
+  background: color-mix(in srgb, var(--bg) 72%, transparent); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+}
+/* Wider, the bar is a rail down the side with nothing passing under it: frost there is just a strip. */
+@media (min-width: 600px) {
+  :root[data-glass][data-ui='quiet'] .nav { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+:root[data-glass][data-ui='quiet'] .dialog { background: var(--c-high); }
