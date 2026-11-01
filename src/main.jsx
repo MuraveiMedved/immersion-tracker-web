@@ -2,6 +2,7 @@ import { render } from 'preact'
 import { useEffect, useState } from 'preact/hooks'
 import './styles.css'
 import './glass.css'
+import './quiet.css'
 import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
 import { applyTheme, applyLook } from './model/theme.js'
 import { sync, syncIfStale, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
@@ -45,7 +46,7 @@ function App() {
   // level in (Settings > Appearance, say) goes back to the top.
   const [visit, setVisit] = useState(0)
   useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset])
-  useEffect(() => applyLook(s.settings.glassUi), [s.settings.glassUi])
+  useEffect(() => applyLook(s.settings.quietUi, s.settings.glassUi), [s.settings.quietUi, s.settings.glassUi])
   useEffect(() => {
     const onHash = () => setRoute({ tab: location.hash.slice(1) || 'home', params: null })
     window.addEventListener('hashchange', onHash)
@@ -136,7 +137,7 @@ if (import.meta.env.DEV) window.__tracker = { getState, update, sync: syncModule
 
 loadState().then(() => {
   applyTheme(getState().settings.uiColorPreset)
-  applyLook(getState().settings.glassUi)
+  applyLook(getState().settings.quietUi, getState().settings.glassUi)
   ensureBase()
   render(<App />, document.getElementById('app'))
   startBackgroundWork()

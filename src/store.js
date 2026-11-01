@@ -57,8 +57,9 @@ export function defaultState() {
       entryThresholdEnabled: false,
       entryThresholdSeconds: 30,
       uiColorPreset: 'SLATE',
-      // The experimental Glass look. Per device, not synced.
+      // The Glass finish and the experimental redesign. Per device, not synced.
       glassUi: false,
+      quietUi: false,
       ringStyle: 'CLASSIC',
       titleStyleMode: 'DEFAULT',
       goalCardStyleMode: 'LANGUAGE_COLOR',

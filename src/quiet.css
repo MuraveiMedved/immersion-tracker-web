@@ -1,0 +1,109 @@
+/* Quiet, the experimental redesign (Appearance > New look) - the phone's ui/theme/Quiet.kt. One quiet
+   system: colour only where it means something (a language's name and rings, what's live), thin rules
+   and space instead of boxes, three sizes of type. Goal cards, animal cards and dialogs are the only
+   boxes left. Everything hangs off data-ui, so with it unset the app is exactly styles.css. */
+:root[data-ui='quiet'] {
+  --quiet-sheet: rgba(255, 255, 255, .04);
+  --rule: color-mix(in srgb, var(--on-surface) 11%, transparent);
+  --quiet-fill: color-mix(in srgb, var(--on-surface) 9%, transparent);
+  --block: transparent !important;
+  --block-line: var(--rule) !important;
+  --nav-h: 52px;
+}
+:root[data-ui='quiet'][data-theme='light'] { --quiet-sheet: rgba(255, 255, 255, .38); }
+
+/* Type: a modest title, the row, small muted detail. */
+:root[data-ui='quiet'] body { font-size: 13px; line-height: 18px; letter-spacing: .1px; font-variant-numeric: tabular-nums; }
+:root[data-ui='quiet'] h1, :root[data-ui='quiet'] .page-title, :root[data-ui='quiet'] .cos-head { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.2px; }
+:root[data-ui='quiet'] .race-title, :root[data-ui='quiet'] .title-large { font-size: 18px; line-height: 24px; font-weight: 500; }
+:root[data-ui='quiet'] h2, :root[data-ui='quiet'] .title-medium, :root[data-ui='quiet'] .fold-title, :root[data-ui='quiet'] .setting .s-title, :root[data-ui='quiet'] .goal-card .name { font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: 0; }
+:root[data-ui='quiet'] .section-title h2, :root[data-ui='quiet'] .today-row h2, :root[data-ui='quiet'] .section-header, :root[data-ui='quiet'] .day-head {
+  font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant);
+}
+:root[data-ui='quiet'] .home-head { align-items: center; }
+:root[data-ui='quiet'] .home-head .title-col { padding-bottom: 8px; }
+:root[data-ui='quiet'] .app-title { font-size: 13px; line-height: 18px; font-weight: 500; }
+:root[data-ui='quiet'] .home-head .today-total { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.2px; }
+
+/* The bar: the page's last row under a rule, the picked tab a short line on that rule. */
+:root[data-ui='quiet'] .nav {
+  left: 0; right: 0; bottom: 0; max-width: none; padding: 0 8px env(safe-area-inset-bottom); gap: 4px;
+  background: color-mix(in srgb, var(--nav-tint, transparent) 8%, var(--bg));
+  border-top: 1px solid var(--rule); border-radius: 0; box-shadow: none;
+}
+:root[data-ui='quiet'] .nav button { position: relative; height: 50px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
+:root[data-ui='quiet'] .nav button.on { background: transparent; color: var(--on-surface); }
+:root[data-ui='quiet'] .nav button.on::after { content: ''; position: absolute; left: 50%; top: -1px; width: 20px; height: 2px; margin-left: -10px; background: currentColor; }
+@media (min-width: 600px) {
+  :root[data-ui='quiet'] .nav {
+    left: 0; right: auto; top: 0; bottom: 0; transform: none; margin: 0; padding: 16px 0; justify-content: center;
+    border-top: 0; border-right: 1px solid var(--rule);
+  }
+  :root[data-ui='quiet'] .nav button { width: 60px; height: 50px; }
+  :root[data-ui='quiet'] .nav button.on::after { left: -1px; top: 50%; width: 2px; height: 20px; margin: -10px 0 0; }
+}
+
+/* Containers come apart into ruled rows. */
+:root[data-ui='quiet'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row, .friend-row) {
+  background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; margin: 0; padding-left: 0; padding-right: 0;
+}
+:root[data-ui='quiet'] .race-card, :root[data-ui='quiet'] .profile-card { border-bottom: 0; }
+:root[data-ui='quiet'] .fold > .fold-row { padding: 10px 0; }
+:root[data-ui='quiet'] .fold > .fold-row:hover { background: transparent; }
+:root[data-ui='quiet'] .fold-body { margin: 0; padding: 0 0 8px; border-top: 0; }
+:root[data-ui='quiet'] .quick-stats { gap: 0; margin-top: 12px; }
+:root[data-ui='quiet'] .record-tile, :root[data-ui='quiet'] .fact-tile { background: transparent; padding-left: 0; padding-right: 0; border-radius: 0; }
+:root[data-ui='quiet'] .section-band { background: transparent; border-top: 1px solid var(--rule); border-radius: 0; padding: 12px 0; }
+:root[data-ui='quiet'] .notice { background: transparent; border-radius: 0; border-bottom: 1px solid var(--rule); padding: 8px 0; }
+:root[data-ui='quiet'] .person-hero { background: transparent; border-bottom: 1px solid var(--rule); border-radius: 0; padding-left: 0; padding-right: 0; }
+:root[data-ui='quiet'] .entry { padding-top: 9px; padding-bottom: 9px; position: relative; }
+:root[data-ui='quiet'] .entry::after { content: ''; position: absolute; left: 50px; right: 20px; bottom: 0; height: 1px; background: var(--rule); }
+:root[data-ui='quiet'] .entry .title { font-size: 15px; line-height: 21px; }
+
+/* Goals keep their rounded shape, a thin sheet; only what's being tracked takes any colour. */
+:root[data-ui='quiet'] .goal-card {
+  background: var(--goal-wash, var(--quiet-sheet)) !important; border: 1px solid var(--rule); box-shadow: none; padding: 12px;
+}
+:root[data-ui='quiet'] .goal-card.lifted { background: var(--bg) !important; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
+
+/* What's tracking, and the idle slot: one ruled line each. */
+:root[data-ui='quiet'] .now-banner { background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 12px 0; margin: 0; }
+:root[data-ui='quiet'] .idle-banner { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; place-items: center start; padding: 16px 0; color: var(--on-surface-variant); font-size: 13px; font-weight: 400; }
+
+/* Recent, folded under its heading on Home. */
+:root[data-ui='quiet'] .recent-fold { padding: 12px 0; border-bottom: 1px solid var(--rule); }
+:root[data-ui='quiet'] .recent-fold h2 { font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .home-divider, :root[data-ui='quiet'] .divider { background: transparent; margin: 8px 0; }
+
+/* Race: a ruled table. Places are plain figures, the bar a thread, your line a short accent mark. */
+:root[data-ui='quiet'] .standing-row { position: relative; background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 10px; }
+:root[data-ui='quiet'] .standing-row.me { background: transparent; border: 0; border-bottom: 1px solid var(--rule); padding: 10px; }
+:root[data-ui='quiet'] .standing-row.me::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; background: var(--primary); }
+:root[data-ui='quiet'] .rank-medal { width: 20px; height: auto; background: transparent !important; border: 0; font-size: 15px; font-weight: 500; }
+:root[data-ui='quiet'] .split-bar { height: 3px !important; }
+:root[data-ui='quiet'] :is(.live-badge, .stale-badge, .card-tag, .place-pill, .now-tag) { background: transparent; border: 0; padding-left: 0; padding-right: 0; }
+:root[data-ui='quiet'] .race-picker { gap: 14px; }
+:root[data-ui='quiet'] .race-picker button { background: transparent; border-radius: 0; padding: 8px 2px; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .race-picker button.on { background: transparent; color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
+
+/* Icons lose their tiles; durations and small labels are text, not chips. */
+:root[data-ui='quiet'] :is(.setting .badge-ico, .fold-row .badge-ico, .side-menu-item .badge-ico, .cos-badge, .icon-badge) {
+  background: transparent !important; color: var(--on-surface-variant); width: 32px;
+}
+:root[data-ui='quiet'] :is(.entry .dur, .dur-pill, .col-pick, .cert span, .code-pill) { background: transparent; padding-left: 0; padding-right: 0; }
+:root[data-ui='quiet'] .lang-chip { background: transparent !important; border: 0 !important; color: var(--on-surface) !important; height: auto; padding: 0; font-weight: 500; }
+
+/* Tabs and filters are words; the picked one has a heavier line. */
+:root[data-ui='quiet'] :is(.seg, .standings-switch) { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 0; gap: 0; }
+:root[data-ui='quiet'] :is(.seg, .standings-switch) button { background: transparent; border-radius: 0; color: var(--on-surface-variant); padding: 10px 0; }
+:root[data-ui='quiet'] :is(.seg, .standings-switch) button.on { background: transparent; color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
+:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter) { background: transparent !important; border: 0 !important; border-radius: 0; color: var(--on-surface-variant) !important; padding: 6px 2px; margin-right: 8px; height: auto; font-weight: 500; }
+:root[data-ui='quiet'] :is(.pill-toggle.on, .chip.on, .lang-filter.on) { color: var(--on-surface) !important; box-shadow: inset 0 -2px 0 var(--on-surface); }
+
+/* Even the main action is quiet: a faint fill and plain text, soft small corners. */
+:root[data-ui='quiet'] :is(.btn:not(.text):not(.outline), .glow-pill) { background: var(--quiet-fill); color: var(--on-surface); box-shadow: none; font-weight: 500; }
+:root[data-ui='quiet'] :is(.btn, .glow-pill, .sel-bar, .type-pill) { border-radius: 10px; }
+:root[data-ui='quiet'] .glow-pill { height: 36px; font-size: 13px; }
+:root[data-ui='quiet'] .btn.text { color: var(--on-surface); }
+:root[data-ui='quiet'] .btn.danger:not(.text) { color: var(--danger); }
+:root[data-ui='quiet'] .egg-glow { display: none; }

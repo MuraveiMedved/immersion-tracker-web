@@ -278,8 +278,11 @@ function Appearance() {
   return (
     <>
       <Block>
-        <SettingRow icon="palette" title="Glass" hint="Experimental: a quieter redesign of the whole app, with thin lines instead of cards and a faint wash of your UI colour. Everything works the same.">
+        <SettingRow icon="palette" title="Glass" hint="A frosted finish over colour bursts from your UI colour. Only the look changes - everything stays where it is.">
           <Switch checked={!!s.settings.glassUi} onChange={(v) => setSetting('glassUi', v)} />
+        </SettingRow>
+        <SettingRow icon="palette" title="New look (experimental)" hint="A quieter, reorganized redesign of the whole app, with thin lines instead of cards and fewer taps to get around.">
+          <Switch checked={!!s.settings.quietUi} onChange={(v) => setSetting('quietUi', v)} />
         </SettingRow>
       </Block>
       <div class="cos-cats" role="tablist">

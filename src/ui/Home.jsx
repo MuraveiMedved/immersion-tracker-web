@@ -19,6 +19,8 @@ const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
  *  "not tracking" box), Today with Momentum, the goal cards, then Recent. */
 export function Home({ nav }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  // The redesign keeps Recent folded under its heading.
+  const [recentOpen, setRecentOpen] = useState(false)
   const s = useStore()
   const now = useNow(1000)
   const [manual, setManual] = useState(null) // {type, profileId}
@@ -142,14 +144,23 @@ export function Home({ nav }) {
       )}
 
       <div class="divider" />
-      <div class="row" style="margin-right:-12px">
-        <h2 class="grow">Recent</h2>
-        <button class="btn text" onClick={() => nav('entries', { tab: 'entries' })}>See all</button>
-      </div>
-      {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} />}
-      {!recent.length && !uncategorized.length
-        ? <p class="muted" style="margin:12px 0">Nothing tracked yet. Start a session and it'll show up here.</p>
-        : <div class="list">{recent.map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => setDetails(e.id)} />)}</div>}
+      {s.settings.quietUi ? (
+        <div class="row recent-fold clickable" onClick={() => setRecentOpen(!recentOpen)}>
+          <h2 class="grow">Recent</h2>
+          <span class={`block-chev${recentOpen ? ' open' : ''}`}><Icon name="expand_more" /></span>
+        </div>
+      ) : (
+        <div class="row" style="margin-right:-12px">
+          <h2 class="grow">Recent</h2>
+          <button class="btn text" onClick={() => nav('entries', { tab: 'entries' })}>See all</button>
+        </div>
+      )}
+      {(!s.settings.quietUi || recentOpen) && <>
+        {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} />}
+        {!recent.length && !uncategorized.length
+          ? <p class="muted" style="margin:12px 0">Nothing tracked yet. Start a session and it'll show up here.</p>
+          : <div class="list">{recent.map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => setDetails(e.id)} />)}</div>}
+      </>}
 
       <StartAgain now={now} running={running} light={light} />
 
@@ -192,8 +203,9 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
     : dimColor(color, 0.9, 0.32, light)
   const ink = light ? deepened(color, 0.42) : color
   const phone = fromPhone(entry)
+  const stain = grey ? undefined : stops && stops.length > 1 ? `linear-gradient(90deg, ${stops.map((c) => withAlpha(c, 0.42)).join(', ')})` : withAlpha(color, 0.42)
   return (
-    <div class="now-banner" style={{ background: bg, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
+    <div class="now-banner" style={{ background: bg, '--goal-stain': stain, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
       <div class="grow">
         <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} · {profile?.name || 'Uncategorized'} · {formatClock(durationOf(entry, now))}</div>
@@ -530,18 +542,21 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
     ? `linear-gradient(135deg, ${stops.map((c) => dimColor(c, sat, val, light)).join(', ')})`
     : dimColor(profile.colorHex, sat, val, light)
   const outline = active ? (grey ? 'var(--block-line)' : withAlpha(profile.colorHex, 0.6)) : 'transparent'
-  // Glass (glass.css): only the language being tracked takes a little of its colour.
+  // The redesign (quiet.css): only the language being tracked takes a little of its colour.
   const wash = grey || !active ? undefined : multi ? `linear-gradient(135deg, ${stops.map((c) => withAlpha(c, 0.12)).join(', ')})` : withAlpha(profile.colorHex, 0.12)
   const nameStyle = multi
     ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
     : { color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
+  // Glass (glass.css): the language's own colour, deeper while it's being tracked.
+  const stainAlpha = active ? 0.42 : 0.24
+  const stain = grey ? undefined : multi ? `linear-gradient(135deg, ${stops.map((c) => withAlpha(c, stainAlpha)).join(', ')})` : withAlpha(profile.colorHex, stainAlpha)
   const iconColor = light ? '#000' : '#fff'
   // Anki is a third mode, with its own goal - never part of the General one (it isn't immersion).
   const rings = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]]
     .filter(([, g]) => g > 0)
   return (
     <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''}`}
-      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash }} onClick={onOpen} role="button">
+      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash, '--goal-stain': stain }} onClick={onOpen} role="button">
       {onToggleStacked && (
         <button class="rings-toggle" title={wide ? 'Rings stacked' : 'Rings side by side'} onClick={(ev) => { ev.stopPropagation(); onToggleStacked() }}>
           <Icon name="screen_rotation" size={20} />

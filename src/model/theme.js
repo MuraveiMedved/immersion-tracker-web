@@ -133,8 +133,7 @@ export function applyTheme(preset) {
   const root = document.documentElement
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v)
   root.dataset.theme = dark ? 'dark' : 'light'
-  const strength = dark ? 0.15 : 0.17
-  burstColors(vars['--primary'], dark).forEach((c, i) => root.style.setProperty(`--burst-${i + 1}`, withAlpha(c, strength)))
+  burstColors(vars['--primary'], dark).forEach((c, i) => root.style.setProperty(`--burst-${i + 1}`, c))
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', vars['--bg'])
 }
 
@@ -145,10 +144,14 @@ export function burstColors(primary, dark) {
   return [0, 48, -56].map((shift) => rgbToHex(hsvToRgb([(h + shift + 360) % 360, dark ? 0.72 : 0.5, dark ? 0.82 : 0.98])))
 }
 
-/** The experimental Glass look (glass.css) - per device, not synced. */
-export function applyLook(glass) {
-  if (glass) document.documentElement.dataset.ui = 'glass'
-  else delete document.documentElement.dataset.ui
+/** The experimental redesign (quiet.css) and the Glass finish (glass.css), each on its own - per
+ *  device, not synced. */
+export function applyLook(quiet, glass) {
+  const root = document.documentElement
+  if (quiet) root.dataset.ui = 'quiet'
+  else delete root.dataset.ui
+  if (glass) root.dataset.glass = ''
+  else delete root.dataset.glass
 }
 
 export const luminance = (hex) => {

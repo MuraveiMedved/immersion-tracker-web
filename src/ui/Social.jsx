@@ -1377,7 +1377,7 @@ function ProfileGoalCard({ l, ringStyle, wide }) {
   const iconColor = light ? '#000' : '#fff'
   const goals = [['listen', 'PODCAST'], ['read', 'READING'], ['gen', 'GENERAL']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak'])
   return (
-    <div class={`goal-card ${wide ? 'wide' : ''}`} style={{ background: bg, cursor: 'default' }}>
+    <div class={`goal-card ${wide ? 'wide' : ''}`} style={{ background: bg, cursor: 'default', '--goal-stain': multi ? `linear-gradient(135deg, ${stops.map((c) => withAlpha(c, 0.24)).join(', ')})` : withAlpha(color, 0.24) }}>
       <div class="name ellipsis" style={nameStyle}>{l.name}</div>
       {goals.map(([k, type]) => {
         const goal = l[k + 'Goal']
