@@ -1,5 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'preact/hooks'
-import { useStore, useNow } from '../store.js'
+import { useStore, useNow, getState } from '../store.js'
 import { RANGES, RANGE_LABEL, STATS_TYPES, windowFor, barsFor, quickStats, heatmap, timeOfDay } from '../model/stats.js'
 import { epochDayStart, formatDate, formatHm } from '../model/time.js'
 import { withAlpha, mix, deepened, isDarkFor, gradientStops } from '../model/theme.js'
@@ -73,6 +73,8 @@ export function Stats() {
   const todTallest = Math.max(1, ...[...tod.values()].flatMap((h) => h))
   const hourBuckets = windowFor('DAY', 0, now).buckets
 
+  const quiet = getState().settings.quietUi
+  const languageFilters = languages.map((p) => <LanguageFilterChip key={p.id} profile={p} selected={!hidden.has(p.id)} onClick={() => setHidden((prev) => { const n = new Set(prev); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })} />)
   return (
     <div style="margin-top:4px;padding-top:12px">
       <div class="chips scroll" style="gap:6px">
@@ -83,12 +85,10 @@ export function Stats() {
         {[['LISTENING', 'PODCAST', 'Listening'], ['READING', 'READING', 'Reading'], ['STUDY', 'ANKI', 'Study']].map(([key, icon, label]) => (
           <button key={key} class={`pill-toggle row ${typeFilter === key ? 'on' : ''}`} style="gap:6px;display:inline-flex;align-items:center" onClick={() => setTypeFilter(key)}><TypeIcon type={icon} size={16} />{label}</button>
         ))}
+        {/* The redesign keeps every filter on this one line, so the chart isn't pushed down. */}
+        {quiet && languages.length > 1 && languageFilters}
       </div>
-      {languages.length > 1 && (
-        <div class="chips scroll" style="margin-top:12px">
-          {languages.map((p) => <LanguageFilterChip key={p.id} profile={p} selected={!hidden.has(p.id)} onClick={() => setHidden((prev) => { const n = new Set(prev); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })} />)}
-        </div>
-      )}
+      {!quiet && languages.length > 1 && <div class="chips scroll" style="margin-top:12px">{languageFilters}</div>}
       <div class="row" style="margin-top:8px">
         <button class="icon-btn" title="Previous" style={canBack ? '' : 'visibility:hidden'} onClick={() => setOffset(offset + 1)}><Icon name="chevron_right" style={{ transform: 'scaleX(-1)' }} /></button>
         <h2 class="grow center">{current.win.label}</h2>

@@ -18,7 +18,7 @@
 :root[data-ui='quiet'] .race-title, :root[data-ui='quiet'] .title-large { font-size: 18px; line-height: 24px; font-weight: 500; }
 :root[data-ui='quiet'] h2, :root[data-ui='quiet'] .title-medium, :root[data-ui='quiet'] .fold-title, :root[data-ui='quiet'] .setting .s-title, :root[data-ui='quiet'] .goal-card .name { font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: 0; }
 :root[data-ui='quiet'] .section-title h2, :root[data-ui='quiet'] .today-row h2, :root[data-ui='quiet'] .section-header, :root[data-ui='quiet'] .day-head {
-  font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant);
+  font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant);
 }
 :root[data-ui='quiet'] .home-head { align-items: center; }
 :root[data-ui='quiet'] .home-head .title-col { padding-bottom: 8px; }
@@ -28,7 +28,7 @@
 /* The bar: the page's last row under a rule, the picked tab a short line on that rule. */
 :root[data-ui='quiet'] .nav {
   left: 0; right: 0; bottom: 0; max-width: none; padding: 0 8px env(safe-area-inset-bottom); gap: 4px;
-  background: color-mix(in srgb, var(--nav-tint, transparent) 8%, var(--bg));
+  background: color-mix(in srgb, var(--nav-tint, var(--bg)) 8%, var(--bg));
   border-top: 1px solid var(--rule); border-radius: 0; box-shadow: none;
 }
 :root[data-ui='quiet'] .nav button { position: relative; height: 50px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
@@ -72,7 +72,7 @@
 
 /* Recent, folded under its heading on Home. */
 :root[data-ui='quiet'] .recent-fold { padding: 12px 0; border-bottom: 1px solid var(--rule); }
-:root[data-ui='quiet'] .recent-fold h2 { font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .recent-fold h2 { font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
 :root[data-ui='quiet'] .home-divider, :root[data-ui='quiet'] .divider { background: transparent; margin: 8px 0; }
 
 /* Race: a ruled table. Places are plain figures, the bar a thread, your line a short accent mark. */
@@ -128,3 +128,28 @@
 /* Tiles on a profile or in a pop-up are figures on the page, not boxes. */
 :root[data-ui='quiet'] .profile-banner { background: transparent !important; border-bottom: 1px solid var(--rule); border-radius: 0; }
 :root[data-ui='quiet'] .side-menu-item { background: transparent; }
+
+/* Whatever's small to look at still has a comfortable area to hit (44px, the phone's 44dp). */
+:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter) { min-height: 44px; padding: 6px 8px; margin-right: 0; display: inline-flex; align-items: center; }
+:root[data-ui='quiet'] .momentum { min-height: 44px; padding: 2px 8px; }
+:root[data-ui='quiet'] .col-pick { min-height: 44px; padding: 6px; }
+:root[data-ui='quiet'] .nametag-count { min-height: 44px; padding: 6px 8px; box-sizing: border-box; }
+:root[data-ui='quiet'] .btn, :root[data-ui='quiet'] .btn.small { min-height: 44px; }
+:root[data-ui='quiet'] .icon-btn { min-width: 44px; min-height: 44px; }
+:root[data-ui='quiet'] .chips { gap: 4px !important; }
+:root[data-ui='quiet'] details > summary { padding: 14px 0; }
+
+/* Home: every language a full-width line, rings beside its name, so three don't fill the screen. */
+:root[data-ui='quiet'] .goal-cols { flex-direction: column; gap: 8px; margin-top: 8px; }
+:root[data-ui='quiet'] .goal-cols > div { display: contents; }
+:root[data-ui='quiet'] .goal-card, :root[data-ui='quiet'] .goal-card.wide { flex-direction: row; justify-content: space-evenly; align-items: flex-start; text-align: left; margin: 0; }
+:root[data-ui='quiet'] .goal-card > .name { align-self: center; flex: 1; min-width: 0; }
+:root[data-ui='quiet'] .goal-card .rings, :root[data-ui='quiet'] .goal-card:not(.wide).stacked .rings { display: flex; flex-direction: row; justify-content: flex-end; align-items: flex-start; width: auto; gap: 16px; }
+:root[data-ui='quiet'] .rings-toggle { display: none; }
+
+/* Small text stays readable. */
+:root[data-ui='quiet'] :is(.version, .ring-stat .val, .bar-label, .label-small, .qtile span, .chart-axis span, .st-figure .sub, .record-tile .k, .fact-tile .k, .tiny) { font-size: 12px; }
+:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter, .col-pick, .swatch) { min-width: 44px; justify-content: center; }
+:root[data-ui='quiet'] .swatch { min-height: 44px; }
+:root[data-ui='quiet'] .btn.text { min-height: 44px !important; }
+:root[data-ui='quiet'] .pill-toggle.row svg { display: none; }

@@ -254,7 +254,7 @@ export function LanguageFilterChip({ profile, selected, onClick }) {
   const wash = stops ? `linear-gradient(90deg, ${stops.map((c) => withAlpha(c, 0.12)).join(', ')})` : withAlpha(profile.colorHex, 0.12)
   const ink = onLight() ? deepened(profile.colorHex, 0.42) : profile.colorHex
   return (
-    <button class="lang-filter" onClick={onClick}
+    <button class={`lang-filter ${selected ? 'on' : ''}`} onClick={onClick}
       style={selected
         ? { background: fill, color: luminance(profile.colorHex) > 0.45 ? '#16171C' : '#fff', borderColor: profile.colorHex }
         : { background: wash, color: ink, borderColor: profile.colorHex }}>
