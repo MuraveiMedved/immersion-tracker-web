@@ -158,3 +158,12 @@
   --block-line: color-mix(in srgb, var(--outline-variant) 60%, transparent) !important;
   font-size: 14px; line-height: 20px; letter-spacing: .25px;
 }
+
+/* Stats: a rule, room either side and a small heading for each section, and the summary figures
+   as columns (the phone's quietSection and quietColumnRule). */
+:root[data-ui='quiet'] .stat-section { margin-top: 24px !important; padding-top: 18px; border-top: 1px solid var(--rule); }
+:root[data-ui='quiet'] .stat-section > h2 { font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .quick-stats { position: relative; padding-top: 18px; margin-top: 8px; border-top: 1px solid var(--rule); }
+:root[data-ui='quiet'] .qtile { border-bottom: 1px solid var(--rule); }
+:root[data-ui='quiet'] .qtile + .qtile { position: relative; }
+:root[data-ui='quiet'] .qtile + .qtile::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--rule); }

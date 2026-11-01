@@ -117,7 +117,7 @@ export function Stats() {
       <Heatmap heat={heat} />
 
       {todTotal > 0 && (
-        <div style="margin-top:24px">
+        <div class="stat-section" style="margin-top:24px">
           <h2>Time of day</h2>
           <div class="muted small">When you immerse, across all your history</div>
           <div class="row" style="margin-top:12px;align-items:flex-start;gap:0">
@@ -186,7 +186,7 @@ function LanguageBreakdown({ byLang, languages }) {
   if (!rows.length) return null
   const sum = rows.reduce((t, [, v]) => t + v, 0) || 1
   return (
-    <div style="margin-top:20px">
+    <div class="stat-section" style="margin-top:20px">
       <h2>By language</h2>
       {rows.map(([p, ms]) => {
         const stops = gradientStops(p)
@@ -218,7 +218,7 @@ function Heatmap({ heat }) {
   const weekday = (n) => new Date(2024, 0, n).toLocaleDateString(undefined, { weekday: 'short' }) // Jan 1 2024 was a Monday
   const byId = new Map(heat.legend.map((p) => [p.id, p]))
   return (
-    <div style="margin-top:24px">
+    <div class="stat-section" style="margin-top:24px">
       <h2>Heatmap</h2>
       <div class="row" style="margin-top:12px;align-items:flex-start;gap:6px">
         <div class="heat-days">{[weekday(1), '', weekday(3), '', weekday(5), '', ''].map((l, i) => <span key={i}>{l}</span>)}</div>
