@@ -993,6 +993,8 @@ textarea.input { resize: vertical; }
 .feed-head { display: inline-flex; align-items: center; gap: 12px; }
 .feed-head .badge-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
 .feed-row.tappable { cursor: pointer; }
+/* In a row it sits in the line: the animal card's own .rarity-pill is pinned to the card's corner. */
+.feed-row .rarity-pill { position: static; }
 .feed-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: color-mix(in srgb, var(--on-surface) 6%, transparent); font-size: 14px; line-height: 1.35; }
 .feed-thumb { flex: none; width: 52px; height: 52px; border-radius: 14px; padding: 2px; display: block; overflow: hidden; }
 .holo-pill { background: rgba(0,0,0,.55); }

@@ -198,3 +198,55 @@
 
 /* The race table ends on its last line, not on a second rule under it. */
 :root[data-ui='quiet'] .standing-row:last-child { border-bottom: 0; }
+
+/* Nothing draws a box when hovered, focused by a click or pressed: a row or a ring answers in its
+   text, and only keyboard focus keeps a visible outline. */
+:root[data-ui='quiet'] *:focus:not(:focus-visible) { outline: none; }
+:root[data-ui='quiet'] :is(.ring-stat.tap, .ring-stat.tap:hover, .standing, .standing:hover, .entry, .entry:hover) { background: transparent; }
+:root[data-ui='quiet'] .ring-stat .tap-hint { display: none; }
+:root[data-ui='quiet'] .ring-stat.tap { transition: opacity .15s, transform .15s; }
+@media (hover: hover) {
+  :root[data-ui='quiet'] .ring-stat.tap:hover { opacity: .75; }
+  :root[data-ui='quiet'] .entry:hover .title, :root[data-ui='quiet'] .sa-item:hover .sa-title { color: var(--primary); }
+  :root[data-ui='quiet'] .standing-row:hover .st-name { color: var(--primary); }
+}
+:root[data-ui='quiet'] .btn.text:not(.normal-look *):hover { background: transparent; opacity: .75; }
+:root[data-ui='quiet'] .sa-item:not(.live):hover { background: transparent; }
+
+/* Fields are a single line, not a box. */
+:root[data-ui='quiet'] :is(.input, select.input, textarea.input):not(.normal-look *) { border: 0; border-bottom: 1px solid var(--outline); border-radius: 0; min-height: 44px; padding: 10px 0; font-size: 15px; }
+:root[data-ui='quiet'] .input:not(.normal-look *):focus { border: 0; border-bottom: 2px solid var(--on-surface); padding: 10px 0 9px; }
+:root[data-ui='quiet'] .title-field:not(.normal-look *) { border: 0; border-bottom: 1px solid var(--outline); border-radius: 0; padding-left: 0; }
+
+/* Small things that were chips are plain marks, each with a comfortable hit area. */
+:root[data-ui='quiet'] .nametag-count { background: transparent; border: 0; border-radius: 0; min-height: 44px; padding: 0 4px; }
+:root[data-ui='quiet'] .empty-races .flag-circle { background: transparent; width: auto; height: auto; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .tier-row { padding: 8px 0; border-radius: 0; border-bottom: 1px solid var(--rule); }
+:root[data-ui='quiet'] .tier-row.reached { background: transparent; }
+
+/* The Zoo: empty trophy slots are quiet tiles, not dashed boxes, and actions match every other button. */
+:root[data-ui='quiet'] .trophy-empty { background: var(--quiet-sheet); border: 0; border-radius: 12px; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .glow-pill-soft:not(.normal-look *), :root[data-ui='quiet'] .glow-pill-soft.solid:not(.normal-look *) {
+  height: 44px; border-radius: 10px; border: 0 !important; background: var(--quiet-fill) !important; color: var(--on-surface); font-size: 13px; font-weight: 500; animation: none;
+}
+:root[data-ui='quiet'] .glow-pill-soft::before, :root[data-ui='quiet'] .glow-pill-soft::after { display: none; }
+:root[data-ui='quiet'] .bar { height: 3px; }
+:root[data-ui='quiet'] .share-track { height: 3px; }
+
+/* An animal's page: the card keeps its frame, but nothing nests inside it. */
+:root[data-ui='quiet'] .acard-stats { gap: 0; }
+:root[data-ui='quiet'] .acard-stats > div { background: transparent !important; border-radius: 0; padding: 4px 10px; }
+:root[data-ui='quiet'] .acard-stats > div:first-child { padding-left: 0; }
+:root[data-ui='quiet'] .acard-stats > div + div { border-left: 1px solid var(--rule); }
+:root[data-ui='quiet'] .acard-cert { background: transparent !important; border: 0 !important; border-top: 1px solid var(--rule) !important; border-bottom: 1px solid var(--rule) !important; border-radius: 0; padding-left: 0; padding-right: 0; }
+:root[data-ui='quiet'] .acard-status { background: transparent !important; border: 0; padding: 0; }
+
+/* Pop-ups and menus: smaller corners, a thin edge, no heavy shadow. */
+:root[data-ui='quiet'] .dialog:not(.normal-look) { border-radius: 16px; border: 1px solid var(--rule); }
+:root[data-ui='quiet'] .dialog h2:not(.normal-look *) { font-size: 18px; line-height: 24px; font-weight: 500; }
+:root[data-ui='quiet'] .menu { border-radius: 10px; background: var(--c-high); border: 1px solid var(--rule); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); padding: 4px 0; }
+
+/* Recent finds: ruled rows, the rarity a word beside the time. */
+:root[data-ui='quiet'] .feed-row { background: transparent; border-radius: 0; border-bottom: 1px solid var(--rule); padding: 10px 0; }
+:root[data-ui='quiet'] .feed-head .badge-ico { background: transparent; width: 28px; }
+:root[data-ui='quiet'] .feed-row .rarity-pill { background: transparent !important; color: var(--on-surface-variant); padding: 0; letter-spacing: .6px; font-weight: 500; }
