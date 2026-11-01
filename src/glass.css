@@ -18,15 +18,12 @@
   --glass-shadow: 0 8px 28px rgba(26, 27, 58, .08);
 }
 
-/* The bursts, behind Glass and (faintly) behind the redesign: fixed behind the page, with fine grain
-   so they read as frosted, not as a gradient. */
-:root[data-ui='quiet'] { --burst-strength: .15; }
-:root[data-ui='quiet'][data-theme='light'] { --burst-strength: .17; }
+/* The bursts: fixed behind the page, with fine grain so they read as frosted, not as a gradient. */
 :root[data-glass] { --burst-strength: .46; }
 :root[data-glass][data-theme='light'] { --burst-strength: .42; }
 :root[data-ui='quiet'][data-glass] { --quiet-sheet: var(--glass); }
-:root:is([data-ui='quiet'], [data-glass]) body { background: var(--bg); }
-:root:is([data-ui='quiet'], [data-glass]) body::before {
+:root[data-glass] body { background: var(--bg); }
+:root[data-glass] body::before {
   content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: var(--burst-strength);
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),

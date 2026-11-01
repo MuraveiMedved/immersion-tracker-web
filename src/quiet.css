@@ -1,16 +1,17 @@
 /* Quiet, the experimental redesign (Appearance > New look) - the phone's ui/theme/Quiet.kt. One quiet
-   system: colour only where it means something (a language's name and rings, what's live), thin rules
-   and space instead of boxes, three sizes of type. Goal cards, animal cards and dialogs are the only
+   system, flat and solid: colour only where it means something (a language's name and rings, what's
+   live), thin rules and space instead of boxes, three sizes of type. Nothing translucent - that's Glass. Goal cards, animal cards and dialogs are the only
    boxes left. Everything hangs off data-ui, so with it unset the app is exactly styles.css. */
 :root[data-ui='quiet'] {
-  --quiet-sheet: rgba(255, 255, 255, .04);
+  --quiet-sheet: var(--c-low);
   --rule: color-mix(in srgb, var(--on-surface) 11%, transparent);
   --quiet-fill: color-mix(in srgb, var(--on-surface) 9%, transparent);
   --block: transparent !important;
   --block-line: var(--rule) !important;
   --nav-h: 52px;
 }
-:root[data-ui='quiet'][data-theme='light'] { --quiet-sheet: rgba(255, 255, 255, .38); }
+
+:root[data-ui='quiet']:not([data-glass]) .backdrop-wash { display: none; }
 
 /* Type: a modest title, the row, small muted detail. */
 :root[data-ui='quiet'] body { font-size: 13px; line-height: 18px; letter-spacing: .1px; font-variant-numeric: tabular-nums; }
@@ -28,7 +29,7 @@
 /* The bar: the page's last row under a rule, the picked tab a short line on that rule. */
 :root[data-ui='quiet'] .nav {
   left: 0; right: 0; bottom: 0; max-width: none; padding: 0 8px env(safe-area-inset-bottom); gap: 4px;
-  background: color-mix(in srgb, var(--nav-tint, var(--bg)) 8%, var(--bg));
+  background: var(--bg);
   border-top: 1px solid var(--rule); border-radius: 0; box-shadow: none;
 }
 :root[data-ui='quiet'] .nav button { position: relative; height: 50px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
@@ -62,7 +63,7 @@
 
 /* Goals keep their rounded shape, a thin sheet; only what's being tracked takes any colour. */
 :root[data-ui='quiet'] .goal-card {
-  background: var(--goal-wash, var(--quiet-sheet)) !important; border: 1px solid var(--rule); box-shadow: none; padding: 12px;
+  background: var(--goal-wash, var(--quiet-sheet)) !important; border: 1px solid var(--rule) !important; box-shadow: none; padding: 12px;
 }
 :root[data-ui='quiet'] .goal-card.lifted { background: var(--bg) !important; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
 
@@ -114,8 +115,7 @@
 :root[data-ui='quiet'] .cos-cat.on { color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
 :root[data-ui='quiet'] .cos-cat .cos-badge, :root[data-ui='quiet'] .cos-cat-value { display: none; }
 :root[data-ui='quiet'] .cos-cat-title { text-align: center; font-weight: 500; font-size: 13px; }
-:root[data-ui='quiet'] .cos-tile { background: transparent; border: 1px solid var(--rule); box-shadow: none; }
-:root[data-ui='quiet'] .cos-tile.on { background: transparent; border-color: var(--on-surface); }
+:root[data-ui='quiet'] .cos-tile:not(.on) { background: transparent; border: 1px solid var(--rule); box-shadow: none; }
 
 /* Forms: picked options are a faint grey and the word, not a block of accent. */
 :root[data-ui='quiet'] :is(.type-pill, .type-btn):not(.normal-look *) { background: transparent; border: 1px solid var(--rule); color: var(--on-surface-variant); }
