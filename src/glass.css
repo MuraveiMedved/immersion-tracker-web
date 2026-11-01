@@ -1,25 +1,20 @@
-/* Glass, the experimental look (Appearance > Glass) - the phone's ui/theme/Glass.kt. Frosted panels
-   over colour bursts drawn from the chosen UI theme (--burst-1..3, set in applyLook). Everything
-   here hangs off data-ui, so with it unset the app is exactly styles.css. */
+/* Glass, the experimental redesign (Appearance > Glass) - the phone's ui/theme/Glass.kt. One quiet
+   system: colour only where it means something (a language's name and rings, what's live), thin rules
+   and space instead of boxes, three sizes of type. Goal cards, animal cards and dialogs are the only
+   boxes left. Everything hangs off data-ui, so with it unset the app is exactly styles.css. */
 :root[data-ui='glass'] {
-  --glass: rgba(255, 255, 255, .08);
-  --glass-strong: rgba(255, 255, 255, .13);
-  --glass-edge: rgba(255, 255, 255, .18);
-  --glass-edge-top: rgba(255, 255, 255, .34);
-  --glass-shadow: 0 8px 28px rgba(0, 0, 0, .22);
-  --block: var(--glass) !important;
-  --block-line: var(--glass-edge) !important;
+  --glass: rgba(255, 255, 255, .04);
+  --glass-strong: rgba(255, 255, 255, .09);
+  --rule: color-mix(in srgb, var(--on-surface) 11%, transparent);
+  --quiet-fill: color-mix(in srgb, var(--on-surface) 9%, transparent);
+  --block: transparent !important;
+  --block-line: var(--rule) !important;
+  --nav-h: 52px;
 }
-:root[data-ui='glass'][data-theme='light'] {
-  --glass: rgba(255, 255, 255, .56);
-  --glass-strong: rgba(255, 255, 255, .72);
-  --glass-edge: rgba(26, 27, 58, .10);
-  --glass-edge-top: rgba(255, 255, 255, .95);
-  --glass-shadow: 0 8px 28px rgba(26, 27, 58, .08);
-}
+:root[data-ui='glass'][data-theme='light'] { --glass: rgba(255, 255, 255, .38); --glass-strong: rgba(255, 255, 255, .6); }
 
-/* The bursts: fixed behind the page, with fine grain so they read as frosted, not as a gradient. */
-:root[data-ui='glass'] body { background: var(--bg); }
+/* The page: its colour, a faint wash from the UI theme, and fine grain. */
+:root[data-ui='glass'] body { background: var(--bg); font-size: 13px; line-height: 18px; letter-spacing: .1px; font-variant-numeric: tabular-nums; }
 :root[data-ui='glass'] body::before {
   content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
   background:
@@ -30,64 +25,92 @@
     radial-gradient(44vmax 44vmax at 85% 100%, var(--burst-1), transparent 70%);
 }
 
-/* Panels. The real blur lives here; a browser without it still gets the veil and the lit edge. */
-:root[data-ui='glass'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .goal-card, .now-banner, .idle-banner, .nav, .winner-row, .notice, .person-hero, .trade-bar) {
-  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+/* Type: a modest title, the row, small muted detail. */
+:root[data-ui='glass'] h1, :root[data-ui='glass'] .page-title, :root[data-ui='glass'] .cos-head { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.2px; }
+:root[data-ui='glass'] .race-title, :root[data-ui='glass'] .title-large { font-size: 18px; line-height: 24px; font-weight: 500; }
+:root[data-ui='glass'] h2, :root[data-ui='glass'] .title-medium, :root[data-ui='glass'] .fold-title, :root[data-ui='glass'] .setting .s-title, :root[data-ui='glass'] .goal-card .name { font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: 0; }
+:root[data-ui='glass'] .section-title h2, :root[data-ui='glass'] .today-row h2, :root[data-ui='glass'] .section-header, :root[data-ui='glass'] .day-head {
+  font-size: 11px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant);
 }
-:root[data-ui='glass'] :is(.card, .block, .fold, .egg-card, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row) {
-  background: var(--glass); border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top); box-shadow: var(--glass-shadow);
-}
-:root[data-ui='glass'] .crate-row { background: var(--glass); box-shadow: var(--glass-shadow); }
-:root[data-ui='glass'] .notice { background: color-mix(in srgb, var(--tertiary) 18%, var(--glass)); border: 1px solid var(--glass-edge); }
-:root[data-ui='glass'] .section-band { background: transparent; border-top: 1px solid var(--glass-edge); border-radius: 0; padding: 14px 0; }
-:root[data-ui='glass'] .record-tile, :root[data-ui='glass'] .fact-tile { background: transparent; }
-:root[data-ui='glass'] .fold > .fold-row:hover { background: color-mix(in srgb, var(--on-surface) 4%, transparent); }
+:root[data-ui='glass'] .home-head { align-items: center; }
+:root[data-ui='glass'] .home-head .title-col { padding-bottom: 8px; }
+:root[data-ui='glass'] .app-title { font-size: 13px; line-height: 18px; font-weight: 500; }
+:root[data-ui='glass'] .home-head .today-total { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.2px; }
 
-/* The bar floats as a sheet of its own, the picked tab a short line under a plain icon. */
+/* The bar: the page's last row under a rule, the picked tab a short line on that rule. */
 :root[data-ui='glass'] .nav {
-  background: color-mix(in srgb, var(--nav-tint, transparent) 22%, var(--glass-strong));
-  border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top); box-shadow: var(--glass-shadow);
+  left: 0; right: 0; bottom: 0; max-width: none; padding: 0 8px env(safe-area-inset-bottom); gap: 4px;
+  background: color-mix(in srgb, var(--nav-tint, transparent) 8%, var(--bg));
+  border-top: 1px solid var(--rule); border-radius: 0; box-shadow: none;
 }
-:root[data-ui='glass'] .nav button { position: relative; background: transparent; color: var(--on-surface-variant); }
+:root[data-ui='glass'] .nav button { position: relative; height: 50px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
 :root[data-ui='glass'] .nav button.on { background: transparent; color: var(--on-surface); }
-:root[data-ui='glass'] .nav button.on::after {
-  content: ''; position: absolute; left: 50%; bottom: 3px; width: 16px; height: 3px; margin-left: -8px;
-  border-radius: 2px; background: currentColor;
+:root[data-ui='glass'] .nav button.on::after { content: ''; position: absolute; left: 50%; top: -1px; width: 20px; height: 2px; margin-left: -10px; background: currentColor; }
+@media (min-width: 600px) {
+  :root[data-ui='glass'] .nav {
+    left: 0; right: auto; top: 0; bottom: 0; transform: none; margin: 0; padding: 16px 0; justify-content: center;
+    border-top: 0; border-right: 1px solid var(--rule);
+  }
+  :root[data-ui='glass'] .nav button { width: 60px; height: 50px; }
+  :root[data-ui='glass'] .nav button.on::after { left: -1px; top: 50%; width: 2px; height: 20px; margin: -10px 0 0; }
 }
 
-/* Goals: rounded sheets of stained glass in the language's colour. */
+/* Containers come apart into ruled rows. */
+:root[data-ui='glass'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row, .friend-row) {
+  background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; margin: 0; padding-left: 0; padding-right: 0;
+}
+:root[data-ui='glass'] .race-card, :root[data-ui='glass'] .profile-card { border-bottom: 0; }
+:root[data-ui='glass'] .fold > .fold-row { padding: 10px 0; }
+:root[data-ui='glass'] .fold > .fold-row:hover { background: transparent; }
+:root[data-ui='glass'] .fold-body { margin: 0; padding: 0 0 8px; border-top: 0; }
+:root[data-ui='glass'] .quick-stats { gap: 0; margin-top: 12px; }
+:root[data-ui='glass'] .record-tile, :root[data-ui='glass'] .fact-tile { background: transparent; padding-left: 0; padding-right: 0; border-radius: 0; }
+:root[data-ui='glass'] .section-band { background: transparent; border-top: 1px solid var(--rule); border-radius: 0; padding: 12px 0; }
+:root[data-ui='glass'] .notice { background: transparent; border-radius: 0; border-bottom: 1px solid var(--rule); padding: 8px 0; }
+:root[data-ui='glass'] .person-hero { background: transparent; border-bottom: 1px solid var(--rule); border-radius: 0; padding-left: 0; padding-right: 0; }
+:root[data-ui='glass'] .entry { padding-top: 9px; padding-bottom: 9px; position: relative; }
+:root[data-ui='glass'] .entry::after { content: ''; position: absolute; left: 50px; right: 20px; bottom: 0; height: 1px; background: var(--rule); }
+:root[data-ui='glass'] .entry .title { font-size: 15px; line-height: 21px; }
+
+/* Goals keep their rounded shape, a thin sheet; only what's being tracked takes any colour. */
 :root[data-ui='glass'] .goal-card {
-  background: var(--goal-wash, var(--glass)) !important; box-shadow: var(--glass-shadow);
-  border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top);
+  background: var(--goal-wash, var(--glass)) !important; border: 1px solid var(--rule); box-shadow: none; padding: 12px;
 }
-:root[data-ui='glass'] .goal-card.active { border-color: var(--goal-line, var(--glass-edge)); }
-:root[data-ui='glass'] .goal-card.lifted { box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
-:root[data-ui='glass'] .now-banner { background: var(--goal-wash, var(--glass)) !important; box-shadow: var(--glass-shadow); }
-:root[data-ui='glass'] .idle-banner { background: var(--glass); }
+:root[data-ui='glass'] .goal-card.lifted { background: var(--bg) !important; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
 
-/* Nothing nests: icon tiles, duration chips and small labels sit on the panel as plain marks. */
+/* What's tracking, and the idle slot: one ruled line each. */
+:root[data-ui='glass'] .now-banner { background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 12px 0; margin: 0; }
+:root[data-ui='glass'] .idle-banner { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; place-items: center start; padding: 16px 0; color: var(--on-surface-variant); font-size: 13px; font-weight: 400; }
+
+/* Race: a ruled table. Places are plain figures, the bar a thread, your line a short accent mark. */
+:root[data-ui='glass'] .standing-row { position: relative; background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 10px; }
+:root[data-ui='glass'] .standing-row.me { background: transparent; border: 0; border-bottom: 1px solid var(--rule); padding: 10px; }
+:root[data-ui='glass'] .standing-row.me::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; background: var(--primary); }
+:root[data-ui='glass'] .rank-medal { width: 20px; height: auto; background: transparent !important; border: 0; font-size: 15px; font-weight: 500; }
+:root[data-ui='glass'] .split-bar { height: 3px !important; }
+:root[data-ui='glass'] :is(.live-badge, .stale-badge, .card-tag, .place-pill, .now-tag) { background: transparent; border: 0; padding-left: 0; padding-right: 0; }
+:root[data-ui='glass'] .race-picker { gap: 14px; }
+:root[data-ui='glass'] .race-picker button { background: transparent; border-radius: 0; padding: 8px 2px; color: var(--on-surface-variant); }
+:root[data-ui='glass'] .race-picker button.on { background: transparent; color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
+
+/* Icons lose their tiles; durations and small labels are text, not chips. */
 :root[data-ui='glass'] :is(.setting .badge-ico, .fold-row .badge-ico, .side-menu-item .badge-ico, .cos-badge, .icon-badge) {
   background: transparent !important; color: var(--on-surface-variant); width: 32px;
 }
-:root[data-ui='glass'] :is(.entry .dur, .dur-pill, .col-pick, .cert span, .code-pill, .stale-badge) { background: transparent; padding-left: 0; padding-right: 0; }
+:root[data-ui='glass'] :is(.entry .dur, .dur-pill, .col-pick, .cert span, .code-pill) { background: transparent; padding-left: 0; padding-right: 0; }
+:root[data-ui='glass'] .lang-chip { background: transparent !important; border: 0 !important; color: var(--on-surface) !important; height: auto; padding: 0; font-weight: 500; }
 
-/* Race rows: a sheet each on top of the race's panel, or they're lost in it. */
-:root[data-ui='glass'] .standing-row { background: var(--glass-strong); border-color: var(--glass-edge); border-top-color: var(--glass-edge-top); }
-:root[data-ui='glass'] .standing-row.me { background: color-mix(in srgb, var(--primary) 20%, transparent); border-color: color-mix(in srgb, var(--primary) 80%, transparent); }
-
-/* Tabs are words on a line. */
-:root[data-ui='glass'] :is(.seg, .standings-switch) {
-  background: transparent; border: 0; border-bottom: 1px solid var(--glass-edge); border-radius: 0; padding: 0; gap: 0;
-}
-:root[data-ui='glass'] :is(.seg, .standings-switch) button { background: transparent; border-radius: 0; color: var(--on-surface-variant); padding: 11px 0; }
+/* Tabs and filters are words; the picked one has a heavier line. */
+:root[data-ui='glass'] :is(.seg, .standings-switch) { background: transparent; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 0; gap: 0; }
+:root[data-ui='glass'] :is(.seg, .standings-switch) button { background: transparent; border-radius: 0; color: var(--on-surface-variant); padding: 10px 0; }
 :root[data-ui='glass'] :is(.seg, .standings-switch) button.on { background: transparent; color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
-:root[data-ui='glass'] .pill-toggle { background: transparent; border: 0; border-radius: 0; color: var(--on-surface-variant); padding: 6px 2px; margin-right: 8px; }
-:root[data-ui='glass'] .pill-toggle.on { background: transparent; color: var(--on-surface); box-shadow: inset 0 -2px 0 var(--on-surface); }
+:root[data-ui='glass'] :is(.pill-toggle, .chip, .lang-filter) { background: transparent !important; border: 0 !important; border-radius: 0; color: var(--on-surface-variant) !important; padding: 6px 2px; margin-right: 8px; height: auto; font-weight: 500; }
+:root[data-ui='glass'] :is(.pill-toggle.on, .chip.on, .lang-filter.on) { color: var(--on-surface) !important; box-shadow: inset 0 -2px 0 var(--on-surface); }
 
-/* Pills soften into small rounded controls; true circles keep their own rules. */
-:root[data-ui='glass'] :is(.btn, .glow-pill, .lang-chip, .place-pill, .live-badge, .rarity-badge, .chip, .lang-filter, .sel-bar, .type-pill) { border-radius: 10px; }
-:root[data-ui='glass'] .btn { box-shadow: none; }
-:root[data-ui='glass'] :is(.input, .title-field, .icon-btn.filled) { background: var(--glass); }
-
-/* Dialogs and sheets stay solid: page text behind them would fight what's in them. */
-:root[data-ui='glass'] .dialog { background: var(--c-high); }
+/* Even the main action is quiet: a faint fill and plain text, soft small corners. */
+:root[data-ui='glass'] :is(.btn:not(.text):not(.outline), .glow-pill) { background: var(--quiet-fill); color: var(--on-surface); box-shadow: none; font-weight: 500; }
+:root[data-ui='glass'] :is(.btn, .glow-pill, .sel-bar, .type-pill) { border-radius: 10px; }
+:root[data-ui='glass'] .glow-pill { height: 36px; font-size: 13px; }
+:root[data-ui='glass'] .btn.text { color: var(--on-surface); }
+:root[data-ui='glass'] .btn.danger:not(.text) { color: var(--danger); }
+:root[data-ui='glass'] .egg-glow { display: none; }

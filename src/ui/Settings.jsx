@@ -278,7 +278,7 @@ function Appearance() {
   return (
     <>
       <Block>
-        <SettingRow icon="palette" title="Glass" hint="Experimental: frosted panels over colour bursts from your UI colour, across the whole app. Everything works the same.">
+        <SettingRow icon="palette" title="Glass" hint="Experimental: a quieter redesign of the whole app, with thin lines instead of cards and a faint wash of your UI colour. Everything works the same.">
           <Switch checked={!!s.settings.glassUi} onChange={(v) => setSetting('glassUi', v)} />
         </SettingRow>
       </Block>

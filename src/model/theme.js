@@ -133,7 +133,7 @@ export function applyTheme(preset) {
   const root = document.documentElement
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, v)
   root.dataset.theme = dark ? 'dark' : 'light'
-  const strength = dark ? 0.46 : 0.42
+  const strength = dark ? 0.15 : 0.17
   burstColors(vars['--primary'], dark).forEach((c, i) => root.style.setProperty(`--burst-${i + 1}`, withAlpha(c, strength)))
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', vars['--bg'])
 }

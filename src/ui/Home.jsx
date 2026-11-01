@@ -191,10 +191,9 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
     ? `linear-gradient(90deg, ${stops.map((c) => dimColor(c, 0.9, 0.32, light)).join(', ')})`
     : dimColor(color, 0.9, 0.32, light)
   const ink = light ? deepened(color, 0.42) : color
-  const wash = grey ? undefined : stops && stops.length > 1 ? `linear-gradient(90deg, ${stops.map((c) => withAlpha(c, 0.42)).join(', ')})` : withAlpha(color, 0.42)
   const phone = fromPhone(entry)
   return (
-    <div class="now-banner" style={{ background: bg, '--goal-wash': wash, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
+    <div class="now-banner" style={{ background: bg, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
       <div class="grow">
         <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} · {profile?.name || 'Uncategorized'} · {formatClock(durationOf(entry, now))}</div>
@@ -531,9 +530,8 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
     ? `linear-gradient(135deg, ${stops.map((c) => dimColor(c, sat, val, light)).join(', ')})`
     : dimColor(profile.colorHex, sat, val, light)
   const outline = active ? (grey ? 'var(--block-line)' : withAlpha(profile.colorHex, 0.6)) : 'transparent'
-  // Glass's stained sheet (glass.css): the language's own colour, deeper while it's being tracked.
-  const washAlpha = active ? 0.42 : 0.24
-  const wash = grey ? undefined : multi ? `linear-gradient(135deg, ${stops.map((c) => withAlpha(c, washAlpha)).join(', ')})` : withAlpha(profile.colorHex, washAlpha)
+  // Glass (glass.css): only the language being tracked takes a little of its colour.
+  const wash = grey || !active ? undefined : multi ? `linear-gradient(135deg, ${stops.map((c) => withAlpha(c, 0.12)).join(', ')})` : withAlpha(profile.colorHex, 0.12)
   const nameStyle = multi
     ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
     : { color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
@@ -542,8 +540,8 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
   const rings = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]]
     .filter(([, g]) => g > 0)
   return (
-    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''} ${active ? 'active' : ''}`}
-      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash, '--goal-line': outline }} onClick={onOpen} role="button">
+    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''}`}
+      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash }} onClick={onOpen} role="button">
       {onToggleStacked && (
         <button class="rings-toggle" title={wide ? 'Rings stacked' : 'Rings side by side'} onClick={(ev) => { ev.stopPropagation(); onToggleStacked() }}>
           <Icon name="screen_rotation" size={20} />
