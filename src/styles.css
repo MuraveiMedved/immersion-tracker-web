@@ -808,6 +808,8 @@ textarea.input { resize: vertical; }
 
 /* ---------- quick timers: tap a ring, resume banner ---------- */
 .ring-stat.tap { position: relative; cursor: pointer; border-radius: 14px; padding: 4px 6px; margin-left: -6px; margin-right: -6px; transition: background .15s, transform .1s; -webkit-tap-highlight-color: transparent; }
+/* A General ring isn't a tap target, but it takes the same room, so it lines up with the ring beside it. */
+.ring-stat:not(.tap) { padding: 4px 6px; margin-left: -6px; margin-right: -6px; }
 .ring-stat.tap:active { transform: scale(.96); }
 .ring-stat.tap:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .ring-stat .tap-hint {
