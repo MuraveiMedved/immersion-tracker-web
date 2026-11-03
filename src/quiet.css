@@ -264,15 +264,15 @@
 :root[data-ui='quiet'] h1, :root[data-ui='quiet'] .page-title, :root[data-ui='quiet'] .quiet-hero .total { font-size: 24px; line-height: 30px; letter-spacing: -.3px; }
 :root[data-ui='quiet'] .ring-stat .val { font-family: var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; font-size: 13px; font-weight: 500; font-variant-numeric: normal; }
 
-/* Each goal card's texture: the language's own name, large and faint, running off its corner. */
+/* Each goal card's texture: one big monogram, the language's first letter, cropped off its corner. */
 :root[data-ui='quiet'] .goal-card { overflow: hidden; }
 :root[data-ui='quiet'] .goal-card > :is(.name, .rings, .rings-toggle) { position: relative; z-index: 1; }
 :root[data-ui='quiet'] .script-tex {
-  display: block; position: absolute; right: -14px; bottom: -22px; z-index: 0; pointer-events: none; white-space: nowrap;
-  font: 600 64px/1 var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; letter-spacing: -1px; color: var(--lang); opacity: .08;
+  display: block; position: absolute; right: -24px; bottom: -40px; z-index: 0; pointer-events: none; white-space: nowrap;
+  font: 600 112px/1 var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; color: var(--lang); opacity: .08;
 }
-:root[data-ui='quiet'][data-theme='light'] .script-tex { opacity: .11; }
-:root[data-ui='quiet'] .goal-card.wide .script-tex { font-size: 76px; }
+:root[data-ui='quiet'][data-theme='light'] .script-tex { opacity: .08; }
+:root[data-ui='quiet'] .goal-card.wide .script-tex { font-size: 124px; }
 
 /* While tracking, what shows it breathes on one beat (--beat, set in main.jsx); nothing else moves. */
 :root[data-ui='quiet'] .goal-card.live::after, :root[data-ui='quiet'] .now-banner.live::before {
@@ -280,7 +280,6 @@
 }
 :root[data-ui='quiet'] .now-banner { position: relative; overflow: hidden; }
 :root[data-ui='quiet'] .now-banner.live::before { opacity: calc(.06 * var(--beat, 0)); }
-:root[data-ui='quiet'] .goal-card .ring-stat.on > :first-child { filter: drop-shadow(0 0 calc(10px * var(--beat, 0)) color-mix(in srgb, var(--lang) 55%, transparent)); }
 :root[data-ui='quiet'] .nav.live { border-top: 2px solid color-mix(in srgb, var(--nav-tint) calc(35% + 45% * var(--beat, 0)), transparent); }
 @media (min-width: 600px) {
   :root[data-ui='quiet'] .nav.live { border-top: 0; border-right: 2px solid color-mix(in srgb, var(--nav-tint) calc(35% + 45% * var(--beat, 0)), transparent); }
