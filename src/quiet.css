@@ -255,3 +255,39 @@
 
 /* Over a background image the flat bar stays readable without hiding the picture. */
 :root[data-bgimage][data-ui='quiet'] .nav { background: color-mix(in srgb, var(--bg) 82%, transparent); }
+
+/* Headings and still figures in the display face (the phone's Fraunces); ticking clocks keep the plain one. */
+:root[data-ui='quiet'] { --display: 'Fraunces', var(--font); }
+:root[data-ui='quiet'] :is(h1, .page-title, .cos-head, .race-title, .title-large, .quiet-hero .total, .home-head .today-total) {
+  font-family: var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; font-variant-numeric: normal;
+}
+:root[data-ui='quiet'] h1, :root[data-ui='quiet'] .page-title, :root[data-ui='quiet'] .quiet-hero .total { font-size: 24px; line-height: 30px; letter-spacing: -.3px; }
+:root[data-ui='quiet'] .ring-stat .val { font-family: var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; font-size: 13px; font-weight: 500; font-variant-numeric: normal; }
+
+/* Each goal card's texture: the language's own name, large and faint, running off its corner. */
+:root[data-ui='quiet'] .goal-card { overflow: hidden; }
+:root[data-ui='quiet'] .goal-card > :is(.name, .rings, .rings-toggle) { position: relative; z-index: 1; }
+:root[data-ui='quiet'] .script-tex {
+  display: block; position: absolute; right: -14px; bottom: -22px; z-index: 0; pointer-events: none; white-space: nowrap;
+  font: 600 64px/1 var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; letter-spacing: -1px; color: var(--lang); opacity: .08;
+}
+:root[data-ui='quiet'][data-theme='light'] .script-tex { opacity: .11; }
+:root[data-ui='quiet'] .goal-card.wide .script-tex { font-size: 76px; }
+
+/* While tracking, what shows it breathes on one beat (--beat, set in main.jsx); nothing else moves. */
+:root[data-ui='quiet'] .goal-card.live::after, :root[data-ui='quiet'] .now-banner.live::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; background: var(--lang); opacity: calc(.07 * var(--beat, 0));
+}
+:root[data-ui='quiet'] .now-banner { position: relative; overflow: hidden; }
+:root[data-ui='quiet'] .now-banner.live::before { opacity: calc(.06 * var(--beat, 0)); }
+:root[data-ui='quiet'] .goal-card .ring-stat.on > :first-child { filter: drop-shadow(0 0 calc(10px * var(--beat, 0)) color-mix(in srgb, var(--lang) 55%, transparent)); }
+:root[data-ui='quiet'] .nav.live { border-top: 2px solid color-mix(in srgb, var(--nav-tint) calc(35% + 45% * var(--beat, 0)), transparent); }
+@media (min-width: 600px) {
+  :root[data-ui='quiet'] .nav.live { border-top: 0; border-right: 2px solid color-mix(in srgb, var(--nav-tint) calc(35% + 45% * var(--beat, 0)), transparent); }
+}
+:root[data-ui='quiet'] .now-banner.just-started::after {
+  content: ''; position: absolute; left: 5px; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+  background: var(--lang); pointer-events: none; animation: spread-out .9s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+@keyframes spread-out { from { transform: scale(1); opacity: .22; } to { transform: scale(220); opacity: 0; } }
+

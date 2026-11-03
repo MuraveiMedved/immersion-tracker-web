@@ -49,6 +49,20 @@ function App() {
   const [visit, setVisit] = useState(0)
   useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset, s.settings.customThemes])
   useEffect(() => applyLook(s.settings.quietUi, s.settings.glassUi), [s.settings.quietUi, s.settings.glassUi])
+  // The redesign's one motion (the phone's LiveBeat): while something's tracked, everything showing it
+  // breathes on this one slow beat, as --beat (0 to 1 and back every 4 s) on the root.
+  const tracking = s.entries.some((e) => e.endTimeMillis == null)
+  useEffect(() => {
+    const root = document.documentElement
+    if (!s.settings.quietUi || !tracking) { root.style.setProperty('--beat', '0'); return }
+    let frame
+    const tick = (t) => {
+      root.style.setProperty('--beat', (0.5 - 0.5 * Math.cos((2 * Math.PI * (t % 4000)) / 4000)).toFixed(3))
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [s.settings.quietUi, tracking])
   useEffect(() => {
     const onHash = () => setRoute({ tab: location.hash.slice(1) || 'home', params: null })
     window.addEventListener('hashchange', onHash)
@@ -66,7 +80,7 @@ function App() {
   return (
     <div class="shell">
       <AppBackground />
-      <nav class="nav" style={navTint(s)}>
+      <nav class={`nav ${navTint(s) ? 'live' : ''}`} style={navTint(s)}>
         {tabs.map(([t, ico, label]) => (
           <button key={t} class={tab === t ? 'on' : ''} onClick={() => { nav(t); setVisit((v) => v + 1) }} title={label} aria-label={label}><NavIcon name={ico} /></button>
         ))}

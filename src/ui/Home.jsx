@@ -217,8 +217,10 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
   const ink = light ? deepened(color, 0.42) : color
   const phone = fromPhone(entry)
   const stain = grey ? undefined : stops && stops.length > 1 ? `linear-gradient(90deg, ${stops.map((c) => withAlpha(c, 0.42)).join(', ')})` : withAlpha(color, 0.42)
+  // A session just started spreads its colour out from the dot (quiet.css), once.
+  const [justStarted] = useState(() => !paused && durationOf(entry, Date.now()) < 3000)
   return (
-    <div class="now-banner" style={{ background: bg, '--goal-stain': stain, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
+    <div class={`now-banner ${paused ? '' : 'live'} ${justStarted ? 'just-started' : ''}`} style={{ background: bg, '--goal-stain': stain, '--lang': stops?.[0] || color, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
       <div class="grow">
         <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} · {profile?.name || 'Uncategorized'} · {formatClock(durationOf(entry, now))}</div>
@@ -568,8 +570,10 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
   const rings = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]]
     .filter(([, g]) => g > 0)
   return (
-    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''}`}
-      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash, '--goal-stain': stain }} onClick={onOpen} role="button">
+    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''} ${active ? 'live' : ''}`}
+      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash, '--goal-stain': stain, '--lang': grey ? 'var(--on-surface)' : (stops?.[0] || profile.colorHex) }} onClick={onOpen} role="button">
+      {/* The redesign's texture (quiet.css): the language's name, large and faint, off the card's corner. */}
+      <span class="script-tex" aria-hidden="true">{profile.name}</span>
       {onToggleStacked && (
         <button class="rings-toggle" title={wide ? 'Rings stacked' : 'Rings side by side'} onClick={(ev) => { ev.stopPropagation(); onToggleStacked() }}>
           <Icon name="screen_rotation" size={20} />

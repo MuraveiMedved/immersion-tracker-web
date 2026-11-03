@@ -34,6 +34,8 @@
 :root[data-theme='light'] { color-scheme: light; --danger: #B3261E; --gold: #B07800; }
 
 * { box-sizing: border-box; }
+/* The redesign's display face (SIL OFL, fonts/FRAUNCES-OFL.txt) - the phone's ui/theme/Type.kt Fraunces. */
+@font-face { font-family: 'Fraunces'; src: url('./fonts/fraunces.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
 html, body { margin: 0; height: 100%; }
 body {
   background: var(--bg);
@@ -1038,3 +1040,4 @@ textarea.input { resize: vertical; }
 .theme-colors { display: flex; gap: 12px; margin-top: 12px; align-items: center; }
 .theme-colors label { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--on-surface-variant); }
 .theme-colors input[type='color'] { width: 100%; height: 44px; padding: 2px; border: 1px solid var(--outline); border-radius: 10px; background: none; cursor: pointer; }
+.script-tex { display: none; }
