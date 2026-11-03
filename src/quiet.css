@@ -21,6 +21,8 @@
 :root[data-ui='quiet'] .section-title h2:not(.normal-look *), :root[data-ui='quiet'] .today-row h2:not(.normal-look *), :root[data-ui='quiet'] .section-header:not(.normal-look *), :root[data-ui='quiet'] .day-head:not(.normal-look *) {
   font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant);
 }
+/* A settings block's heading reads as a section heading, not a word in the accent colour (the phone's SettingsBlock). */
+:root[data-ui='quiet'] .block-title:not(.normal-look *) { font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
 :root[data-ui='quiet'] .home-head { align-items: center; }
 :root[data-ui='quiet'] .home-head .title-col { padding-bottom: 8px; }
 :root[data-ui='quiet'] .app-title { font-size: 13px; line-height: 18px; font-weight: 500; }
