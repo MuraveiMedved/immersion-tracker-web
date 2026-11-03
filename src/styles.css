@@ -1040,4 +1040,3 @@ textarea.input { resize: vertical; }
 .theme-colors { display: flex; gap: 12px; margin-top: 12px; align-items: center; }
 .theme-colors label { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--on-surface-variant); }
 .theme-colors input[type='color'] { width: 100%; height: 44px; padding: 2px; border: 1px solid var(--outline); border-radius: 10px; background: none; cursor: pointer; }
-.script-tex { display: none; }

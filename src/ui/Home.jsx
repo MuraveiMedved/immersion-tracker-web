@@ -13,12 +13,6 @@ import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
 
-/** A goal card's monogram: the first letter of the name (a whole code point, so 日 or 한 too), capitalised. */
-export function monogramOf(name) {
-  const first = [...(name || '').trim()][0]
-  return first ? first.toUpperCase() : ''
-}
-
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
 
 /** Home, laid out like the phone's: title and today's total, what's being tracked (or a dashed
@@ -578,8 +572,6 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
   return (
     <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''} ${active ? 'live' : ''}`}
       data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash, '--goal-stain': stain, '--lang': grey ? 'var(--on-surface)' : (stops?.[0] || profile.colorHex) }} onClick={onOpen} role="button">
-      {/* The redesign's texture (quiet.css): one big monogram, the language's first letter, off the card's corner. */}
-      <span class="script-tex" aria-hidden="true">{monogramOf(profile.name)}</span>
       {onToggleStacked && (
         <button class="rings-toggle" title={wide ? 'Rings stacked' : 'Rings side by side'} onClick={(ev) => { ev.stopPropagation(); onToggleStacked() }}>
           <Icon name="screen_rotation" size={20} />

@@ -264,16 +264,8 @@
 :root[data-ui='quiet'] h1, :root[data-ui='quiet'] .page-title, :root[data-ui='quiet'] .quiet-hero .total { font-size: 24px; line-height: 30px; letter-spacing: -.3px; }
 :root[data-ui='quiet'] .ring-stat .val { font-family: var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; font-size: 13px; font-weight: 500; font-variant-numeric: normal; }
 
-/* Each goal card's texture: one big monogram, the language's first letter, cropped off its corner. */
 :root[data-ui='quiet'] .goal-card { overflow: hidden; }
 :root[data-ui='quiet'] .goal-card > :is(.name, .rings, .rings-toggle) { position: relative; z-index: 1; }
-:root[data-ui='quiet'] .script-tex {
-  display: block; position: absolute; right: -24px; bottom: -40px; z-index: 0; pointer-events: none; white-space: nowrap;
-  font: 600 112px/1 var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; color: var(--lang); opacity: .08;
-}
-:root[data-ui='quiet'][data-theme='light'] .script-tex { opacity: .08; }
-:root[data-ui='quiet'] .goal-card.wide .script-tex { font-size: 124px; }
-
 /* While tracking, what shows it breathes on one beat (--beat, set in main.jsx); nothing else moves. */
 :root[data-ui='quiet'] .goal-card.live::after, :root[data-ui='quiet'] .now-banner.live::before {
   content: ''; position: absolute; inset: 0; pointer-events: none; background: var(--lang); opacity: calc(.07 * var(--beat, 0));
