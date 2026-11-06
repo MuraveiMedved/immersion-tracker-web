@@ -175,6 +175,8 @@ export function Home({ nav }) {
             ? <div class="list">{today.map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => setDetails(e.id)} />)}</div>
             : <p class="muted" style="margin:8px 0">Nothing logged yet today.</p>
         })()}
+        {/* Everything older: the All entries tab. */}
+        <button class="btn text" style="margin:4px 0 0 -12px" onClick={() => nav('entries', { tab: 'entries' })}>See more</button>
       </>}
       {!s.settings.quietUi && <>
         <div class="divider" />
