@@ -512,7 +512,8 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe, menuExtras })
             {[['total', 'Total'], ['today', 'Today']].map(([k, l]) => <button key={k} class={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}
           </div>
         )}
-        {canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
+        {/* Not in the redesign: the note pushed the standings down each time Today was picked. */}
+        {!s.settings.quietUi && canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
         <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} />
         {started && <RaceCharts event={event} now={now} />}
       </>}
