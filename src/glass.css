@@ -68,9 +68,12 @@
 :root[data-glass]:not([data-ui='quiet']) .cos-cat.on .cos-badge { background: var(--primary); }
 
 /* Small controls: the same veil, no blur of their own (they sit on a sheet or on the bursts). */
-:root[data-glass]:not([data-ui='quiet']) :is(.pill-toggle:not(.on), .entry .dur, .dur-pill, .col-pick, .col-pick select, .chip:not(.on), .icon-btn.filled, .input, .title-field, .btn.tonal, .seg, .standings-switch, .code-pill, .stale-badge, .sel-bar, .type-pill:not(.on), .tier-row:not(.reached)) {
+:root[data-glass]:not([data-ui='quiet']) :is(.pill-toggle:not(.on), .entry .dur, .dur-pill, .col-pick, .col-pick select, .chip:not(.on), .icon-btn.filled, .input, .title-field, .btn.tonal, .seg, .code-pill, .stale-badge, .sel-bar, .type-pill:not(.on), .tier-row:not(.reached)) {
   background: var(--glass); border-color: var(--glass-edge);
 }
+:root[data-glass]:not([data-ui='quiet']) .standings-switch { background: var(--glass-strong); border: 1px solid var(--glass-edge); }
+:root[data-glass]:not([data-ui='quiet']) .standings-switch button { color: var(--on-surface); }
+:root[data-glass]:not([data-ui='quiet']) .standings-switch button.on { background: var(--primary); color: var(--on-primary); }
 :root[data-glass]:not([data-ui='quiet']) .switch input:not(:checked) + span { background: var(--glass); border-color: var(--glass-edge); }
 :root[data-glass]:not([data-ui='quiet']) .sa-item:not(.live) { background: var(--glass); }
 
