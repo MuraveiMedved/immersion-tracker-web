@@ -141,13 +141,12 @@
 
 /* Home: a full-width card is one line, rings beside its name, so three don't fill the screen. A
    card can still be switched to half width and stacked rings, which keep their normal layout. */
-:root[data-ui='quiet'] .goal-card.wide { flex-direction: row; justify-content: space-evenly; align-items: flex-start; text-align: left; }
-:root[data-ui='quiet'] .goal-card.wide > .name { align-self: center; flex: 1; min-width: 0; }
-:root[data-ui='quiet'] .goal-card.wide { flex-wrap: wrap; row-gap: 4px; }
-:root[data-ui='quiet'] .goal-card.wide > .name { flex: 1 1 90px; }
-/* Fixed columns from the right, so every card's rings line up whatever their labels say. */
-:root[data-ui='quiet'] .goal-card.wide .rings { display: grid; grid-auto-flow: column; grid-auto-columns: 84px; justify-content: end; align-items: start; flex: none; width: auto; gap: 0; }
-:root[data-ui='quiet'] .goal-card.wide .ring-stat { width: 84px; margin: 0; padding: 4px 0; }
+/* Like the phone's horizontal card: the name and each ring spread evenly across the row (SpaceEvenly),
+   rings lined up along their tops - not packed against the right edge. */
+:root[data-ui='quiet'] .goal-card.wide { flex-direction: row; flex-wrap: wrap; justify-content: space-evenly; align-items: flex-start; row-gap: 4px; text-align: left; }
+:root[data-ui='quiet'] .goal-card.wide > .name { align-self: center; min-width: 0; }
+:root[data-ui='quiet'] .goal-card.wide .rings { display: contents; }
+:root[data-ui='quiet'] .goal-card.wide .ring-stat { min-width: 84px; padding: 4px 6px; }
 
 /* Small text stays readable. */
 :root[data-ui='quiet'] :is(.version, .ring-stat .val, .bar-label, .label-small, .qtile span, .chart-axis span, .st-figure .sub, .record-tile .k, .fact-tile .k, .tiny) { font-size: 12px; }
@@ -256,13 +255,16 @@
 /* Over a background image the flat bar stays readable without hiding the picture. */
 :root[data-bgimage][data-ui='quiet'] .nav { background: color-mix(in srgb, var(--bg) 82%, transparent); }
 
-/* Headings and still figures in the display face (the phone's Fraunces); ticking clocks keep the plain one. */
-:root[data-ui='quiet'] { --display: 'Fraunces', var(--font); }
-:root[data-ui='quiet'] :is(h1, .page-title, .cos-head, .race-title, .title-large, .quiet-hero .total, .home-head .today-total) {
+/* Headings and still figures in the display face (the phone's Fraunces) - only with Serif type on
+   (data-serif, opt in); ticking clocks keep the plain one. */
+:root[data-ui='quiet'] { --display: var(--font); }
+:root[data-ui='quiet'][data-serif] { --display: 'Fraunces', var(--font); }
+:root[data-ui='quiet'][data-serif] :is(h1, .page-title, .cos-head, .race-title, .title-large, .quiet-hero .total, .home-head .today-total) {
   font-family: var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; font-variant-numeric: normal;
 }
 :root[data-ui='quiet'] h1, :root[data-ui='quiet'] .page-title, :root[data-ui='quiet'] .quiet-hero .total { font-size: 24px; line-height: 30px; letter-spacing: -.3px; }
-:root[data-ui='quiet'] .ring-stat .val { font-family: var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; font-size: 13px; font-weight: 500; font-variant-numeric: normal; }
+:root[data-ui='quiet'] .ring-stat .val { font-size: 13px; font-weight: 500; }
+:root[data-ui='quiet'][data-serif] .ring-stat .val { font-family: var(--display); font-variation-settings: 'opsz' 48, 'SOFT' 50; font-variant-numeric: normal; }
 
 :root[data-ui='quiet'] .goal-card { overflow: hidden; }
 :root[data-ui='quiet'] .goal-card > :is(.name, .rings, .rings-toggle) { position: relative; z-index: 1; }

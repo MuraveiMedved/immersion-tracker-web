@@ -285,6 +285,11 @@ function Appearance() {
         <SettingRow icon="palette" title="New look (experimental)" hint="A quieter, flatter redesign of the whole app, with thin lines instead of cards and fewer taps to get around.">
           <Switch checked={!!s.settings.quietUi} onChange={(v) => setSetting('quietUi', v)} />
         </SettingRow>
+        {s.settings.quietUi && (
+          <SettingRow icon="text_fields" title="Serif type" hint="Headings, totals and ring times in an editorial serif.">
+            <Switch checked={!!s.settings.serifUi} onChange={(v) => setSetting('serifUi', v)} />
+          </SettingRow>
+        )}
       </Block>
       <div class="cos-cats" role="tablist">
         {COSMETIC_TABS.map(([k, l, icon]) => (

@@ -49,6 +49,8 @@ function App() {
   const [visit, setVisit] = useState(0)
   useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset, s.settings.customThemes])
   useEffect(() => applyLook(s.settings.quietUi, s.settings.glassUi), [s.settings.quietUi, s.settings.glassUi])
+  // The New look's serif is opt in (Appearance > Serif type); quiet.css uses it only under [data-serif].
+  useEffect(() => { document.documentElement.toggleAttribute('data-serif', !!s.settings.serifUi) }, [s.settings.serifUi])
   // The redesign's one motion (the phone's LiveBeat): while something's tracked, everything showing it
   // breathes on this one slow beat, as --beat (0 to 1 and back every 4 s) on the root.
   const tracking = s.entries.some((e) => e.endTimeMillis == null)
@@ -155,6 +157,7 @@ if (import.meta.env.DEV) window.__tracker = { getState, update, sync: syncModule
 loadState().then(() => {
   applyTheme(getState().settings.uiColorPreset)
   applyLook(getState().settings.quietUi, getState().settings.glassUi)
+  document.documentElement.toggleAttribute('data-serif', !!getState().settings.serifUi)
   ensureBase()
   render(<App />, document.getElementById('app'))
   startBackgroundWork()

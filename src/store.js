@@ -65,6 +65,7 @@ export function defaultState() {
       bgFit: 'FILL',
       bgDim: 0.6,
       quietUi: false,
+      serifUi: false, // the New look's serif (Fraunces) - opt in, per device, never synced
       ringStyle: 'CLASSIC',
       titleStyleMode: 'DEFAULT',
       goalCardStyleMode: 'LANGUAGE_COLOR',
