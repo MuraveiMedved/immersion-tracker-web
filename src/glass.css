@@ -38,10 +38,10 @@
    takes only the backdrop above and the frosted goal cards and bar at the end of this file. */
 
 /* Panels. The real blur lives here; a browser without it still gets the veil and the lit edge. */
-:root[data-glass]:not([data-ui='quiet']) :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .goal-card, .now-banner, .idle-banner, .nav, .winner-row, .notice, .person-hero, .trade-bar) {
+:root[data-glass]:not([data-ui='quiet']) :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .goal-card, .now-banner, .idle-banner, .nav, .winner-row, .notice, .person-hero, .trade-bar) {
   -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
 }
-:root[data-glass]:not([data-ui='quiet']) :is(.card, .block, .fold, .egg-card, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row) {
+:root[data-glass]:not([data-ui='quiet']) :is(.card, .block, .fold, .egg-card, .zoo-feed, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row) {
   background: var(--glass); border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top); box-shadow: var(--glass-shadow);
 }
 :root[data-glass]:not([data-ui='quiet']) .crate-row { background: var(--glass); box-shadow: var(--glass-shadow); }

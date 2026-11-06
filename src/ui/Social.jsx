@@ -139,12 +139,12 @@ function Race({ onEditName, onOpenMe }) {
     <button onClick={() => { close(); setSettings(true) }}><Icon name="brush" size={20} />Race settings</button>
     <button onClick={() => { close(); onEditName() }}><Icon name="edit" size={20} />Name &amp; emoji</button>
   </>
-  const foldRacerLine = s.settings.quietUi && !!shownRace
+  const foldRacerLine = !!shownRace // both looks: who you race as lives in the race's own menu
 
   return (
     <div style="margin-top:14px">
       {/* The phone's header: who you race as (tap to change), how fresh the standings are, then add / settings.
-          The redesign folds it into the race's own menu; with no race showing there's no menu to fold it into. */}
+          It folds into the race's own menu (both looks); with no race showing there's no menu to fold it into. */}
       {!foldRacerLine && <div class="row" style="margin-right:-12px">
         <div class="grow clickable" style="min-width:0" onClick={onEditName}>
           <div class="title-medium ellipsis">Racing as {s.race.emoji ? `${displayEmoji(s.race.emoji)} ` : ''}{s.race.name}</div>
