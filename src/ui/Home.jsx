@@ -570,14 +570,15 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
         const ms = todayOf(type)
         const goalMs = goal * 60000
         const on = isActive(type)
+        const met = ms >= goalMs // reached: icon and figure in the language's colour, a check before the figure
         // The General goal stands for two kinds of session: its tap opens the dialog, as on the card.
         const tap = type === GENERAL ? {} : { title: on ? `Stop ${sessionName(type, profile.id)}` : `Start ${sessionName(type, profile.id)}`,
           onClick: (ev) => { ev.stopPropagation(); toggleTimer(type, profile.id) } }
         return (
           <div key={type} class={`gl-row ${on ? 'on' : ''}`}>
-            <button class="gl-icon" {...tap}><TypeIcon type={type} size={18} color={on ? ink : 'var(--on-surface-variant)'} /></button>
+            <button class="gl-icon" {...tap}><TypeIcon type={type} size={18} color={on || met ? ink : 'var(--on-surface-variant)'} /></button>
             <div class="gl-track"><div style={{ width: `${Math.min(100, (ms / goalMs) * 100)}%`, background: bar }} /></div>
-            <span class={`gl-figure ${ms >= goalMs ? 'met' : ''}`}>{formatHm(ms)} / {formatHm(goalMs, true)}</span>
+            <span class={`gl-figure ${met ? 'met' : ''}`}>{met && <Icon name="check" size={15} color="var(--lang)" />}{formatHm(ms)} / {formatHm(goalMs, true)}</span>
             <span class="gl-streak"><StreakBadge streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} /></span>
           </div>
         )

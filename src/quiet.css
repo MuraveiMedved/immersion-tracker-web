@@ -164,7 +164,8 @@
 :root[data-ui='quiet'] .gl-track { flex: 1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--on-surface) 10%, transparent); overflow: hidden; margin-left: 3px; }
 :root[data-ui='quiet'] .gl-track > div { height: 100%; }
 :root[data-ui='quiet'] .gl-figure { min-width: 92px; white-space: nowrap; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--on-surface); }
-:root[data-ui='quiet'] .gl-figure.met { color: var(--lang); }
+:root[data-ui='quiet'] .gl-figure { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; }
+:root[data-ui='quiet'] .gl-figure.met { color: var(--lang); font-weight: 700; }
 :root[data-ui='quiet'] .gl-streak { min-width: 64px; margin-left: 4px; display: flex; justify-content: flex-end; white-space: nowrap; }
 :root[data-ui='quiet'] .gl-streak .streak { margin: 0; }
 
