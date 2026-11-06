@@ -51,7 +51,9 @@ export function Home({ nav }) {
   // else the last unpicked one (left where it is). A card picked as stacked is never widened.
   // The redesign starts every card full width, so goals are the top of Home rather than all of it -
   // a choice made on the card still stands.
-  const choiceOf = (p) => drag.stackedOf(p) ?? (s.settings.quietUi ? false : null)
+  // The redesign draws every language as plain full-width lines (GoalLines), so shapes don't apply there;
+  // one picked in the normal look is kept for it.
+  const choiceOf = (p) => (s.settings.quietUi ? false : drag.stackedOf(p) ?? null)
   const halves = cards.filter((p) => choiceOf(p) !== false)
   const unpicked = halves.filter((p) => choiceOf(p) == null)
   const oddOne = halves.length % 2 === 1 ? unpicked.find((p) => p.isMain) || unpicked[unpicked.length - 1] || null : null
@@ -103,7 +105,7 @@ export function Home({ nav }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
-  const card = (p, wide) => <GoalCard key={p.id} profile={p} now={now} running={running} light={light} wide={wide}
+  const card = (p, wide) => s.settings.quietUi ? <GoalLines key={p.id} profile={p} now={now} running={running} light={light} lifted={drag.id === p.id} selected={drag.selected === p.id} onOpen={() => setGoalCard(p.id)} /> : <GoalCard key={p.id} profile={p} now={now} running={running} light={light} wide={wide}
     lifted={drag.id === p.id} selected={drag.selected === p.id} stacked={drag.stackedOf(p) === true}
     onToggleStacked={drag.selected === p.id ? () => drag.toggleStacked(p, s.settings.quietUi ? drag.stackedOf(p) !== true : wide) : null} onOpen={() => setGoalCard(p.id)} />
 
@@ -539,6 +541,47 @@ export function HomeMenu({ nav, onClose, current = null, active = null }) {
         <button class={`side-menu-item ${current === 'entries' ? 'on' : ''}`} onClick={() => go('entries')}><span class="badge-ico"><Icon name="list" size={22} /></span>Entries</button>
         <button class={`side-menu-item ${current === 'stats' ? 'on' : ''}`} onClick={() => go('stats')}><span class="badge-ico"><Icon name="bar_chart" size={22} /></span>Stats</button>
       </nav>
+    </div>
+  )
+}
+
+/** A language on the redesign's Home without a card (the phone's QuietGoalLines): its name, then a line per
+ *  goal - its icon (tap to start or stop that timer), a thin bar in the language's colour, "32m / 1h" and the
+ *  streak - over a rule. Plain on purpose: the figures are what's read, so they line up in one column. */
+function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
+  const s = useStore()
+  const todayStart = goalDayStart(now)
+  const todayOf = (type) => s.entries.reduce((t, e) => (e.languageProfileId === profile.id && fillsGoal(type, e.contentType) && e.startTimeMillis >= todayStart ? t + durationOf(e, now) : t), 0)
+  const isActive = (type) => running.some((e) => e.languageProfileId === profile.id && fillsGoal(type, e.contentType))
+  const active = isActive(PODCAST) || isActive(READING) || isActive(ANKI)
+  const stops = gradientStops(profile)
+  const grey = s.settings.goalCardStyleMode === 'GREY_TINT'
+  const ink = grey ? 'var(--on-surface)' : light ? deepened(profile.colorHex, 0.42) : profile.colorHex
+  const bar = grey ? 'var(--on-surface)' : stops && stops.length > 1 ? `linear-gradient(90deg, ${stops.join(', ')})` : profile.colorHex
+  const nameStyle = !grey && stops && stops.length > 1
+    ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+    : { color: ink }
+  const goals = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]].filter(([, g]) => g > 0)
+  return (
+    <div class={`goal-lines ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${active ? 'live' : ''}`} data-goal-id={profile.id}
+      style={{ '--lang': ink }} onClick={onOpen} role="button">
+      <div class="gl-name"><span class="ellipsis" style={nameStyle}>{profile.name}</span>{active && <span class="gl-live"><i />live</span>}</div>
+      {goals.map(([type, goal]) => {
+        const ms = todayOf(type)
+        const goalMs = goal * 60000
+        const on = isActive(type)
+        // The General goal stands for two kinds of session: its tap opens the dialog, as on the card.
+        const tap = type === GENERAL ? {} : { title: on ? `Stop ${sessionName(type, profile.id)}` : `Start ${sessionName(type, profile.id)}`,
+          onClick: (ev) => { ev.stopPropagation(); toggleTimer(type, profile.id) } }
+        return (
+          <div key={type} class={`gl-row ${on ? 'on' : ''}`}>
+            <button class="gl-icon" {...tap}><TypeIcon type={type} size={18} color={on ? ink : 'var(--on-surface-variant)'} /></button>
+            <div class="gl-track"><div style={{ width: `${Math.min(100, (ms / goalMs) * 100)}%`, background: bar }} /></div>
+            <span class={`gl-figure ${ms >= goalMs ? 'met' : ''}`}>{formatHm(ms)} / {formatHm(goalMs, true)}</span>
+            <span class="gl-streak"><StreakBadge streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} /></span>
+          </div>
+        )
+      })}
     </div>
   )
 }
