@@ -256,12 +256,15 @@ export const customThemeOf = (preset) => (isCustomPreset(preset) ? customThemes.
 
 /** The experimental redesign (quiet.css) and the Glass finish (glass.css), each on its own - per
  *  device, not synced. */
-export function applyLook(quiet, glass) {
+export function applyLook(quiet, glass, clear = false) {
   const root = document.documentElement
   if (quiet) root.dataset.ui = 'quiet'
   else delete root.dataset.ui
   if (glass) root.dataset.glass = ''
   else delete root.dataset.glass
+  // Clear glass (glass.css): a lens over the bursts rather than frost - only with Glass on.
+  if (glass && clear) root.dataset.glassClear = ''
+  else delete root.dataset.glassClear
 }
 
 export const luminance = (hex) => {

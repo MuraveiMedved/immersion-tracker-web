@@ -7,6 +7,7 @@
   --glass-edge: rgba(255, 255, 255, .18);
   --glass-edge-top: rgba(255, 255, 255, .34);
   --glass-shadow: 0 8px 28px rgba(0, 0, 0, .22);
+  --glass-filter: blur(24px) saturate(160%);
   --block: var(--glass) !important;
   --block-line: var(--glass-edge) !important;
 }
@@ -39,7 +40,7 @@
 
 /* Panels. The real blur lives here; a browser without it still gets the veil and the lit edge. */
 :root[data-glass]:not([data-ui='quiet']) :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .goal-card, .now-banner, .idle-banner, .nav, .winner-row, .notice, .person-hero, .trade-bar) {
-  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter);
 }
 :root[data-glass]:not([data-ui='quiet']) :is(.card, .block, .fold, .egg-card, .zoo-feed, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row) {
   background: var(--glass); border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top); box-shadow: var(--glass-shadow);
@@ -50,7 +51,7 @@
 /* Every other tile and panel, Appearance's included. What a surface shows stays solid - chart bars,
    previews, photos, medals - since that's content rather than the surface it sits on. */
 :root[data-glass]:not([data-ui='quiet']) :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .sprint-row, .lang-tile, .fact-tile, .record-tile, .person-hero, .friend-row, .menu) {
-  -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter);
 }
 :root[data-glass]:not([data-ui='quiet']) :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .lang-tile, .fact-tile, .record-tile) {
   background: var(--glass); border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top);
@@ -99,7 +100,7 @@
 :root[data-glass]:not([data-ui='quiet']) .dialog { background: var(--c-high); }
 
 /* With New look on too: the bursts, and frost on the two things that are still objects on the page. */
-:root[data-glass][data-ui='quiet'] .goal-card { -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%); }
+:root[data-glass][data-ui='quiet'] .goal-card { -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); }
 :root[data-glass][data-ui='quiet'] .nav {
   background: color-mix(in srgb, var(--bg) 72%, transparent); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
 }
@@ -108,7 +109,55 @@
   :root[data-glass][data-ui='quiet'] .nav { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 :root[data-glass][data-ui='quiet'] .dialog { background: var(--c-high); }
-:root[data-glass][data-ui='quiet'] .idle-banner { background: var(--glass); -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%); }
+:root[data-glass][data-ui='quiet'] .idle-banner { background: var(--glass); -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); }
+
+/* Clear glass (Appearance > Glass > Clear; the phone's Glass.clear): a lens, not frost. Panels drop the
+   milky veil and nearly all the blur; what's behind them is pushed in colour instead (saturated, brighter,
+   a touch more contrast), and each panel's edge bends the bursts into a coloured band under a bright
+   top-left rim with a faint rainbow fringe. No grain - that's what made the bursts read as frosted. */
+:root[data-glass][data-glass-clear] {
+  --glass: rgba(255, 255, 255, .025);
+  --glass-strong: rgba(255, 255, 255, .06);
+  --glass-edge: rgba(255, 255, 255, .26);
+  --glass-edge-top: rgba(255, 255, 255, .6);
+  --glass-filter: blur(1.5px) saturate(210%) brightness(1.1) contrast(1.06);
+  --burst-strength: .6;
+  --glass-shadow:
+    inset 1.5px 1.5px 0 -.5px rgba(255, 255, 255, .55),
+    inset -1px -1px 0 -.5px rgba(255, 255, 255, .16),
+    inset 2px 0 1px -1px rgba(255, 90, 160, .3),
+    inset -2px 0 1px -1px rgba(80, 210, 255, .3),
+    inset 0 0 16px -5px color-mix(in srgb, var(--burst-2, #fff) 75%, transparent),
+    inset 10px 12px 22px -16px color-mix(in srgb, var(--burst-1, #fff) 80%, transparent),
+    0 10px 30px rgba(0, 0, 0, .28);
+}
+:root[data-glass][data-glass-clear][data-theme='light'] {
+  --glass: rgba(255, 255, 255, .14);
+  --glass-strong: rgba(255, 255, 255, .26);
+  --glass-edge: rgba(26, 27, 58, .12);
+  --glass-edge-top: rgba(255, 255, 255, 1);
+  --glass-filter: blur(1.5px) saturate(190%) brightness(1.04) contrast(1.04);
+  --burst-strength: .52;
+  --glass-shadow:
+    inset 1.5px 1.5px 0 -.5px rgba(255, 255, 255, .95),
+    inset -1px -1px 0 -.5px rgba(26, 27, 58, .1),
+    inset 2px 0 1px -1px rgba(255, 90, 160, .25),
+    inset -2px 0 1px -1px rgba(60, 170, 255, .25),
+    inset 0 0 16px -5px color-mix(in srgb, var(--burst-2, #fff) 70%, transparent),
+    inset 10px 12px 22px -16px color-mix(in srgb, var(--burst-1, #fff) 75%, transparent),
+    0 10px 28px rgba(26, 27, 58, .12);
+}
+:root[data-glass][data-glass-clear] body::before {
+  background:
+    radial-gradient(70vmax 70vmax at 10% 8%, var(--burst-1), transparent 70%),
+    radial-gradient(62vmax 62vmax at 98% 42%, var(--burst-2), transparent 70%),
+    radial-gradient(72vmax 72vmax at 5% 82%, var(--burst-3), transparent 70%),
+    radial-gradient(44vmax 44vmax at 85% 100%, var(--burst-1), transparent 70%);
+}
+/* Tiles and panels that only had an edge take the lens rim too. */
+:root[data-glass][data-glass-clear]:not([data-ui='quiet']) :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .lang-tile, .fact-tile, .record-tile, .sprint-row, .person-hero, .friend-row, .standing-row, .standings-switch, .now-banner, .idle-banner) {
+  box-shadow: var(--glass-shadow);
+}
 
 /* A background image takes the bursts' place (ui/CustomLook.jsx). */
 :root[data-bgimage] body::before { display: none; }
