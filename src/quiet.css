@@ -159,12 +159,13 @@
 :root[data-ui='quiet'] .gl-live { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--lang); flex: none; }
 :root[data-ui='quiet'] .gl-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--lang); opacity: calc(.45 + .55 * var(--beat, 0)); }
 :root[data-ui='quiet'] .gl-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+:root[data-ui='quiet'] .gl-row > .gl-figure { margin-left: 6px; }
 :root[data-ui='quiet'] .gl-icon { flex: none; width: 44px; height: 44px; margin: 0 -13px; display: grid; place-items: center; background: transparent; border: 0; padding: 0; cursor: pointer; }
 :root[data-ui='quiet'] .gl-track { flex: 1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--on-surface) 10%, transparent); overflow: hidden; margin-left: 3px; }
 :root[data-ui='quiet'] .gl-track > div { height: 100%; }
-:root[data-ui='quiet'] .gl-figure { min-width: 84px; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--on-surface); }
+:root[data-ui='quiet'] .gl-figure { min-width: 92px; white-space: nowrap; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--on-surface); }
 :root[data-ui='quiet'] .gl-figure.met { color: var(--lang); }
-:root[data-ui='quiet'] .gl-streak { min-width: 52px; display: flex; justify-content: flex-end; }
+:root[data-ui='quiet'] .gl-streak { min-width: 64px; margin-left: 4px; display: flex; justify-content: flex-end; white-space: nowrap; }
 :root[data-ui='quiet'] .gl-streak .streak { margin: 0; }
 
 /* Small text stays readable. */
