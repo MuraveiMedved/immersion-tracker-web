@@ -169,6 +169,15 @@
 :root[data-ui='quiet'] .gl-streak { min-width: 64px; margin-left: 4px; display: flex; justify-content: flex-end; white-space: nowrap; }
 :root[data-ui='quiet'] .gl-streak .streak { margin: 0; }
 
+/* Home's This week (WeekStrip): seven plain bars, stacked by language. */
+:root[data-ui='quiet'] .ws-days { display: flex; gap: 8px; }
+:root[data-ui='quiet'] .ws-day { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+:root[data-ui='quiet'] .ws-bar { width: 100%; height: 64px; border-radius: 3px; overflow: hidden; display: flex; align-items: flex-end; background: color-mix(in srgb, var(--on-surface) 6%, transparent); }
+:root[data-ui='quiet'] .ws-bar > div { width: 100%; display: flex; flex-direction: column; }
+:root[data-ui='quiet'] .ws-letter { margin-top: 6px; font-size: 12px; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .ws-day.today .ws-letter { color: var(--on-surface); font-weight: 700; }
+:root[data-ui='quiet'] .ws-total { font-size: 11px; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 /* Small text stays readable. */
 :root[data-ui='quiet'] :is(.version, .ring-stat .val, .bar-label, .label-small, .qtile span, .chart-axis span, .st-figure .sub, .record-tile .k, .fact-tile .k, .tiny) { font-size: 12px; }
 :root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter, .col-pick, .swatch):not(.normal-look *) { min-width: 44px; justify-content: center; }

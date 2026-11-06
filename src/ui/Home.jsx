@@ -164,7 +164,18 @@ export function Home({ nav }) {
         </div>
       )}
 
-      {/* The redesign's Home ends at the goals: everything recent is a tab away under All entries. */}
+      {/* The redesign, below the goals: the week at a glance, then what was logged today (the phone's WeekStrip
+          and Today list); everything older is a tab away under All entries. */}
+      {s.settings.quietUi && <>
+        <WeekStrip now={now} light={light} />
+        <div class="section-header" style="margin:24px 0 4px">Today</div>
+        {(() => {
+          const today = recent.filter((e) => e.startTimeMillis >= goalDayStart(now))
+          return today.length
+            ? <div class="list">{today.map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => setDetails(e.id)} />)}</div>
+            : <p class="muted" style="margin:8px 0">Nothing logged yet today.</p>
+        })()}
+      </>}
       {!s.settings.quietUi && <>
         <div class="divider" />
         <div class="row" style="margin-right:-12px">
@@ -541,6 +552,43 @@ export function HomeMenu({ nav, onClose, current = null, active = null }) {
         <button class={`side-menu-item ${current === 'entries' ? 'on' : ''}`} onClick={() => go('entries')}><span class="badge-ico"><Icon name="list" size={22} /></span>Entries</button>
         <button class={`side-menu-item ${current === 'stats' ? 'on' : ''}`} onClick={() => go('stats')}><span class="badge-ico"><Icon name="bar_chart" size={22} /></span>Stats</button>
       </nav>
+    </div>
+  )
+}
+
+/** The redesign's This week (the phone's WeekStrip): a column per goal day, oldest to today, each bar
+ *  stacked by language in its colour and scaled to the week's biggest day, the day's letter and total
+ *  under it. Finished immersion only (no music, no Anki), like the phone. */
+function WeekStrip({ now, light }) {
+  const s = useStore()
+  const todayStart = goalDayStart(now)
+  const starts = [6, 5, 4, 3, 2, 1, 0].map((k) => addDays(todayStart, -k))
+  const langs = s.profiles.filter((p) => !p.isAnki)
+  const days = starts.map((start, i) => {
+    const end = starts[i + 1] ?? Infinity
+    const by = new Map()
+    for (const e of s.entries) {
+      if (e.endTimeMillis == null || e.startTimeMillis < start || e.startTimeMillis >= end || !counts(e.contentType, e.languageProfileId)) continue
+      by.set(e.languageProfileId, (by.get(e.languageProfileId) || 0) + durationOf(e, now))
+    }
+    const parts = langs.filter((p) => by.get(p.id)).map((p) => [p, by.get(p.id)])
+    return { start, parts, total: parts.reduce((t, [, ms]) => t + ms, 0) }
+  })
+  const most = Math.max(1, ...days.map((d) => d.total))
+  return (
+    <div class="week-strip">
+      <div class="section-header" style="margin:20px 0 10px">This week</div>
+      <div class="ws-days">
+        {days.map((d, i) => (
+          <div key={d.start} class={`ws-day ${i === 6 ? 'today' : ''}`}>
+            <div class="ws-bar"><div style={{ height: `${(d.total / most) * 100}%` }}>
+              {[...d.parts].reverse().map(([p, ms]) => <div key={p.id} style={{ flex: ms, background: p.colorHex }} />)}
+            </div></div>
+            <span class="ws-letter">{new Date(d.start).toLocaleDateString(undefined, { weekday: 'narrow' })}</span>
+            <span class="ws-total">{d.total ? formatHm(d.total, true) : '–'}</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
