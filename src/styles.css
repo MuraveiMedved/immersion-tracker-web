@@ -142,6 +142,11 @@ main.page {
   background: var(--primary); color: var(--on-primary); font-size: 14px; font-weight: 600; letter-spacing: .1px; white-space: nowrap;
 }
 .btn:disabled { opacity: .38; cursor: default; }
+/* The squish (the phone's ui/theme/Squish.kt): a button gives a little while held and springs back
+   past full size on release - quick in, a loose overshooting curve out. */
+.btn, .icon-btn { transition: transform .45s cubic-bezier(.34, 1.8, .5, 1); }
+.btn:active:not(:disabled), .icon-btn:active:not(:disabled) { transform: scale(.94); transition: transform .08s ease-out; }
+@media (prefers-reduced-motion: reduce) { .btn, .icon-btn, .btn:active, .icon-btn:active { transition: none; transform: none; } }
 .btn.tonal { background: var(--secondary-container); color: var(--on-surface); }
 .btn.outline { background: transparent; color: var(--primary); border: 1px solid var(--outline); }
 .btn.text { background: transparent; color: var(--primary); padding: 0 12px; }
