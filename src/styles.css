@@ -218,6 +218,22 @@ textarea.input { resize: vertical; }
   animation: pop .18s ease-out;
 }
 .dialog.wide { max-width: 720px; }
+/* Momentum: its day count as a medallion across the dialog's top edge (the phone's MomentumBadge),
+   popping in with the squish spring. The dialog leaves room above itself for the overhang. */
+.dialog.momentum-dialog { position: relative; overflow: visible; margin-top: 46px; padding-top: 58px; }
+.momentum-badge {
+  position: absolute; top: -46px; left: 50%; width: 92px; height: 92px; margin-left: -46px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--bg); border: 3px solid var(--outline-variant); box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  animation: badge-pop .55s cubic-bezier(.34, 1.8, .5, 1);
+}
+.momentum-badge.lit { border-color: transparent; background: linear-gradient(var(--bg), var(--bg)) padding-box, linear-gradient(135deg, var(--tier), var(--tier-pale)) border-box; }
+.momentum-badge .n { font-size: 36px; line-height: 40px; font-weight: 700; }
+.momentum-badge.lit .n { color: var(--tier-ink); }
+:root[data-serif] .momentum-badge .n { font-family: 'Fraunces', serif; }
+.momentum-badge .unit { font-size: 11px; line-height: 14px; color: var(--on-surface-variant); }
+@keyframes badge-pop { from { transform: scale(.6); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .momentum-badge { animation: none; } }
 .dialog.no-scrollbar { scrollbar-width: none; }
 .dialog.no-scrollbar::-webkit-scrollbar { display: none; }
 .dialog h2 { font-size: 24px; line-height: 32px; font-weight: 400; margin-bottom: 16px; }

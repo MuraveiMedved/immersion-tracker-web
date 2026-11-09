@@ -761,16 +761,19 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
   const toGo = next && next.minDays - days
   const pct = Math.min(1, todayMillis / GOLDEN_DAILY_MILLIS)
   return (
-    <Dialog title={`Momentum · ${days}d`} onClose={onClose} sheet={false} actions={<button class="btn" onClick={onClose}>OK</button>}>
-      <div class={`tier-${tier?.id || 'bronze'}`}>
-        <div class="center" style="font-size:54px;margin:4px 0 10px"><Bolt tier={tier?.id} muted={!tier} /></div>
+    <Dialog onClose={onClose} sheet={false} extraClass={`momentum-dialog tier-${tier?.id || 'bronze'}`} actions={<button class="btn" onClick={onClose}>OK</button>}>
+      {/* The day count, large and centred across the dialog's top edge - the one thing to see first. */}
+      <div class={`momentum-badge ${tier ? 'lit' : ''}`} role="img" aria-label={`${days} day${days === 1 ? '' : 's'} of momentum`}>
+        <span class="n">{days}</span><span class="unit">{days === 1 ? 'day' : 'days'}</span>
+      </div>
+      <div>
+        <h2 class="center" style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px"><Bolt tier={tier?.id} muted={!tier} /> Momentum</h2>
         <p style={{ margin: '0 0 12px', fontWeight: 650, textAlign: 'center', color: tier ? 'var(--tier-ink)' : undefined }}>
           {[tier?.name, next ? `${toGo} more day${toGo === 1 ? '' : 's'} to ${next.name}` : 'The top tier'].filter(Boolean).join(' · ')}
         </p>
         <div class="small muted" style="margin-bottom:6px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}{immersing ? ' · counting now' : ''}</div>
         <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, var(--tier), var(--tier-pale))' }} /></div>
-        <p class="muted small" style="margin:14px 0 8px">1+ hour of immersion every day keeps it going - longer runs reach higher tiers. Every language counts together; music and Study don't.</p>
-        <MomentumTierTable current={tier} topTierFirst showHolo={false} />
+        <div style="margin-top:16px"><MomentumTierTable current={tier} topTierFirst showHolo={false} /></div>
       </div>
     </Dialog>
   )
