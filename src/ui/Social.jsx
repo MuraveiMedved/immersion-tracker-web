@@ -542,6 +542,8 @@ function Avatar({ standing, profile, size = 34 }) {
 // Tall enough that racers close together don't sit on top of each other (was 160).
 const CHART_HEIGHT = 320
 const MONTH_LABEL_MIN_DAYS = 120
+/** How many days (the most recent) the day-by-day chart shows. */
+const DAILY_CHART_DAYS = 7
 /** The racer bubbles at the end of each line on the progress chart. */
 const BUBBLE_RADIUS = 12
 
@@ -669,6 +671,8 @@ function ProgressChart({ event, now, daily }) {
   const last = Math.max(raceDay(Math.min(now, event.endMillis ?? now)), ...dayKeys)
   const days = []
   for (let d = first; d <= last && days.length < 731; d++) days.push(epochDayToYmd(d))
+  // Day by day shows only the last week; the running total, the whole race.
+  if (daily && days.length > DAILY_CHART_DAYS) days.splice(0, days.length - DAILY_CHART_DAYS)
   const lines = useMemo(() => withData.map((st) => {
     const color = lineColor(st, event.standings.indexOf(st), event.standings)
     if (daily) return { st, color, rgb: rgbOf(color), cumulative: days.map((k) => st.daily[k] || 0), isMe: st.userId === me, joinIndex: 0 }
@@ -689,7 +693,7 @@ function ProgressChart({ event, now, daily }) {
       return firstWithTime < 0 ? joinDay : Math.min(joinDay, firstWithTime)
     })()
     return { st, color, rgb: rgbOf(color), cumulative, isMe: st.userId === me, joinIndex }
-  }).sort((x, y) => x.isMe - y.isMe), [event, days.length, me, daily])
+  }).sort((x, y) => x.isMe - y.isMe), [event, days.length, days[0], me, daily])
   const topValue = Math.max(0, ...lines.map((l) => (daily ? Math.max(0, ...l.cumulative) : l.cumulative[l.cumulative.length - 1] || 0)))
   const overtakes = useMemo(() => (daily ? [] : findOvertakes(lines, Math.max(60000, topValue * 0.005))), [lines])
   const significantDays = [...new Set(overtakes.filter((o) => o.important).map((o) => o.day))]
