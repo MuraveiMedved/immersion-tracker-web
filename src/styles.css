@@ -105,6 +105,17 @@ main.page {
   .nav button { width: 52px; height: 52px; flex: none; }
   main.page { padding-bottom: 48px; padding-left: max(20px, calc(112px - max(0px, (100vw - 720px) / 2))); }
 }
+/* Social: Friends under the races, or beside them once there's room - the page widens for it. */
+.social-layout { display: flex; flex-direction: column; }
+.social-main { min-width: 0; }
+.social-friends { min-width: 0; margin-top: 24px; }
+@media (min-width: 1100px) {
+  main.page:has(.social-layout) { max-width: 1100px; padding-left: max(20px, calc(112px - max(0px, (100vw - 1100px) / 2))); }
+  .social-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 32px; align-items: start; }
+  .social-friends { margin-top: 0; position: sticky; top: 20px; max-height: calc(100dvh - 40px); overflow-y: auto; scrollbar-width: none; }
+  .social-friends::-webkit-scrollbar { display: none; }
+  .social-friends > div { margin-top: 0 !important; }
+}
 .backdrop-wash { position: fixed; inset: 0 0 auto 0; height: 320px; pointer-events: none; z-index: -1; transition: background .9s; }
 
 /* ---------- surfaces ---------- */
