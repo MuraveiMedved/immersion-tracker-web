@@ -558,8 +558,8 @@ export function HomeMenu({ nav, onClose, current = null, active = null }) {
   )
 }
 
-/** The redesign's This week (the phone's WeekStrip): a column per goal day, oldest to today, each bar
- *  stacked by language in its colour and scaled to the week's biggest day, the day's letter and total
+/** The redesign's This week (the phone's WeekStrip): a thin bar per goal day on one hairline, oldest to today,
+ *  only today in full colour, each bar stacked by language in its colour and scaled to the week's biggest day, the day's letter and total
  *  under it. Finished immersion only (no music, no Anki), like the phone. */
 function WeekStrip({ now, light }) {
   const s = useStore()
@@ -583,11 +583,11 @@ function WeekStrip({ now, light }) {
       <div class="ws-days">
         {days.map((d, i) => (
           <div key={d.start} class={`ws-day ${i === 6 ? 'today' : ''}`}>
-            <div class="ws-bar"><div style={{ height: `${(d.total / most) * 100}%` }}>
+            <div class="ws-bar">{d.total > 0 && <div style={{ height: `${Math.max(6, (d.total / most) * 100)}%` }}>
               {[...d.parts].reverse().map(([p, ms]) => <div key={p.id} style={{ flex: ms, background: p.colorHex }} />)}
-            </div></div>
+            </div>}</div>
             <span class="ws-letter">{new Date(d.start).toLocaleDateString(undefined, { weekday: 'narrow' })}</span>
-            <span class="ws-total">{d.total ? formatHm(d.total, true) : '–'}</span>
+            <span class="ws-total">{d.total ? formatHm(d.total, true) : ''}</span>
           </div>
         ))}
       </div>

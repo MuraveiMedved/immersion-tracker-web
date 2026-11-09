@@ -171,13 +171,16 @@
 :root[data-ui='quiet'] .gl-streak .streak { margin: 0; }
 
 /* Home's This week (WeekStrip): seven plain bars, stacked by language. */
-:root[data-ui='quiet'] .ws-days { display: flex; gap: 8px; }
+:root[data-ui='quiet'] .ws-days { display: flex; gap: 8px; background: linear-gradient(color-mix(in srgb, var(--on-surface) 10%, transparent), color-mix(in srgb, var(--on-surface) 10%, transparent)) 0 44px / 100% 1px no-repeat; }
 :root[data-ui='quiet'] .ws-day { flex: 1; display: flex; flex-direction: column; align-items: center; min-width: 0; }
-:root[data-ui='quiet'] .ws-bar { width: 100%; height: 64px; border-radius: 3px; overflow: hidden; display: flex; align-items: flex-end; background: color-mix(in srgb, var(--on-surface) 6%, transparent); }
-:root[data-ui='quiet'] .ws-bar > div { width: 100%; display: flex; flex-direction: column; }
-:root[data-ui='quiet'] .ws-letter { margin-top: 6px; font-size: 12px; color: var(--on-surface-variant); }
-:root[data-ui='quiet'] .ws-day.today .ws-letter { color: var(--on-surface); font-weight: 700; }
-:root[data-ui='quiet'] .ws-total { font-size: 11px; color: var(--on-surface-variant); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Quiet on purpose (the phone's WeekStrip): a thin bar on one hairline, no box behind it, the past days held back. */
+:root[data-ui='quiet'] .ws-bar { width: 6px; height: 44px; display: flex; align-items: flex-end; }
+:root[data-ui='quiet'] .ws-bar > div { width: 100%; display: flex; flex-direction: column; border-radius: 3px 3px 0 0; overflow: hidden; opacity: .45; }
+:root[data-ui='quiet'] .ws-day.today .ws-bar > div { opacity: 1; }
+:root[data-ui='quiet'] .ws-letter { margin-top: 7px; font-size: 11px; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); }
+:root[data-ui='quiet'] .ws-day.today .ws-letter { color: var(--on-surface); font-weight: 600; }
+:root[data-ui='quiet'] .ws-total { font-size: 11px; min-height: 1.3em; color: color-mix(in srgb, var(--on-surface-variant) 60%, transparent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+:root[data-ui='quiet'] .ws-day.today .ws-total { color: var(--on-surface-variant); }
 
 /* Small text stays readable. */
 :root[data-ui='quiet'] :is(.version, .ring-stat .val, .bar-label, .label-small, .qtile span, .chart-axis span, .st-figure .sub, .record-tile .k, .fact-tile .k, .tiny) { font-size: 12px; }
