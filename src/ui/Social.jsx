@@ -529,7 +529,7 @@ function Avatar({ standing, profile, size = 34 }) {
 const CHART_HEIGHT = 320
 const MONTH_LABEL_MIN_DAYS = 120
 /** How many days (the most recent) the day-by-day chart shows. */
-const DAILY_CHART_DAYS = 7
+const DAILY_CHART_DAYS = 14
 /** The racer bubbles at the end of each line on the progress chart. */
 const BUBBLE_RADIUS = 12
 
@@ -657,7 +657,7 @@ function ProgressChart({ event, now, daily }) {
   const last = Math.max(raceDay(Math.min(now, event.endMillis ?? now)), ...dayKeys)
   const days = []
   for (let d = first; d <= last && days.length < 731; d++) days.push(epochDayToYmd(d))
-  // Day by day shows only the last week; the running total, the whole race.
+  // Day by day shows only the last two weeks; the running total, the whole race.
   if (daily && days.length > DAILY_CHART_DAYS) days.splice(0, days.length - DAILY_CHART_DAYS)
   const lines = useMemo(() => withData.map((st) => {
     const color = lineColor(st, event.standings.indexOf(st), event.standings)
