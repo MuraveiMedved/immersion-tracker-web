@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { createPortal } from 'preact/compat'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry,
@@ -753,29 +754,43 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
   )
 }
 
-/** What Momentum is and what it's for (HomeScreen.kt GoldenStreakDialog): the tier reached and
- *  how far the next is, today's hour and the days each tier takes. */
+/** What Momentum is and what it's for (HomeScreen.kt GoldenStreakDialog): on its own glowing stage in
+ *  the tier's colours (like the phone's RarityGlowDialog), a solid card rimmed in them with the day
+ *  count as a medallion across its top edge, the tier reached and how far the next is, today's hour
+ *  (white flashes run through the bar while immersion is tracked), and the days each tier takes. */
 function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
   const tier = momentumTier(days)
   const next = nextMomentumTier(tier)
   const toGo = next && next.minDays - days
   const pct = Math.min(1, todayMillis / GOLDEN_DAILY_MILLIS)
-  return (
-    <Dialog onClose={onClose} sheet={false} extraClass={`momentum-dialog tier-${tier?.id || 'bronze'}`} actions={<button class="btn" onClick={onClose}>OK</button>}>
-      {/* The day count, large and centred across the dialog's top edge - the one thing to see first. */}
-      <div class={`momentum-badge ${tier ? 'lit' : ''}`} role="img" aria-label={`${days} day${days === 1 ? '' : 's'} of momentum`}>
-        <span class="n">{days}</span><span class="unit">{days === 1 ? 'day' : 'days'}</span>
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+  return createPortal(
+    <div class={`card-stage momentum-stage tier-${tier?.id || 'bronze'}`} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div class="card-stage-inner">
+        <div class="glow-pools" style={{ '--p': 'var(--tier)', '--s': 'var(--tier-pale)' }}><i class="a" /><i class="b" /></div>
+        <div class="col" style="position:relative;gap:16px">
+          <div class="momentum-card">
+            {/* The day count, large and centred across the card's top edge - the one thing to see first. */}
+            <div class={`momentum-badge ${tier ? 'lit' : ''}`} role="img" aria-label={`${days} day${days === 1 ? '' : 's'} of momentum`}>
+              <span class="n">{days}</span><span class="unit">{days === 1 ? 'day' : 'days'}</span>
+            </div>
+            <div class="title-large" style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700"><Bolt tier={tier?.id} muted={!tier} /> Momentum</div>
+            <div style={{ marginTop: '4px', fontWeight: 600, fontSize: '14px', color: tier ? 'var(--tier-ink)' : 'var(--on-surface-variant)' }}>
+              {[tier?.name, next ? `${toGo} more day${toGo === 1 ? '' : 's'} to ${next.name}` : 'The top tier'].filter(Boolean).join(' · ')}
+            </div>
+            <div class="momentum-bar"><div class={immersing ? 'flashing' : ''} style={{ width: `${pct * 100}%` }} /></div>
+            <div class="muted" style="font-size:12px;margin-top:4px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}</div>
+            <div style="margin-top:16px;width:100%;text-align:left"><MomentumTierTable current={tier} topTierFirst showHolo={false} /></div>
+          </div>
+          <button class="glow-pill-soft momentum-close" onClick={onClose}>Close</button>
+        </div>
       </div>
-      <div>
-        <h2 class="center" style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px"><Bolt tier={tier?.id} muted={!tier} /> Momentum</h2>
-        <p style={{ margin: '0 0 12px', fontWeight: 650, textAlign: 'center', color: tier ? 'var(--tier-ink)' : undefined }}>
-          {[tier?.name, next ? `${toGo} more day${toGo === 1 ? '' : 's'} to ${next.name}` : 'The top tier'].filter(Boolean).join(' · ')}
-        </p>
-        <div class="small muted" style="margin-bottom:6px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}{immersing ? ' · counting now' : ''}</div>
-        <div class="progress" style="height:12px"><div style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg, var(--tier), var(--tier-pale))' }} /></div>
-        <div style="margin-top:16px"><MomentumTierTable current={tier} topTierFirst showHolo={false} /></div>
-      </div>
-    </Dialog>
+    </div>,
+    document.body,
   )
 }
 

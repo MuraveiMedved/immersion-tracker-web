@@ -220,20 +220,35 @@ textarea.input { resize: vertical; }
 .dialog.wide { max-width: 720px; }
 /* Momentum: its day count as a medallion across the dialog's top edge (the phone's MomentumBadge),
    popping in with the squish spring. The dialog leaves room above itself for the overhang. */
-.dialog.momentum-dialog { position: relative; overflow: visible; margin-top: 46px; padding-top: 58px; }
+/* Momentum's popup (HomeScreen.kt GoldenStreakDialog): a solid card rimmed in the tier's colours on the
+ * glowing stage, the day-count medallion across its top edge. A dialog, so it stays a box in every look. */
+.momentum-card {
+  position: relative; margin-top: 46px; padding: 54px 18px 14px; border-radius: 20px; border: 1.5px solid transparent;
+  background: linear-gradient(var(--c-high), var(--c-high)) padding-box, linear-gradient(135deg, var(--tier), var(--tier-pale)) border-box;
+  display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--on-surface);
+}
+.momentum-bar { width: 100%; height: 8px; margin-top: 10px; border-radius: 999px; overflow: hidden; background: var(--surface-variant); }
+.momentum-bar > div { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--tier), var(--tier-pale)); }
+.momentum-bar > .flashing { position: relative; overflow: hidden; }
+.momentum-bar > .flashing::after { content: ''; position: absolute; top: 0; bottom: 0; width: max(24px, 22%); left: -30%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent); animation: barflash 2.2s linear infinite; }
+.glow-pill-soft.momentum-close {
+  background: linear-gradient(color-mix(in srgb, var(--tier) 16%, transparent), color-mix(in srgb, var(--tier) 16%, transparent)) padding-box,
+    linear-gradient(var(--c-high), var(--c-high)) padding-box, linear-gradient(135deg, var(--tier), var(--tier-pale)) border-box;
+}
 .momentum-badge {
   position: absolute; top: -46px; left: 50%; width: 92px; height: 92px; margin-left: -46px; border-radius: 50%;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: var(--bg); border: 3px solid var(--outline-variant); box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  background: var(--c-high); border: 3px solid var(--outline-variant); box-shadow: 0 8px 24px rgba(0,0,0,.35);
   animation: badge-pop .55s cubic-bezier(.34, 1.8, .5, 1);
 }
-.momentum-badge.lit { border-color: transparent; background: linear-gradient(var(--bg), var(--bg)) padding-box, linear-gradient(135deg, var(--tier), var(--tier-pale)) border-box; }
+.momentum-badge.lit { border-color: transparent; background: linear-gradient(var(--c-high), var(--c-high)) padding-box, linear-gradient(135deg, var(--tier), var(--tier-pale)) border-box; }
 .momentum-badge .n { font-size: 36px; line-height: 40px; font-weight: 700; }
 .momentum-badge.lit .n { color: var(--tier-ink); }
 :root[data-serif] .momentum-badge .n { font-family: 'Fraunces', serif; }
 .momentum-badge .unit { font-size: 11px; line-height: 14px; color: var(--on-surface-variant); }
 @keyframes badge-pop { from { transform: scale(.6); } to { transform: scale(1); } }
-@media (prefers-reduced-motion: reduce) { .momentum-badge { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .momentum-badge, .momentum-bar > .flashing::after { animation: none; } }
 .dialog.no-scrollbar { scrollbar-width: none; }
 .dialog.no-scrollbar::-webkit-scrollbar { display: none; }
 .dialog h2 { font-size: 24px; line-height: 32px; font-weight: 400; margin-bottom: 16px; }
@@ -425,6 +440,17 @@ textarea.input { resize: vertical; }
 .tile-animal.holo, .feed-thumb.holo { box-shadow: 0 0 12px color-mix(in srgb, var(--p) 70%, transparent); }
 .tile-animal.holo-top, .feed-thumb.holo-top { box-shadow: 0 0 12px color-mix(in srgb, var(--p) 90%, transparent), 0 0 24px color-mix(in srgb, var(--s) 65%, transparent); }
 .tile-animal.picked { outline: 3px solid var(--primary); outline-offset: -3px; }
+/* The collection's cards, shaped like the full card: 4:3 photo on top (same crop), name, faint text lines. */
+.tile-animal.card { aspect-ratio: auto; display: flex; flex-direction: column; background: var(--c-high, var(--surface-variant)); }
+.tile-animal.card .tile-photo { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface-variant); }
+.tile-animal.card .photo-rule { height: 1.5px; }
+.tile-animal.card .cap { position: static; background: none; color: var(--on-surface); padding: 5px 7px 4px; text-align: left; min-height: calc(2 * 1.2em + 9px); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.zoo-grid.roomy .tile-animal.card .cap { padding: 6px 7px 4px; }
+.card-lines { display: flex; flex-direction: column; gap: 4px; padding: 0 7px 8px; }
+.card-lines i { display: block; height: 3px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface-variant) 24%, transparent); }
+.zoo-grid.roomy .card-lines { gap: 5px; padding-bottom: 10px; }
+.zoo-grid.roomy .card-lines i { height: 4px; }
+.tile-animal.card:has(> .tile-photo > .foil-sheen) img { filter: saturate(1.22) contrast(1.1); }
 .egg-card { background: var(--block); border: 1px solid var(--block-line); border-radius: 26px; padding: 20px; margin: 8px 0; }
 .egg-stage { position: relative; width: 140px; height: 140px; margin: 0 auto; display: grid; place-items: center; cursor: pointer; }
 .egg-glow { position: absolute; inset: 5px; border-radius: 50%; background: radial-gradient(rgba(255, 213, 120, .5), transparent 70%); transition: opacity .6s; }

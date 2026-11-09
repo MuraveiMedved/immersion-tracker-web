@@ -400,12 +400,12 @@ function RaceFacts({ event, started }) {
   return <div class="race-facts-line">{parts.join('  ·  ')}</div>
 }
 
-function RaceCharts({ event, now }) {
+function RaceCharts({ event, now, daily }) {
   const hasDaily = event.standings.some((x) => Object.keys(x.daily || {}).length)
   const best = event.standings.map((x) => [x, bestDayOf(x)]).filter(([, b]) => b).sort((a, b) => b[1][1] - a[1][1])[0]
   return (
     <>
-      {hasDaily && <><div class="label-medium muted" style="margin:16px 0 6px">Progress</div><ProgressChart event={event} now={now} /></>}
+      {hasDaily && <><div class="label-medium muted" style="margin:16px 0 6px">{daily ? 'Day by day' : 'Progress'}</div><ProgressChart event={event} now={now} daily={daily} /></>}
       {best && <div class="row best-day-line"><Icon name="bolt" size={16} color="var(--tertiary)" /><span class="ellipsis">Best day: {best[0].name}, {formatHm(best[1][1])} on {formatYmd(best[1][0])}</span></div>}
     </>
   )
@@ -515,7 +515,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe, menuExtras })
         {/* Not in the redesign: the note pushed the standings down each time Today was picked. */}
         {!s.settings.quietUi && canShowToday && view === 'today' && zonesDiffer && <div class="muted" style="font-size:11px;margin:6px 4px 0">Each person's own today, where they are.</div>}
         <Standings event={event} now={now} isLive={started} view={canShowToday ? view : 'total'} onPerson={openPerson} />
-        {started && <RaceCharts event={event} now={now} />}
+        {started && <RaceCharts event={event} now={now} daily={canShowToday && view === 'today'} />}
       </>}
       {dialogs}
     </div>
@@ -656,8 +656,9 @@ const valueAt = (line, at) => {
 }
 const rgbOf = (hex) => { const h = hex.replace('#', ''); return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)).join(',') }
 
-/** Everyone's running total, day by day, with a replay of the race. */
-function ProgressChart({ event, now }) {
+/** Everyone's running total, day by day, with a replay of the race. [daily] (the standings' Today
+ *  view): each day's own amount instead - one point per day, straight lines, no goal line or replay. */
+function ProgressChart({ event, now, daily }) {
   const s = useStore()
   const me = s.race.userId
   const raceDay = (t) => ymdToEpochDay(ymdOf(t - 4 * HOUR))
@@ -669,6 +670,8 @@ function ProgressChart({ event, now }) {
   const days = []
   for (let d = first; d <= last && days.length < 731; d++) days.push(epochDayToYmd(d))
   const lines = useMemo(() => withData.map((st) => {
+    const color = lineColor(st, event.standings.indexOf(st), event.standings)
+    if (daily) return { st, color, rgb: rgbOf(color), cumulative: days.map((k) => st.daily[k] || 0), isMe: st.userId === me, joinIndex: 0 }
     let run = 0
     // Point 0 is the start of the first day (nothing yet, for everyone); point i is the end of
     // day i - so every line rises from zero instead of starting in mid-air at its first day's total.
@@ -685,15 +688,14 @@ function ProgressChart({ event, now }) {
       const firstWithTime = cumulative.findIndex((v) => v > 0) - 1
       return firstWithTime < 0 ? joinDay : Math.min(joinDay, firstWithTime)
     })()
-    const color = lineColor(st, event.standings.indexOf(st), event.standings)
     return { st, color, rgb: rgbOf(color), cumulative, isMe: st.userId === me, joinIndex }
-  }).sort((x, y) => x.isMe - y.isMe), [event, days.length, me])
-  const topValue = Math.max(0, ...lines.map((l) => l.cumulative[l.cumulative.length - 1] || 0))
-  const overtakes = useMemo(() => findOvertakes(lines, Math.max(60000, topValue * 0.005)), [lines])
+  }).sort((x, y) => x.isMe - y.isMe), [event, days.length, me, daily])
+  const topValue = Math.max(0, ...lines.map((l) => (daily ? Math.max(0, ...l.cumulative) : l.cumulative[l.cumulative.length - 1] || 0)))
+  const overtakes = useMemo(() => (daily ? [] : findOvertakes(lines, Math.max(60000, topValue * 0.005))), [lines])
   const significantDays = [...new Set(overtakes.filter((o) => o.important).map((o) => o.day))]
   const replayMillis = Math.min(12000, Math.max(3000, days.length * 220))
-  // Chart points: the start of the first day, then the end of each day.
-  const points = days.length + 1
+  // Chart points: the start of the first day, then the end of each day. Day by day: one per day.
+  const points = daily ? days.length : days.length + 1
   const timeline = useMemo(() => new ReplayTimeline(replayMillis, significantDays.map((d) => d / Math.max(1, points - 1))), [overtakes, replayMillis, points])
   const tailNeeded = useMemo(() => {
     const li = Math.max(1, points - 1)
@@ -712,9 +714,10 @@ function ProgressChart({ event, now }) {
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
+  useEffect(() => { setReplay(null); setShownDay(null) }, [daily])
 
   const goal = event.goalHours * HOUR
-  const showGoal = goal <= (topValue * 3) / 2
+  const showGoal = !daily && goal <= (topValue * 3) / 2
   const yMax = Math.max(1, showGoal ? (Math.max(topValue, goal) * 21) / 20 : (topValue * 21) / 20)
   const anyLive = lines.some((l) => isLiveAt(l.st, now) && l.st.emoji)
 
@@ -747,7 +750,7 @@ function ProgressChart({ event, now }) {
       const bubble = BUBBLE_RADIUS
       const inset = lines.some((l) => l.st.emoji) ? bubble + 2 : 0
       const plotW = W - inset
-      const x = (i) => (i * plotW) / (points - 1)
+      const x = (i) => (i * plotW) / Math.max(1, points - 1)
       const y = (v) => H - (v / yMax) * (H - inset)
       const visible = lines.filter((l) => !replaying || position >= l.joinIndex)
       const arrival = (l) => (!replaying || l.joinIndex === 0 ? 1 : Math.min(1, Math.max(0, since(l.joinIndex) / JOIN_REACTION_PROGRESS)))
@@ -860,7 +863,7 @@ function ProgressChart({ event, now }) {
       <div class="row" style="align-items:flex-start;gap:10px">
         <span class="muted grow" style="font-size:11px">{formatHm(yMax)}</span>
         {showGoal && <span style="font-size:11px;color:var(--tertiary)">Goal {event.goalHours}h</span>}
-        {days.length > 1 && (
+        {days.length > 1 && !daily && (
           <button class="replay-btn" onClick={() => (replay ? (setReplay(null), setShownDay(null)) : setReplay({ start: performance.now() }))}>
             <Icon name={replay ? 'stop' : 'play_arrow'} size={16} />{replay ? 'Stop' : 'Replay'}
           </button>
