@@ -1,6 +1,6 @@
 // What counts as immersion, goal streaks and Momentum (the golden streak) - ported one-to-one
 // from the phone's Immersion.kt and StreakCalculator.kt so both give the same numbers.
-import { epochDay, epochDayStart, goalDayStart, HOUR } from './time.js'
+import { epochDay, goalEpochDay, goalEpochDayStart, goalDayStart, HOUR } from './time.js'
 
 export const LISTENING = 'LISTENING' // music
 export const PODCAST = 'PODCAST' // spoken listening - "Listening" in the UI
@@ -30,12 +30,12 @@ export const durationOf = (e, now = Date.now()) => Math.max(0, (e.endTimeMillis 
 /** Immersion is spoken listening or reading, with a language - not music, not Anki. */
 export const counts = (type, languageProfileId) => languageProfileId != null && (type === PODCAST || type === READING)
 
-/** Immersion per epoch day for the last [days] days up to [now] - a running session counts up to
- *  now, and one crossing midnight is split between its days. */
+/** Immersion per goal day (epoch-day numbers, days from 4 AM like the goal rings) for the last [days]
+ *  days up to [now] - a running session counts up to now, and one crossing 4 AM is split between its days. */
 export function dailyMillis(entries, now, days = GOLDEN_DAYS + 1) {
-  const today = epochDay(now)
+  const today = goalEpochDay(now)
   const firstDay = today - (days - 1)
-  const windowStart = epochDayStart(firstDay)
+  const windowStart = goalEpochDayStart(firstDay)
   const totals = new Map()
   for (const e of entries) {
     if (!counts(e.contentType, e.languageProfileId)) continue
@@ -43,8 +43,8 @@ export function dailyMillis(entries, now, days = GOLDEN_DAYS + 1) {
     if (end <= windowStart) continue
     let start = e.startTimeMillis
     while (start < end) {
-      const day = epochDay(start)
-      const partEnd = Math.min(end, epochDayStart(day + 1))
+      const day = goalEpochDay(start)
+      const partEnd = Math.min(end, goalEpochDayStart(day + 1))
       if (day >= firstDay && day <= today) totals.set(day, (totals.get(day) || 0) + (partEnd - start))
       start = partEnd
     }
@@ -55,7 +55,7 @@ export function dailyMillis(entries, now, days = GOLDEN_DAYS + 1) {
 /** Days in a row with 1+ hour - today counts once it reaches that, otherwise up to yesterday. */
 export function goldenStreakDays(entries, now = Date.now()) {
   const daily = dailyMillis(entries, now, MAX_GOLDEN_LOOKBACK_DAYS)
-  const today = epochDay(now)
+  const today = goalEpochDay(now)
   const met = (d) => (daily.get(d) || 0) >= GOLDEN_DAILY_MILLIS
   let day = met(today) ? today : today - 1
   let run = 0
@@ -85,7 +85,7 @@ export function momentumTier(days) {
 export const nextMomentumTier = (tier) => (tier ? MOMENTUM_TIERS[MOMENTUM_TIERS.indexOf(tier) + 1] || null : MOMENTUM_TIERS[0])
 
 export function goldenTodayMillis(entries, now = Date.now()) {
-  return dailyMillis(entries, now, 1).get(epochDay(now)) || 0
+  return dailyMillis(entries, now, 1).get(goalEpochDay(now)) || 0
 }
 
 /** Goal streak from per-day totals keyed by goal day (see dailyTotalsFor). Any missed day breaks

@@ -123,7 +123,7 @@ export function lastSession(now = Date.now()) {
   const hideMinutes = getState().settings.resumeHideMinutes ?? 60
   let best = null
   for (const e of getState().entries) {
-    if (e.endTimeMillis == null || e.appPackage !== WEB_APP || (e.contentType !== PODCAST && e.contentType !== READING && e.contentType !== ANKI)) continue
+    if (e.endTimeMillis == null || e.languageProfileId == null || e.appPackage !== WEB_APP || (e.contentType !== PODCAST && e.contentType !== READING && e.contentType !== ANKI)) continue
     if (!best || e.endTimeMillis > best.endTimeMillis) best = e
   }
   if (best && hideMinutes > 0 && now - best.endTimeMillis >= hideMinutes * 60000) return null

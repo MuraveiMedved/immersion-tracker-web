@@ -34,6 +34,16 @@ export function epochDay(ms) {
   return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY)
 }
 
+/** The goal day [ms] falls in, as an epoch-day number: before 4 AM still counts as the day before
+ *  (the phone's Immersion.goalEpochDayOf). */
+export const goalEpochDay = (ms) => epochDay(goalDayStart(ms))
+
+/** When goal day [n] begins (its local 4 AM) - the phone's Immersion.goalEpochDayStart. */
+export function goalEpochDayStart(n) {
+  const u = new Date(n * DAY)
+  return new Date(u.getUTCFullYear(), u.getUTCMonth(), u.getUTCDate(), GOAL_DAY_START_HOUR).getTime()
+}
+
 /** Local midnight of epoch day [n]. */
 export function epochDayStart(n) {
   const u = new Date(n * DAY)

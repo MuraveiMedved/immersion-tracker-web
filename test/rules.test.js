@@ -1,7 +1,7 @@
 // Run with: TZ=America/Chicago npm test
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { goldenStreakDays, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, vouchedEntries } from '../src/model/rules.js'
+import { goldenStreakDays, goldenTodayMillis, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, vouchedEntries } from '../src/model/rules.js'
 import { goalDayStart } from '../src/model/time.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate, hourMarkAt } from '../src/model/zoo.js'
@@ -49,11 +49,16 @@ test('Momentum: a deleted language\'s entries are uncategorized and stop countin
   assert.equal(goldenStreakDays(afterDelete.map((e) => ({ ...e, languageProfileId: e.languageProfileId ?? 1 })), now), 5)
 })
 
-test('Momentum splits sessions across midnight', () => {
+test('Momentum days run from 4 AM, like the goal rings', () => {
   const now = at(2026, 10, 16, 12)
-  // 22:00 -> 02:00 is 2h on the 14th and 2h on the 15th.
-  const list = [entry(at(2026, 10, 14, 22), 4 * HOUR)]
-  assert.equal(goldenStreakDays(list, now), 2)
+  // 22:00 -> 02:00 is all on the 14th's goal day.
+  assert.equal(goldenStreakDays([entry(at(2026, 10, 14, 22), 4 * HOUR)], now), 0)
+  // 02:00 -> 06:00 is 2h on the 14th and 2h on the 15th.
+  assert.equal(goldenStreakDays([entry(at(2026, 10, 15, 2), 4 * HOUR)], now), 2)
+  // Momentum's today is empty again at 4 AM.
+  const lastNight = [entry(at(2026, 10, 16, 2), HOUR)]
+  assert.equal(goldenTodayMillis(lastNight, at(2026, 10, 16, 3, 30)), HOUR)
+  assert.equal(goldenTodayMillis(lastNight, at(2026, 10, 16, 4, 1)), 0)
 })
 
 test('goal streaks: missed today does not break, a missed day does', () => {
