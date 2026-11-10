@@ -64,6 +64,16 @@ export function addSplitByDay(byDay, from, until) {
   }
 }
 
+/** [standing]'s points on the day-by-day chart: each of [days]' (yyyymmdd) own amount, stopping at
+ *  their own today - so once someone ahead in time zones starts tomorrow, everyone still on today
+ *  ends on today instead of dropping to 0 on a day they haven't begun. Mirrors dailyPoints in RaceInsights.kt. */
+export function dailyPoints(standing, days, now = Date.now()) {
+  const i = days.indexOf(localTodayKey(standing, now))
+  const shown = i >= 0 ? days.slice(0, i + 1) : days
+  const out = shown.map((k) => (standing.daily || {})[k] || 0)
+  return out.length ? out : [0]
+}
+
 /** Which of [standing]'s day keys is their today, in their zone with their day boundary. */
 export function localTodayKey(standing, now = Date.now()) {
   const zone = standing.timeZone || localZone()

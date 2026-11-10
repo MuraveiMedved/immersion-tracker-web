@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow, update, getState } from '../store.js'
 import {
   sync, syncIfStale, createEvent, joinByCode, leaveEvent, endEvent, editEvent, deleteEventForEveryone, deleteCompleted, visibleEvents,
-  raceStatus, onRaceStatus, errorText, ordinal, localTodayKey, refreshFriends, addFriendByCode, addFriendById, respondFriend, removeFriend,
+  raceStatus, onRaceStatus, errorText, ordinal, localTodayKey, dailyPoints, refreshFriends, addFriendByCode, addFriendById, respondFriend, removeFriend,
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
 import { GOLDEN_DAYS } from '../model/rules.js'
@@ -661,7 +661,7 @@ function ProgressChart({ event, now, daily }) {
   if (daily && days.length > DAILY_CHART_DAYS) days.splice(0, days.length - DAILY_CHART_DAYS)
   const lines = useMemo(() => withData.map((st) => {
     const color = lineColor(st, event.standings.indexOf(st), event.standings)
-    if (daily) return { st, color, rgb: rgbOf(color), cumulative: days.map((k) => st.daily[k] || 0), isMe: st.userId === me, joinIndex: 0 }
+    if (daily) return { st, color, rgb: rgbOf(color), cumulative: dailyPoints(st, days, now), isMe: st.userId === me, joinIndex: 0 }
     let run = 0
     // Point 0 is the start of the first day (nothing yet, for everyone); point i is the end of
     // day i - so every line rises from zero instead of starting in mid-air at its first day's total.
@@ -679,7 +679,7 @@ function ProgressChart({ event, now, daily }) {
       return firstWithTime < 0 ? joinDay : Math.min(joinDay, firstWithTime)
     })()
     return { st, color, rgb: rgbOf(color), cumulative, isMe: st.userId === me, joinIndex }
-  }).sort((x, y) => x.isMe - y.isMe), [event, days.length, days[0], me, daily])
+  }).sort((x, y) => x.isMe - y.isMe), [event, days.length, days[0], me, daily, daily && withData.map((st) => localTodayKey(st, now)).join()])
   const topValue = Math.max(0, ...lines.map((l) => (daily ? Math.max(0, ...l.cumulative) : l.cumulative[l.cumulative.length - 1] || 0)))
   const overtakes = useMemo(() => (daily ? [] : findOvertakes(lines, Math.max(60000, topValue * 0.005))), [lines])
   const significantDays = [...new Set(overtakes.filter((o) => o.important).map((o) => o.day))]
@@ -778,14 +778,17 @@ function ProgressChart({ event, now, daily }) {
       for (const l of visible) {
         const sw = l.isMe ? 3 : 2
         const start = replaying ? l.joinIndex : 0
-        const tip = [x(position), y(valueAt(l, position))]
+        // A day-by-day line stops at its owner's own today, even once someone ahead in time zones
+        // has started tomorrow (see dailyPoints).
+        const end = Math.min(position, l.cumulative.length - 1)
+        const tip = [x(end), y(valueAt(l, end))]
         const alpha = arrival(l) * dimFor(l)
         ctx.strokeStyle = ctx.fillStyle = `rgba(${l.rgb},${alpha})`
-        if (position <= start) {
+        if (end <= start) {
           ctx.beginPath(); ctx.arc(tip[0], tip[1], sw * 1.5, 0, Math.PI * 2); ctx.fill()
         } else {
           ctx.beginPath(); ctx.moveTo(x(start), y(valueAt(l, start)))
-          for (let at = start + step; at < position; at += step) ctx.lineTo(x(at), y(valueAt(l, at)))
+          for (let at = start + step; at < end; at += step) ctx.lineTo(x(at), y(valueAt(l, at)))
           ctx.lineTo(tip[0], tip[1])
           ctx.lineWidth = sw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke()
           if (!l.st.emoji) { ctx.beginPath(); ctx.arc(tip[0], tip[1], sw * 1.2, 0, Math.PI * 2); ctx.fill() }
@@ -804,7 +807,8 @@ function ProgressChart({ event, now, daily }) {
         const a = arrival(l)
         const pop = a >= 1 ? 1 : 1 + 2.70158 * (a - 1) ** 3 + 1.70158 * (a - 1) ** 2
         if (pop <= 0) continue
-        const cx = x(position), cy = y(valueAt(l, position))
+        const end = Math.min(position, l.cumulative.length - 1)
+        const cx = x(end), cy = y(valueAt(l, end))
         const passing = reaction(l.st.userId, true), passed = reaction(l.st.userId, false)
         const dim = dimFor(l)
         if (spotlight > 0 && inSpot.has(l.st.userId)) {
