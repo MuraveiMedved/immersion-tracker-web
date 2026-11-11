@@ -41,7 +41,7 @@ export function Stats() {
   }, [current])
   const stats = useMemo(() => quickStats(s.entries, current.win, langSet, now, types), [current])
   const heat = useMemo(() => heatmap(s.entries, langSet, visible, now, types), [s.entries, hidden, typeFilter, Math.floor(now / 3600000)])
-  const tod = useMemo(() => timeOfDay(s.entries, langSet, now, types), [s.entries, hidden, typeFilter])
+  const tod = useMemo(() => timeOfDay(s.entries, langSet, now, types, current.win), [current])
 
   const zoomTo = (i) => {
     const next = ZOOM_IN[range]
@@ -119,7 +119,7 @@ export function Stats() {
       {todTotal > 0 && (
         <div class="stat-section" style="margin-top:24px">
           <h2>Time of day</h2>
-          <div class="muted small">When you immerse, across all your history</div>
+          <div class="muted small">When you immerse, over the period chosen above</div>
           <div class="row" style="margin-top:12px;align-items:flex-start;gap:0">
             <Axis labels={[percent(todTallest / todTotal), percent(todTallest / todTotal / 2), '0%']} />
             <BarColumns buckets={hourBuckets} languages={visible} value={(i, id) => tod.get(id)?.[i] || 0} max={todTallest} light={light} />

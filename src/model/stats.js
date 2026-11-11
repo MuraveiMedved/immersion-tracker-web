@@ -193,21 +193,23 @@ export function heatmap(entries, langSet, profiles, now = Date.now(), types = nu
   return { weeks, p95, legend: profiles.filter((p) => tops.has(p.id)) }
 }
 
-/** All of history folded onto the clock, per language: language id -> 24 hourly totals, read in
- *  each session's own time zone. PolyLogger imports are left out - they have no real time of day
+/** A span folded onto the clock, per language: language id -> 24 hourly totals, read in each
+ *  session's own time zone. [win] ({start, end}, from windowFor) limits it to the span being
+ *  browsed - a session crossing its edges counts only the part inside; null = all of history. PolyLogger imports are left out - they have no real time of day
  *  (the importer lays each day's sessions from noon), which would show as a false midday peak. */
 // The web importer's marker and the phone's (TrackingRepository.POLYLOGGER_APP_PACKAGE), which
 // arrives with synced entries and phone backups.
 const POLYLOGGER_PACKAGES = new Set(['import:polylogger', 'polylogger-import'])
 
-export function timeOfDay(entries, langSet, now = Date.now(), types = null) {
+export function timeOfDay(entries, langSet, now = Date.now(), types = null, win = null) {
   const out = new Map()
   for (const e of entries) {
     if (!included(e, langSet, types) || POLYLOGGER_PACKAGES.has(e.appPackage)) continue
+    let s = win ? Math.max(e.startTimeMillis, win.start) : e.startTimeMillis
+    const end = Math.min(e.endTimeMillis ?? now, now, win ? win.end : Infinity)
+    if (s >= end) continue
     const hours = out.get(e.languageProfileId) || new Array(24).fill(0)
     out.set(e.languageProfileId, hours)
-    let s = e.startTimeMillis
-    const end = Math.min(e.endTimeMillis ?? now, now)
     while (s < end) {
       const next = Math.min(end, (Math.floor(s / HOUR) + 1) * HOUR)
       hours[hourIn(s, e.timeZone)] += next - s

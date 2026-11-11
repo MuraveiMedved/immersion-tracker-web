@@ -155,6 +155,22 @@ test('time of day leaves out PolyLogger imports from the web and from the phone'
   assert.equal(hours[20], HOUR)
 })
 
+test('time of day counts only the span being browsed', async () => {
+  const { timeOfDay } = await import('../src/model/stats.js')
+  const entries = [
+    entry(at(2026, 3, 1, 9), HOUR, PODCAST, 1),
+    // 11:30 PM on the 2nd to 12:30 AM on the 3rd: only the half hour on the 3rd is inside.
+    entry(at(2026, 3, 2, 23) + HOUR / 2, HOUR, PODCAST, 1),
+    entry(at(2026, 3, 4, 20), HOUR, PODCAST, 1),
+  ]
+  const hours = timeOfDay(entries, null, at(2026, 3, 10), null, { start: at(2026, 3, 3, 0), end: at(2026, 3, 5, 0) }).get(1)
+  assert.equal(hours[9], 0)
+  assert.equal(hours[23], 0)
+  assert.equal(hours[0], HOUR / 2)
+  assert.equal(hours[20], HOUR)
+  assert.equal(timeOfDay(entries, null, at(2026, 3, 10), null, { start: at(2026, 3, 6, 0), end: at(2026, 3, 7, 0) }).size, 0)
+})
+
 test('goal days run from 4 AM: a late night counts for the day before', () => {
   // 2 AM on the 16th belongs to the 15th's goal day; 5 AM is the 16th's.
   assert.equal(goalDayStart(at(2026, 10, 16, 2)), at(2026, 10, 15, 4))
