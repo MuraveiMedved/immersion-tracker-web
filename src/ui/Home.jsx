@@ -88,6 +88,7 @@ export function Home({ nav }) {
   const uncategorized = sorted.filter((e) => e.languageProfileId == null && (s.settings.logUncategorized || e.contentType === ANKI))
   const paused = running.length ? null : pausedEntry()
   const activeProfile = running.map((e) => profileById(e.languageProfileId)).find((p) => p && !p.isAnki)
+  const gains = useSessionGains(running.length ? running : paused ? [paused] : [], s.entries)
   // Desktop: Space stops what's running (the newest one), or resumes the last session.
   useEffect(() => {
     const onKey = (e) => {
@@ -138,6 +139,7 @@ export function Home({ nav }) {
         </div>
       </div>}
 
+      <SessionGainFloats gains={gains.list} light={light} onDone={gains.remove} />
       {running.length
         ? running.map((e) => <NowTrackingBanner key={e.id} entry={e} now={now} light={light} mode={s.settings.goalCardStyleMode} />)
         : paused
@@ -251,6 +253,49 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
       <button class="stop" style={{ color: ink }} title={paused ? 'Stop and save' : 'Stop and save (Space)'} onClick={(ev) => { ev.stopPropagation(); paused ? stopPausedTimer(entry) : stopTimer(entry) }}><span /></button>
       <button class="stop" style={{ color: ink }} title="Discard without counting its time" onClick={(ev) => { ev.stopPropagation(); paused ? discardPausedTimer(entry) : discardTimer(entry) }}><Icon name="close" size={18} /></button>
       {edit && <EditElapsedDialog entry={entry} onClose={() => setEdit(false)} />}
+    </div>
+  )
+}
+
+/** The phone's SessionGainFloats: a session that ends while Home is on screen floats up off the
+ *  now-tracking bar as "+32m" in its language's colour (or gradient), then fades - the game-style
+ *  "you earned this". Goes by the bar: a kind leaving it whose entry is still there, closed (a
+ *  discard deletes it, so it gets nothing), and at least a minute long - what counts. Not on page
+ *  load, nor while the tab is in the background. */
+function useSessionGains(shown, entries) {
+  const [list, setList] = useState([])
+  const types = shown.map((e) => e.contentType).join()
+  const last = useRef({ types, shown })
+  useEffect(() => {
+    const prev = last.current
+    last.current = { types, shown }
+    if (prev.types === types || document.visibilityState !== 'visible') return
+    const still = new Set(shown.map((e) => e.contentType))
+    const added = []
+    for (const e of prev.shown) {
+      if (still.has(e.contentType) || e.id == null) continue
+      const saved = entries.find((x) => x.id === e.id)
+      if (!saved || saved.endTimeMillis == null) continue
+      const ms = durationOf(saved)
+      if (ms >= 60000) added.push({ key: `${saved.id}-${Date.now()}`, ms, profile: profileById(saved.languageProfileId) })
+    }
+    if (added.length) setList((l) => [...l, ...added])
+  })
+  return { list, remove: (g) => setList((l) => l.filter((x) => x !== g)) }
+}
+
+function SessionGainFloats({ gains, light, onDone }) {
+  return (
+    <div class="gain-anchor" aria-hidden="true">
+      {gains.map((g) => {
+        const color = g.profile?.colorHex || '#6FA8C9'
+        const stops = gradientStops(g.profile)
+        const ink = (c) => (light ? deepened(c, 0.42) : c)
+        const style = stops && stops.length > 1
+          ? { backgroundImage: `linear-gradient(90deg, ${stops.map(ink).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+          : { color: ink(color) }
+        return <span key={g.key} class="gain-float" style={style} onAnimationEnd={() => onDone(g)}>+{formatHm(g.ms, true)}</span>
+      })}
     </div>
   )
 }
