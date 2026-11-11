@@ -262,7 +262,7 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
 /** The phone's SessionGainFloats: a session that ends while Home is on screen floats up off the
  *  now-tracking bar as "+32m" in its language's colour (or gradient), then fades - the game-style
  *  "you earned this". Goes by the bar: a kind leaving it whose entry is still there, closed (a
- *  discard deletes it, so it gets nothing), and at least a minute long - what counts. Not on page
+ *  discard deletes it, so it gets nothing), and at least a minute long. Not on page
  *  load, nor while the tab is in the background. */
 function useSessionGains(shown, entries) {
   const [list, setList] = useState([])
@@ -285,12 +285,14 @@ function useSessionGains(shown, entries) {
       if (ms >= 60000) added.push({ key: `${saved.id}-${Date.now()}`, ms, profile: profileById(saved.languageProfileId) })
     }
     if (added.length) setList((l) => [...l, ...added])
-    if (hit) hitStop(slot.current)
+    // A session starting lands the same way as one ending.
+    const was = new Set(prev.shown.map((e) => e.contentType))
+    if (hit || shown.some((e) => !was.has(e.contentType))) hitStop(slot.current)
   })
   return { list, slot, remove: (g) => setList((l) => l.filter((x) => x !== g)) }
 }
 
-/** The phone's sessionHitStop: a session ending lands like a blow - the slot snaps to a slight
+/** The phone's sessionHitStop: a session starting or ending lands like a blow - the slot snaps to a slight
  *  squash, holds it ~90ms (the "freeze"), then springs back past full size and settles. */
 function hitStop(el) {
   if (!el?.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
