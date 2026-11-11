@@ -163,6 +163,25 @@
 :root[data-ui='quiet'] .gl-icon { flex: none; width: 44px; height: 44px; margin: 0 -13px; display: grid; place-items: center; background: transparent; border: 0; padding: 0; cursor: pointer; }
 :root[data-ui='quiet'] .gl-track { flex: 1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--on-surface) 10%, transparent); overflow: hidden; margin-left: 3px; }
 :root[data-ui='quiet'] .gl-track > div { height: 100%; }
+:root[data-ui='quiet'] .gl-track-host { flex: 1; position: relative; display: flex; align-items: center; }
+:root[data-ui='quiet'] .gl-track-host > .gl-track { flex: 1; }
+/* A goal filled while watching: sparks off the bar's end (Home's LineBurst, the phone's goalBurst). */
+.gl-burst { position: absolute; right: 0; top: 50%; width: 0; height: 0; pointer-events: none; z-index: 2; }
+.gl-burst::before {
+  content: ''; position: absolute; left: -2px; top: -2px; width: 4px; height: 4px; border-radius: 50%;
+  border: 2px solid var(--c0); animation: gl-flash .95s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+.gl-burst i {
+  position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%;
+  animation: gl-spark .95s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+@keyframes gl-flash { from { transform: scale(1); opacity: .6; } to { transform: scale(9); opacity: 0; border-width: .2px; } }
+@keyframes gl-spark {
+  from { transform: rotate(var(--a)) translateX(2px) scale(1); opacity: 1; }
+  60% { opacity: .8; }
+  to { transform: rotate(var(--a)) translateX(var(--d)) scale(.3); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .gl-burst i { animation-duration: .5s; } .gl-burst::before { animation: none; opacity: 0; } }
 /* Fixed widths, so every bar on Home is the same length. */
 :root[data-ui='quiet'] .gl-figure { flex: none; width: 100px; white-space: nowrap; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--on-surface); }
 :root[data-ui='quiet'] .gl-figure { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; }

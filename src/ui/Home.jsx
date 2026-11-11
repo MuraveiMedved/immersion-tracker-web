@@ -139,12 +139,14 @@ export function Home({ nav }) {
         </div>
       </div>}
 
+      <div class="now-slot" ref={gains.slot}>
       <SessionGainFloats gains={gains.list} light={light} onDone={gains.remove} />
       {running.length
         ? running.map((e) => <NowTrackingBanner key={e.id} entry={e} now={now} light={light} mode={s.settings.goalCardStyleMode} />)
         : paused
           ? <NowTrackingBanner entry={paused} now={now} light={light} mode={s.settings.goalCardStyleMode} paused onOpen={() => paused.id != null && setDetails(paused.id)} />
           : <IdleBanner now={now} onOther={() => setManual({})} />}
+      </div>
 
       <div class="today-row">
         <h2>Today</h2>
@@ -264,6 +266,7 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
  *  load, nor while the tab is in the background. */
 function useSessionGains(shown, entries) {
   const [list, setList] = useState([])
+  const slot = useRef(null)
   const types = shown.map((e) => e.contentType).join()
   const last = useRef({ types, shown })
   useEffect(() => {
@@ -272,16 +275,63 @@ function useSessionGains(shown, entries) {
     if (prev.types === types || document.visibilityState !== 'visible') return
     const still = new Set(shown.map((e) => e.contentType))
     const added = []
+    let hit = false
     for (const e of prev.shown) {
       if (still.has(e.contentType) || e.id == null) continue
       const saved = entries.find((x) => x.id === e.id)
       if (!saved || saved.endTimeMillis == null) continue
+      hit = true
       const ms = durationOf(saved)
       if (ms >= 60000) added.push({ key: `${saved.id}-${Date.now()}`, ms, profile: profileById(saved.languageProfileId) })
     }
     if (added.length) setList((l) => [...l, ...added])
+    if (hit) hitStop(slot.current)
   })
-  return { list, remove: (g) => setList((l) => l.filter((x) => x !== g)) }
+  return { list, slot, remove: (g) => setList((l) => l.filter((x) => x !== g)) }
+}
+
+/** The phone's sessionHitStop: a session ending lands like a blow - the slot snaps to a slight
+ *  squash, holds it ~90ms (the "freeze"), then springs back past full size and settles. */
+function hitStop(el) {
+  if (!el?.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+  const squash = 'scale(1.025, 0.93)'
+  el.animate([
+    { transform: squash, offset: 0 },
+    { transform: squash, offset: 0.18 },
+    { transform: 'scale(0.992, 1.035)', offset: 0.45 },
+    { transform: 'scale(1.004, 0.99)', offset: 0.7 },
+    { transform: 'none', offset: 1 },
+  ], { duration: 500, easing: 'ease-out' })
+}
+
+/** The phone's goalBurst on a New-look goal line: when the goal fills while you watch, sparks in
+ *  the language's colours fly off the bar's end behind a spreading flash ring. Rings have their own
+ *  burst (Ring.jsx). Not when it's already met as the page opens or comes back to the front. */
+function LineBurst({ met, colors }) {
+  const [n, setN] = useState(0)
+  const last = useRef(met)
+  const since = useRef(performance.now())
+  useEffect(() => {
+    const onVis = () => { if (document.visibilityState === 'visible') since.current = performance.now() }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [])
+  useEffect(() => {
+    const was = last.current
+    last.current = met
+    if (met && !was && document.visibilityState === 'visible' && performance.now() - since.current > 1500) setN((x) => x + 1)
+  }, [met])
+  if (!n) return null
+  return (
+    <span key={n} class="gl-burst" style={{ '--c0': colors[0] }} aria-hidden="true">
+      {Array.from({ length: 18 }, (_, i) => {
+        const angle = (360 * i) / 18 + ((i * 37) % 19) - 9
+        const reach = 18 + ((i * 53) % 17)
+        const c = colors[i % colors.length]
+        return <i key={i} style={{ '--a': `${angle}deg`, '--d': `${reach}px`, background: i % 3 === 0 ? `color-mix(in srgb, ${c} 35%, white)` : c }} />
+      })}
+    </span>
+  )
 }
 
 function SessionGainFloats({ gains, light, onDone }) {
@@ -673,7 +723,10 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
         return (
           <div key={type} class={`gl-row ${on ? 'on' : ''}`}>
             <button class="gl-icon" {...tap}><TypeIcon type={type} size={18} color={ink} /></button>
-            <div class="gl-track"><div style={{ width: `${Math.min(100, (ms / goalMs) * 100)}%`, background: bar }} /></div>
+            <div class="gl-track-host">
+              <div class="gl-track"><div style={{ width: `${Math.min(100, (ms / goalMs) * 100)}%`, background: bar }} /></div>
+              <LineBurst met={met} colors={grey ? ['var(--on-surface)'] : stops && stops.length > 1 ? stops : [profile.colorHex]} />
+            </div>
             <span class={`gl-figure ${met ? 'met' : ''}`}>{met && <Icon name="check" size={15} color="var(--lang)" />}{formatHm(ms)} / {formatHm(goalMs, true)}</span>
             <span class="gl-streak"><StreakBadge streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} /></span>
           </div>
