@@ -22,7 +22,7 @@
 /* The bursts: fixed behind the page, with fine grain so they read as frosted, not as a gradient. */
 :root[data-glass] { --burst-strength: .46; }
 :root[data-glass][data-theme='light'] { --burst-strength: .42; }
-:root[data-ui='quiet'][data-glass] { --quiet-sheet: var(--glass); }
+:root[data-ui='quiet'][data-glass] { --quiet-sheet: var(--glass); --quiet-panel: var(--glass); }
 :root[data-glass] body { background: var(--bg); }
 :root[data-glass] body::before {
   content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: var(--burst-strength);
@@ -86,8 +86,7 @@
 
 /* Goals: tinted frosted glass (the phone's glassTint) - the stronger sheet, with the language's colour washed
    in from the top-left corner and thinning across, deeper while it's tracked. A flat film of colour over the
-   bursts read as plastic. One fine neutral rim and a soft shadow (glassCardEdge): Clear glass's rainbow rim
-   repeated around every card was too much. */
+   bursts read as plastic. One fine neutral rim and a soft shadow (glassCardEdge). */
 :root[data-glass]:not([data-ui='quiet']) {
   --tint-idle: .24; --tint-live: .40;
   --glass-card-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 8px 24px rgba(0, 0, 0, .2);
@@ -134,8 +133,8 @@
 
 /* Clear glass (Appearance > Glass > Clear; the phone's Glass.clear): a lens, not frost. Panels drop the
    milky veil and nearly all the blur; what's behind them is pushed in colour instead (saturated, brighter,
-   a touch more contrast), and each panel's edge bends the bursts into a coloured band under a bright
-   top-left rim with a faint rainbow fringe. No grain - that's what made the bursts read as frosted. */
+   a touch more contrast), and each panel has a bright top-left rim - plain white, no rainbow fringe (taken
+   out on request: it looked cheap). No grain - that's what made the bursts read as frosted. */
 :root[data-glass][data-glass-clear] {
   --glass: rgba(255, 255, 255, .025);
   --glass-strong: rgba(255, 255, 255, .06);
@@ -146,8 +145,6 @@
   --glass-shadow:
     inset 1.5px 1.5px 0 -.5px rgba(255, 255, 255, .55),
     inset -1px -1px 0 -.5px rgba(255, 255, 255, .16),
-    inset 2px 0 1px -1px rgba(255, 90, 160, .3),
-    inset -2px 0 1px -1px rgba(80, 210, 255, .3),
     inset 0 0 16px -5px color-mix(in srgb, var(--burst-2, #fff) 75%, transparent),
     inset 10px 12px 22px -16px color-mix(in srgb, var(--burst-1, #fff) 80%, transparent),
     0 10px 30px rgba(0, 0, 0, .28);
@@ -162,8 +159,6 @@
   --glass-shadow:
     inset 1.5px 1.5px 0 -.5px rgba(255, 255, 255, .95),
     inset -1px -1px 0 -.5px rgba(26, 27, 58, .1),
-    inset 2px 0 1px -1px rgba(255, 90, 160, .25),
-    inset -2px 0 1px -1px rgba(60, 170, 255, .25),
     inset 0 0 16px -5px color-mix(in srgb, var(--burst-2, #fff) 70%, transparent),
     inset 10px 12px 22px -16px color-mix(in srgb, var(--burst-1, #fff) 75%, transparent),
     0 10px 28px rgba(26, 27, 58, .12);

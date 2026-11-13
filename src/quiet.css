@@ -9,9 +9,11 @@
   --section-rule: color-mix(in srgb, var(--on-surface) 28%, transparent);
   --heading-ink: color-mix(in srgb, var(--on-surface) 82%, transparent);
   --quiet-fill: color-mix(in srgb, var(--on-surface) 9%, transparent);
+  /* A grouped panel (the phone's quietGroupFill): one solid step off the page, the same for every section. */
+  --quiet-panel: var(--c);
   --block: transparent !important;
   --block-line: var(--rule) !important;
-  --nav-h: 52px;
+  --nav-h: 60px;
 }
 
 :root[data-ui='quiet']:not([data-glass]) .backdrop-wash { display: none; }
@@ -25,7 +27,7 @@
   font-size: 11.5px; line-height: 16px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--heading-ink);
 }
 /* Home's This week and Today start on the section rule (the phone's quietSection). */
-:root[data-ui='quiet'] .section-header.home-section { margin-top: 20px !important; padding-top: 14px; border-top: 1px solid var(--section-rule); }
+:root[data-ui='quiet'] .section-header.home-section { margin-top: 22px !important; margin-bottom: 8px !important; padding-left: 6px; }
 /* A settings block's heading reads as a section heading, not a word in the accent colour (the phone's SettingsBlock). */
 :root[data-ui='quiet'] .block-title:not(.normal-look *) { font-size: 11.5px; line-height: 16px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--heading-ink); }
 :root[data-ui='quiet'] .home-head { align-items: center; }
@@ -39,8 +41,10 @@
   background: var(--bg);
   border-top: 1px solid var(--rule); border-radius: 0; box-shadow: none;
 }
-:root[data-ui='quiet'] .nav button { position: relative; height: 50px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
+:root[data-ui='quiet'] .nav button { position: relative; height: 58px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
 :root[data-ui='quiet'] .nav button.on { background: transparent; color: var(--on-surface); }
+/* A touch bigger than it was (the phone's 24dp icons, 17dp above and below). */
+:root[data-ui='quiet'] .nav button svg { width: 24px; height: 24px; }
 :root[data-ui='quiet'] .nav button.on::after { content: ''; position: absolute; left: 50%; top: -1px; width: 20px; height: 2px; margin-left: -10px; background: currentColor; }
 @media (min-width: 600px) {
   :root[data-ui='quiet'] .nav {
@@ -51,19 +55,24 @@
   :root[data-ui='quiet'] .nav button.on::after { left: -1px; top: 50%; width: 2px; height: 20px; margin: -10px 0 0; }
 }
 
-/* Containers come apart into ruled rows. */
-:root[data-ui='quiet'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .tile, .qtile, .profile-card, .entry.boxed, .trophy-card, .winner-row, .friend-row):not(.normal-look *) {
+/* Sections are grouped panels (the phone's quietGroup): a section's content on one soft, flat panel - no
+   border, no shadow - reaching 8px past the page's margin, its rows divided by thin rules. */
+:root[data-ui='quiet'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .profile-card, .entry.boxed, .trophy-card, .friend-row, .notice, .person-hero, .section-band, .list:has(> .entry)):not(.normal-look *) {
+  background: var(--quiet-panel) !important; border: 0; border-radius: 14px; box-shadow: none; margin: 6px -8px; padding-left: 14px; padding-right: 14px;
+}
+:root[data-ui='quiet'] .list:has(> .entry):not(.normal-look *) { padding: 0; }
+:root[data-ui='quiet'] .list > .entry:last-child::after { display: none; }
+/* Figures and rows inside a panel stay flat. */
+:root[data-ui='quiet'] :is(.tile, .qtile, .winner-row):not(.normal-look *) {
   background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; margin: 0; padding-left: 0; padding-right: 0;
 }
-:root[data-ui='quiet'] .race-card, :root[data-ui='quiet'] .profile-card { border-bottom: 0; }
 :root[data-ui='quiet'] .fold > .fold-row { padding: 10px 0; }
 :root[data-ui='quiet'] .fold > .fold-row:hover { background: transparent; }
 :root[data-ui='quiet'] .fold-body { margin: 0; padding: 0 0 8px; border-top: 0; }
 :root[data-ui='quiet'] .quick-stats { gap: 0; margin-top: 12px; }
 :root[data-ui='quiet'] .record-tile, :root[data-ui='quiet'] .fact-tile { background: transparent; padding-left: 0; padding-right: 0; border-radius: 0; }
-:root[data-ui='quiet'] .section-band { background: transparent; border-top: 1px solid var(--section-rule); border-radius: 0; padding: 12px 0; }
-:root[data-ui='quiet'] .notice { background: transparent; border-radius: 0; border-bottom: 1px solid var(--rule); padding: 8px 0; }
-:root[data-ui='quiet'] .person-hero { background: transparent; border-bottom: 1px solid var(--rule); border-radius: 0; padding-left: 0; padding-right: 0; }
+:root[data-ui='quiet'] .section-band { padding-top: 12px; padding-bottom: 12px; }
+:root[data-ui='quiet'] .notice { padding-top: 8px; padding-bottom: 8px; }
 :root[data-ui='quiet'] .entry:not(.normal-look *) { padding-top: 9px; padding-bottom: 9px; position: relative; }
 :root[data-ui='quiet'] .entry::after:not(.normal-look *) { content: ''; position: absolute; left: 50px; right: 20px; bottom: 0; height: 1px; background: var(--rule); }
 :root[data-ui='quiet'] .entry .title:not(.normal-look *) { font-size: 15px; line-height: 21px; }
@@ -74,8 +83,8 @@
 }
 :root[data-ui='quiet'] .goal-card.lifted { background: var(--bg) !important; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
 
-/* What's tracking: one ruled line. The idle slot (Resume and +) keeps its normal buttons. */
-:root[data-ui='quiet'] .now-banner { background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; padding: 12px 0; margin: 0; }
+/* What's tracking: a grouped panel like every section. The idle slot (Resume and +) keeps its normal buttons. */
+:root[data-ui='quiet'] .now-banner { background: var(--quiet-panel) !important; border: 0; border-radius: 14px; padding: 12px 14px; margin: 0 -8px; }
 
 :root[data-ui='quiet'] .home-divider:not(.normal-look *), :root[data-ui='quiet'] .divider:not(.normal-look *) { background: transparent; margin: 8px 0; }
 
@@ -156,7 +165,7 @@
 /* Home's languages without cards (GoalLines, the phone's QuietGoalLines): a name, then a line per goal -
    icon, thin bar, figure, streak - over a rule. Plain, so the figures read in one column. */
 :root[data-ui='quiet'] .goal-area { gap: 0; }
-:root[data-ui='quiet'] .goal-lines { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-bottom: 1px solid var(--rule); cursor: pointer; position: relative; }
+:root[data-ui='quiet'] .goal-lines { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; margin: 0 -8px 8px; background: var(--quiet-panel); border-radius: 14px; cursor: pointer; position: relative; }
 :root[data-ui='quiet'] .goal-lines.lifted { background: var(--bg); box-shadow: 0 12px 32px rgba(0, 0, 0, .35); z-index: 5; }
 :root[data-ui='quiet'] .goal-lines.selected { outline: 2px solid var(--on-surface); outline-offset: 2px; }
 :root[data-ui='quiet'] .goal-area.editing .goal-lines { cursor: grab; touch-action: none; }
@@ -222,9 +231,9 @@
 
 /* Stats: a rule, room either side and a small heading for each section, and the summary figures
    as columns (the phone's quietSection and quietColumnRule). */
-:root[data-ui='quiet'] .stat-section { margin-top: 20px !important; padding-top: 14px; border-top: 1px solid var(--section-rule); }
+:root[data-ui='quiet'] .stat-section { margin-top: 22px !important; }
 :root[data-ui='quiet'] .stat-section > h2 { font-size: 11.5px; line-height: 16px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--heading-ink); }
-:root[data-ui='quiet'] .quick-stats { position: relative; padding-top: 14px; margin-top: 8px; border-top: 1px solid var(--section-rule); }
+:root[data-ui='quiet'] .quick-stats { position: relative; padding: 4px 14px; margin: 8px -8px 0; background: var(--quiet-panel); border-radius: 14px; }
 :root[data-ui='quiet'] .qtile { border-bottom: 1px solid var(--rule); }
 :root[data-ui='quiet'] .qtile + .qtile { position: relative; }
 :root[data-ui='quiet'] .qtile + .qtile::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--rule); }
@@ -348,3 +357,6 @@
 }
 @keyframes spread-out { from { transform: scale(1); opacity: .22; } to { transform: scale(220); opacity: 0; } }
 
+
+/* Home's This week on its grouped panel, like every section (the phone's WeekStrip in quietGroup). */
+:root[data-ui='quiet'] .week-strip { background: var(--quiet-panel); border-radius: 14px; padding: 12px 14px; margin: 0 -8px; }
