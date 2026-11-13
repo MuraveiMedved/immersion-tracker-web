@@ -5,7 +5,6 @@ import './glass.css'
 import './quiet.css'
 import { loadState, useStore, getState, flush, update, subscribe } from './store.js'
 import { applyTheme, applyLook, setCustomThemes } from './model/theme.js'
-import { gradientStops } from './model/theme.js'
 import { sync, syncIfStale, shouldReport, raceConfigured, runningForRace, raceStatus } from './model/race.js'
 import { ensureBase, recordEarnedEggs, backfillHoloMomentum, takeBackEarlyEggs } from './model/zoo.js'
 import * as syncModule from './model/sync.js'
@@ -32,28 +31,8 @@ const TABS = [
 function navTint(s) {
   const order = ['PODCAST', 'LISTENING', 'READING']
   const running = order.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).find((e) => e && e.languageProfileId != null)
-  const profile = running && s.profiles.find((p) => p.id === running.languageProfileId)
-  const color = profile?.colorHex
-  if (!color) return undefined
-  const fill = folioFill(profile)
-  return { '--nav-bg': `color-mix(in srgb, ${color} 22%, var(--surface))`, '--nav-tint': color, '--nav-fill': fill.css, '--nav-ink': fill.ink }
-}
-
-/** Folio's bar while a language plays (quiet.css; the phone's BottomNavBar folioFill): the language's own colours -
- *  its gradient across the bar when it has one - at 55% over the page, and black or white ink, whichever reads. */
-function folioFill(profile) {
-  const stops = (gradientStops(profile) || [profile.colorHex]).filter(Boolean)
-  const css = stops.length > 1
-    ? `linear-gradient(90deg, ${stops.map((c) => `color-mix(in srgb, ${c} 55%, var(--bg))`).join(', ')})`
-    : `color-mix(in srgb, ${stops[0]} 55%, var(--bg))`
-  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0F1220'
-  const rgb = (hex) => { const m = /^#?([0-9a-f]{6})/i.exec(hex); if (!m) return [0, 0, 0]; const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255] }
-  const lum = ([r, g, b]) => [r, g, b].map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0)
-  const mixed = stops.map((c) => { const a = rgb(c), b = rgb(bg); return a.map((v, i) => v * 0.55 + b[i] * 0.45) })
-  const contrast = (l1, l2) => (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
-  const blackWorst = Math.min(...mixed.map((c) => contrast(lum(c), 0)))
-  const whiteWorst = Math.min(...mixed.map((c) => contrast(lum(c), 1)))
-  return { css, ink: blackWorst >= 4.5 || blackWorst >= whiteWorst ? '#000' : '#fff' }
+  const color = running && s.profiles.find((p) => p.id === running.languageProfileId)?.colorHex
+  return color ? { '--nav-bg': `color-mix(in srgb, ${color} 22%, var(--surface))`, '--nav-tint': color } : undefined
 }
 
 function App() {
