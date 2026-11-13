@@ -369,11 +369,11 @@
 /* Home's This week on its grouped panel, like every section (the phone's WeekStrip in quietGroup). */
 :root[data-ui='quiet'] .week-strip { background: var(--quiet-panel); border-radius: 14px; padding: 12px 14px; margin: 0 -8px; }
 
-/* Folio (not with Glass) while a language plays: the whole bar in its colour (--nav-fill, lightened enough for black),
-   black icons and labels, and the live beat as a darker line along its top (the phone's BottomNavBar folioLive). */
-:root[data-ui='quiet']:not([data-glass]) .nav.live { background: var(--nav-fill, var(--bg)); border-top: 2px solid rgba(0, 0, 0, calc(.10 + .18 * var(--beat, 0))); }
-:root[data-ui='quiet']:not([data-glass]) .nav.live button { color: rgba(0, 0, 0, .62); }
-:root[data-ui='quiet']:not([data-glass]) .nav.live button.on { color: #000; }
+/* Folio (not with Glass) while a language plays: the bar in its own colours (--nav-fill: its gradient, 55% over the page),
+   black or white icons and labels (--nav-ink, whichever reads), and the live beat as a darker line along its top (the phone's BottomNavBar folioLive). */
+:root[data-ui='quiet']:not([data-glass]) .nav.live { background: var(--nav-fill, var(--bg)); border-top: 2px solid color-mix(in srgb, var(--nav-ink, #000) calc(12% + 20% * var(--beat, 0)), transparent); }
+:root[data-ui='quiet']:not([data-glass]) .nav.live button { color: color-mix(in srgb, var(--nav-ink, #000) 62%, transparent); }
+:root[data-ui='quiet']:not([data-glass]) .nav.live button.on { color: var(--nav-ink, #000); }
 @media (min-width: 600px) {
-  :root[data-ui='quiet']:not([data-glass]) .nav.live { border-top: 0; border-right: 2px solid rgba(0, 0, 0, calc(.10 + .18 * var(--beat, 0))); }
+  :root[data-ui='quiet']:not([data-glass]) .nav.live { border-top: 0; border-right: 2px solid color-mix(in srgb, var(--nav-ink, #000) calc(12% + 20% * var(--beat, 0)), transparent); }
 }
