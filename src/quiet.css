@@ -355,9 +355,9 @@
      they show as jumps on the panel's fill. Across a gradient they land in different places, so it's smooth. */
   background: linear-gradient(90deg, var(--lang), color-mix(in srgb, var(--lang) 30%, transparent)); opacity: calc(.096 * var(--beat, 0));
 }
-:root[data-ui='quiet'] .nav.live { border-top: 2px solid color-mix(in srgb, var(--nav-tint) calc(35% + 45% * var(--beat, 0)), transparent); }
+:root[data-ui='quiet'] .nav.live { border-top: 2px solid color-mix(in srgb, var(--nav-tint) 70%, transparent); }
 @media (min-width: 600px) {
-  :root[data-ui='quiet'] .nav.live { border-top: 0; border-right: 2px solid color-mix(in srgb, var(--nav-tint) calc(35% + 45% * var(--beat, 0)), transparent); }
+  :root[data-ui='quiet'] .nav.live { border-top: 0; border-right: 2px solid color-mix(in srgb, var(--nav-tint) 70%, transparent); }
 }
 :root[data-ui='quiet'] .now-banner.just-started::after {
   content: ''; position: absolute; left: 5px; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
