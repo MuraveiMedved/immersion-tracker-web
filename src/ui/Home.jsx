@@ -179,7 +179,7 @@ export function Home({ nav }) {
           and Today list); everything older is a tab away under All entries. */}
       {s.settings.quietUi && <>
         <WeekStrip now={now} light={light} />
-        <div class="section-header home-section" style="margin:24px 0 4px">Today</div>
+        <div class="section-header home-section" style="margin:24px 0 4px">Recent</div>
         {(() => {
           const today = recent.filter((e) => e.startTimeMillis >= goalDayStart(now))
           return today.length
