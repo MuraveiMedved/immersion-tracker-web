@@ -84,12 +84,33 @@
   border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top); box-shadow: var(--glass-shadow);
 }
 
-/* Goals: sheets of stained glass in the language's colour. */
+/* Goals: tinted frosted glass (the phone's glassTint) - the stronger sheet, with the language's colour washed
+   in from the top-left corner and thinning across, deeper while it's tracked. A flat film of colour over the
+   bursts read as plastic. One fine neutral rim and a soft shadow (glassCardEdge): Clear glass's rainbow rim
+   repeated around every card was too much. */
+:root[data-glass]:not([data-ui='quiet']) {
+  --tint-idle: .24; --tint-live: .40;
+  --glass-card-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 8px 24px rgba(0, 0, 0, .2);
+}
+:root[data-glass][data-theme='light']:not([data-ui='quiet']) {
+  --tint-idle: .18; --tint-live: .32;
+  --glass-card-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 8px 24px rgba(26, 27, 58, .07);
+}
 :root[data-glass]:not([data-ui='quiet']) .goal-card {
-  background: var(--goal-stain, var(--glass)) !important; box-shadow: var(--glass-shadow);
+  background: var(--goal-stain, var(--glass)) !important; box-shadow: var(--glass-card-shadow);
   border: 1px solid var(--glass-edge); border-top-color: var(--glass-edge-top);
 }
-:root[data-glass]:not([data-ui='quiet']) .now-banner { background: var(--goal-stain, var(--glass)) !important; box-shadow: var(--glass-shadow); }
+:root[data-glass]:not([data-ui='quiet']) :is(.goal-card, .now-banner).tinted { --tint-s: var(--tint-idle); }
+:root[data-glass]:not([data-ui='quiet']) :is(.goal-card.live, .now-banner).tinted { --tint-s: var(--tint-live); }
+:root[data-glass]:not([data-ui='quiet']) :is(.goal-card, .now-banner).tinted {
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--tint-a) calc(var(--tint-s) * 100%), transparent) 0%,
+      color-mix(in srgb, var(--tint-b) calc(var(--tint-s) * 50%), transparent) 50%,
+      color-mix(in srgb, var(--tint-c) calc(var(--tint-s) * 20%), transparent) 100%),
+    var(--glass-strong) !important;
+}
+:root[data-glass]:not([data-ui='quiet']) .now-banner { background: var(--goal-stain, var(--glass)) !important; box-shadow: var(--glass-card-shadow); }
 :root[data-glass]:not([data-ui='quiet']) .idle-banner { background: var(--glass); }
 
 /* Race rows: a sheet each on top of the race's panel, or they're lost in it. */
@@ -155,7 +176,7 @@
     radial-gradient(44vmax 44vmax at 85% 100%, var(--burst-1), transparent 70%);
 }
 /* Tiles and panels that only had an edge take the lens rim too. */
-:root[data-glass][data-glass-clear]:not([data-ui='quiet']) :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .lang-tile, .fact-tile, .record-tile, .sprint-row, .person-hero, .friend-row, .standing-row, .standings-switch, .now-banner, .idle-banner) {
+:root[data-glass][data-glass-clear]:not([data-ui='quiet']) :is(.cos-tile, .cos-opt, .cos-cat, .cos-group, .sa-group, .lang-tile, .fact-tile, .record-tile, .sprint-row, .person-hero, .friend-row, .standing-row, .standings-switch, .idle-banner) {
   box-shadow: var(--glass-shadow);
 }
 

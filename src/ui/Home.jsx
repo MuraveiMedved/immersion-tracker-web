@@ -14,6 +14,12 @@ import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
 
+/** Glass's tinted goal cards (glass.css, the phone's glassTint): the language's first, middle and last colours. */
+function glassTintVars(stops) {
+  return { '--tint-a': stops[0], '--tint-b': stops[Math.floor(stops.length / 2)], '--tint-c': stops[stops.length - 1] }
+}
+
+
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
 
 /** Home, laid out like the phone's: title and today's total, what's being tracked (or a dashed
@@ -173,7 +179,7 @@ export function Home({ nav }) {
           and Today list); everything older is a tab away under All entries. */}
       {s.settings.quietUi && <>
         <WeekStrip now={now} light={light} />
-        <div class="section-header" style="margin:24px 0 4px">Today</div>
+        <div class="section-header home-section" style="margin:24px 0 4px">Today</div>
         {(() => {
           const today = recent.filter((e) => e.startTimeMillis >= goalDayStart(now))
           return today.length
@@ -237,10 +243,11 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
   const ink = light ? deepened(color, 0.42) : color
   const phone = fromPhone(entry)
   const stain = grey ? undefined : stops && stops.length > 1 ? `linear-gradient(90deg, ${stops.map((c) => withAlpha(c, 0.42)).join(', ')})` : withAlpha(color, 0.42)
+  const tint = grey ? {} : glassTintVars(stops && stops.length ? stops : [color])
   // A session just started spreads its colour out from the dot (quiet.css), once.
   const [justStarted] = useState(() => !paused && durationOf(entry, Date.now()) < 3000)
   return (
-    <div class={`now-banner ${paused ? '' : 'live'} ${justStarted ? 'just-started' : ''}`} style={{ background: bg, '--goal-stain': stain, '--lang': stops?.[0] || color, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
+    <div class={`now-banner ${paused ? '' : 'live'} ${justStarted ? 'just-started' : ''} ${grey ? '' : 'tinted'}`} style={{ background: bg, '--goal-stain': stain, ...tint, '--lang': stops?.[0] || color, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
       <div class="grow">
         <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} · {profile?.name || 'Uncategorized'} · {formatClock(durationOf(entry, now))}</div>
@@ -677,7 +684,7 @@ function WeekStrip({ now, light }) {
   const most = Math.max(1, ...days.map((d) => d.total))
   return (
     <div class="week-strip">
-      <div class="section-header" style="margin:20px 0 10px">This week</div>
+      <div class="section-header home-section" style="margin:20px 0 10px">This week</div>
       <div class="ws-days">
         {days.map((d, i) => (
           <div key={d.start} class={`ws-day ${i === 6 ? 'today' : ''}`}>
@@ -760,13 +767,14 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
   // Glass (glass.css): the language's own colour, deeper while it's being tracked.
   const stainAlpha = active ? 0.42 : 0.24
   const stain = grey ? undefined : multi ? `linear-gradient(135deg, ${stops.map((c) => withAlpha(c, stainAlpha)).join(', ')})` : withAlpha(profile.colorHex, stainAlpha)
+  const tint = grey ? {} : glassTintVars(multi ? stops : [profile.colorHex])
   const iconColor = light ? '#000' : '#fff'
   // Anki is a third mode, with its own goal - never part of the General one (it isn't immersion).
   const rings = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]]
     .filter(([, g]) => g > 0)
   return (
-    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''} ${active ? 'live' : ''}`}
-      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash, '--goal-stain': stain, '--lang': grey ? 'var(--on-surface)' : (stops?.[0] || profile.colorHex) }} onClick={onOpen} role="button">
+    <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''} ${active ? 'live' : ''} ${grey ? '' : 'tinted'}`}
+      data-goal-id={profile.id} style={{ background: bg, borderColor: outline, '--goal-wash': wash, '--goal-stain': stain, ...tint, '--lang': grey ? 'var(--on-surface)' : (stops?.[0] || profile.colorHex) }} onClick={onOpen} role="button">
       {onToggleStacked && (
         <button class="rings-toggle" title={wide ? 'Rings stacked' : 'Rings side by side'} onClick={(ev) => { ev.stopPropagation(); onToggleStacked() }}>
           <Icon name="screen_rotation" size={20} />

@@ -4,7 +4,10 @@
    boxes left. Everything hangs off data-ui, so with it unset the app is exactly styles.css. */
 :root[data-ui='quiet'] {
   --quiet-sheet: var(--c-low);
-  --rule: color-mix(in srgb, var(--on-surface) 11%, transparent);
+  --rule: color-mix(in srgb, var(--on-surface) 15%, transparent);
+  /* The firmer line a section starts on (the phone's quietSectionLine): sections stand apart from their rows. */
+  --section-rule: color-mix(in srgb, var(--on-surface) 28%, transparent);
+  --heading-ink: color-mix(in srgb, var(--on-surface) 82%, transparent);
   --quiet-fill: color-mix(in srgb, var(--on-surface) 9%, transparent);
   --block: transparent !important;
   --block-line: var(--rule) !important;
@@ -19,10 +22,12 @@
 :root[data-ui='quiet'] .race-title, :root[data-ui='quiet'] .title-large { font-size: 18px; line-height: 24px; font-weight: 500; }
 :root[data-ui='quiet'] h2:not(.normal-look *), :root[data-ui='quiet'] .title-medium:not(.normal-look *), :root[data-ui='quiet'] .fold-title:not(.normal-look *), :root[data-ui='quiet'] .setting .s-title:not(.normal-look *), :root[data-ui='quiet'] .goal-card .name:not(.normal-look *) { font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: 0; }
 :root[data-ui='quiet'] .section-title h2:not(.normal-look *), :root[data-ui='quiet'] .today-row h2:not(.normal-look *), :root[data-ui='quiet'] .section-header:not(.normal-look *), :root[data-ui='quiet'] .day-head:not(.normal-look *) {
-  font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant);
+  font-size: 11.5px; line-height: 16px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--heading-ink);
 }
+/* Home's This week and Today start on the section rule (the phone's quietSection). */
+:root[data-ui='quiet'] .section-header.home-section { margin-top: 20px !important; padding-top: 14px; border-top: 1px solid var(--section-rule); }
 /* A settings block's heading reads as a section heading, not a word in the accent colour (the phone's SettingsBlock). */
-:root[data-ui='quiet'] .block-title:not(.normal-look *) { font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
+:root[data-ui='quiet'] .block-title:not(.normal-look *) { font-size: 11.5px; line-height: 16px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--heading-ink); }
 :root[data-ui='quiet'] .home-head { align-items: center; }
 :root[data-ui='quiet'] .home-head .title-col { padding-bottom: 8px; }
 :root[data-ui='quiet'] .app-title { font-size: 13px; line-height: 18px; font-weight: 500; }
@@ -56,7 +61,7 @@
 :root[data-ui='quiet'] .fold-body { margin: 0; padding: 0 0 8px; border-top: 0; }
 :root[data-ui='quiet'] .quick-stats { gap: 0; margin-top: 12px; }
 :root[data-ui='quiet'] .record-tile, :root[data-ui='quiet'] .fact-tile { background: transparent; padding-left: 0; padding-right: 0; border-radius: 0; }
-:root[data-ui='quiet'] .section-band { background: transparent; border-top: 1px solid var(--rule); border-radius: 0; padding: 12px 0; }
+:root[data-ui='quiet'] .section-band { background: transparent; border-top: 1px solid var(--section-rule); border-radius: 0; padding: 12px 0; }
 :root[data-ui='quiet'] .notice { background: transparent; border-radius: 0; border-bottom: 1px solid var(--rule); padding: 8px 0; }
 :root[data-ui='quiet'] .person-hero { background: transparent; border-bottom: 1px solid var(--rule); border-radius: 0; padding-left: 0; padding-right: 0; }
 :root[data-ui='quiet'] .entry:not(.normal-look *) { padding-top: 9px; padding-bottom: 9px; position: relative; }
@@ -217,9 +222,9 @@
 
 /* Stats: a rule, room either side and a small heading for each section, and the summary figures
    as columns (the phone's quietSection and quietColumnRule). */
-:root[data-ui='quiet'] .stat-section { margin-top: 24px !important; padding-top: 18px; border-top: 1px solid var(--rule); }
-:root[data-ui='quiet'] .stat-section > h2 { font-size: 11.5px; line-height: 16px; font-weight: 500; letter-spacing: 1.1px; text-transform: uppercase; color: var(--on-surface-variant); }
-:root[data-ui='quiet'] .quick-stats { position: relative; padding-top: 18px; margin-top: 8px; border-top: 1px solid var(--rule); }
+:root[data-ui='quiet'] .stat-section { margin-top: 20px !important; padding-top: 14px; border-top: 1px solid var(--section-rule); }
+:root[data-ui='quiet'] .stat-section > h2 { font-size: 11.5px; line-height: 16px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--heading-ink); }
+:root[data-ui='quiet'] .quick-stats { position: relative; padding-top: 14px; margin-top: 8px; border-top: 1px solid var(--section-rule); }
 :root[data-ui='quiet'] .qtile { border-bottom: 1px solid var(--rule); }
 :root[data-ui='quiet'] .qtile + .qtile { position: relative; }
 :root[data-ui='quiet'] .qtile + .qtile::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--rule); }
