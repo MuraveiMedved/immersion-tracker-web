@@ -16,6 +16,10 @@
   --nav-h: 60px;
 }
 
+/* On a light theme the container colour is all but the page's own, so a panel there is a faint shade of ink
+   over the page (the phone's quietGroupFill) - always a visible step. */
+:root[data-ui='quiet'][data-theme='light']:not([data-glass]) { --quiet-panel: color-mix(in srgb, var(--on-surface) 6%, var(--bg)); }
+
 :root[data-ui='quiet']:not([data-glass]) .backdrop-wash { display: none; }
 
 /* Type: a modest title, the row, small muted detail. */
