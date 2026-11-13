@@ -64,9 +64,9 @@ export function defaultState() {
       bgImage: 0, // when the background image was set (it lives apart, under BACKGROUND_KEY); 0 is none
       bgFit: 'FILL',
       bgDim: 0.6,
-      quietUi: false,
+      quietUi: true, // Folio - the default look for anyone new (the phone's TrackingRepository.freshInstall); saved settings keep theirs
       glassClear: false, // Glass as a clear lens instead of frost - per device, never synced
-      serifUi: false, // the New look's serif (Fraunces) - opt in, per device, never synced
+      serifUi: true, // Folio's serif (Fraunces) - on for anyone new, per device, never synced
       ringStyle: 'CLASSIC',
       titleStyleMode: 'DEFAULT',
       goalCardStyleMode: 'LANGUAGE_COLOR',

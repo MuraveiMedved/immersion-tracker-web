@@ -85,7 +85,7 @@ function NametagCollected({ onClose }) {
           <div style="color:rgba(255,255,255,.85);margin:6px 0 18px">Name an animal in your Zoo - open its card and tap Name.</div>
         </div>
       </Floaty>
-      <GlowPill rarity="ORANGE" onClick={onClose}>Nice!</GlowPill>
+      <GlowPill rarity="ORANGE" onClick={onClose}>Nice</GlowPill>
     </CardStage>
   )
 }
@@ -145,7 +145,7 @@ export function SprintsPanel({ now, data, onCollect, immersing = false }) {
             {elapsed != null && (
               <div class={`sprint-pace ${ahead ? 'ahead' : ''}`}>
                 <span class="tri" style={{ left: `calc((100% - 18px) * ${elapsed} + 9px)` }} />
-                <span class="word" style={{ left: `clamp(0px, calc((100% - 18px) * ${elapsed} + 9px - 40px), calc(100% - 80px))` }}>{ahead ? "You're Ahead." : 'Hurry!'}</span>
+                <span class="word" style={{ left: `clamp(0px, calc((100% - 18px) * ${elapsed} + 9px - 40px), calc(100% - 80px))` }}>{ahead ? "You're ahead" : 'Behind pace'}</span>
               </div>
             )}
             <div class="muted" style="font-size:11px;margin-top:6px">{formatHm(sp.myMillis)} of {sp.capHours} h</div>
@@ -179,7 +179,7 @@ export function PrizeReveal({ result, onClose, onReplay }) {
         <div class="reveal-pop">
           <Floaty>
             <div class="col" style="align-items:center">
-              <span class="reveal-banner" style={{ backgroundImage: rarityBrush(r), '--p': RARITY_COLOR[r] }}>REWARD!</span>
+              <span class="reveal-banner" style={{ backgroundImage: rarityBrush(r), '--p': RARITY_COLOR[r] }}>Reward</span>
               <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} onDisplay={onDisplay} /></div>
             </div>
           </Floaty>
@@ -188,7 +188,7 @@ export function PrizeReveal({ result, onClose, onReplay }) {
       <div class="stage-row">
         {onReplay && <GlowPill rarity={r} onClick={() => setRound(round + 1)}>Replay</GlowPill>}
         {!onReplay && !onDisplay && <GlowPill rarity={r} onClick={() => { setTrophy(result.animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
-        <GlowPill rarity={r} onClick={onClose}>Nice!</GlowPill>
+        <GlowPill rarity={r} onClick={onClose}>Nice</GlowPill>
       </div>
     </CardStage>
   )
@@ -282,7 +282,7 @@ export function HoloCelebration({ result, bannerPrefix }) {
     <div class="holo-celebration">
       <canvas ref={canvas} class="holo-canvas" />
       <div class="col" style="align-items:center;position:relative">
-        <span class="reveal-banner holo-banner">{bannerPrefix ? `${bannerPrefix}  ` : ''}✦ HOLO! ✦</span>
+        <span class="reveal-banner holo-banner">{bannerPrefix ? `${bannerPrefix}  ` : ''}✦ Holo ✦</span>
         <div class="holo-flip">
           <div class="front"><AnimalCardView animal={result.animal} cert={result.cert} /></div>
           <div class="back" />

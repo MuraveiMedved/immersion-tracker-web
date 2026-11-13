@@ -411,14 +411,14 @@ export function HatchDialog({ kind, onClose, hatch }) {
   return (
     <CardStage rarity={r} onClose={onClose}>
       {/* A holo copy gets the same celebration wherever it comes from (Sprints.jsx HoloCelebration). */}
-      {result.cert?.foil ? <HoloCelebration result={result} bannerPrefix={result.copies === 1 ? 'NEW!' : `You now have ×${result.copies}`} /> : (
+      {result.cert?.foil ? <HoloCelebration result={result} bannerPrefix={result.copies === 1 ? 'New' : `You now have ×${result.copies}`} /> : (
       <div class="reveal-pop">
         <Floaty>
           <div style="position:relative">
             <div class="reveal-burst"><Sunburst rarity={r} scale={1.25} /></div>
             <div class="col" style="align-items:center;position:relative">
               <span class={`reveal-banner ${r === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(r), '--p': (LOOK[r] || LOOK.GREEN)[0] }}>
-                {result.copies === 1 ? 'NEW!' : `You now have ×${result.copies}`}{result.cert?.foil ? '  ✦ HOLO!' : ''}
+                {result.copies === 1 ? 'New' : `You now have ×${result.copies}`}{result.cert?.foil ? '  ✦ Holo' : ''}
               </span>
               <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} onDisplay={onDisplay} nickname={nametagsOf(s).names[result.animal.id]} /></div>
             </div>
@@ -428,7 +428,7 @@ export function HatchDialog({ kind, onClose, hatch }) {
       )}
       <div class="stage-row">
         {!onDisplay && <GlowPill rarity={r} onClick={() => { setTrophy(result.animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
-        <GlowPill rarity={r} onClick={onClose}>Nice!</GlowPill>
+        <GlowPill rarity={r} onClick={onClose}>Nice</GlowPill>
       </div>
       {left > 0 && <GlowPill rarity={r} onClick={again}>Hatch another ({left})</GlowPill>}
     </CardStage>
@@ -482,7 +482,7 @@ function TradeUpCelebration({ from, to, given, onOpenNow, onClose }) {
           <div style="font-size:24px;font-weight:700">+1 {RARITY_LABEL[to]} egg</div>
           <div class="muted" style="margin-top:4px">Hatches a {RARITY_LABEL[to]} animal</div>
           <div class="stage-row" style="margin-top:20px">
-            <GlowPill rarity="NEUTRAL" solid disabled={!done} onClick={onClose}>Nice!</GlowPill>
+            <GlowPill rarity="NEUTRAL" solid disabled={!done} onClick={onClose}>Nice</GlowPill>
             <GlowPill rarity={to} solid disabled={!done} onClick={onOpenNow}>Hatch it now</GlowPill>
           </div>
         </div>

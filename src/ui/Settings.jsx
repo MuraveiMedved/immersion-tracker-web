@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import { useStore, getState, upsertProfile, deleteProfile, newProfile, setSetting, importEntries, replaceState, importedCount, removeImported, PODCAST, READING, ANKI, LISTENING } from '../store.js'
-import { PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS, GRADIENTS, mix, withAlpha, deepened, isDarkFor } from '../model/theme.js'
+import { CURATED_PRESETS, PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS, GRADIENTS, mix, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntries, exportBackup, readJsonBackup, readPhoneBackup } from '../model/imports.js'
 import { formatHm } from '../model/time.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
@@ -287,7 +287,7 @@ function Appearance() {
             <Switch checked={!!s.settings.glassClear} onChange={(v) => setSetting('glassClear', v)} />
           </SettingRow>
         )}
-        <SettingRow icon="palette" title="New look (experimental)" hint="A quieter, flatter redesign of the whole app, with thin lines instead of cards and fewer taps to get around.">
+        <SettingRow icon="palette" title="Folio" hint="The app's own look: flat panels, quiet colour, fewer taps.">
           <Switch checked={!!s.settings.quietUi} onChange={(v) => setSetting('quietUi', v)} />
         </SettingRow>
         {s.settings.quietUi && (
@@ -325,7 +325,7 @@ function Appearance() {
       {tab === 'ui' && (
         <div class="cos-grid">
           <CustomThemeTiles />
-          {PRESETS.map((p) => {
+          {PRESETS.filter((p) => CURATED_PRESETS.includes(p) || s.settings.uiColorPreset === p).map((p) => {
             const v = schemeFor(p, isLightPreset(p) ? false : dark !== false)
             return (
               <button key={p} class={`cos-tile ${s.settings.uiColorPreset === p ? 'on' : ''}`} onClick={() => setSetting('uiColorPreset', p)}>

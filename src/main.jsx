@@ -56,7 +56,8 @@ function App() {
   const tracking = s.entries.some((e) => e.endTimeMillis == null)
   useEffect(() => {
     const root = document.documentElement
-    if (!s.settings.quietUi || !tracking) { root.style.setProperty('--beat', '0'); return }
+    // Still when the system asks for reduced motion (the phone's Motion.reduced).
+    if (!s.settings.quietUi || !tracking || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { root.style.setProperty('--beat', '0'); return }
     let frame
     const tick = (t) => {
       root.style.setProperty('--beat', (0.5 - 0.5 * Math.cos((2 * Math.PI * (t % 4000)) / 4000)).toFixed(3))
@@ -84,7 +85,7 @@ function App() {
       <AppBackground />
       <nav class={`nav ${navTint(s) ? 'live' : ''}`} style={navTint(s)}>
         {tabs.map(([t, ico, label]) => (
-          <button key={t} class={tab === t ? 'on' : ''} onClick={() => { nav(t); setVisit((v) => v + 1) }} title={label} aria-label={label}><NavIcon name={ico} /></button>
+          <button key={t} class={tab === t ? 'on' : ''} onClick={() => { nav(t); setVisit((v) => v + 1) }} title={label} aria-label={label}><NavIcon name={ico} /><span class="nav-label" aria-hidden="true">{label}</span></button>
         ))}
       </nav>
       <main class="page" key={visit}>

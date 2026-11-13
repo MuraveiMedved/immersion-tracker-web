@@ -45,7 +45,7 @@
   background: var(--bg);
   border-top: 1px solid var(--rule); border-radius: 0; box-shadow: none;
 }
-:root[data-ui='quiet'] .nav button { position: relative; height: 58px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
+:root[data-ui='quiet'] .nav button { position: relative; height: 60px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
 :root[data-ui='quiet'] .nav button.on { background: transparent; color: var(--on-surface); }
 /* A touch bigger than it was (the phone's 24dp icons, 17dp above and below). */
 :root[data-ui='quiet'] .nav button svg { width: 24px; height: 24px; }

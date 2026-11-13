@@ -5,6 +5,9 @@ export const PRESETS = [
   'OBSIDIAN', 'MIDNIGHT', 'SLATE', 'DUSK', 'FOG', 'AMOLED', 'MAROON', 'OXBLOOD', 'FOREST', 'OCEAN',
   'AMETHYST', 'SAKURA', 'ESPRESSO', 'SYNTHWAVE', 'PAPER', 'IVORY', 'PEARL', 'MINT', 'GREEN_TEA',
 ]
+/** In Appearance's picker (the phone's UiColorPreset.curated): a short, curated list reads as designed. The
+ *  others stay valid - saved settings, profile backgrounds - and show in the picker only while in use. */
+export const CURATED_PRESETS = ['SLATE', 'OBSIDIAN', 'MIDNIGHT', 'AMOLED', 'FOREST', 'OCEAN', 'MAROON', 'PAPER', 'IVORY']
 export const presetLabel = (p) => (isCustomPreset(p) ? customThemeOf(p)?.name || 'Slate' : p === 'AMOLED' ? 'AMOLED' : p.split('_').map((w) => w[0] + w.slice(1).toLowerCase()).join(' '))
 export const isLightPreset = (p) => p === 'PAPER' || p === 'IVORY' || p === 'PEARL' || p === 'MINT' || p === 'GREEN_TEA'
 

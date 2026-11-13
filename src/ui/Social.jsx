@@ -929,7 +929,7 @@ function PersonSheet({ event, standing: st, now, onClose, onOpenMe }) {
           </div>
           {isMe && onOpenMe && <button class="btn tonal small" onClick={onOpenMe}><Icon name="edit" size={16} />Profile</button>}
           {!isMe && (isFriend ? <span class="label-large" style="color:var(--primary)">Friends ✓</span>
-            : incoming ? <button class="btn small" onClick={() => friendAction(() => respondFriend(st.userId, true), `You and ${st.name} are now friends!`)}>Accept</button>
+            : incoming ? <button class="btn small" onClick={() => friendAction(() => respondFriend(st.userId, true), `You and ${st.name} are now friends`)}>Accept</button>
               : outgoing ? <span class="label-large muted">Requested</span>
                 : <button class="btn tonal small" disabled={busy} onClick={() => friendAction(() => addFriendById(st.userId), `Friend request sent to ${st.name}`)}>{busy ? 'Sending…' : 'Add friend'}</button>)}
         </div>
@@ -1102,7 +1102,7 @@ function JoinDialog({ onClose }) {
     setBusy(true)
     const ok = await joinByCode(code)
     setBusy(false)
-    if (ok) { toast('Joined!'); onClose() } else toast(errorText(raceStatus.error))
+    if (ok) { toast('Joined'); onClose() } else toast(errorText(raceStatus.error))
   }
   return (
     <Dialog title="Join with a code" onClose={onClose} sheet={false} actions={<>
@@ -1189,7 +1189,7 @@ function Friends() {
               <Avatar profile={p} />
               <b class="grow">{p.name}</b>
               <button class="btn text small" onClick={() => run(() => respondFriend(p.userId, false))}>Decline</button>
-              <button class="btn small" onClick={() => run(() => respondFriend(p.userId, true), `You and ${p.name} are now friends!`)}>Accept</button>
+              <button class="btn small" onClick={() => run(() => respondFriend(p.userId, true), `You and ${p.name} are now friends`)}>Accept</button>
             </div>
           ))}</div>
         </div>

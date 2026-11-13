@@ -1,6 +1,13 @@
 /* Laid out after the Android app (Compose / Material 3): Roboto, 20px page margins, the phone's
    type scale, tinted surfaces with thin outlines, pill tab switchers and the floating nav bar. */
 :root {
+  /* Shared design values (the phone's ui/theme/Tokens.kt and Motion.kt): four corner sizes, a 4px
+     spacing grid, three speeds and two curves. New rules use these instead of picking a number. */
+  --r-small: 10px; --r-medium: 14px; --r-large: 24px; --r-sheet: 28px;
+  --space-xs: 4px; --space-s: 8px; --space-m: 12px; --space-l: 16px; --space-xl: 20px; --space-xxl: 24px;
+  --dur-fast: 150ms; --dur-standard: 250ms; --dur-slow: 400ms;
+  --ease-enter: cubic-bezier(.2, 0, 0, 1); --ease-exit: cubic-bezier(.3, 0, 1, 1);
+  --c-success: #43A047; --c-warning: #FB8C00; --c-danger: #E53935; --c-gold: #E8B93E; --c-silver: #B9C0CC; --c-bronze: #CB8D5E;
   --bg: #0F1220;
   --surface: #1A1D2E;
   --surface-variant: #242742;
@@ -90,9 +97,12 @@ main.page {
   transition: background .9s;
 }
 .nav button {
-  flex: 1; height: 46px; border: 0; border-radius: 20px; background: transparent;
-  display: grid; place-items: center; color: var(--on-surface-variant);
+  flex: 1; height: 52px; border: 0; border-radius: 20px; background: transparent;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--on-surface-variant);
 }
+/* A small label under every icon (the phone's NavPillItem): one line, trimmed if a slot is narrow. */
+.nav-label { font-size: 11px; line-height: 14px; font-weight: 500; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.nav button.on .nav-label { font-weight: 600; }
 .nav button.on { background: #fff; color: var(--nav-bg, var(--surface)); }
 :root[data-theme='light'] .nav button.on { background: var(--on-surface); }
 /* Anything wider than a phone: the bar stands on the left, and the page keeps clear of it
@@ -102,7 +112,7 @@ main.page {
     left: 20px; right: auto; top: 50%; bottom: auto; transform: translateY(-50%);
     flex-direction: column; width: auto; padding: 10px;
   }
-  .nav button { width: 52px; height: 52px; flex: none; }
+  .nav button { width: 60px; height: 56px; flex: none; }
   main.page { padding-bottom: 48px; padding-left: max(20px, calc(112px - max(0px, (100vw - 720px) / 2))); }
 }
 /* Social: Friends under the races, or beside them once there's room - the page widens for it. */
@@ -1116,3 +1126,8 @@ textarea.input { resize: vertical; }
 .theme-colors { display: flex; gap: 12px; margin-top: 12px; align-items: center; }
 .theme-colors label { flex: 1; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--on-surface-variant); }
 .theme-colors input[type='color'] { width: 100%; height: 44px; padding: 2px; border: 1px solid var(--outline); border-radius: 10px; background: none; cursor: pointer; }
+
+/* Reduce motion: what moves by itself stands still, and anything that animates finishes at once. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

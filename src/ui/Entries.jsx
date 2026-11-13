@@ -185,7 +185,7 @@ export function Entries({ params, nav }) {
         <div style="margin-top:12px">
           {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} />}
           {uncategorized.length > 0 && groups.length > 0 && <div class="divider" style="margin:12px 0" />}
-          {!groups.length && !uncategorized.length && <div class="empty">No entries yet.</div>}
+          {!groups.length && !uncategorized.length && <div class="empty"><b>No entries yet</b><br /><span class="muted">Start a timer on Home, or log a session you did earlier.</span></div>}
           {groups.map((g, i) => {
             const ids = g.entries.map((e) => e.id)
             const allSel = ids.every((id) => selected.has(id))
