@@ -269,8 +269,13 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
 /** The phone's SessionGainFloats: a session that ends while Home is on screen floats up off the
  *  now-tracking bar as "+32m" in its language's colour (or gradient), then fades - the game-style
  *  "you earned this". Goes by the bar: a kind leaving it whose entry is still there, closed (a
- *  discard deletes it, so it gets nothing), and at least a minute long. Not on page
+ *  discard deletes it, so it gets nothing), and at least a minute of time not already floated up. Not on page
  *  load, nor while the tab is in the background. */
+/** How much of each entry (by id) a "+32m" has already shown: a resumed session is the same entry
+ *  carrying its time so far, so only the time added since the last float counts (the phone's
+ *  HomeViewModel.shownGainMillis). Module-level so leaving Home doesn't forget it. */
+const shownGainMs = new Map()
+
 function useSessionGains(shown, entries) {
   const [list, setList] = useState([])
   const slot = useRef(null)
@@ -288,8 +293,12 @@ function useSessionGains(shown, entries) {
       const saved = entries.find((x) => x.id === e.id)
       if (!saved || saved.endTimeMillis == null) continue
       hit = true
-      const ms = durationOf(saved)
-      if (ms >= 60000) added.push({ key: `${saved.id}-${Date.now()}`, ms, profile: profileById(saved.languageProfileId) })
+      const total = durationOf(saved)
+      const ms = total - (shownGainMs.get(saved.id) || 0)
+      if (ms >= 60000) {
+        shownGainMs.set(saved.id, total)
+        added.push({ key: `${saved.id}-${Date.now()}`, ms, profile: profileById(saved.languageProfileId) })
+      }
     }
     if (added.length) setList((l) => [...l, ...added])
     // A session starting lands the same way as one ending.
