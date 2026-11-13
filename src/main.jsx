@@ -32,7 +32,23 @@ function navTint(s) {
   const order = ['PODCAST', 'LISTENING', 'READING']
   const running = order.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).find((e) => e && e.languageProfileId != null)
   const color = running && s.profiles.find((p) => p.id === running.languageProfileId)?.colorHex
-  return color ? { '--nav-bg': `color-mix(in srgb, ${color} 22%, var(--surface))`, '--nav-tint': color } : undefined
+  return color ? { '--nav-bg': `color-mix(in srgb, ${color} 22%, var(--surface))`, '--nav-tint': color, '--nav-fill': readableUnderBlack(color) } : undefined
+}
+
+/** Folio's bar while a language plays (quiet.css): the language's colour, lightened just enough toward white
+ *  that black icons and labels read on it (the phone's readableUnderBlack). */
+function readableUnderBlack(hex) {
+  const m = /^#?([0-9a-f]{6})/i.exec(hex || '')
+  if (!m) return hex
+  const n = parseInt(m[1], 16)
+  const base = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+  const lum = (c) => {
+    const [r, g, b] = c.map((v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 })
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+  let c = base
+  for (let step = 1; lum(c) < 0.3 && step <= 10; step++) c = base.map((v) => Math.round(v + (255 - v) * step * 0.08))
+  return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('')
 }
 
 function App() {
