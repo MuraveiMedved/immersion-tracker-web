@@ -61,7 +61,7 @@ export function stopTimer(entry) {
   stopRunningEntry(entry.contentType)
   const saved = ms < 60000 ? 'Stopped - too short to count' : `${formatHm(ms)} of ${sessionName(entry.contentType, entry.languageProfileId)} saved`
   // The phone only hears about the stop on its next sync - until then it still shows it running.
-  toast(fromPhone(entry) ? `${saved} · the phone stops it when it next syncs` : saved, {
+  toast(fromPhone(entry) ? `${saved}. The phone stops it when it next syncs` : saved, {
     label: 'Undo',
     run: () => reopenEntry(snapshot),
   })

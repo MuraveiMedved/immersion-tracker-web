@@ -76,7 +76,7 @@ export function Stats() {
   const quiet = getState().settings.quietUi
   const languageFilters = languages.map((p) => <LanguageFilterChip key={p.id} profile={p} selected={!hidden.has(p.id)} onClick={() => setHidden((prev) => { const n = new Set(prev); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n })} />)
   return (
-    <div style="margin-top:4px;padding-top:12px">
+    <div class="stats-page" style="margin-top:4px;padding-top:12px">
       <div class="chips scroll" style="gap:6px">
         {RANGES.map((r) => <button key={r} class={`pill-toggle ${range === r ? 'on' : ''}`} onClick={() => { setRange(r); setOffset(0) }}>{RANGE_LABEL[r]}</button>)}
       </div>
@@ -109,7 +109,7 @@ export function Stats() {
               ? <BarColumns buckets={current.win.buckets} languages={visible} value={(i, id) => current.bars[i].get(id) || 0} max={scaleMax} light={light} onBucket={ZOOM_IN[range] ? zoomTo : null} />
               : <div class="grow muted small" style={{ height: CHART_HEIGHT + 22, display: 'grid', placeItems: 'center' }}>Nothing tracked in this window yet.</div>}
           </div>
-          {hasData && range !== 'ALL' && <div class="center muted small" style="margin-top:4px">Swipe for more · tap a bar to zoom in</div>}
+          {hasData && range !== 'ALL' && <div class="center muted small" style="margin-top:4px">Swipe for more, or tap a bar to zoom in</div>}
           <LanguageBreakdown byLang={stats.byLang} languages={visible} />
         </>
       )}
@@ -157,7 +157,7 @@ function BarColumns({ buckets, languages, value, max, light, onBucket }) {
         const bars = languages.map((p) => [p, value(i, p.id)]).filter(([, v]) => v > 0).sort((x, y) => y[1] - x[1])
         return (
           <div key={i} class="bar-column" onClick={onBucket ? () => onBucket(i) : undefined} style={onBucket ? 'cursor:pointer' : ''}
-            title={bars.length ? bars.map(([p, v]) => `${p.name} ${formatHm(v)}`).join(' · ') : undefined}>
+            title={bars.length ? bars.map(([p, v]) => `${p.name} ${formatHm(v)}`).join(', ') : undefined}>
             <div class="bar-stack" style={{ height: CHART_HEIGHT }}>
               {bars.map(([p, v]) => {
                 const stops = gradientStops(p) || [p.colorHex]

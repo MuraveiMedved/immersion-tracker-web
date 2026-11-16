@@ -123,7 +123,7 @@ export function Zoo({ nav }) {
         <div class="grow" style="min-width:0">
           <div class="title-small" style="font-weight:700">{ready ? `${z.boxesReady} egg${z.boxesReady === 1 ? '' : 's'} ready to hatch` : 'No egg ready yet'}</div>
           <div class="bar" style="margin-top:8px;height:6px"><div style={{ width: `${z.boxProgress * 100}%` }} /></div>
-          <div class="muted tiny ellipsis" style="margin-top:5px">{z.timeToNextBox} remaining{ready ? '' : ' · tap for hatch rates'}</div>
+          <div class="muted tiny ellipsis" style="margin-top:5px">{z.timeToNextBox} remaining{ready ? '' : '. Tap for hatch rates'}</div>
           {tier && <div class={`tiny ellipsis tier-${tier.id}`} style="margin-top:2px;color:var(--tier-ink);font-weight:650">{tier.name} Momentum = {holoChancePercent(momentumDays)}% holo chance</div>}
         </div>
         {ready && <button class="glow-pill small" onClick={(e) => { e.stopPropagation(); setHatching('BOX') }}>Hatch</button>}
@@ -767,7 +767,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
             )}
             {animal.status && <span class="acard-status" style={{ color: statusColor(animal.status), background: hexA(statusColor(animal.status), 0.14) }}>{animal.status}</span>}
             <div class="acard-credit" style={mythic ? { textAlign: 'center', padding: '12px 30px 0' } : {}}>
-              {animal.credit && `Photo: ${animal.credit} · `}
+              {animal.credit && `Photo: ${animal.credit}. `}
               {animal.url ? <a href={animal.url} target="_blank" rel="noopener">Wikipedia</a> : 'Wikipedia'}
             </div>
           </div>
@@ -871,7 +871,7 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   return (
     <>
       <div class="row collection-head">
-        <div class="section-header grow">Collection · {held}</div>
+        <div class="section-header grow">Collection ({held})</div>
         {/* Everything ever found, held or not. */}
         {found.size > 0 && (
           <button class="col-pick discovered-btn" title="Discovered" aria-label="Discovered" onClick={() => setDiscovered(true)}>
@@ -961,7 +961,7 @@ function Discovered({ catalog, copies, onOpen, onClose }) {
         <button class="icon-btn" title="Back" aria-label="Back" onClick={onClose}><Icon name="arrow_back" /></button>
         <div class="title-large">Discovered</div>
       </div>
-      <div class="small muted">{found} discovered · {held} in your collection</div>
+      <div class="small muted">{found} discovered, {held} in your collection</div>
       {tiers.map(({ rarity, found: animals }) => (
         <div key={rarity}>
           <div class="discovered-tier">
@@ -1097,7 +1097,7 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade, initialCopyI
             <div class="chips" style="justify-content:center">
               {copies.map((c, n) => (
                 <button key={c.id} class={`chip ${n === i ? 'on' : ''}`} style="background:var(--c-high)" onClick={() => setI(n)}>
-                  Copy {n + 1}{c.cert?.foil ? ' · holo' : ''}{carriesCertificate(r) && c.cert?.hourMark != null ? ` · h${c.cert.hourMark}` : ''}
+                  Copy {n + 1}{c.cert?.foil ? ', holo' : ''}{carriesCertificate(r) && c.cert?.hourMark != null ? `, h${c.cert.hourMark}` : ''}
                 </button>
               ))}
             </div>

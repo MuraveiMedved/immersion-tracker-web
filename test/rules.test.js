@@ -132,7 +132,7 @@ test('PolyLogger: back to back from noon, in logged order', () => {
   assert.equal(rows[0].description, 'Show A')
   assert.equal(rows[0].start, at(2026, 10, 1, 12))
   assert.equal(rows[1].start, at(2026, 10, 1, 13))
-  assert.equal(rows[0].project, 'Japanese · Listening')
+  assert.equal(rows[0].project, 'Japanese, Listening')
 })
 
 test('Toggl detailed export', () => {

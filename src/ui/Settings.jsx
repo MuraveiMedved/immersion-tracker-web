@@ -209,7 +209,7 @@ function LanguageEdit({ id, onClose }) {
       <div class="col" style="gap:16px">
         <div class="col" style="gap:12px">
           <ColorTile colorHex={p.colorHex} gradientColors={p.gradientColors} onChange={(c, g) => setP((x) => ({ ...x, colorHex: c, gradientColors: g }))} />
-          {p.isMain && <div class="muted small">★ Main language · picked first when you add a session</div>}
+          {p.isMain && <div class="muted small">★ Main language, picked first when you add a session</div>}
         </div>
         <div class="col">
           <div class="form-label">Daily goal</div>
@@ -219,16 +219,16 @@ function LanguageEdit({ id, onClose }) {
             generalGoalMinutes: v && !x.generalGoalMinutes ? (x.podcastGoalMinutes || 0) + (x.readingGoalMinutes || 0) : x.generalGoalMinutes || 0,
           }))} />
           {p.generalGoal ? <>
-            <label class="field"><TypeLabel type="GENERAL" size={14}>General · min</TypeLabel><input class="input" inputMode="numeric" value={p.generalGoalMinutes} onInput={(e) => set('generalGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+            <label class="field"><TypeLabel type="GENERAL" size={14}>General (min)</TypeLabel><input class="input" inputMode="numeric" value={p.generalGoalMinutes} onInput={(e) => set('generalGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
           </> : <>
           <div class="row">
-            <label class="field grow"><TypeLabel type="PODCAST" size={14}>Listening · min</TypeLabel><input class="input" inputMode="numeric" value={p.podcastGoalMinutes} onInput={(e) => set('podcastGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
-            <label class="field grow"><TypeLabel type="READING" size={14}>Reading · min</TypeLabel><input class="input" inputMode="numeric" value={p.readingGoalMinutes} onInput={(e) => set('readingGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+            <label class="field grow"><TypeLabel type="PODCAST" size={14}>Listening (min)</TypeLabel><input class="input" inputMode="numeric" value={p.podcastGoalMinutes} onInput={(e) => set('podcastGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+            <label class="field grow"><TypeLabel type="READING" size={14}>Reading (min)</TypeLabel><input class="input" inputMode="numeric" value={p.readingGoalMinutes} onInput={(e) => set('readingGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
           </div>
           </>}
           {/* Anki's own goal, beside either mode - review isn't immersion. Which AnkiDroid decks
               count is picked on the phone. */}
-          <label class="field"><TypeLabel type="ANKI" size={14}>Study · min</TypeLabel><input class="input" inputMode="numeric" value={p.ankiGoalMinutes || 0} onInput={(e) => set('ankiGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+          <label class="field"><TypeLabel type="ANKI" size={14}>Study (min)</TypeLabel><input class="input" inputMode="numeric" value={p.ankiGoalMinutes || 0} onInput={(e) => set('ankiGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
         </div>
         <details>
           <summary class="form-label clickable">Detection</summary>
@@ -477,7 +477,7 @@ function ImportDialog({ kind, files, onClose }) {
             const setM = (patch) => setMapping({ ...mapping, [p.name]: { ...m, ...patch } })
             return (
               <div key={p.name} class="card" style="padding:12px">
-                <div class="row"><b class="grow ellipsis">{p.name || '(No project)'}</b><span class="muted small">{p.count} entries · {formatHm(p.ms)}</span></div>
+                <div class="row"><b class="grow ellipsis">{p.name || '(No project)'}</b><span class="muted small">{p.count} entries, {formatHm(p.ms)}</span></div>
                 <div class="chips" style="margin-top:8px">
                   {TYPE_OPTIONS.map(([t, l]) => <button key={String(t)} class={`chip ${m.type === t ? 'on' : ''}`} onClick={() => setM({ type: t, languageProfileId: m.languageProfileId })}>{t && <TypeIcon type={t} size={15} />}{l}</button>)}
                 </div>

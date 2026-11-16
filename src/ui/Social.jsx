@@ -134,7 +134,7 @@ function Race({ onEditName, onOpenMe }) {
       {!foldRacerLine && <div class="row" style="margin-right:-12px">
         <div class="grow clickable" style="min-width:0" onClick={onEditName}>
           <div class="title-medium ellipsis">Racing as {s.race.emoji ? `${displayEmoji(s.race.emoji)} ` : ''}{s.race.name}</div>
-          <div class="muted ellipsis" style="font-size:11px">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)} · tap to change name` : 'Tap to change name'}</div>
+          <div class="muted ellipsis" style="font-size:11px">{activityText ? <span class="row"><Spinner /> {activityText}</span> : s.race.lastSync ? `Updated ${agoText(s.race.lastSync, now)}. Tap to change your name` : 'Tap to change name'}</div>
         </div>
         {/* Adding a race, refreshing, its settings and your name are occasional - one menu. */}
         <div style="position:relative">
@@ -179,7 +179,7 @@ function Race({ onEditName, onOpenMe }) {
       {done.length > 0 && <>
         <button class="completed-row" onClick={() => setCompletedChoice(!completedOpen)}>
           <Icon name="emoji_events" size={18} color="var(--tertiary)" />
-          <span class="title-small grow">Completed races  ·  {done.length}</span>
+          <span class="title-small grow">Completed races ({done.length})</span>
           <Icon name={completedOpen ? 'expand_less' : 'expand_more'} size={20} color="var(--tertiary)" />
         </button>
         {completedOpen && done.map((e) => <RaceCard key={e.id} event={e} now={now} completed onOpenMe={onOpenMe} />)}
@@ -378,12 +378,12 @@ function Standings({ event, now, isLive, view, onPerson }) {
   )
 }
 
-/** The race's key facts as one small line under its name: "Goal 1000 h · Started Oct 3 · Ends ...".
+/** The race's key facts as one small line under its name: "Goal 1000 h, Started Oct 3, Ends ...".
  *  As tiles they took a whole band of the card above the standings. */
 function RaceFacts({ event, started }) {
   const parts = [`Goal ${event.goalHours} h`, `${started ? 'Started' : 'Starts'} ${factDate(event.startMillis, !started)}`]
   if (event.endMillis != null) parts.push(`Ends ${factDate(event.endMillis, true)}`)
-  return <div class="race-facts-line">{parts.join('  ·  ')}</div>
+  return <div class="race-facts-line">{parts.join(', ')}</div>
 }
 
 function RaceCharts({ event, now, daily }) {
@@ -441,13 +441,13 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe, menuExtras })
     const winner = event.standings[0]?.millis > 0 ? event.standings[0] : null
     const reason = { goal: 'goal reached', manual: 'ended early' }[event.endReason] || 'time ran out'
     const waiting = event.standings.filter((x) => !x.final).map((x) => x.name)
-    const ended = `Ended ${formatDateTime(event.endMillis || 0)} · ${reason}`
+    const ended = `Ended ${formatDateTime(event.endMillis || 0)} (${reason})`
     return (
       <div class="race-card">
         <div class="row clickable" onClick={() => setExpanded(!expanded)}>
           <div class="grow" style="min-width:0">
             <div class="title-medium ellipsis">{event.name}</div>
-            <div class="ellipsis" style={`font-size:12px;margin-top:2px;color:${winner ? 'var(--tertiary)' : 'var(--on-surface-variant)'}`}>{winner ? `${winner.name} won  ·  ${formatHm(winner.millis)}` : ended}</div>
+            <div class="ellipsis" style={`font-size:12px;margin-top:2px;color:${winner ? 'var(--tertiary)' : 'var(--on-surface-variant)'}`}>{winner ? `${winner.name} won, ${formatHm(winner.millis)}` : ended}</div>
           </div>
           <Icon name={expanded ? 'expand_less' : 'expand_more'} size={22} color="var(--on-surface-variant)" />
         </div>
@@ -946,7 +946,7 @@ function PersonSheet({ event, standing: st, now, onClose, onOpenMe }) {
           </div>
         </div>
         {(localTime || report) && (
-          <div class="row muted" style="gap:6px;margin-top:14px;font-size:12px"><Icon name="schedule" size={14} />{[localTime && `${localTime} their time`, report].filter(Boolean).join(' · ')}</div>
+          <div class="row muted" style="gap:6px;margin-top:14px;font-size:12px"><Icon name="schedule" size={14} />{[localTime && `${localTime} their time`, report].filter(Boolean).join(', ')}</div>
         )}
       </div>
       {profile && <>
@@ -956,14 +956,14 @@ function PersonSheet({ event, standing: st, now, onClose, onOpenMe }) {
       <div style="margin-top:20px">
         <SplitBar listening={listening} reading={st.readingMillis || 0} anki={st.ankiMillis || 0} total={st.millis} max={st.millis} colors={colors} height={12} />
         <div class="row split-line" style="gap:4px;margin-top:6px">
-          <SplitAmount type="PODCAST" color={colors.listening} millis={listening} /><span class="muted" style="font-size:11px">Listening · {pct(listening)}%</span>
+          <SplitAmount type="PODCAST" color={colors.listening} millis={listening} /><span class="muted" style="font-size:11px">Listening ({pct(listening)}%)</span>
           <span style="width:12px" />
-          <SplitAmount type="READING" color={colors.reading} millis={st.readingMillis || 0} /><span class="muted" style="font-size:11px">Reading · {pct(st.readingMillis || 0)}%</span>
+          <SplitAmount type="READING" color={colors.reading} millis={st.readingMillis || 0} /><span class="muted" style="font-size:11px">Reading ({pct(st.readingMillis || 0)}%)</span>
         </div>
         {(st.ankiMillis > 0 || st.ankiBankedMillis > 0) && (
           <div class="row split-line" style="gap:4px;margin-top:6px">
             <SplitAmount type="ANKI" color={colors.anki} millis={st.ankiMillis || 0} />
-            <span class="muted" style="font-size:11px">{st.ankiBankedMillis > 0 ? `counted · ${formatHm(st.ankiBankedMillis)} banked` : 'counted'}</span>
+            <span class="muted" style="font-size:11px">{st.ankiBankedMillis > 0 ? `counted, ${formatHm(st.ankiBankedMillis)} banked` : 'counted'}</span>
           </div>
         )}
         {/* Today's split too, while the race runs - the card's Today view shows only the bars. */}
@@ -1204,7 +1204,7 @@ function Friends() {
       )}
 
       <div class="section">
-        <div class="section-title"><h2>Friends · {friends.length}</h2></div>
+        <div class="section-title"><h2>Friends ({friends.length})</h2></div>
         {!friends.length ? <div class="card muted small">No friends yet - add someone by their code, or tap them in a race.</div> : (
           <div class="col" style="gap:8px">{friends.map((p) => (
             <FriendRow key={p.userId} p={p} onClick={() => setOpen(p)} />          ))}</div>
@@ -1251,7 +1251,7 @@ function FriendRow({ p, onClick }) {
       <ProfilePicture p={p} color={cs[0]} />
       <div class="grow" style="min-width:0;padding-left:12px">
         <div class="row" style="gap:8px"><span class="title-medium ellipsis" style="font-weight:600">{p.name}</span>{p.goldenDays >= GOLDEN_DAYS && <MomentumPill days={p.goldenDays} progress={1} />}</div>
-        <div class="muted ellipsis" style="font-size:12px">{[trophy ? (p.names?.[trophy.id] ? `“${p.names[trophy.id]}”` : trophy.name) : null, p.updatedAt ? agoText(p.updatedAt) : null].filter(Boolean).join(' · ')}</div>
+        <div class="muted ellipsis" style="font-size:12px">{[trophy ? (p.names?.[trophy.id] ? `“${p.names[trophy.id]}”` : trophy.name) : null, p.updatedAt ? agoText(p.updatedAt) : null].filter(Boolean).join(', ')}</div>
       </div>
       <Icon name="chevron_right" color={cs[0]} />
     </div>
@@ -1332,7 +1332,7 @@ function MyProfileSheet({ onClose }) {
       {/* Your code - last, under everything about your profile (as on the phone). */}
       <div class="card row" style="margin:16px 0 0">
         <div class="grow clickable" onClick={() => s.friends.code && copyText(s.friends.code, 'Friend code copied')}>
-          <div class="muted small">Your friend code · tap to copy</div>
+          <div class="muted small">Your friend code. Tap to copy</div>
           <div style="font-family:ui-monospace,monospace;font-size:28px;font-weight:900;letter-spacing:4px">{s.friends.code || '······'}</div>
         </div>
         <button class="icon-btn" title="Share code" disabled={!s.friends.code} onClick={() => share(`Add me as a friend in Immersion Tracker (Social → Friends): ${s.friends.code}`)}><Icon name="share" /></button>
@@ -1502,10 +1502,10 @@ function ProfileSections({ p }) {
       )}
       {zoo.length > 0 && (
         <div class="profile-card">
-          <div class="pc-title">Zoo · {zoo.length}</div>
+          <div class="pc-title">Zoo ({zoo.length})</div>
           <div class="profile-zoo">
             {(all ? cards : cards.slice(0, 12)).map((c) => (
-              <button key={c.key} class={`tile-animal ${c.foil ? holoClass(c.a.rarity) : ''}`} style={{ borderColor: RARITY_COLOR[c.a.rarity], ...glowColors(c.a.rarity) }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}” · ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c), n: c.n })}>
+              <button key={c.key} class={`tile-animal ${c.foil ? holoClass(c.a.rarity) : ''}`} style={{ borderColor: RARITY_COLOR[c.a.rarity], ...glowColors(c.a.rarity) }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}”, ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c), n: c.n })}>
                 <AnimalPhoto animal={c.a} />{c.foil && <FoilSheen seed={c.a.id} />}{c.n > 1 && <span class="count">×{c.n}</span>}
               </button>
             ))}
@@ -1520,7 +1520,7 @@ function ProfileSections({ p }) {
           <div class="record-tiles">
             <RecordTile label="All-time immersion" value={formatHm(p.records.totalMillis)} />
             <RecordTile label="Longest streak" value={`${p.records.longestStreak}d`} />
-            <RecordTile label="Best day" value={p.records.bestDay > 0 ? `${formatHm(p.records.bestDayMillis)} · ${formatYmd(p.records.bestDay)}` : '-'} />
+            <RecordTile label="Best day" value={p.records.bestDay > 0 ? `${formatHm(p.records.bestDayMillis)} on ${formatYmd(p.records.bestDay)}` : '-'} />
             <RecordTile label="Days tracked" value={String(p.records.daysTracked)} />
           </div>
         </div>

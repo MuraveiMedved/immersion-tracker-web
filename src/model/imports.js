@@ -92,7 +92,7 @@ export function parsePolyLogger(text) {
     const day = parseDate(cell(date))
     const len = Math.round(Number(cell(minutes)))
     if (!day || !(len > 0)) return
-    sessions.push({ order, day, minutes: len, group: [cell(language), cell(type)].filter(Boolean).join(' · '), title: cell(activity) })
+    sessions.push({ order, day, minutes: len, group: [cell(language), cell(type)].filter(Boolean).join(', '), title: cell(activity) })
   })
   const byDay = new Map()
   for (const s of sessions) {

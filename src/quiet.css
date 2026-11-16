@@ -374,3 +374,21 @@
 
 /* Home's This week on its grouped panel, like every section (the phone's WeekStrip in quietGroup). */
 :root[data-ui='quiet'] .week-strip { background: var(--quiet-panel); border-radius: 14px; padding: 12px 14px; margin: 0 -8px; }
+
+/* Stats in Folio (2026-11-16, the phone's EntriesStatsSection): separate outlined boxes, and outlined pill
+   buttons - grey boxes running together and plain underlined words didn't read well there. */
+:root[data-ui='quiet'] .stats-page .quick-stats { padding: 0; margin: 12px 0 0; background: transparent; gap: 8px; }
+:root[data-ui='quiet'] .stats-page .qtile:not(.normal-look *) {
+  background: var(--quiet-panel) !important; border: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent);
+  border-radius: 14px; padding: 10px 6px;
+}
+:root[data-ui='quiet'] .stats-page .qtile + .qtile::before { display: none; }
+:root[data-ui='quiet'] .stats-page :is(.pill-toggle, .lang-filter):not(.normal-look *) {
+  border: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent) !important; border-radius: 999px;
+  padding: 6px 14px; margin: 5px 0; min-height: 34px; box-shadow: none;
+}
+:root[data-ui='quiet'] .stats-page .pill-toggle.on:not(.normal-look *) {
+  background: color-mix(in srgb, var(--on-surface) 10%, transparent) !important; border-color: color-mix(in srgb, var(--on-surface) 70%, transparent) !important;
+}
+:root[data-ui='quiet'] .stats-page .lang-filter.on:not(.normal-look *) { border-color: color-mix(in srgb, var(--lang) 70%, transparent) !important; }
+:root[data-ui='quiet'] .stats-page .pill-toggle.row svg:not(.normal-look *) { display: none; }

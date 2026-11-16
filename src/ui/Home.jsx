@@ -128,7 +128,7 @@ export function Home({ nav }) {
         </HomeTabs>
         <div class="quiet-hero">
           <div class="total">{formatHm(todayTotal)}</div>
-          <div class="sub">Immersion Tracker · web ⚡</div>
+          <div class="sub">Immersion Tracker web ⚡</div>
         </div>
       </> : <div class="home-head">
         <div class="title-col">
@@ -250,10 +250,10 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
     <div class={`now-banner ${paused ? '' : 'live'} ${justStarted ? 'just-started' : ''} ${grey ? '' : 'tinted'}`} style={{ background: bg, '--goal-stain': stain, ...tint, '--lang': stops?.[0] || color, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
       <div class="grow">
-        <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} · {profile?.name || 'Uncategorized'} · {formatClock(durationOf(entry, now))}</div>
+        <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} in {profile?.name || 'Uncategorized'}, {formatClock(durationOf(entry, now))}</div>
         {entry.mediaTitle && <div class="small ellipsis">{entry.mediaTitle}</div>}
         <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>
-          {paused ? 'Paused · tap to edit' : phone ? 'On your phone' : 'Manual · tap to edit title or time'}
+          {paused ? 'Paused, tap to edit' : phone ? 'On your phone' : 'Manual, tap to edit the title or time'}
         </div>
       </div>
       {paused
@@ -373,7 +373,7 @@ function SessionGainFloats({ gains, light, onDone }) {
 function IdleBanner({ now, onOther }) {
   useStore()
   const last = lastSession(now)
-  if (!last) return <div class="idle-banner" role="button" onClick={onOther}>Not tracking · tap to start a session</div>
+  if (!last) return <div class="idle-banner" role="button" onClick={onOther}>Not tracking. Tap to start a session</div>
   const profile = profileById(last.languageProfileId)
   const color = profile?.colorHex || '#6FA8C9'
   return (
@@ -381,7 +381,7 @@ function IdleBanner({ now, onOther }) {
       <button class="resume-btn" title="Resume (Space)" onClick={() => startTimer(last.contentType, last.languageProfileId, last.mediaTitle)}>
         <span class="resume-play" style={{ background: withAlpha(color, 0.22), color }}><TypeIcon type={last.contentType} size={24} /></span>
         <span class="grow" style="min-width:0;text-align:left">
-          <span class="resume-label">Resume · {sessionName(last.contentType, last.languageProfileId)}</span>
+          <span class="resume-label">Resume {sessionName(last.contentType, last.languageProfileId)}</span>
           {last.mediaTitle && <span class="resume-title ellipsis">{last.mediaTitle}</span>}
         </span>
       </button>
@@ -429,7 +429,7 @@ function StartAgain({ now, running, light }) {
                 <span class="sa-bar" />
                 <span class="grow" style="min-width:0">
                   <span class="sa-title">{e.mediaTitle}</span>
-                  <span class="sa-meta"><b style={{ color: ink }}>{profile?.name || 'Uncategorized'}</b> · {live ? `running ${formatClock(durationOf(live, now))}` : ago(e.startTimeMillis)}</span>
+                  <span class="sa-meta"><b style={{ color: ink }}>{profile?.name || 'Uncategorized'}</b>, {live ? `running ${formatClock(durationOf(live, now))}` : ago(e.startTimeMillis)}</span>
                 </span>
                 <span class="sa-go"><Icon name={live ? 'stop' : 'play_arrow'} size={20} /></span>
               </StartAgainItem>
@@ -463,7 +463,7 @@ export function TabTitle() {
   const s = useStore()
   const now = useNow(1000)
   const live = RUNNING_ORDER.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).filter(Boolean)
-  const label = live.length ? `${formatClock(durationOf(live[0], now))} · ${sessionName(live[0].contentType, live[0].languageProfileId)}` : 'Immersion Tracker'
+  const label = live.length ? `${formatClock(durationOf(live[0], now))}, ${sessionName(live[0].contentType, live[0].languageProfileId)}` : 'Immersion Tracker'
   useEffect(() => { document.title = label }, [label])
   return null
 }
@@ -867,13 +867,13 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
           <div class="goal-dialog-section">Daily goal</div>
           <GoalModeChoice general={general} onChange={setGeneral} />
           {general
-            ? <label class="field"><TypeLabel type={GENERAL}>General · min</TypeLabel>{minutes(gen, setGen)}</label>
+            ? <label class="field"><TypeLabel type={GENERAL}>General (min)</TypeLabel>{minutes(gen, setGen)}</label>
             : <div class="row">
-                <label class="field grow"><TypeLabel type={PODCAST}>Listening · min</TypeLabel>{minutes(listen, setListen)}</label>
-                <label class="field grow"><TypeLabel type={READING}>Reading · min</TypeLabel>{minutes(read, setRead)}</label>
+                <label class="field grow"><TypeLabel type={PODCAST}>Listening (min)</TypeLabel>{minutes(listen, setListen)}</label>
+                <label class="field grow"><TypeLabel type={READING}>Reading (min)</TypeLabel>{minutes(read, setRead)}</label>
               </div>}
           {/* Anki's own goal, beside either mode - review isn't immersion. */}
-          <label class="field"><TypeLabel type={ANKI}>Study · min</TypeLabel>{minutes(anki, setAnki)}</label>
+          <label class="field"><TypeLabel type={ANKI}>Study (min)</TypeLabel>{minutes(anki, setAnki)}</label>
         </>
       </div>
     </Dialog>
@@ -906,7 +906,7 @@ function GoldenStreakDialog({ days, todayMillis, immersing, onClose }) {
             </div>
             <div class="title-large" style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:700"><Bolt tier={tier?.id} muted={!tier} /> Momentum</div>
             <div style={{ marginTop: '4px', fontWeight: 600, fontSize: '14px', color: tier ? 'var(--tier-ink)' : 'var(--on-surface-variant)' }}>
-              {[tier?.name, next ? `${toGo} more day${toGo === 1 ? '' : 's'} to ${next.name}` : 'The top tier'].filter(Boolean).join(' · ')}
+              {[tier?.name, next ? `${toGo} more day${toGo === 1 ? '' : 's'} to ${next.name}` : 'The top tier'].filter(Boolean).join(', ')}
             </div>
             <div class="momentum-bar"><div class={immersing ? 'flashing' : ''} style={{ width: `${pct * 100}%` }} /></div>
             <div class="muted" style="font-size:12px;margin-top:4px">Today: {formatHm(todayMillis)} of {formatHm(GOLDEN_DAILY_MILLIS)}</div>
@@ -999,7 +999,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
   const visible = expanded ? presets : presets.slice(0, RECENT_SESSIONS_PREVIEW_COUNT)
 
   return (
-    <Dialog title={fixedLanguage ? `Add a session · ${fixedLanguage.name}` : 'Add a session'} sheet={false} normalLook onClose={onClose} actions={<>
+    <Dialog title={fixedLanguage ? `Add a session for ${fixedLanguage.name}` : 'Add a session'} sheet={false} normalLook onClose={onClose} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
       <button class="btn" disabled={!canSubmit} onClick={submit}><Icon name={saving ? 'check' : 'play_arrow'} size={18} />{saving ? 'Save' : 'Start'}</button>
     </>}>

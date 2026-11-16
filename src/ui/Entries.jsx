@@ -27,7 +27,7 @@ export function EntryRow({ entry, now, onClick, selected, onLongPress }) {
         <div class="title ellipsis">{title}</div>
         {entry.mediaArtist && <div class="small muted ellipsis">{entry.mediaArtist}</div>}
       </div>
-      <div class="dur">{running ? `${formatHm(durationOf(entry, now))} · now` : formatHm(durationOf(entry, now))}</div>
+      <div class="dur">{running ? `${formatHm(durationOf(entry, now))} so far` : formatHm(durationOf(entry, now))}</div>
     </div>
   )
 }
@@ -64,7 +64,7 @@ export function EntryDetails({ id, onClose }) {
       <div class="col" style="gap:10px">
         <div class="row"><TypeIcon type={entry.contentType} size={22} color={profile?.colorHex} /><span>{typeLabel(entry.contentType)}</span><LanguageChip profile={profile} /></div>
         <div class="muted small">
-          {running ? `${formatHm(durationOf(entry, now))} so far · still tracking` : `${formatDateTime(entry.startTimeMillis)} – ${formatTime(entry.endTimeMillis)} · ${formatHm(durationOf(entry))}`}
+          {running ? `${formatHm(durationOf(entry, now))} so far, still tracking` : `${formatDateTime(entry.startTimeMillis)} – ${formatTime(entry.endTimeMillis)}, ${formatHm(durationOf(entry))}`}
         </div>
         {entry.detectionReason && <div class="muted tiny">{entry.detectionReason}</div>}
         <div class="divider" />

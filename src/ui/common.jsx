@@ -433,7 +433,7 @@ export function MomentumPill({ days, progress, onClick }) {
   const p = Math.max(0, Math.min(1, progress))
   const r = 12.75, c = 2 * Math.PI * r
   return (
-    <button class={`momentum tier-${tier?.id || 'bronze'} ${lit ? 'lit' : ''}`} onClick={onClick} title={`Momentum · ${days} days`}>
+    <button class={`momentum tier-${tier?.id || 'bronze'} ${lit ? 'lit' : ''}`} onClick={onClick} title={`Momentum: ${days} days`}>
       <span style="position:relative;width:28px;height:28px;display:grid;place-items:center">
         {p < 1 && (
           <svg width="28" height="28" style="position:absolute;inset:0;transform:rotate(-90deg)">
