@@ -48,7 +48,7 @@ function App() {
   // level in (Settings > Appearance, say) goes back to the top.
   const [visit, setVisit] = useState(0)
   useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset, s.settings.customThemes])
-  useEffect(() => applyLook(s.settings.quietUi, s.settings.glassUi, s.settings.glassClear), [s.settings.quietUi, s.settings.glassUi, s.settings.glassClear])
+  useEffect(() => applyLook(s.settings.quietUi, s.settings.glassUi), [s.settings.quietUi, s.settings.glassUi])
   // The New look's serif is opt in (Appearance > Serif type); quiet.css uses it only under [data-serif].
   useEffect(() => { document.documentElement.toggleAttribute('data-serif', !!s.settings.serifUi) }, [s.settings.serifUi])
   // The redesign's one motion (the phone's LiveBeat): while something's tracked, everything showing it
@@ -157,7 +157,7 @@ if (import.meta.env.DEV) window.__tracker = { getState, update, sync: syncModule
 
 loadState().then(() => {
   applyTheme(getState().settings.uiColorPreset)
-  applyLook(getState().settings.quietUi, getState().settings.glassUi, getState().settings.glassClear)
+  applyLook(getState().settings.quietUi, getState().settings.glassUi)
   document.documentElement.toggleAttribute('data-serif', !!getState().settings.serifUi)
   ensureBase()
   render(<App />, document.getElementById('app'))

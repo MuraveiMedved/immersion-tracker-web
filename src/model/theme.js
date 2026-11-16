@@ -147,11 +147,11 @@ export function applyTheme(preset) {
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', vars['--bg'])
 }
 
-/** Three neighbouring hues around [primary] - the phone's burstColors: each UI theme gets bursts of
- *  its own, softer and brighter on a light theme. */
+/** Two neighbouring hues and a third close by, from [primary] - the phone's burstColors: deep and calm
+ *  in a dark theme, a pale wash in a light one. */
 export function burstColors(primary, dark) {
   const [h] = rgbToHsv(hexToRgb(primary))
-  return [0, 48, -56].map((shift) => rgbToHex(hsvToRgb([(h + shift + 360) % 360, dark ? 0.72 : 0.5, dark ? 0.82 : 0.98])))
+  return [0, 28, -24].map((shift) => rgbToHex(hsvToRgb([(h + shift + 360) % 360, dark ? 0.55 : 0.3, dark ? 0.6 : 1])))
 }
 
 // Themes made in Appearance: chosen like a preset, as the preset 'custom:<id>'. Everything comes from
@@ -259,15 +259,13 @@ export const customThemeOf = (preset) => (isCustomPreset(preset) ? customThemes.
 
 /** The experimental redesign (quiet.css) and the Glass finish (glass.css), each on its own - per
  *  device, not synced. */
-export function applyLook(quiet, glass, clear = false) {
+export function applyLook(quiet, glass) {
   const root = document.documentElement
   if (quiet) root.dataset.ui = 'quiet'
   else delete root.dataset.ui
   if (glass) root.dataset.glass = ''
   else delete root.dataset.glass
-  // Clear glass (glass.css): a lens over the bursts rather than frost - only with Glass on.
-  if (glass && clear) root.dataset.glassClear = ''
-  else delete root.dataset.glassClear
+  delete root.dataset.glassClear // Clear glass was folded into Glass (2026-11-16)
 }
 
 export const luminance = (hex) => {

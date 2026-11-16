@@ -279,14 +279,9 @@ function Appearance() {
   return (
     <>
       <Block>
-        <SettingRow icon="glass" title="Glass" hint="A frosted finish over colour bursts from your UI colour. Only the look changes - everything stays where it is.">
+        <SettingRow icon="glass" title="Glass" hint="A glass finish over soft colour from your UI colour. Only the look changes - everything stays where it is.">
           <Switch checked={!!s.settings.glassUi} onChange={(v) => setSetting('glassUi', v)} />
         </SettingRow>
-        {s.settings.glassUi && (
-          <SettingRow icon="glass" title="Clear glass" hint="Clear like a lens instead of frosted: the colour behind each panel is pushed brighter and bent at its edges.">
-            <Switch checked={!!s.settings.glassClear} onChange={(v) => setSetting('glassClear', v)} />
-          </SettingRow>
-        )}
         <SettingRow icon="palette" title="Folio" hint="The app's own look: flat panels, quiet colour, fewer taps.">
           <Switch checked={!!s.settings.quietUi} onChange={(v) => setSetting('quietUi', v)} />
         </SettingRow>
