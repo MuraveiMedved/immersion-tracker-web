@@ -169,7 +169,7 @@
 /* Home's languages without cards (GoalLines, the phone's QuietGoalLines): a name, then a line per goal -
    icon, thin bar, figure, streak - over a rule. Plain, so the figures read in one column. */
 :root[data-ui='quiet'] .goal-area { gap: 0; }
-:root[data-ui='quiet'] .goal-lines { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; margin: 0 -8px 8px; background: var(--quiet-panel); border-radius: 14px; cursor: pointer; position: relative; }
+:root[data-ui='quiet'] .goal-lines { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; margin: 0 -8px 8px; background: var(--quiet-panel); border: 1px solid transparent; border-radius: 14px; cursor: pointer; position: relative; }
 :root[data-ui='quiet'] .goal-lines.lifted { background: var(--bg); box-shadow: 0 12px 32px rgba(0, 0, 0, .35); z-index: 5; }
 :root[data-ui='quiet'] .goal-lines.selected { outline: 2px solid var(--on-surface); outline-offset: 2px; }
 :root[data-ui='quiet'] .goal-area.editing .goal-lines { cursor: grab; touch-action: none; }

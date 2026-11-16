@@ -129,6 +129,20 @@
 
 /* With New look on too: the bursts, and frost on the two things that are still objects on the page. */
 :root[data-glass][data-ui='quiet'] .goal-card { -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); }
+/* Folio's language panels in Glass: the same tinted glass as the normal look's goal cards (the phone's glassTint). */
+:root[data-glass][data-ui='quiet'] .goal-lines { background: var(--glass) !important; -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); }
+:root[data-glass][data-ui='quiet'] .goal-lines.tinted { --tint-s: .16; }
+:root[data-glass][data-theme='light'][data-ui='quiet'] .goal-lines.tinted { --tint-s: .12; }
+:root[data-glass][data-ui='quiet'] .goal-lines.tinted.live { --tint-s: .30; }
+:root[data-glass][data-theme='light'][data-ui='quiet'] .goal-lines.tinted.live { --tint-s: .24; }
+:root[data-glass][data-ui='quiet'] .goal-lines.tinted {
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--tint-a) calc(var(--tint-s) * 100%), transparent) 0%,
+      color-mix(in srgb, var(--tint-b) calc(var(--tint-s) * 40%), transparent) 55%,
+      color-mix(in srgb, var(--tint-c) calc(var(--tint-s) * 12%), transparent) 100%),
+    var(--glass-strong) !important;
+}
 :root[data-glass][data-ui='quiet'] .nav {
   background: color-mix(in srgb, var(--bg) 72%, transparent); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
 }

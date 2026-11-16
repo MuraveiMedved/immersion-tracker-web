@@ -726,9 +726,18 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
     ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
     : { color: ink }
   const goals = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]].filter(([, g]) => g > 0)
+  // The panel takes the normal look's card treatment (as GoalCard, asked for 2026-11-16): the language's colour,
+  // dimmed by the card style and brighter while it plays, outlined only then; tinted glass with Glass on (glass.css).
+  const multi = stops && stops.length > 1
+  const [sat, val] = active ? [0.9, 0.32] : [0.6, 0.18]
+  const bg = grey ? undefined : multi
+    ? `linear-gradient(135deg, ${stops.map((c) => dimColor(c, sat, val, light)).join(', ')})`
+    : dimColor(profile.colorHex, sat, val, light)
+  const outline = active ? (grey ? 'var(--block-line)' : withAlpha(profile.colorHex, 0.6)) : 'transparent'
+  const tint = grey ? {} : glassTintVars(multi ? stops : [profile.colorHex])
   return (
-    <div class={`goal-lines ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${active ? 'live' : ''}`} data-goal-id={profile.id}
-      style={{ '--lang': ink }} onClick={onOpen} role="button">
+    <div class={`goal-lines ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${active ? 'live' : ''} ${grey ? '' : 'tinted'}`} data-goal-id={profile.id}
+      style={{ '--lang': ink, background: bg, borderColor: outline, ...tint }} onClick={onOpen} role="button">
       <div class="gl-name"><span class="ellipsis" style={nameStyle}>{profile.name}</span>{active && <span class="gl-live"><i />live</span>}</div>
       {goals.map(([type, goal]) => {
         const ms = todayOf(type)
