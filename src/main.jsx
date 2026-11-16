@@ -85,7 +85,7 @@ function App() {
       <AppBackground />
       <nav class={`nav ${navTint(s) ? 'live' : ''}`} style={navTint(s)}>
         {tabs.map(([t, ico, label]) => (
-          <button key={t} class={tab === t ? 'on' : ''} onClick={() => { nav(t); setVisit((v) => v + 1) }} title={label} aria-label={label}><NavIcon name={ico} /><span class="nav-label" aria-hidden="true">{label}</span></button>
+          <button key={t} class={tab === t ? 'on' : ''} onClick={() => { nav(t); setVisit((v) => v + 1) }} title={label} aria-label={label}><NavIcon name={ico} /></button>
         ))}
       </nav>
       <main class="page" key={visit}>

@@ -97,12 +97,10 @@ main.page {
   transition: background .9s;
 }
 .nav button {
-  flex: 1; height: 52px; border: 0; border-radius: 20px; background: transparent;
+  flex: 1; height: 48px; border: 0; border-radius: 20px; background: transparent;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--on-surface-variant);
 }
-/* A small label under every icon (the phone's NavPillItem): one line, trimmed if a slot is narrow. */
-.nav-label { font-size: 11px; line-height: 14px; font-weight: 500; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
-.nav button.on .nav-label { font-weight: 600; }
+/* Icons only, as on the phone (labels taken out 2026-11-16); each button keeps its aria-label. */
 .nav button.on { background: #fff; color: var(--nav-bg, var(--surface)); }
 :root[data-theme='light'] .nav button.on { background: var(--on-surface); }
 /* Anything wider than a phone: the bar stands on the left, and the page keeps clear of it
