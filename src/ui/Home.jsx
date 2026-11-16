@@ -303,18 +303,21 @@ function useSessionGains(shown, entries) {
     if (added.length) setList((l) => [...l, ...added])
     // A session starting lands the same way as one ending.
     const was = new Set(prev.shown.map((e) => e.contentType))
-    if (hit || shown.some((e) => !was.has(e.contentType))) hitStop(slot.current)
+    if (hit) hitStop(slot.current)
+    else if (shown.some((e) => !was.has(e.contentType))) hitStop(slot.current, true)
   })
   return { list, slot, remove: (g) => setList((l) => l.filter((x) => x !== g)) }
 }
 
-/** The phone's sessionHitStop: a session starting or ending lands like a blow - the slot snaps to a slight
- *  squash, holds it ~90ms (the "freeze"), then springs back past full size and settles. */
-function hitStop(el) {
+/** The phone's sessionHitStop: a session ending lands like a blow - the slot snaps to a slight
+ *  squash, holds it ~90ms (the "freeze"), then springs back past full size and settles. A session
+ *  starting ([start], e.g. Resume clicked) eases into the squash instead of snapping to it, so the
+ *  switch to playing is one continuous movement (like the phone's slot, 2026-11-16). */
+function hitStop(el, start = false) {
   if (!el?.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
   const squash = 'scale(1.025, 0.93)'
   el.animate([
-    { transform: squash, offset: 0 },
+    ...(start ? [{ transform: 'none', offset: 0 }, { transform: squash, offset: 0.14 }] : [{ transform: squash, offset: 0 }]),
     { transform: squash, offset: 0.18 },
     { transform: 'scale(0.992, 1.035)', offset: 0.45 },
     { transform: 'scale(1.004, 0.99)', offset: 0.7 },
