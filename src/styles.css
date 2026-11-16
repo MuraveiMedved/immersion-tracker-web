@@ -463,7 +463,7 @@ textarea.input { resize: vertical; }
 .discovered-row.gone .thumb { opacity: .5; filter: grayscale(1); }
 .discovered-row.gone .name { color: var(--on-surface-variant); }
 /* Cards per row: one pill like the app's chips - icon, "4 per row", an arrow (the phone's ColumnsPicker). */
-.col-pick { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 10px; border-radius: 999px; background: var(--c-high); color: var(--on-surface-variant); cursor: pointer; }
+.col-pick { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 10px; border-radius: 999px; background: var(--c-high); color: var(--on-surface-variant); cursor: pointer; border: 1px solid var(--outline-variant); } /* outlined in every look (2026-11-16) */
 /* The select covers the whole pill invisibly: only the icons show, its options still open on tap. */
 .col-pick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; appearance: none; -webkit-appearance: none; border: 0; margin: 0; padding: 0; font: inherit; font-size: 13px; cursor: pointer; }
 .col-pick:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }

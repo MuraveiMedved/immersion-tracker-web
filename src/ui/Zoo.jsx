@@ -978,7 +978,7 @@ function Discovered({ catalog, copies, onOpen, onClose }) {
                 <span class="thumb"><AnimalPhoto animal={a} /></span>
                 <div class="grow" style="min-width:0">
                   <div class="name ellipsis">{holo ? '✦ ' : ''}{a.name}</div>
-                  <div class="tiny muted">{times[a.id] > 1 ? `Found ${times[a.id]} times` : 'Found once'}</div>
+                  <div class="tiny muted">{times[a.id] > 2 ? `Found ${times[a.id]} times` : times[a.id] === 2 ? 'Found twice' : 'Found once'}</div>
                 </div>
                 {copiesHeldNow
                   ? <span class="status" style={{ background: `linear-gradient(90deg, ${hexA(p, 0.22)}, ${hexA(s2, 0.22)})` }}><Icon name="check" size={13} />In collection{copiesHeldNow > 1 ? ` ×${copiesHeldNow}` : ''}</span>

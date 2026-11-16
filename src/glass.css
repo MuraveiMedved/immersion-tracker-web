@@ -80,6 +80,7 @@
 :root[data-glass]:not([data-ui='quiet']) :is(.pill-toggle:not(.on), .entry .dur, .dur-pill, .col-pick, .col-pick select, .chip:not(.on), .icon-btn.filled, .input, .title-field, .btn.tonal, .seg, .code-pill, .stale-badge, .sel-bar, .type-pill:not(.on), .tier-row:not(.reached)) {
   background: var(--glass); border-color: transparent;
 }
+:root[data-glass]:not([data-ui='quiet']) .col-pick.col-pick { border-color: var(--outline-variant); } /* the Zoo's buttons keep their outline (doubled class: beats the veil rule above) */
 :root[data-glass]:not([data-ui='quiet']) .standings-switch { background: var(--glass-strong); border: 1px solid var(--glass-edge); }
 :root[data-glass]:not([data-ui='quiet']) .standings-switch button { color: var(--on-surface); }
 :root[data-glass]:not([data-ui='quiet']) .standings-switch button.on { background: var(--primary); color: var(--on-primary); }
@@ -133,9 +134,9 @@
 :root[data-glass][data-ui='quiet'] .goal-lines { background: var(--glass) !important; -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); }
 :root[data-glass][data-ui='quiet'] .goal-lines.tinted { --tint-s: .16; }
 :root[data-glass][data-theme='light'][data-ui='quiet'] .goal-lines.tinted { --tint-s: .12; }
-:root[data-glass][data-ui='quiet'] .goal-lines.tinted.live { --tint-s: .30; }
-:root[data-glass][data-theme='light'][data-ui='quiet'] .goal-lines.tinted.live { --tint-s: .24; }
-:root[data-glass][data-ui='quiet'] .goal-lines.tinted {
+:root[data-glass][data-ui='quiet'] :is(.goal-lines.tinted.live, .now-banner.tinted) { --tint-s: .30; }
+:root[data-glass][data-theme='light'][data-ui='quiet'] :is(.goal-lines.tinted.live, .now-banner.tinted) { --tint-s: .24; }
+:root[data-glass][data-ui='quiet'] :is(.goal-lines, .now-banner).tinted {
   background:
     linear-gradient(135deg,
       color-mix(in srgb, var(--tint-a) calc(var(--tint-s) * 100%), transparent) 0%,

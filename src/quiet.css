@@ -91,7 +91,8 @@
 :root[data-ui='quiet'] .goal-card.lifted { background: var(--bg) !important; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); }
 
 /* What's tracking: a grouped panel like every section. The idle slot (Resume and +) keeps its normal buttons. */
-:root[data-ui='quiet'] .now-banner { background: var(--quiet-panel) !important; border: 0; border-radius: 14px; padding: 12px 14px; margin: 0 -8px; }
+/* Coloured and outlined as in the normal look (its inline background and border colour; asked 2026-11-16). */
+:root[data-ui='quiet'] .now-banner { border: 1px solid; border-radius: 14px; padding: 12px 14px; margin: 0 -8px; }
 
 :root[data-ui='quiet'] .home-divider:not(.normal-look *), :root[data-ui='quiet'] .divider:not(.normal-look *) { background: transparent; margin: 8px 0; }
 
@@ -111,6 +112,8 @@
   background: transparent !important; color: var(--on-surface-variant); width: 32px;
 }
 :root[data-ui='quiet'] :is(.entry .dur, .dur-pill, .col-pick, .cert span, .code-pill):not(.normal-look *) { background: transparent; padding-left: 0; padding-right: 0; }
+/* The Zoo's Discovered and cards-per-row buttons keep their outline, so they keep room inside it. */
+:root[data-ui='quiet'] .col-pick:not(.normal-look *) { padding-left: 8px; padding-right: 6px; }
 :root[data-ui='quiet'] .lang-chip:not(.normal-look *) { background: transparent !important; border: 0 !important; color: var(--on-surface) !important; height: auto; padding: 0; font-weight: 500; }
 
 /* Tabs and filters are words; the picked one has a heavier line. */
