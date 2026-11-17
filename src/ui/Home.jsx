@@ -95,6 +95,8 @@ export function Home({ nav }) {
   const paused = running.length ? null : pausedEntry()
   const activeProfile = running.map((e) => profileById(e.languageProfileId)).find((p) => p && !p.isAnki)
   const gains = useSessionGains(running.length ? running : paused ? [paused] : [], s.entries)
+  // Resume's bar grows out of Resume's icon (before the first paint, so it never shows whole first).
+  useLayoutEffect(() => { if (running.length) revealFromResume(gains.slot.current) }, [running.length > 0])
   // Desktop: Space stops what's running (the newest one), or resumes the last session.
   useEffect(() => {
     const onKey = (e) => {
@@ -106,7 +108,7 @@ export function Home({ nav }) {
       else if (pausedEntry()) resumeTimer(pausedEntry())
       else {
         const last = lastSession()
-        if (last) startTimer(last.contentType, last.languageProfileId, last.mediaTitle)
+        if (last) { markResumeReveal(); startTimer(last.contentType, last.languageProfileId, last.mediaTitle) }
         else setManual({})
       }
     }
@@ -371,6 +373,44 @@ function SessionGainFloats({ gains, light, onDone }) {
   )
 }
 
+/** Resume clicked: where its icon circle is and how Resume looked, so the bar it starts can grow out of
+ *  that circle over a copy of it (revealFromResume) - the phone's BouncingSlot reveal. */
+let resumeReveal = null
+function markResumeReveal() {
+  const icon = document.querySelector('.now-slot .resume-play')
+  const banner = icon?.closest('.idle-banner')
+  if (!banner) return
+  const r = icon.getBoundingClientRect()
+  resumeReveal = { x: r.left + r.width / 2, y: r.top + r.height / 2, r: r.width / 2, clone: banner.cloneNode(true), at: performance.now() }
+}
+
+/** The bar Resume started is revealed through a circle growing from Resume's icon until it covers the bar,
+ *  the copy of Resume staying underneath until then. Only right after a Resume click. */
+function revealFromResume(slot) {
+  const from = resumeReveal
+  resumeReveal = null
+  if (!from || performance.now() - from.at > 2500 || !slot?.animate) return
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+  const bar = slot.querySelector('.now-banner')
+  if (!bar) return
+  const b = bar.getBoundingClientRect()
+  const x = from.x - b.left
+  const y = from.y - b.top
+  const far = Math.hypot(Math.max(x, b.width - x), Math.max(y, b.height - y))
+  const under = from.clone
+  const slotTop = slot.getBoundingClientRect().top
+  Object.assign(under.style, { position: 'absolute', left: '0', right: '0', top: `${b.top - slotTop}px`, margin: '0', pointerEvents: 'none', zIndex: '0' })
+  slot.style.position = 'relative'
+  slot.prepend(under)
+  bar.style.position = 'relative'
+  bar.style.zIndex = '1'
+  const done = () => { under.remove(); bar.style.zIndex = '' }
+  bar.animate(
+    [{ clipPath: `circle(${from.r}px at ${x}px ${y}px)` }, { clipPath: `circle(${far}px at ${x}px ${y}px)` }],
+    { duration: 420, easing: 'cubic-bezier(.2, 0, 0, 1)' },
+  ).finished.then(done, done)
+}
+
 /** Not tracking: your last session, one tap from running again (until the Resume button
  *  setting's time since it ended passes), and the way to start anything else. (With nothing to resume, the whole banner opens Add a session.) */
 function IdleBanner({ now, onOther }) {
@@ -381,7 +421,7 @@ function IdleBanner({ now, onOther }) {
   const color = profile?.colorHex || '#6FA8C9'
   return (
     <div class="idle-banner resume">
-      <button class="resume-btn" title="Resume (Space)" onClick={() => startTimer(last.contentType, last.languageProfileId, last.mediaTitle)}>
+      <button class="resume-btn" title="Resume (Space)" onClick={() => markResumeReveal() || startTimer(last.contentType, last.languageProfileId, last.mediaTitle)}>
         <span class="resume-play" style={{ background: withAlpha(color, 0.22), color }}><TypeIcon type={last.contentType} size={24} /></span>
         <span class="grow" style="min-width:0;text-align:left">
           <span class="resume-label">Resume {sessionName(last.contentType, last.languageProfileId)}</span>
