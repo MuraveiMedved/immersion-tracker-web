@@ -61,7 +61,9 @@
 
 /* Sections are grouped panels (the phone's quietGroup): a section's content on one soft, flat panel - no
    border, no shadow - reaching 8px past the page's margin, its rows divided by thin rules. */
-:root[data-ui='quiet'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .profile-card, .entry.boxed, .trophy-card, .friend-row, .notice, .person-hero, .section-band, .list:has(> .entry)):not(.normal-look *) {
+/* Not the Zoo's collection tiles (.tile-animal.card): they're cards in their own right and keep their rounded
+   corners, rarity border and photo edge to edge (2026-11-17 - the panel rule padded them and squared the photo). */
+:root[data-ui='quiet'] :is(.card, .block, .fold, .egg-card, .crate-row, .zoo-feed, .race-card, .profile-card, .entry.boxed, .trophy-card, .friend-row, .notice, .person-hero, .section-band, .list:has(> .entry)):not(.normal-look *):not(.tile-animal) {
   background: var(--quiet-panel) !important; border: 0; border-radius: 14px; box-shadow: none; margin: 6px -8px; padding-left: 14px; padding-right: 14px;
 }
 :root[data-ui='quiet'] .list:has(> .entry):not(.normal-look *) { padding: 0; }
