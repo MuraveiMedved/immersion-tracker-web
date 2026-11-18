@@ -95,8 +95,18 @@ export function Home({ nav }) {
   const paused = running.length ? null : pausedEntry()
   const activeProfile = running.map((e) => profileById(e.languageProfileId)).find((p) => p && !p.isAnki)
   const gains = useSessionGains(running.length ? running : paused ? [paused] : [], s.entries)
-  // Resume's bar grows out of Resume's icon (before the first paint, so it never shows whole first).
-  useLayoutEffect(() => { if (running.length) revealFromResume(gains.slot.current) }, [running.length > 0])
+  // Resume's bar grows out of Resume's icon (before the first paint, so it never shows whole first), and a
+  // stopped one closes back into it - a copy of the bar as it last was, since the real one is gone by then.
+  const barShown = running.length > 0 || !!paused
+  const lastBar = useRef(null)
+  const wasBar = useRef(barShown)
+  useLayoutEffect(() => {
+    const slot = gains.slot.current
+    if (barShown && !wasBar.current) revealFromResume(slot)
+    if (!barShown && wasBar.current) closeIntoResume(slot, lastBar.current)
+    wasBar.current = barShown
+    lastBar.current = barShown ? slot?.querySelector('.now-banner')?.cloneNode(true) ?? null : null
+  })
   // Desktop: Space stops what's running (the newest one), or resumes the last session.
   useEffect(() => {
     const onKey = (e) => {
@@ -305,7 +315,9 @@ function useSessionGains(shown, entries) {
     if (added.length) setList((l) => [...l, ...added])
     // A session starting lands the same way as one ending.
     const was = new Set(prev.shown.map((e) => e.contentType))
-    if (hit) hitStop(slot.current)
+    // An ending to nothing has the bar closing into Resume instead (closeIntoResume) - one movement, not two.
+    if (hit && shown.length) hitStop(slot.current)
+    else if (hit) { /* closing into Resume */ }
     else if (shown.some((e) => !was.has(e.contentType))) hitStop(slot.current, true)
   })
   return { list, slot, remove: (g) => setList((l) => l.filter((x) => x !== g)) }
@@ -408,6 +420,29 @@ function revealFromResume(slot) {
   bar.animate(
     [{ clipPath: `circle(${from.r}px at ${x}px ${y}px)` }, { clipPath: `circle(${far}px at ${x}px ${y}px)` }],
     { duration: 420, easing: 'cubic-bezier(.2, 0, 0, 1)' },
+  ).finished.then(done, done)
+}
+
+/** The phone's bar closing into Resume (BouncingSlot): a copy of the stopped bar over the idle banner, shrinking
+ *  inside a circle into Resume's icon (or the middle, with no Resume) until it's gone. */
+function closeIntoResume(slot, bar) {
+  if (!bar || !slot?.animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+  const idle = slot.querySelector('.idle-banner')
+  if (!idle) return
+  const box = idle.getBoundingClientRect()
+  const slotTop = slot.getBoundingClientRect().top
+  const icon = idle.querySelector('.resume-play')?.getBoundingClientRect()
+  const x = icon ? icon.left + icon.width / 2 - box.left : box.width / 2
+  Object.assign(bar.style, { position: 'absolute', left: '0', right: '0', top: `${box.top - slotTop}px`, margin: '0', pointerEvents: 'none', zIndex: '1' })
+  slot.style.position = 'relative'
+  slot.append(bar)
+  const h = bar.getBoundingClientRect().height
+  const y = h / 2
+  const far = Math.hypot(Math.max(x, box.width - x), Math.max(y, h - y))
+  const done = () => bar.remove()
+  bar.animate(
+    [{ clipPath: `circle(${far}px at ${x}px ${y}px)` }, { clipPath: `circle(0px at ${x}px ${y}px)` }],
+    { duration: 420, easing: 'cubic-bezier(.3, 0, 1, 1)' },
   ).finished.then(done, done)
 }
 
