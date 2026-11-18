@@ -442,7 +442,7 @@ function closeIntoResume(slot, bar) {
   const done = () => bar.remove()
   bar.animate(
     [{ clipPath: `circle(${far}px at ${x}px ${y}px)` }, { clipPath: `circle(0px at ${x}px ${y}px)` }],
-    { duration: 420, easing: 'cubic-bezier(.3, 0, 1, 1)' },
+    { duration: 250, easing: 'cubic-bezier(.3, 0, 1, 1)' }, // quicker than the reveal: a stop answers at once (the phone's RESUME_CLOSE_MILLIS)
   ).finished.then(done, done)
 }
 
