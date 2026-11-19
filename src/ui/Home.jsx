@@ -256,8 +256,9 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
   const phone = fromPhone(entry)
   const stain = grey ? undefined : stops && stops.length > 1 ? `linear-gradient(90deg, ${stops.map((c) => withAlpha(c, 0.42)).join(', ')})` : withAlpha(color, 0.42)
   const tint = grey ? {} : glassTintVars(stops && stops.length ? stops : [color])
-  // A session just started spreads its colour out from the dot (quiet.css), once.
-  const [justStarted] = useState(() => !paused && durationOf(entry, Date.now()) < 3000)
+  // A session just started spreads its colour out from the dot (quiet.css), once - but not when the bar is
+  // growing out of Resume's icon (revealFromResume): the spread inside that circle read as a ripple.
+  const [justStarted] = useState(() => !paused && durationOf(entry, Date.now()) < 3000 && !(resumeReveal && performance.now() - resumeReveal.at < 2500))
   return (
     <div class={`now-banner ${paused ? '' : 'live'} ${justStarted ? 'just-started' : ''} ${grey ? '' : 'tinted'}`} style={{ background: bg, '--goal-stain': stain, ...tint, '--lang': stops?.[0] || color, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
