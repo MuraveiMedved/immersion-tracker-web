@@ -128,16 +128,19 @@ export function Zoo({ nav }) {
         </div>
         {ready && <button class="glow-pill small" onClick={(e) => { e.stopPropagation(); setHatching('BOX') }}>Hatch</button>}
       </div>
-      {/* Trading up isn't advertised here: a long-press on an animal in the collection starts it. */}
-      {tierRows.filter((t) => t.eggs > 0).map(({ r, eggs, canTrade }) => (
+      {/* A tier with an egg, or enough animals to trade, gets a row - Trade up is offered right here
+          (a long-press on an animal in the collection also starts one). */}
+      {tierRows.map(({ r, eggs, canTrade }) => (
         <div key={r} class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
-          <div class={eggs > 0 ? 'wobble' : ''}><Egg rarity={r} width={44} glow={eggs > 0 ? 12 : 0} /></div>
+          {/* Faded while there's no egg of this colour - only a trade waiting. */}
+          <div class={eggs > 0 ? 'wobble' : ''}><Egg rarity={r} width={44} glow={eggs > 0 ? 12 : 0} style={eggs > 0 ? undefined : { opacity: 0.45 }} /></div>
           <div class="grow">
             <div class="title-medium">{RARITY_LABEL[r]} egg{eggs > 1 ? ` ×${eggs}` : ''}</div>
             <div class="muted small">{eggs > 0 ? `Hatches a ${RARITY_LABEL[r]} animal` : `Trade ${TRADE_UP_COUNT} for a ${RARITY_LABEL[nextRarity(r)]} egg`}</div>
           </div>
           {eggs > 0 && <button class="btn small" onClick={() => setHatching(r)}>Hatch</button>}
-          {canTrade && <button class="btn tonal small" onClick={() => startTradeOf(r)}>Trade up</button>}
+          {/* With nothing to hatch, Trade up is the row's one (main) button. */}
+          {canTrade && <button class={`btn small ${eggs > 0 ? 'tonal' : ''}`} onClick={() => startTradeOf(r)}>Trade up</button>}
         </div>
       ))}
       {/* The trophy case, at the top of the collection - the eggs stay above. */}
@@ -386,7 +389,11 @@ export function HatchDialog({ kind, onClose, hatch }) {
     setResult(r)
   }
   useEffect(() => { if (result && charge >= 1) setRevealed(true) }, [result, charge])
-  const again = () => { setResult(null); setRevealed(false); setTapped(false); setCharge(0); setRound(round + 1) }
+  const again = () => { setResult(null); setRevealed(false); setTapped(false); setCharge(0); setRound(round + 1); setNaming(null) }
+  // "Name it" from the reveal (with a nametag held): the name form takes the buttons' place, the
+  // card showing the name live, and the reveal's buttons come back once it's named or cancelled.
+  const [naming, setNaming] = useState(null)
+  const tags = nametagsOf(s)
 
   const shake = Math.sin((t / 140) * 2 * Math.PI) * (2 + 14 * charge * charge)
   const look = revealed ? result.animal.rarity : kind
@@ -409,7 +416,8 @@ export function HatchDialog({ kind, onClose, hatch }) {
   }
   const r = result.animal.rarity
   return (
-    <CardStage rarity={r} onClose={onClose}>
+    // A tap outside while naming just stops naming.
+    <CardStage rarity={r} onClose={naming != null ? () => setNaming(null) : onClose}>
       {/* A holo copy gets the same celebration wherever it comes from (Sprints.jsx HoloCelebration). */}
       {result.cert?.foil ? <HoloCelebration result={result} bannerPrefix={result.copies === 1 ? 'New' : `You now have ×${result.copies}`} /> : (
       <div class="reveal-pop">
@@ -420,17 +428,30 @@ export function HatchDialog({ kind, onClose, hatch }) {
               <span class={`reveal-banner ${r === 'RAINBOW' ? 'shimmer' : ''}`} style={{ backgroundImage: rarityBrush(r), '--p': (LOOK[r] || LOOK.GREEN)[0] }}>
                 {result.copies === 1 ? 'New' : `You now have ×${result.copies}`}{result.cert?.foil ? '  ✦ Holo' : ''}
               </span>
-              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} onDisplay={onDisplay} nickname={nametagsOf(s).names[result.animal.id]} /></div>
+              <div style="width:100%"><AnimalCardView animal={result.animal} cert={result.cert} onDisplay={onDisplay} nickname={(naming || '').trim() || tags.names[result.animal.id]} /></div>
             </div>
           </div>
         </Floaty>
       </div>
       )}
-      <div class="stage-row">
-        {!onDisplay && <GlowPill rarity={r} onClick={() => { setTrophy(result.animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
-        <GlowPill rarity={r} onClick={onClose}>Nice</GlowPill>
-      </div>
-      {left > 0 && <GlowPill rarity={r} onClick={again}>Hatch another ({left})</GlowPill>}
+      {naming != null ? (
+        <NameForm preview={naming} setPreview={setNaming} held={tags.held}
+          canSave={tags.held > 0 && !!naming.trim() && naming.trim() !== tags.names[result.animal.id]}
+          onConfirm={() => { if (nameAnimal(result.animal.id, naming)) setNaming(null) }} />
+      ) : (
+        <>
+          <div class="stage-row">
+            {!onDisplay && <GlowPill rarity={r} onClick={() => { setTrophy(result.animal.id); toast('On display on your profile') }}>Show on my profile</GlowPill>}
+            <GlowPill rarity={r} onClick={onClose}>Nice</GlowPill>
+          </div>
+          {(left > 0 || tags.held > 0) && (
+            <div class="stage-row">
+              {tags.held > 0 && <GlowPill rarity={r} onClick={() => setNaming(tags.names[result.animal.id] || '')}>Name it</GlowPill>}
+              {left > 0 && <GlowPill rarity={r} onClick={again}>Hatch another ({left})</GlowPill>}
+            </div>
+          )}
+        </>
+      )}
     </CardStage>
   )
 }
@@ -832,7 +853,8 @@ function CardTextLines({ seed }) {
 }
 
 /** Only animals held, rarest first - like the phone; everything ever found is in Discovered, behind
- *  the book button. A long-press (or right-click) on one starts a trade-up of its tier. */
+ *  the book button. A long-press (or right-click) on one starts a trade-up of its tier, as does a
+ *  tier's Trade up above; "Pick spares" fills the picks from duplicates. */
 function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   const names = nametagsOf(useStore()).names
   const columns = Math.min(5, Math.max(2, useStore().settings.zooColumns || 4))
@@ -858,6 +880,21 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
     if (trade.picks.some((p) => p.copyId === c.id)) setTrade({ ...trade, picks: trade.picks.filter((p) => p.copyId !== c.id) })
     else if (trade.picks.length < TRADE_UP_COUNT) setTrade({ ...trade, picks: [...trade.picks, { animalId: a.id, copyId: c.id }] })
   }
+  // "Pick spares" tops the picks up from duplicates (ZooScreen.kt spareCopies): every animal keeps a
+  // copy, and the least special copies go first, from whichever animal has the most left.
+  const spares = () => {
+    if (!trade) return []
+    const taken = new Set(trade.picks.map((p) => p.copyId))
+    const left = catalog.filter((a) => a.rarity === trade.from && copies[a.id]).map((a) => ({ a, list: copies[a.id].filter((c) => !taken.has(c.id)) }))
+    const out = []
+    while (out.length < TRADE_UP_COUNT - trade.picks.length) {
+      const most = left.filter((x) => x.list.length > 1).sort((x, y) => y.list.length - x.list.length)[0]
+      if (!most) break
+      out.push({ animalId: most.a.id, copyId: most.list.pop().id })
+    }
+    return out
+  }
+  const spareList = spares()
   const [celebrate, setCelebrate] = useState(null)
   const [hatchNow, setHatchNow] = useState(null)
   const doTrade = () => {
@@ -887,7 +924,6 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
           <Icon name="expand_more" size={18} />
         </label>
       </div>
-      {!trade && held > 0 && <div class="muted" style="font-size:12px;margin:-4px 0 10px">Long-press to trade up</div>}
       {!list.length ? <div class="empty">{!held ? 'No animals yet - hatch an egg to find your first.' : 'None of these yet.'}</div> : (
         <div class={`zoo-grid ${columns <= 3 ? 'roomy' : ''}`} style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
           {cards.map(({ a, c, first }) => {
@@ -920,7 +956,10 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
 
       {trade && (
         <div class="trade-bar" style={{ borderColor: RARITY_COLOR[nextRarity(trade.from)] }}>
-          <b>{trade.picks.length} / {TRADE_UP_COUNT} {RARITY_LABEL[trade.from]} picked → {RARITY_LABEL[nextRarity(trade.from)]} egg</b>
+          <div class="row" style="align-items:center">
+            <b class="grow">{trade.picks.length} / {TRADE_UP_COUNT} {RARITY_LABEL[trade.from]} picked → {RARITY_LABEL[nextRarity(trade.from)]} egg</b>
+            <button class="btn text small" disabled={!spareList.length} onClick={() => setTrade({ ...trade, picks: [...trade.picks, ...spareList] })}>Pick spares</button>
+          </div>
           <div class="bar" style="margin-top:8px"><div style={{ width: `${(trade.picks.length / TRADE_UP_COUNT) * 100}%`, background: RARITY_COLOR[trade.from] }} /></div>
           <div class="row" style="margin-top:12px">
             <button class="btn tonal grow" onClick={() => setTrade(null)}>Cancel</button>
@@ -1059,6 +1098,24 @@ function TrophyCase({ catalog, copies }) {
   )
 }
 
+/** Naming an animal under its card (the phone's NamingPanel): the name being typed (shown live on the
+ *  card), what it costs, Cancel and Confirm - from the animal's card and from the egg reveal. */
+function NameForm({ preview, setPreview, held, canSave, onConfirm }) {
+  return (
+    <div class="name-form" onClick={(e) => e.stopPropagation()}>
+      <input class="input" autoFocus maxLength={NAMETAG_MAX_LENGTH} value={preview} placeholder="Name"
+        onInput={(e) => setPreview(e.currentTarget.value)} onKeyDown={(e) => { if (e.key === 'Enter') onConfirm() }} />
+      <div class="small" style="opacity:.8;margin-top:6px">
+        {held > 0 ? `Confirming uses one nametag (you have ${held}). Renaming later takes another.` : 'You have no nametags - preview only. Earn one at 70 hours in a Monthly challenge.'}
+      </div>
+      <div class="row" style="margin-top:10px;gap:8px">
+        <button class="btn tonal grow" onClick={() => setPreview(null)}>Cancel</button>
+        <button class="btn grow" disabled={!canSave} onClick={onConfirm}>{held > 0 ? 'Confirm' : 'Needs a nametag'}</button>
+      </div>
+    </div>
+  )
+}
+
 function AnimalDialog({ animal, copies, trophyId, onClose, onTrade, initialCopyId = null }) {
   const [i, setI] = useState(() => Math.max(0, copies.findIndex((c) => c.id === initialCopyId)))
   const st = useStore()
@@ -1075,22 +1132,20 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade, initialCopyI
   const trimmed = (preview || '').trim()
   const canSave = tags.held > 0 && trimmed && trimmed !== nickname
   const confirmName = () => { if (canSave && nameAnimal(animal.id, trimmed)) setPreview(null) }
+  // Straight into the first empty slot; only a full case asks which one to replace.
+  const addToCase = () => {
+    const ids = st.zoo.trophyIds || []
+    const empty = Array.from({ length: TROPHY_CASE_SIZE }, (_, n) => n).find((n) => !ids[n])
+    if (empty == null) { setChoosingSlot(true); return }
+    setTrophySlot(empty, animal.id)
+    toast('Added to your trophy case')
+  }
   return (
     <CardStage rarity={r} onClose={onClose}>
       <Floaty><AnimalCardView animal={animal} cert={copy?.cert} timesFound={sameFinishCount(copies, !!copy?.cert?.foil)} onDisplay={trophyId === animal.id}
         nickname={trimmed || nickname || null} onNameClick={copies.length ? () => setPreview(preview ?? nickname ?? '') : null} /></Floaty>
       {preview != null ? (
-        <div class="name-form" onClick={(e) => e.stopPropagation()}>
-          <input class="input" autoFocus maxLength={NAMETAG_MAX_LENGTH} value={preview} placeholder="Name"
-            onInput={(e) => setPreview(e.currentTarget.value)} onKeyDown={(e) => { if (e.key === 'Enter') confirmName() }} />
-          <div class="small" style="opacity:.8;margin-top:6px">
-            {tags.held > 0 ? `Confirming uses one nametag (you have ${tags.held}). Renaming later takes another.` : 'You have no nametags - preview only. Earn one at 70 hours in a Monthly challenge.'}
-          </div>
-          <div class="row" style="margin-top:10px;gap:8px">
-            <button class="btn tonal grow" onClick={() => setPreview(null)}>Cancel</button>
-            <button class="btn grow" disabled={!canSave} onClick={confirmName}>{tags.held > 0 ? 'Confirm' : 'Needs a nametag'}</button>
-          </div>
-        </div>
+        <NameForm preview={preview} setPreview={setPreview} held={tags.held} canSave={canSave} onConfirm={confirmName} />
       ) : (
         <>
           {copies.length > 1 && (
@@ -1107,7 +1162,7 @@ function AnimalDialog({ animal, copies, trophyId, onClose, onTrade, initialCopyI
             <div class="stage-row">
               {inCase
                 ? <GlowPill rarity={r} onClick={() => removeFromTrophyCase(animal.id)}>Remove from trophy case</GlowPill>
-                : <GlowPill rarity={r} onClick={() => setChoosingSlot(true)}>Add to trophy case</GlowPill>}
+                : <GlowPill rarity={r} onClick={addToCase}>Add to trophy case</GlowPill>}
               {nextRarity(r) && onTrade && <GlowPill rarity={r} onClick={onTrade}>Trade up</GlowPill>}
             </div>
           )}

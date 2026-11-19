@@ -91,7 +91,6 @@ function RaceSetup({ onDone, first }) {
 function Race({ onEditName, onOpenMe }) {
   const s = useStore()
   const [headerMenu, setHeaderMenu] = useState(false)
-  const [emptyMenu, setEmptyMenu] = useState(false)
   const status = useRaceStatus()
   const now = useNow(30000)
   const [create, setCreate] = useState(false)
@@ -156,15 +155,11 @@ function Race({ onEditName, onOpenMe }) {
         <div class="empty-races">
           <span class="flag-circle"><Icon name="flag" size={30} /></span>
           <div class="muted">{done.length ? 'No races running right now. Start one and your friends will see it here.' : "No races yet. Start one and share its code, or join a friend's with theirs."}</div>
-          {/* The same choices as the header's +, right where someone with no race is looking. */}
-          <div style="position:relative">
-            <button class="btn tonal" onClick={() => setEmptyMenu(!emptyMenu)}><Icon name="add" size={18} />Add a race</button>
-            {emptyMenu && (
-              <div class="menu" style="left:0;right:auto" onMouseLeave={() => setEmptyMenu(false)}>
-                <button onClick={() => { setEmptyMenu(false); setJoin(true) }}><Icon name="flag" size={20} />Join with a code</button>
-                <button onClick={() => { setEmptyMenu(false); setCreate(true) }}><Icon name="add" size={20} />New event</button>
-              </div>
-            )}
+          {/* The same choices as the header's +, right where someone with no race is looking - both in
+              view, side by side, rather than behind one more tap. */}
+          <div class="row" style="gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn outline" onClick={() => setJoin(true)}><Icon name="flag" size={18} />Join with a code</button>
+            <button class="btn tonal" onClick={() => setCreate(true)}><Icon name="add" size={18} />New event</button>
           </div>
         </div>
       )}
@@ -421,6 +416,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe, menuExtras })
   const started = now >= event.startMillis
   const joined = event.standings.some((x) => x.userId === me)
   const isCreator = event.createdBy === me
+  const waitingForOthers = isCreator && !!event.code && event.standings.every((x) => x.userId === me)
   const canShowToday = started && event.standings.some((x) => Object.keys(x.daily || {}).length)
   const zonesDiffer = event.standings.some((x) => {
     try { return x.timeZone && new Date(new Date(now).toLocaleString('en-US', { timeZone: x.timeZone })).getTime() !== new Date(new Date(now).toLocaleString('en-US')).getTime() } catch { return false }
@@ -480,7 +476,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe, menuExtras })
             <button class="icon-btn muted" title="More options" onClick={() => setMenu(!menu)}><Icon name="more_vert" /></button>
             {menu && (
               <div class="menu" onMouseLeave={() => setMenu(false)}>
-                {event.code && <button onClick={() => { setMenu(false); share(`Join my race "${event.name}" in Immersion Tracker: Social → Race → Join with a code → ${event.code}`) }}><Icon name="share" size={20} />Code {event.code}</button>}
+                {event.code && <button onClick={() => { setMenu(false); shareRaceCode(event) }}><Icon name="share" size={20} />Code {event.code}</button>}
                 {isCreator && <button onClick={() => { setMenu(false); setEdit(true) }}>Edit event</button>}
                 {joined && <button onClick={() => { setMenu(false); setConfirm('leave') }}>Leave</button>}
                 {isCreator && <button style="color:var(--danger)" onClick={() => { setMenu(false); setConfirm('end') }}>End event</button>}
@@ -492,7 +488,18 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe, menuExtras })
         )}
       </div>
       {!joined && <button class="btn" style="width:100%;margin-top:12px" onClick={() => sync({ joinEventId: event.id })}>Join</button>}
-      {!event.standings.length ? <div class="muted small" style="margin-top:12px">Nobody has joined yet.</div> : <>
+      {/* A race just made, with only its maker in it: the code to hand out, right here instead of in
+          the menu, until someone else joins (RaceSection.kt RaceInvite). */}
+      {waitingForOthers && (
+        <div class="row" style="align-items:center;gap:10px;margin-top:12px;padding:8px 8px 8px 14px;border-radius:var(--r-medium, 14px);background:color-mix(in srgb, var(--on-surface) 6%, transparent)">
+          <div class="grow" style="min-width:0">
+            <div class="small">Nobody else has joined yet</div>
+            <div style="font-family:ui-monospace,monospace;font-weight:650;font-size:16px">Code {event.code}</div>
+          </div>
+          <button class="btn tonal small" onClick={() => shareRaceCode(event)}><Icon name="share" size={18} />Share</button>
+        </div>
+      )}
+      {!event.standings.length ? (!waitingForOthers && <div class="muted small" style="margin-top:12px">Nobody has joined yet.</div>) : <>
         {canShowToday && (
           <div class="standings-switch">
             {[['total', 'Total'], ['today', 'Today']].map(([k, l]) => <button key={k} class={view === k ? 'on' : ''} onClick={() => setView(k)}>{l}</button>)}
@@ -1149,9 +1156,28 @@ function RaceSettingsDialog({ onClose }) {
   )
 }
 
+/** Sends a race's code with the share sheet (or copies it) - from its menu and from RaceInvite. */
+function shareRaceCode(event) {
+  share(`Join my race "${event.name}" in Immersion Tracker: Social → Race → Join with a code → ${event.code}`)
+}
+
 /* ------------------------------------------------------------------------------------------------
  * Friends
  * --------------------------------------------------------------------------------------------- */
+
+/** Your friend code: tap it to copy, or Share - on your profile, in Add a friend and under an empty
+ *  friends list, wherever codes get swapped (FriendsScreen.kt MyFriendCode). */
+function MyFriendCode({ code, compact = false }) {
+  return (
+    <div class="row" style="align-items:center">
+      <div class="grow clickable" onClick={() => code && copyText(code, 'Friend code copied')}>
+        <div class="muted small">Your friend code. Tap to copy</div>
+        <div style={`font-family:ui-monospace,monospace;font-size:${compact ? 22 : 28}px;font-weight:900;letter-spacing:${compact ? 3 : 4}px`}>{code || '······'}</div>
+      </div>
+      <button class="icon-btn" title="Share code" disabled={!code} onClick={() => share(`Add me as a friend in Immersion Tracker (Social → Friends): ${code}`)}><Icon name="share" /></button>
+    </div>
+  )
+}
 
 function Friends() {
   const s = useStore()
@@ -1179,6 +1205,8 @@ function Friends() {
           <input class="input grow" style="text-transform:uppercase;letter-spacing:2px" placeholder="Friend's code" value={code} onInput={(e) => setCode(e.currentTarget.value.toUpperCase())} />
           <button class="btn" disabled={code.trim().length < 4 || busy} onClick={() => run(async () => { await addFriendByCode(code); setCode('') }, 'Friend request sent')}>Add</button>
         </div>
+        {/* Swapping codes goes both ways - yours is right here to copy or send. */}
+        {s.friends.code && <div style="margin-top:14px"><MyFriendCode code={s.friends.code} compact /></div>}
       </div>
 
       {s.friends.incoming.length > 0 && (
@@ -1205,7 +1233,9 @@ function Friends() {
 
       <div class="section">
         <div class="section-title"><h2>Friends ({friends.length})</h2></div>
-        {!friends.length ? <div class="card muted small">No friends yet - add someone by their code, or tap them in a race.</div> : (
+        {!friends.length ? <div class="card"><div class="muted small">No friends yet - add someone by their code, or tap them in a race.</div>
+          {/* With no friends yet, the code to give them is the next thing needed. */}
+          {s.friends.code && <div style="margin-top:12px"><MyFriendCode code={s.friends.code} /></div>}</div> : (
           <div class="col" style="gap:8px">{friends.map((p) => (
             <FriendRow key={p.userId} p={p} onClick={() => setOpen(p)} />          ))}</div>
         )}
@@ -1330,13 +1360,7 @@ function MyProfileSheet({ onClose }) {
         <SettingRow key={k} title={l}><Switch checked={share[k]} onChange={(v) => setF((st) => { st.friends.share[k] = v })} /></SettingRow>
       ))}
       {/* Your code - last, under everything about your profile (as on the phone). */}
-      <div class="card row" style="margin:16px 0 0">
-        <div class="grow clickable" onClick={() => s.friends.code && copyText(s.friends.code, 'Friend code copied')}>
-          <div class="muted small">Your friend code. Tap to copy</div>
-          <div style="font-family:ui-monospace,monospace;font-size:28px;font-weight:900;letter-spacing:4px">{s.friends.code || '······'}</div>
-        </div>
-        <button class="icon-btn" title="Share code" disabled={!s.friends.code} onClick={() => share(`Add me as a friend in Immersion Tracker (Social → Friends): ${s.friends.code}`)}><Icon name="share" /></button>
-      </div>
+      <div class="card" style="margin:16px 0 0"><MyFriendCode code={s.friends.code} /></div>
     </Dialog>
   )
 }

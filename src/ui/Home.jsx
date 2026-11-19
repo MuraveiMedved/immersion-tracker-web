@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import { createPortal } from 'preact/compat'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
-  editRunningElapsed, editRunningTitle, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry,
+  editRunningElapsed, editRunningTitle, editEntry, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry,
   removeRecentManualSession, isHiddenManualSession, setSetting,
 } from '../store.js'
 import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
@@ -140,12 +140,11 @@ export function Home({ nav }) {
         </HomeTabs>
         <div class="quiet-hero">
           <div class="total">{formatHm(todayTotal)}</div>
-          <div class="sub">Immersion Tracker web ⚡</div>
+          <div class="sub">Immersion Tracker</div>
         </div>
       </> : <div class="home-head">
         <div class="title-col">
           <Title mode={s.settings.titleStyleMode} active={activeProfile} light={light} />
-          <div class="version">web ⚡</div>
         </div>
         <div class="side">
           <div class="row" style="gap:0">
@@ -266,7 +265,7 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
         <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} in {profile?.name || 'Uncategorized'}, {formatClock(durationOf(entry, now))}</div>
         {entry.mediaTitle && <div class="small ellipsis">{entry.mediaTitle}</div>}
         <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>
-          {paused ? 'Paused, tap to edit' : phone ? 'On your phone' : 'Manual, tap to edit the title or time'}
+          {paused ? 'Paused, tap to edit' : phone ? 'On your phone' : 'Manual, tap to edit'}
         </div>
       </div>
       {paused
@@ -548,8 +547,12 @@ export function TabTitle() {
 }
 
 function EditElapsedDialog({ entry, onClose }) {
+  const s = useStore()
   const ms = durationOf(entry)
   const [title, setTitle] = useState(entry.mediaTitle || '')
+  // Its language too (as the phone's details sheet for a running timer) - changed, it keeps running.
+  const [lang, setLang] = useState(entry.languageProfileId ?? null)
+  const languages = s.profiles.filter((p) => !p.isAnki)
   const titleInput = useRef(null)
   // Title selected on open, so a quick start's "Manual Japanese session" is replaced by just typing.
   useEffect(() => { titleInput.current?.focus(); titleInput.current?.select() }, [])
@@ -558,6 +561,7 @@ function EditElapsedDialog({ entry, onClose }) {
   const save = () => {
     const t = title.trim()
     if (t && t !== entry.mediaTitle) editRunningTitle(entry.contentType, t)
+    if (lang !== (entry.languageProfileId ?? null)) editEntry(entry.id, { languageProfileId: lang })
     const next = hmToMillis(h, m)
     // Only when the time was actually changed - otherwise saving a new title would knock off the
     // seconds that have ticked by since the dialog opened.
@@ -572,6 +576,11 @@ function EditElapsedDialog({ entry, onClose }) {
       <label class="field" style="margin-bottom:14px">Title
         <input ref={titleInput} class="input" value={title} onInput={(e) => setTitle(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && save()} />
       </label>
+      <div class="muted small" style="margin-bottom:6px">Language</div>
+      <div class="chips" style="margin-bottom:14px">
+        {languages.map((p) => <LanguageFilterChip key={p.id} profile={p} selected={lang === p.id} onClick={() => setLang(p.id)} />)}
+        {(s.settings.logUncategorized || lang == null) && <LanguageFilterChip profile={UNCATEGORIZED_CHIP} selected={lang == null} onClick={() => setLang(null)} />}
+      </div>
       <div class="muted small" style="margin-bottom:6px">Time so far</div>
       <DurationInput hours={h} minutes={m} onHours={setH} onMinutes={setM} />
       {/* Started late? Add the minutes you forgot in one tap. */}

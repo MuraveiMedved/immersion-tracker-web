@@ -268,7 +268,8 @@ const ENTRY_LABEL_STYLES = [['CHIP', 'Colored label'], ['DOT', 'Colored dot'], [
 
 function Appearance() {
   const s = useStore()
-  const [tab, setTab] = useState('ring')
+  // Opens on UI Color, the category most visits are for (as on the phone).
+  const [tab, setTab] = useState('ui')
   const main = s.profiles.find((p) => p.isMain && !p.isAnki)
   const color = main?.colorHex || PREVIEW_COLOR
   const stops = main?.gradientColors ? main.gradientColors.split(',') : null
@@ -316,10 +317,9 @@ function Appearance() {
             preview={(v) => <EntryLabelPreview style={v} />} />
         </>
       )}
-      {tab === 'ui' && <BackgroundImage />}
+      {/* UI Color: the curated presets first, then your own themes, then the background photo. */}
       {tab === 'ui' && (
         <div class="cos-grid">
-          <CustomThemeTiles />
           {PRESETS.filter((p) => CURATED_PRESETS.includes(p) || s.settings.uiColorPreset === p).map((p) => {
             const v = schemeFor(p, isLightPreset(p) ? false : dark !== false)
             return (
@@ -333,6 +333,8 @@ function Appearance() {
           })}
         </div>
       )}
+      {tab === 'ui' && <div class="cos-grid" style="margin-top:12px"><CustomThemeTiles /></div>}
+      {tab === 'ui' && <div style="margin-top:16px"><BackgroundImage /></div>}
       {tab === 'ring' && (
         // Each tile shows the in-progress fill and the completed look, both active so they play
         // the style's still-tracking animation - in the main language's colour, as on the phone.

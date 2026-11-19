@@ -150,6 +150,7 @@ export function Entries({ params, nav }) {
   const [selected, setSelected] = useState(new Set())
   const [details, setDetails] = useState(null)
   const [confirm, setConfirm] = useState(false)
+  const [pickingLang, setPickingLang] = useState(false)
 
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])
   // Anki without a language (from before Anki was a mode of each language) is always listed.
@@ -178,6 +179,7 @@ export function Entries({ params, nav }) {
         <div class="sel-bar">
           <button class="icon-btn" title="Cancel" onClick={() => setSelected(new Set())}><Icon name="close" /></button>
           <b class="grow">{selected.size} selected</b>
+          <button class="icon-btn" title="Change language" onClick={() => setPickingLang(true)}><Icon name="language" /></button>
           <button class="icon-btn" title="Delete" onClick={() => setConfirm(true)}><Icon name="delete" /></button>
         </div>
       )}
@@ -209,6 +211,25 @@ export function Entries({ params, nav }) {
         </div>
       )}
       {details != null && <EntryDetails id={details} onClose={() => setDetails(null)} />}
+      {/* The selection bar's Language (as the phone's BatchLanguageSheet): the same choices as one entry's
+          Change language, for every picked row at once. */}
+      {pickingLang && (() => {
+        const n = selected.size
+        const pick = (p) => {
+          [...selected].forEach((id) => editEntry(id, { languageProfileId: p ? p.id : null }))
+          setSelected(new Set())
+          setPickingLang(false)
+          toast(`${n} ${n === 1 ? 'entry' : 'entries'} moved to ${p ? p.name : 'Uncategorized'}`)
+        }
+        return (
+          <Dialog title={`Language for ${n} ${n === 1 ? 'entry' : 'entries'}`} onClose={() => setPickingLang(false)} sheet={false}>
+            <div class="col">
+              {s.profiles.filter((p) => !p.isAnki).map((p) => <button key={p.id} class="btn tonal" style={{ justifyContent: 'flex-start' }} onClick={() => pick(p)}><LanguageChip profile={p} /></button>)}
+              {s.settings.logUncategorized && <button class="btn text" onClick={() => pick(null)}>Uncategorized</button>}
+            </div>
+          </Dialog>
+        )
+      })()}
       {confirm && <Confirm title={`Delete ${selected.size} ${selected.size === 1 ? 'entry' : 'entries'}?`} text="This can't be undone." confirmLabel="Delete" danger
         onConfirm={() => { deleteEntries([...selected]); setSelected(new Set()) }} onClose={() => setConfirm(false)} />}
     </>
