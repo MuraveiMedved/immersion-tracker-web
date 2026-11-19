@@ -39,24 +39,31 @@
 :root[data-ui='quiet'] .app-title { font-size: 13px; line-height: 18px; font-weight: 500; }
 :root[data-ui='quiet'] .home-head .today-total { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.2px; }
 
-/* The bar: the page's last row under a rule, the picked tab a short line on that rule. */
+/* The bar: the page's last row under a rule; the picked tab a low solid block in ink behind its icon, the icon
+   in the page's colour on it (2026-11-18, like the normal look's pill but keeping the bar's height). */
 :root[data-ui='quiet'] .nav {
   left: 0; right: 0; bottom: 0; max-width: none; padding: 0 8px env(safe-area-inset-bottom); gap: 4px;
   background: var(--bg);
   border-top: 1px solid var(--rule); border-radius: 0; box-shadow: none;
 }
 :root[data-ui='quiet'] .nav button { position: relative; height: 58px; background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); border-radius: 0; }
-:root[data-ui='quiet'] .nav button.on { background: transparent; color: var(--on-surface); }
+:root[data-ui='quiet'] .nav button.on { background: transparent; color: var(--bg); }
+:root[data-ui='quiet'] .nav button::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: min(56px, calc(100% - 8px)); height: 34px; border-radius: 10px;
+  background: var(--on-surface); opacity: 0; transform: translate(-50%, -50%) scale(.85);
+  transition: opacity var(--dur-fast, .15s) var(--ease-enter, ease), transform var(--dur-fast, .15s) var(--ease-enter, ease);
+}
+:root[data-ui='quiet'] .nav button.on::before { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+:root[data-ui='quiet'] .nav button svg { position: relative; transition: color var(--dur-fast, .15s); }
 /* A touch bigger than it was (the phone's 24dp icons, 17dp above and below). */
 :root[data-ui='quiet'] .nav button svg { width: 24px; height: 24px; }
-:root[data-ui='quiet'] .nav button.on::after { content: ''; position: absolute; left: 50%; top: -1px; width: 20px; height: 2px; margin-left: -10px; background: currentColor; }
+
 @media (min-width: 600px) {
   :root[data-ui='quiet'] .nav {
     left: 0; right: auto; top: 0; bottom: 0; transform: none; margin: 0; padding: 16px 0; justify-content: center;
     border-top: 0; border-right: 1px solid var(--rule);
   }
   :root[data-ui='quiet'] .nav button { width: 60px; height: 50px; }
-  :root[data-ui='quiet'] .nav button.on::after { left: -1px; top: 50%; width: 2px; height: 20px; margin: -10px 0 0; }
 }
 
 /* Sections are grouped panels (the phone's quietGroup): a section's content on one soft, flat panel - no
