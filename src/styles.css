@@ -134,8 +134,8 @@ main.page {
   background: var(--block); border: 1px solid var(--block-line); border-radius: 20px;
   padding: 6px 16px 12px; margin: 8px 0;
 }
-/* Settings' blocks a clear step off the page (the phone's settingsCardFill, 2026-11-19). */
-.settings-page .block { background: color-mix(in srgb, var(--surface-variant) 85%, var(--bg)); border-color: var(--outline-variant); }
+/* Settings' blocks outlined in every look, Folio included (2026-11-19), like the phone's settings cards. */
+.settings-page .block { border: 1px solid color-mix(in srgb, var(--outline) 60%, transparent) !important; }
 .block-title { min-height: 44px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--primary); letter-spacing: .1px; }
 .block-title > span:first-child { flex: 1; }
 /* Settings' collapsible sections: the phone's card look (SettingsCard.kt, the "What's new" card) -
