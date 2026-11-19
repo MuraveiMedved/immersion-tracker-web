@@ -11,7 +11,7 @@ import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance,
 import { Ring } from './Ring.jsx'
 import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
-import { startTimer, stopTimer, discardTimer, toggleTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
+import { startTimer, stopTimer, discardTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
 
 /** Glass's tinted goal cards (glass.css, the phone's glassTint): the language's first, middle and last colours. */
@@ -832,12 +832,10 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
         const goalMs = goal * 60000
         const on = isActive(type)
         const met = ms >= goalMs // reached: the figure in the language's colour, a check before it (the icon always is)
-        // The General goal stands for two kinds of session: its tap opens the dialog, as on the card.
-        const tap = type === GENERAL ? {} : { title: on ? `Stop ${sessionName(type, profile.id)}` : `Start ${sessionName(type, profile.id)}`,
-          onClick: (ev) => { ev.stopPropagation(); toggleTimer(type, profile.id) } }
         return (
           <div key={type} class={`gl-row ${on ? 'on' : ''}`}>
-            <button class="gl-icon" {...tap}><TypeIcon type={type} size={18} color={ink} /></button>
+            {/* Not a button (2026-11-19): a tap anywhere on the panel opens its goals, like the phone. */}
+            <span class="gl-icon"><TypeIcon type={type} size={18} color={ink} /></span>
             <div class="gl-track-host">
               <div class="gl-track"><div style={{ width: `${Math.min(100, (ms / goalMs) * 100)}%`, background: bar }} /></div>
               <LineBurst met={met} colors={grey ? ['var(--on-surface)'] : stops && stops.length > 1 ? stops : [profile.colorHex]} />
@@ -891,27 +889,21 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
       {rings.map(([type, goal]) => {
         const ms = todayOf(type)
         const on = isActive(type)
-        // The General ring stands for two kinds of session, so a tap on it opens the card's dialog
-        // (pick what to add there) rather than guessing which timer to start.
-        const tap = type === GENERAL ? {} : { role: 'button', tabIndex: 0, title: on ? `Stop ${sessionName(type, profile.id)}` : `Start ${sessionName(type, profile.id)}`,
-          onClick: (ev) => { ev.stopPropagation(); toggleTimer(type, profile.id) },
-          onKeyDown: (ev) => { if (ev.key === 'Enter') { ev.stopPropagation(); toggleTimer(type, profile.id) } } }
+        // Rings aren't play buttons (taken out 2026-11-19, like the phone): a tap opens the card's goals.
         if (!goal) {
           return (
-            <div key={type} class={`ring-stat tap ${on ? 'on' : ''}`} {...tap}>
+            <div key={type} class={`ring-stat ${on ? 'on' : ''}`}>
               <div style="width:64px;height:64px;display:grid;place-items:center"><TypeIcon type={type} size={40} color={profile.colorHex} style={active ? { animation: 'pulse-a .9s ease-in-out infinite alternate' } : undefined} /></div>
               <span class="val">{formatHm(ms)}</span>
-              <span class="tap-hint"><Icon name={on ? 'stop' : 'play_arrow'} size={16} /></span>
             </div>
           )
         }
         const goalMs = goal * 60000
         return (
-          <div key={type} class={`ring-stat ${type === GENERAL ? '' : 'tap'} ${on ? 'on' : ''}`} {...tap}>
+          <div key={type} class={`ring-stat ${on ? 'on' : ''}`}>
             <Ring size={64} progress={ms / goalMs} color={profile.colorHex} stops={stops} ringStyle={s.settings.ringStyle} iconType={type} iconColor={iconColor} active={isActive(type)} light={light} />
             <span class="val">{formatHm(ms)} / {formatHm(goalMs, true)}</span>
             <StreakBadge streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} />
-            {type !== GENERAL && <span class="tap-hint"><Icon name={on ? 'stop' : 'play_arrow'} size={16} /></span>}
           </div>
         )
       })}
