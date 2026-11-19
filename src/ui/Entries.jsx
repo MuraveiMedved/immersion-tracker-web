@@ -222,10 +222,13 @@ export function Entries({ params, nav }) {
             const allSel = ids.every((id) => selected.has(id))
             return (
               <div key={g.day}>
-                {i > 0 && <div class="divider" style="margin:12px 0" />}
-                <div class="row clickable" style="padding:4px 0" onClick={selecting ? () => setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => (allSel ? n.delete(id) : n.add(id))); return n }) : undefined}>
+                {i > 0 && !s.settings.quietUi && <div class="divider" style="margin:12px 0" />}
+                {/* Folio: the day as a small section label with its total at the end (the phone's day header). */}
+                <div class={`row clickable ${s.settings.quietUi ? 'day-head day-group-head' : ''}`} style={s.settings.quietUi ? undefined : 'padding:4px 0'} onClick={selecting ? () => setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => (allSel ? n.delete(id) : n.add(id))); return n }) : undefined}>
                   {selecting && <Icon name={allSel ? 'check_circle' : 'expand_more'} size={18} color={allSel ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
-                  <h2>{dayLabel(g.day, now)}</h2>
+                  {s.settings.quietUi
+                    ? <><span class="grow">{dayLabel(g.day, now)}</span><span class="day-total">{formatHm(g.entries.reduce((t, e) => t + durationOf(e, now), 0))}</span></>
+                    : <h2>{dayLabel(g.day, now)}</h2>}
                 </div>
                 <div class="list">
                   {g.entries.map((e) => (

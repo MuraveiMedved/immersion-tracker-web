@@ -135,7 +135,7 @@ main.page {
   padding: 6px 16px 12px; margin: 8px 0;
 }
 /* Settings' blocks outlined in every look, Folio included (2026-11-19), like the phone's settings cards. */
-.settings-page .block { border: 1px solid color-mix(in srgb, var(--outline) 60%, transparent) !important; }
+.settings-page :is(.block, .fold) { border: 1px solid color-mix(in srgb, var(--outline) 60%, transparent) !important; }
 .block-title { min-height: 44px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--primary); letter-spacing: .1px; }
 .block-title > span:first-child { flex: 1; }
 /* Settings' collapsible sections: the phone's card look (SettingsCard.kt, the "What's new" card) -
@@ -168,6 +168,27 @@ main.page {
 .btn, .icon-btn { transition: transform .45s cubic-bezier(.34, 1.8, .5, 1); }
 .btn:active:not(:disabled), .icon-btn:active:not(:disabled) { transform: scale(.94); transition: transform .08s ease-out; }
 @media (prefers-reduced-motion: reduce) { .btn, .icon-btn, .btn:active, .icon-btn:active { transition: none; transform: none; } }
+/* A whole tappable card or row (the phone's squishClickable): gives to .97 while held, springs back past full size. */
+:is(.squish, .goal-lines, .goal-card, .entry, .fold-row, .standing, .friend-row, .discovered-row, .setting.clickable, .cos-tile, .cos-opt, .idle-banner, .now-banner, .tile-animal) {
+  transition: transform .45s cubic-bezier(.34, 1.8, .5, 1);
+}
+:is(.squish, .goal-lines, .goal-card, .entry, .fold-row, .standing, .friend-row, .discovered-row, .setting.clickable, .cos-tile, .cos-opt, .idle-banner, .now-banner, .tile-animal):active {
+  transform: scale(.97); transition: transform .08s ease-out;
+}
+.goal-card.lifted, .goal-lines.lifted, .goal-area.editing :is(.goal-card, .goal-lines):active { transform: none; transition: none; }
+/* Options in a menu or anything that pops up (the phone's floatIn): rise a few px from a touch smaller and
+   spring into place, ~45ms apart down the list - once, as they appear. */
+@keyframes float-in { from { opacity: 0; transform: translateY(6px) scale(.96); } }
+.menu > *, .dialog .col > .btn, .dialog .side-menu-item { animation: float-in .42s cubic-bezier(.34, 1.56, .5, 1) both; }
+.menu > :nth-child(2), .dialog .col > .btn:nth-child(2) { animation-delay: 45ms; }
+.menu > :nth-child(3), .dialog .col > .btn:nth-child(3) { animation-delay: 90ms; }
+.menu > :nth-child(4), .dialog .col > .btn:nth-child(4) { animation-delay: 135ms; }
+.menu > :nth-child(5), .dialog .col > .btn:nth-child(5) { animation-delay: 180ms; }
+.menu > :nth-child(n+6), .dialog .col > .btn:nth-child(n+6) { animation-delay: 225ms; }
+@media (prefers-reduced-motion: reduce) {
+  :is(.squish, .goal-lines, .goal-card, .entry, .fold-row, .standing, .friend-row, .discovered-row, .setting.clickable, .cos-tile, .cos-opt, .idle-banner, .now-banner, .tile-animal), :is(.squish, .goal-lines, .goal-card, .entry, .fold-row, .standing, .friend-row, .discovered-row, .setting.clickable, .cos-tile, .cos-opt, .idle-banner, .now-banner, .tile-animal):active { transition: none; transform: none; }
+  .menu > *, .dialog .col > .btn, .dialog .side-menu-item { animation: none; }
+}
 .btn.tonal { background: var(--secondary-container); color: var(--on-surface); }
 .btn.outline { background: transparent; color: var(--primary); border: 1px solid var(--outline); }
 .btn.text { background: transparent; color: var(--primary); padding: 0 12px; }
@@ -449,9 +470,12 @@ textarea.input { resize: vertical; }
 .zoo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .trophy-case { margin-bottom: 16px; }
 .trophy-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.trophy-empty { aspect-ratio: 1; border-radius: 16px; border: 2px dashed color-mix(in srgb, var(--on-surface-variant) 35%, transparent); background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 60%, transparent); display: grid; place-items: center; cursor: pointer; }
+.trophy-empty { aspect-ratio: .78; border-radius: var(--r-medium); border: 2px dashed color-mix(in srgb, var(--on-surface-variant) 35%, transparent); background: transparent; color: color-mix(in srgb, var(--on-surface-variant) 60%, transparent); display: grid; place-items: center; cursor: pointer; }
 .zoo-grid.roomy .tile-animal .cap { font-size: 12px; padding: 14px 6px 6px; }
 .collection-head { align-items: center; }
+/* The Zoo's section headings (the phone's SectionHeader): titleMedium, semibold, sentence case. */
+.zoo-heading { font-size: 16px; line-height: 24px; font-weight: 600; margin: 12px 0 8px; }
+.egg-card.compact .bar > div { background: linear-gradient(90deg, var(--primary), var(--tertiary)); }
 .discovered-screen { position: fixed; inset: 0; z-index: 50; overflow-y: auto; background: var(--bg); animation: fade .15s ease-out; }
 .discovered-page { max-width: 640px; margin: 0 auto; padding: calc(12px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom)); }
 .discovered-tier { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 10px 0 4px; font-size: 14px; background: var(--bg); }
@@ -465,7 +489,7 @@ textarea.input { resize: vertical; }
 .discovered-row.gone .thumb { opacity: .5; filter: grayscale(1); }
 .discovered-row.gone .name { color: var(--on-surface-variant); }
 /* Cards per row: one pill like the app's chips - icon, "4 per row", an arrow (the phone's ColumnsPicker). */
-.col-pick { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 10px; border-radius: 999px; background: var(--c-high); color: var(--on-surface-variant); cursor: pointer; border: 1px solid var(--outline-variant); } /* outlined in every look (2026-11-16) */
+.col-pick { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 6px 6px 6px 10px; border-radius: 999px; background: var(--surface-variant); color: var(--on-surface-variant); cursor: pointer; border: 1px solid var(--outline-variant); } /* outlined in every look (2026-11-16), surfaceVariant like the phone's ColumnsPicker */
 /* The select covers the whole pill invisibly: only the icons show, its options still open on tap. */
 .col-pick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; appearance: none; -webkit-appearance: none; border: 0; margin: 0; padding: 0; font: inherit; font-size: 13px; cursor: pointer; }
 .col-pick:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
@@ -481,7 +505,17 @@ textarea.input { resize: vertical; }
 .tile-animal.holo-top, .feed-thumb.holo-top { box-shadow: 0 0 12px color-mix(in srgb, var(--p) 90%, transparent), 0 0 24px color-mix(in srgb, var(--s) 65%, transparent); }
 .tile-animal.picked { outline: 3px solid var(--primary); outline-offset: -3px; }
 /* The collection's cards, shaped like the full card: 4:3 photo on top (same crop), name, faint text lines. */
-.tile-animal.card { aspect-ratio: auto; display: flex; flex-direction: column; background: var(--c-high, var(--surface-variant)); }
+/* As the phone's AnimalTile: no padding (it isn't a page .card), the surfaceContainer fill, a 2px rim in the
+   rarity's two colours, and a soft halo for a held Legendary (gold) or Mythic (its own colours). */
+.tile-animal.card {
+  aspect-ratio: auto; display: flex; flex-direction: column; padding: 0; border-radius: 16px;
+  border: 2px solid transparent !important;
+  background: linear-gradient(var(--c), var(--c)) padding-box, linear-gradient(135deg, var(--p), var(--s)) border-box;
+}
+.tile-animal.card.picked { border-width: 4px !important; outline: 0; background: linear-gradient(color-mix(in srgb, var(--p) 18%, var(--c)), color-mix(in srgb, var(--p) 18%, var(--c))) padding-box, linear-gradient(135deg, var(--p), var(--s)) border-box; }
+.tile-animal.card[data-r='ORANGE']:not(.holo) { box-shadow: 0 0 8px color-mix(in srgb, #FFC21A 75%, transparent); }
+.tile-animal.card[data-r='RAINBOW']:not(.holo) { box-shadow: 0 0 8px color-mix(in srgb, var(--p) 70%, transparent), 0 0 12px color-mix(in srgb, var(--s) 45%, transparent); }
+.tile-animal.card .cap { font-weight: 600; }
 .tile-animal.card .tile-photo { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface-variant); }
 .tile-animal.card .photo-rule { height: 1.5px; }
 .tile-animal.card .cap { position: static; background: none; color: var(--on-surface); padding: 5px 7px 8px; text-align: left; min-height: calc(2 * 1.2 * 10px + 13px); overflow: hidden; } /* px, not em: a long name's shrunk font mustn't make its tile shorter */
@@ -1177,3 +1211,12 @@ textarea.input { resize: vertical; }
 
 /* Fit (Zoo.jsx): words stay whole - a long one is shrunk to fit, never broken or cut with an ellipsis. */
 .fit { overflow-wrap: normal; word-break: normal; hyphens: none; }
+
+/* Race setup (the phone's RaceSetup): a flag on a soft tile beside the heading, emoji as outlined circles. */
+.flag-tile { width: 40px; height: 40px; border-radius: var(--r-small); display: grid; place-items: center; flex: none; background: var(--surface-variant); color: var(--primary); }
+.race-setup-title { font-size: 20px !important; line-height: 28px !important; font-weight: 600 !important; }
+.emoji-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
+.emoji-pick { aspect-ratio: 1; min-height: 38px; border-radius: 50%; border: 1px solid var(--outline-variant); background: transparent; font-size: 20px; display: grid; place-items: center; padding: 0; }
+.emoji-pick.on { background: color-mix(in srgb, var(--primary) 18%, transparent); border-color: var(--primary); }
+.friend-code-input { text-transform: uppercase; letter-spacing: 2px; }
+.friend-code-input::placeholder, .code-input::placeholder { text-transform: none; letter-spacing: .2px; }

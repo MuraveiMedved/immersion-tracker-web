@@ -75,14 +75,19 @@
 }
 :root[data-ui='quiet'] .list:has(> .entry):not(.normal-look *) { padding: 0; }
 /* The Zoo's eggs keep their outline on the panel (asked 2026-11-16): the egg's, and each rarity's colour. */
-:root[data-ui='quiet'] .egg-card:not(.normal-look *) { border: 1px solid var(--block-line); }
+/* The egg card keeps its outline in the egg's colours (primary to tertiary, the phone's lootBoxLook), on the panel's fill. */
+:root[data-ui='quiet'] .egg-card.egg-card.egg-card:not(.normal-look *):not(.tile-animal) { border: 1px solid transparent; border-radius: var(--r-large);
+  background: linear-gradient(var(--quiet-panel), var(--quiet-panel)) padding-box, linear-gradient(135deg, var(--primary), var(--tertiary)) border-box !important; }
+:root[data-ui='quiet'] .egg-card.compact .egg-stage { width: 40px; height: 40px; }
+:root[data-ui='quiet'] .egg-card.compact .egg-stage > div { transform: scale(.75); }
+:root[data-ui='quiet'] .egg-card.compact .bar { height: 3px !important; }
 :root[data-ui='quiet'] .crate-row:not(.normal-look *) { border-width: 1px; border-style: solid; }
 :root[data-ui='quiet'] .list > .entry:last-child::after { display: none; }
 /* Figures and rows inside a panel stay flat. */
 :root[data-ui='quiet'] :is(.tile, .qtile, .winner-row):not(.normal-look *) {
   background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; margin: 0; padding-left: 0; padding-right: 0;
 }
-:root[data-ui='quiet'] .fold > .fold-row { padding: 10px 0; }
+:root[data-ui='quiet'] .fold > .fold-row { padding: 5px 0; min-height: 50px; } /* the phone's settings rows, about 52dp with the outline */
 :root[data-ui='quiet'] .fold > .fold-row:hover { background: transparent; }
 :root[data-ui='quiet'] .fold-body { margin: 0; padding: 0 0 8px; border-top: 0; }
 :root[data-ui='quiet'] .quick-stats { gap: 0; margin-top: 12px; }
@@ -90,7 +95,8 @@
 :root[data-ui='quiet'] .section-band { padding-top: 12px; padding-bottom: 12px; }
 :root[data-ui='quiet'] .notice { padding-top: 8px; padding-bottom: 8px; }
 :root[data-ui='quiet'] .entry:not(.normal-look *) { padding-top: 9px; padding-bottom: 9px; position: relative; }
-:root[data-ui='quiet'] .entry::after:not(.normal-look *) { content: ''; position: absolute; left: 50px; right: 20px; bottom: 0; height: 1px; background: var(--rule); }
+/* A thin rule under each row, from the title to near the end (the phone's EntryRow in a group). */
+:root[data-ui='quiet'] .list > .entry:not(.normal-look *)::after { content: ''; position: absolute; left: 50px; right: 44px; bottom: 0; height: 1px; background: var(--rule); }
 :root[data-ui='quiet'] .entry .title:not(.normal-look *) { font-size: 15px; line-height: 21px; }
 
 /* Goals keep their rounded shape, a thin sheet; only what's being tracked takes any colour. */
@@ -120,9 +126,8 @@
 :root[data-ui='quiet'] :is(.setting .badge-ico, .fold-row .badge-ico, .side-menu-item .badge-ico, .cos-badge, .icon-badge) {
   background: transparent !important; color: var(--on-surface-variant); width: 32px;
 }
-:root[data-ui='quiet'] :is(.entry .dur, .dur-pill, .col-pick, .cert span, .code-pill):not(.normal-look *) { background: transparent; padding-left: 0; padding-right: 0; }
+:root[data-ui='quiet'] :is(.entry .dur, .dur-pill, .cert span, .code-pill):not(.normal-look *) { background: transparent; padding-left: 0; padding-right: 0; }
 /* The Zoo's Discovered and cards-per-row buttons keep their outline, so they keep room inside it. */
-:root[data-ui='quiet'] .col-pick:not(.normal-look *) { padding-left: 8px; padding-right: 6px; }
 :root[data-ui='quiet'] .lang-chip:not(.normal-look *) { background: transparent !important; border: 0 !important; color: var(--on-surface) !important; height: auto; padding: 0; font-weight: 500; }
 
 /* Tabs and filters are words; the picked one has a heavier line. */
@@ -165,7 +170,10 @@
 /* Whatever's small to look at still has a comfortable area to hit (44px, the phone's 44dp). */
 :root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter):not(.normal-look *) { min-height: 44px; padding: 6px 8px; margin-right: 0; display: inline-flex; align-items: center; }
 :root[data-ui='quiet'] .momentum { min-height: 44px; padding: 2px 8px; }
-:root[data-ui='quiet'] .col-pick { min-height: 44px; padding: 6px; }
+/* The Zoo's small pills look as on the phone (about 32px) but still take a 44px touch: the hit area reaches past them. */
+:root[data-ui='quiet'] .col-pick { min-height: 32px; padding: 5px 6px 5px 10px; }
+:root[data-ui='quiet'] .col-pick::after { content: ''; position: absolute; left: 0; right: 0; top: -6px; bottom: -6px; }
+:root[data-ui='quiet'] .col-pick select { inset: -6px 0; height: auto; z-index: 1; }
 :root[data-ui='quiet'] .nametag-count { min-height: 44px; padding: 6px 8px; box-sizing: border-box; }
 :root[data-ui='quiet'] .btn:not(.normal-look *), :root[data-ui='quiet'] .btn.small:not(.normal-look *) { min-height: 44px; }
 :root[data-ui='quiet'] .icon-btn:not(.normal-look *) { min-width: 44px; min-height: 44px; }
@@ -184,17 +192,20 @@
 /* Home's languages without cards (GoalLines, the phone's QuietGoalLines): a name, then a line per goal -
    icon, thin bar, figure, streak - over a rule. Plain, so the figures read in one column. */
 :root[data-ui='quiet'] .goal-area { gap: 0; }
-:root[data-ui='quiet'] .goal-lines { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; margin: 0 -8px 8px; background: var(--quiet-panel); border: 1px solid transparent; border-radius: 14px; cursor: pointer; position: relative; }
+:root[data-ui='quiet'] .goal-lines { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; margin: 0 -8px 8px; background: var(--quiet-panel); border: 1px solid transparent; border-radius: 14px; cursor: pointer; position: relative; }
 :root[data-ui='quiet'] .goal-lines.lifted { background: var(--bg); box-shadow: 0 12px 32px rgba(0, 0, 0, .35); z-index: 5; }
 :root[data-ui='quiet'] .goal-lines.selected { outline: 2px solid var(--on-surface); outline-offset: 2px; }
 :root[data-ui='quiet'] .goal-area.editing .goal-lines { cursor: grab; touch-action: none; }
 :root[data-ui='quiet'] .gl-name { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 15px; line-height: 21px; font-weight: 500; }
 :root[data-ui='quiet'] .gl-live { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; color: var(--lang); flex: none; }
 :root[data-ui='quiet'] .gl-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--lang); opacity: calc(.45 + .55 * var(--beat, 0)); }
-:root[data-ui='quiet'] .gl-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
-:root[data-ui='quiet'] .gl-row > .gl-figure { margin-left: 6px; }
-:root[data-ui='quiet'] .gl-icon { flex: none; width: 44px; height: 44px; margin: 0 -13px; display: grid; place-items: center; background: transparent; border: 0; padding: 0; }
-:root[data-ui='quiet'] .gl-track { flex: 1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--on-surface) 10%, transparent); overflow: hidden; margin-left: 3px; }
+/* 24px lines, 8px apart (the phone's QuietGoalLines since 2026-11-18): 44px rows spread them out. */
+:root[data-ui='quiet'] .gl-row { display: flex; align-items: center; gap: 0; min-height: 24px; }
+:root[data-ui='quiet'] .gl-row > .gl-figure { margin-left: 16px; }
+:root[data-ui='quiet'] .gl-icon { flex: none; width: 18px; height: 24px; margin-right: 10px; display: grid; place-items: center; background: transparent; border: 0; padding: 0; position: relative; }
+:root[data-ui='quiet'] .gl-row.on .gl-icon::before { content: ''; position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; background: var(--lang); opacity: .16; }
+:root[data-ui='quiet'] .gl-icon svg { position: relative; }
+:root[data-ui='quiet'] .gl-track { flex: 1; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--on-surface) 10%, transparent); overflow: hidden; }
 :root[data-ui='quiet'] .gl-track > div { height: 100%; }
 :root[data-ui='quiet'] .gl-track-host { flex: 1; position: relative; display: flex; align-items: center; }
 :root[data-ui='quiet'] .gl-track-host > .gl-track { flex: 1; }
@@ -219,7 +230,7 @@
 :root[data-ui='quiet'] .gl-figure { flex: none; width: 100px; white-space: nowrap; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--on-surface); }
 :root[data-ui='quiet'] .gl-figure { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; }
 :root[data-ui='quiet'] .gl-figure.met { color: var(--lang); font-weight: 700; }
-:root[data-ui='quiet'] .gl-streak { flex: none; width: 84px; margin-left: 4px; display: flex; justify-content: flex-end; white-space: nowrap; }
+:root[data-ui='quiet'] .gl-streak { flex: none; width: 84px; margin-left: 14px; display: flex; justify-content: flex-end; white-space: nowrap; }
 :root[data-ui='quiet'] .gl-streak .streak { margin: 0; }
 
 /* Home's This week (WeekStrip): seven plain bars, stacked by language. */
@@ -236,7 +247,7 @@
 
 /* Small text stays readable. */
 :root[data-ui='quiet'] :is(.version, .ring-stat .val, .bar-label, .label-small, .qtile span, .chart-axis span, .st-figure .sub, .record-tile .k, .fact-tile .k, .tiny) { font-size: 12px; }
-:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter, .col-pick, .swatch):not(.normal-look *) { min-width: 44px; justify-content: center; }
+:root[data-ui='quiet'] :is(.pill-toggle, .chip, .lang-filter, .swatch):not(.normal-look *) { min-width: 44px; justify-content: center; }
 :root[data-ui='quiet'] .swatch { min-height: 44px; }
 :root[data-ui='quiet'] .btn.text:not(.normal-look *) { min-height: 44px !important; }
 :root[data-ui='quiet'] .pill-toggle.row svg:not(.normal-look *) { display: none; }
@@ -306,10 +317,9 @@
 :root[data-ui='quiet'] .btn.text:not(.normal-look *):hover { background: transparent; opacity: .75; }
 :root[data-ui='quiet'] .sa-item:not(.live):hover { background: transparent; }
 
-/* Fields are a single line, not a box. */
-:root[data-ui='quiet'] :is(.input, select.input, textarea.input):not(.normal-look *) { border: 0; border-bottom: 1px solid var(--outline); border-radius: 0; min-height: 44px; padding: 10px 0; font-size: 15px; }
-:root[data-ui='quiet'] .input:not(.normal-look *):focus { border: 0; border-bottom: 2px solid var(--on-surface); padding: 10px 0 9px; }
-:root[data-ui='quiet'] .title-field:not(.normal-look *) { border: 0; border-bottom: 1px solid var(--outline); border-radius: 0; padding-left: 0; }
+/* Fields are outlined boxes, as the phone's OutlinedTextField is in Folio too (an underline alone read as text). */
+:root[data-ui='quiet'] :is(.input, select.input, textarea.input):not(.normal-look *) { border: 1px solid var(--outline); border-radius: 4px; min-height: 52px; padding: 13px 16px; font-size: 15px; }
+:root[data-ui='quiet'] .input:not(.normal-look *):focus { border: 2px solid var(--primary); padding: 12px 15px; }
 
 /* Small things that were chips are plain marks, each with a comfortable hit area. */
 :root[data-ui='quiet'] .nametag-count { background: transparent; border: 0; border-radius: 0; min-height: 44px; padding: 0 4px; }
@@ -318,13 +328,13 @@
 :root[data-ui='quiet'] .tier-row.reached { background: transparent; }
 
 /* The Zoo: empty trophy slots are quiet tiles, not dashed boxes, and actions match every other button. */
-:root[data-ui='quiet'] .trophy-empty { background: var(--quiet-sheet); border: 0; border-radius: 12px; color: var(--on-surface-variant); }
+
 :root[data-ui='quiet'] .glow-pill-soft:not(.normal-look *), :root[data-ui='quiet'] .glow-pill-soft.solid:not(.normal-look *) {
   height: 44px; border-radius: 10px; border: 1px solid var(--outline) !important; background: var(--c-high) !important; color: var(--on-surface); font-size: 13px; font-weight: 500; animation: none;
 }
 :root[data-ui='quiet'] .glow-pill-soft::before, :root[data-ui='quiet'] .glow-pill-soft::after { display: none; }
 :root[data-ui='quiet'] .bar { height: 3px; }
-:root[data-ui='quiet'] .share-track { height: 3px; }
+:root[data-ui='quiet'] .share-track { height: 4px; background: color-mix(in srgb, var(--on-surface) 10%, transparent); } /* the full track shows, as on the phone */
 
 /* An animal's page: the card keeps its frame, but nothing nests inside it. */
 :root[data-ui='quiet'] .acard-cert { background: transparent !important; border: 0 !important; border-top: 1px solid var(--rule) !important; border-bottom: 1px solid var(--rule) !important; border-radius: 0; padding-left: 0; padding-right: 0; }
@@ -393,3 +403,11 @@
 }
 :root[data-ui='quiet'] .stats-page .lang-filter.on:not(.normal-look *) { border-color: color-mix(in srgb, var(--lang) 70%, transparent) !important; }
 :root[data-ui='quiet'] .stats-page .pill-toggle.row svg:not(.normal-look *) { display: none; }
+
+/* All entries: each day a small label in ink with its total at the end, then its rows on one panel (the phone's
+   day header over a quietGroup). */
+:root[data-ui='quiet'] .day-group-head { margin: 18px 6px 6px; padding: 0; color: var(--heading-ink); }
+:root[data-ui='quiet'] .day-group-head .day-total { font-size: 12px; letter-spacing: .2px; text-transform: none; font-weight: 600; color: var(--on-surface-variant); }
+/* This week's label sits at the top of its own panel (the phone's WeekStrip), not a section's distance below it. */
+:root[data-ui='quiet'] .week-strip > .section-header.home-section { margin: 0 0 10px !important; padding-left: 0; }
+:root[data-ui='quiet'] .week-strip { margin-top: 16px; }

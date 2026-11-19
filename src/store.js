@@ -68,7 +68,7 @@ export function defaultState() {
       serifUi: true, // Folio's serif (Fraunces) - on for anyone new, per device, never synced
       ringStyle: 'CLASSIC',
       titleStyleMode: 'DEFAULT',
-      goalCardStyleMode: 'LANGUAGE_COLOR',
+      goalCardStyleMode: 'GREY_TINT', // the phone's default (TrackingRepository); saved settings keep theirs
       entryLabelStyle: 'ICON',
       tutorialShown: false,
       backupPromptShown: false,

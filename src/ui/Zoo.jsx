@@ -917,7 +917,7 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
   return (
     <>
       <div class="row collection-head">
-        <div class="section-header grow">Collection ({held})</div>
+        <div class="zoo-heading grow">Collection ({held})</div>
         {/* Trading up, always in view (2026-11-18, as the phone's TradeUpButton). */}
         {found.size > 0 && <TradeUpMenu catalog={catalog} copies={copies} onPick={(r) => setTrade({ from: r, picks: [] })} />}
         {/* Everything ever found, held or not. */}
@@ -942,8 +942,8 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
             const foil = !!c?.cert?.foil
             let timer = null
             return (
-              <div key={`${a.id}#${c?.id ?? ''}`} class={`tile-animal card ${picked ? 'picked' : ''} ${foil ? holoClass(a.rarity) : ''}`}
-                style={{ borderColor: RARITY_COLOR[a.rarity], ...glowColors(a.rarity) }}
+              <div key={`${a.id}#${c?.id ?? ''}`} class={`tile-animal card squish ${picked ? 'picked' : ''} ${foil ? holoClass(a.rarity) : ''}`} data-r={a.rarity}
+                style={glowColors(a.rarity)}
                 onClick={() => pick(a, c)}
                 onContextMenu={(e) => { e.preventDefault(); if (!trade) startTrade(a, c) }}
                 onPointerDown={() => { if (!trade) timer = setTimeout(() => startTrade(a, c), 500) }}
@@ -1089,7 +1089,7 @@ function TrophyCase({ catalog, copies }) {
   const choices = catalog.filter((a) => copies[a.id]?.length && !ids.includes(a.id))
   return (
     <div class="trophy-case">
-      <div class="section-header" style="margin-top:0">Trophy case</div>
+      <div class="zoo-heading" style="margin-top:0">Trophy case</div>
       <TrophySlots catalog={catalog} onFilled={(_, a) => setOpen(a)} onEmpty={setPickingSlot} />
       {pickingSlot != null && (
         <Dialog title="Pick an animal" onClose={() => setPickingSlot(null)} actions={<button class="btn text" onClick={() => setPickingSlot(null)}>Close</button>}>

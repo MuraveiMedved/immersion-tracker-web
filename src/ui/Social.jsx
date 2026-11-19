@@ -65,14 +65,22 @@ function RaceSetup({ onDone, first }) {
     sync()
   }
   return (
-    <div class="card col" style="gap:14px;margin-top:8px">
-      <h2>{first ? 'Join the race' : 'Name & emoji'}</h2>
-      <p class="muted small" style="margin:0">Pick the name your friends will see. Races and friends work with everyone on the Immersion Tracker server - Android and web alike.</p>
-      <label class="field">Your name<input class="input" value={name} maxLength={40} onInput={(e) => setName(e.currentTarget.value)} autoFocus /></label>
+    <>
+    {/* Laid out as the phone's race setup: the page's title, then a flag tile and the heading, no card round it. */}
+    {first && <h1 class="page-title" style="margin-bottom:12px">Social</h1>}
+    <div class="col race-setup" style="gap:14px">
+      <div class="row" style="gap:12px">
+        <span class="flag-tile"><Icon name="flag" size={22} /></span>
+        <h2 class="race-setup-title">{first ? 'Join the race' : 'Name & emoji'}</h2>
+      </div>
+      <p class="muted small" style="margin:0">Pick the name your friends will see. Races and friends work with everyone on the Immersion Tracker server, Android and web alike.</p>
+      <input class="input" placeholder="Your name" aria-label="Your name" value={name} maxLength={40} onInput={(e) => setName(e.currentTarget.value)} autoFocus />
       <div class="col">
-        <div style="font-weight:600">Your emoji</div>
-        <div class="muted small">Shown next to your name and on the progress chart, for everyone in your races. Optional.</div>
-        <div class="swatches">{EMOJIS.map((e) => <button key={e} class={`swatch ${emoji === e ? 'on' : ''}`} style="background:var(--c-high);font-size:18px" onClick={() => setEmoji(emoji === e ? '' : e)}>{e}</button>)}</div>
+        <div>
+          <div style="font-weight:600">Your emoji</div>
+          <div class="muted small">Shown next to your name and on the progress chart, for everyone in your races. Optional.</div>
+        </div>
+        <div class="emoji-grid">{EMOJIS.map((e) => <button key={e} class={`emoji-pick squish ${emoji === e ? 'on' : ''}`} onClick={() => setEmoji(emoji === e ? '' : e)}>{e}</button>)}</div>
         <input class="input" style="max-width:200px" placeholder="Or type any emoji" value={EMOJIS.includes(emoji) ? '' : emoji} onInput={(e) => setEmoji(firstGrapheme(e.currentTarget.value))} />
       </div>
       <details><summary class="muted small clickable">Race server link</summary>
@@ -81,6 +89,7 @@ function RaceSetup({ onDone, first }) {
       </details>
       <div class="row"><span class="spacer" />{!first && <button class="btn text" onClick={onDone}>Cancel</button>}<button class="btn" disabled={!name.trim()} onClick={save}>Save</button></div>
     </div>
+    </>
   )
 }
 
@@ -1202,7 +1211,7 @@ function Friends() {
       <div class="card section">
         <h3 style="margin-bottom:8px">Add a friend</h3>
         <div class="row">
-          <input class="input grow" style="text-transform:uppercase;letter-spacing:2px" placeholder="Friend's code" value={code} onInput={(e) => setCode(e.currentTarget.value.toUpperCase())} />
+          <input class="input grow friend-code-input" placeholder="Friend's code" value={code} onInput={(e) => setCode(e.currentTarget.value.toUpperCase())} />
           <button class="btn" disabled={code.trim().length < 4 || busy} onClick={() => run(async () => { await addFriendByCode(code); setCode('') }, 'Friend request sent')}>Add</button>
         </div>
         {/* Swapping codes goes both ways - yours is right here to copy or send. */}
@@ -1232,10 +1241,9 @@ function Friends() {
       )}
 
       <div class="section">
-        <div class="section-title"><h2>Friends ({friends.length})</h2></div>
-        {!friends.length ? <div class="card"><div class="muted small">No friends yet - add someone by their code, or tap them in a race.</div>
-          {/* With no friends yet, the code to give them is the next thing needed. */}
-          {s.friends.code && <div style="margin-top:12px"><MyFriendCode code={s.friends.code} /></div>}</div> : (
+        {/* A plain title, as the phone's Friends (0) - your code is already in Add a friend above. */}
+        <div class="zoo-heading">Friends ({friends.length})</div>
+        {!friends.length ? <div class="muted">No friends yet. Add someone by their code, or tap them in a race.</div> : (
           <div class="col" style="gap:8px">{friends.map((p) => (
             <FriendRow key={p.userId} p={p} onClick={() => setOpen(p)} />          ))}</div>
         )}

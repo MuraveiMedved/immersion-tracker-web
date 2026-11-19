@@ -810,9 +810,10 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
   const grey = s.settings.goalCardStyleMode === 'GREY_TINT'
   const ink = grey ? 'var(--on-surface)' : light ? deepened(profile.colorHex, 0.42) : profile.colorHex
   const bar = grey ? 'var(--on-surface)' : stops && stops.length > 1 ? `linear-gradient(90deg, ${stops.join(', ')})` : profile.colorHex
-  const nameStyle = !grey && stops && stops.length > 1
+  // The name keeps the language's colour in every card style, Grey tint included (the phone's nameTextStyle).
+  const nameStyle = stops && stops.length > 1
     ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
-    : { color: ink }
+    : { color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
   const goals = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]].filter(([, g]) => g > 0)
   // The panel takes the normal look's card treatment (as GoalCard, asked for 2026-11-16): the language's colour,
   // dimmed by the card style and brighter while it plays, outlined only then; tinted glass with Glass on (glass.css).

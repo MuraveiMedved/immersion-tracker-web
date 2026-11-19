@@ -47,6 +47,7 @@ function App() {
   // Each nav bar tap opens the tab's main page afresh - even the tab already open, so a page a
   // level in (Settings > Appearance, say) goes back to the top.
   const [visit, setVisit] = useState(0)
+  const [, setSchemeTick] = useState(0)
   useEffect(() => applyTheme(s.settings.uiColorPreset), [s.settings.uiColorPreset, s.settings.customThemes])
   useEffect(() => applyLook(s.settings.quietUi, s.settings.glassUi), [s.settings.quietUi, s.settings.glassUi])
   // The New look's serif is opt in (Appearance > Serif type); quiet.css uses it only under [data-serif].
@@ -73,7 +74,9 @@ function App() {
   }, [])
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
-    const on = () => applyTheme(getState().settings.uiColorPreset)
+    // The system flipping light/dark changes the preset's look: redraw too, so colours worked out for
+    // the old one (Home's language names and bars) follow.
+    const on = () => { applyTheme(getState().settings.uiColorPreset); setSchemeTick((t) => t + 1) }
     mq?.addEventListener?.('change', on)
     return () => mq?.removeEventListener?.('change', on)
   }, [])
