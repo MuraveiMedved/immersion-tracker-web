@@ -85,9 +85,9 @@ export function Stats() {
         {[['LISTENING', 'PODCAST', 'Listening'], ['READING', 'READING', 'Reading'], ['STUDY', 'ANKI', 'Study']].map(([key, icon, label]) => (
           <button key={key} class={`pill-toggle row ${typeFilter === key ? 'on' : ''}`} style="gap:6px;display:inline-flex;align-items:center" onClick={() => setTypeFilter(key)}><TypeIcon type={icon} size={16} />{label}</button>
         ))}
-        {/* The redesign keeps every filter on this one line, so the chart isn't pushed down. */}
-        {quiet && languages.length > 1 && languageFilters}
       </div>
+      {/* Folio: the languages on a row of their own, right under the kinds (2026-11-18, as on the phone). */}
+      {quiet && languages.length > 1 && <div class="chips scroll" style="gap:6px">{languageFilters}</div>}
       {!quiet && languages.length > 1 && <div class="chips scroll" style="margin-top:12px">{languageFilters}</div>}
       <div class="row" style="margin-top:8px">
         <button class="icon-btn" title="Previous" style={canBack ? '' : 'visibility:hidden'} onClick={() => setOffset(offset + 1)}><Icon name="chevron_right" style={{ transform: 'scaleX(-1)' }} /></button>

@@ -100,7 +100,12 @@ export function Zoo({ nav }) {
   const heldOfTier = (r) => Object.entries(z.copies).filter(([id]) => rarityOfId(id) === r).reduce((t, [, l]) => t + l.length, 0)
   const startTradeOf = (r) => { setTrade({ from: r, picks: [] }); setTimeout(() => document.getElementById('zoo-collection')?.scrollIntoView({ behavior: 'smooth' }), 0) }
   // Like the phone: a tier shows only once there's a coloured egg to hatch or enough to trade up.
-  const tierRows = RARITIES.map((r) => ({ r, eggs: z.coloured[r], canTrade: !!nextRarity(r) && heldOfTier(r) >= TRADE_UP_COUNT })).filter((t) => t.eggs > 0 || t.canTrade)
+  // A trade-only row (no egg of that colour to hatch) can be swiped away for good - kept on this device
+  // (settings.dismissedTradeRows isn't one of the synced settings), like the phone's.
+  const dismissedTrades = s.settings.dismissedTradeRows || []
+  const setTradeDismissed = (r, on) => setSetting('dismissedTradeRows', on ? [...new Set([...dismissedTrades, r])] : dismissedTrades.filter((x) => x !== r))
+  const tierRows = RARITIES.map((r) => ({ r, eggs: z.coloured[r], canTrade: !!nextRarity(r) && heldOfTier(r) >= TRADE_UP_COUNT }))
+    .filter((t) => t.eggs > 0 || (t.canTrade && !dismissedTrades.includes(t.r)))
   const ready = z.boxesReady > 0
 
   return (
@@ -131,7 +136,11 @@ export function Zoo({ nav }) {
       {/* A tier with an egg, or enough animals to trade, gets a row - Trade up is offered right here
           (a long-press on an animal in the collection also starts one). */}
       {tierRows.map(({ r, eggs, canTrade }) => (
-        <div key={r} class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
+        <SwipeAway key={r} enabled={eggs === 0} onDismiss={() => {
+          setTradeDismissed(r, true)
+          toast(`${RARITY_LABEL[r]} trade reminder hidden`, { label: 'Undo', run: () => setTradeDismissed(r, false) })
+        }}>
+        <div class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
           {/* Faded while there's no egg of this colour - only a trade waiting. */}
           <div class={eggs > 0 ? 'wobble' : ''}><Egg rarity={r} width={44} glow={eggs > 0 ? 12 : 0} style={eggs > 0 ? undefined : { opacity: 0.45 }} /></div>
           <div class="grow">
@@ -142,6 +151,7 @@ export function Zoo({ nav }) {
           {/* With nothing to hatch, Trade up is the row's one (main) button. */}
           {canTrade && <button class={`btn small ${eggs > 0 ? 'tonal' : ''}`} onClick={() => startTradeOf(r)}>Trade up</button>}
         </div>
+        </SwipeAway>
       ))}
       {/* The trophy case, at the top of the collection - the eggs stay above. */}
       {Object.keys(z.copies).some((id) => z.copies[id]?.length) && <div style="margin-top:12px"><TrophyCase catalog={catalog} copies={z.copies} /></div>}
@@ -1220,6 +1230,61 @@ function NametagDemo({ animal }) {
         {typed ? <><b>“{typed}”</b><span class="muted small">{animal.name}</span></> : <b>{animal.name}</b>}
       </div>
       <span class={`tag ${tag ? 'on' : ''}`}>🏷</span>
+    </div>
+  )
+}
+
+/** A row that can be dragged off either side ([enabled]) to dismiss it: it follows the finger, fading as it
+ *  goes, and past a third of its width slides out and calls [onDismiss]; short of that it springs back. A drag
+ *  doesn't also click a button in it. Vertical scrolling still works (touch-action: pan-y). */
+function SwipeAway({ enabled, onDismiss, children }) {
+  const ref = useRef(null)
+  const drag = useRef(null)
+  if (!enabled) return children
+  const set = (dx, animate) => {
+    const el = ref.current
+    if (!el) return
+    el.style.transition = animate ? 'transform var(--dur-standard, .25s) var(--ease-enter, ease), opacity var(--dur-standard, .25s)' : 'none'
+    el.style.transform = dx ? `translateX(${dx}px)` : ''
+    el.style.opacity = dx ? String(Math.max(0, 1 - Math.abs(dx) / el.offsetWidth * 1.4)) : ''
+  }
+  return (
+    <div
+      ref={ref}
+      style="touch-action:pan-y"
+      onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, dx: 0, moving: false, id: e.pointerId } }}
+      onPointerMove={(e) => {
+        const d = drag.current
+        if (!d || d.id !== e.pointerId) return
+        const dx = e.clientX - d.x
+        if (!d.moving) {
+          if (Math.abs(e.clientY - d.y) > 10) { drag.current = null; return }
+          if (Math.abs(dx) < 10) return
+          d.moving = true
+          ref.current?.setPointerCapture?.(e.pointerId)
+        }
+        d.dx = dx
+        set(dx, false)
+      }}
+      onPointerUp={() => {
+        const d = drag.current
+        drag.current = null
+        if (!d?.moving) return
+        const w = ref.current?.offsetWidth || 1
+        if (Math.abs(d.dx) > w / 3) {
+          set(Math.sign(d.dx) * w * 1.1, true)
+          setTimeout(onDismiss, 220)
+        } else {
+          set(0, true)
+        }
+        // The drag ends with a click on whatever's under it - swallow that one.
+        const stop = (ev) => { ev.stopPropagation(); ev.preventDefault() }
+        ref.current?.addEventListener('click', stop, { capture: true, once: true })
+        setTimeout(() => ref.current?.removeEventListener('click', stop, { capture: true }), 50)
+      }}
+      onPointerCancel={() => { drag.current = null; set(0, true) }}
+    >
+      {children}
     </div>
   )
 }
