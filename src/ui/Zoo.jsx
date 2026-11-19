@@ -28,6 +28,20 @@ export function useCatalog() {
 }
 
 export function AnimalPhoto({ animal, style = {} }) {
+  const hidden = useStore().zoo.arachnophobia && animal?.spider
+  // Arachnophobia: a smiley in a spider's place (the phone draws the same); its name and details stay.
+  if (hidden) {
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', ...style }} role="img" aria-label={animal.name}>
+        <svg viewBox="0 0 100 100" style={{ width: '60%', height: '60%', maxWidth: '60%', maxHeight: '60%' }}>
+          <circle cx="50" cy="50" r="46" fill="#FFD54A" stroke="#3A2A12" stroke-width="3" />
+          <circle cx="34" cy="38" r="5" fill="#3A2A12" />
+          <circle cx="66" cy="38" r="5" fill="#3A2A12" />
+          <path d="M28 58 Q50 80 72 58" fill="none" stroke="#3A2A12" stroke-width="5" stroke-linecap="round" />
+        </svg>
+      </div>
+    )
+  }
   if (!animal?.image) return <div style={{ ...style, display: 'grid', placeItems: 'center', fontSize: 40 }}>🐾</div>
   const f = animal.frame || { x: 0.5, y: 0.5, zoom: 1 }
   return (
@@ -738,7 +752,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
   const wrapRef = useRef(null)
   const size = useSize(wrapRef)
   const border = mythic ? 3 : 2
-  const tint = usePhotoTint(animal.image)
+  const tint = usePhotoTint(useStore().zoo.arachnophobia && animal.spider ? null : animal.image)
   // Each card's own wash: its photo's bottom colour running on down into the details and fading,
   // with a faint glow of the rarity in the far corner.
   const wash = [

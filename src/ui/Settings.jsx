@@ -7,6 +7,7 @@ import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
 import { AccountSection } from './Account.jsx'
 import { BackgroundImage, CustomThemeTiles } from './CustomLook.jsx'
 import { RESUME_HIDE_CHOICES, resumeHideLabel } from './timers.js'
+import { setArachnophobia } from '../model/zoo.js'
 import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorTile, GoalModeChoice, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
 
 const SCRIPTS = [
@@ -94,6 +95,11 @@ export function Settings({ params, nav }) {
         <SettingRow icon="pets" title="Zoo" hint="Collect animal cards with your immersion hours.">
           <Switch checked={s.settings.showZooTab} onChange={(v) => setSetting('showZooTab', v)} />
         </SettingRow>
+        {s.settings.showZooTab && (
+          <SettingRow icon="visibility_off" title="Arachnophobia" hint="No spiders from eggs, and a smiley in place of any spider's photo.">
+            <Switch checked={!!s.zoo.arachnophobia} onChange={(v) => setArachnophobia(v)} />
+          </SettingRow>
+        )}
       </Block>
 
       {/* Everything about using this history on other devices, behind one row - as on the phone. */}

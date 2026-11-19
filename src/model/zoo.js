@@ -54,6 +54,11 @@ export function loadCatalog() {
   return catalogPromise
 }
 export const catalogNow = () => catalog
+
+/** Arachnophobia (the phone's Arachnophobia object): spiders leave every egg and prize pool, and their photos show a
+ *  smiley wherever they appear. Synced with the phone in the Zoo's prefs record. */
+export const eggPool = (s, pool) => (s.zoo.arachnophobia ? pool.filter((a) => !a.spider) : pool)
+export function setArachnophobia(on) { update((st) => { st.zoo.arachnophobia = !!on }) }
 export const animalById = (id) => catalog?.find((a) => a.id === id)
 
 /* ------------------------------------------------------------------------------------------------ */
@@ -371,7 +376,7 @@ export async function hatchLootEgg() {
   const z = zooState(s)
   if (z.boxesReady <= 0) return null
   const tier = lootBoxTier(randomInt(100))
-  const pool = animals.filter((a) => a.rarity === tier)
+  const pool = eggPool(getState(), animals.filter((a) => a.rarity === tier))
   if (!pool.length) return null
   const animal = pool[randomInt(pool.length)]
   const n = z.boxesOpened + 1
@@ -391,7 +396,7 @@ export async function hatchColouredEgg(rarity) {
   const animals = await loadCatalog()
   const s = getState()
   if (zooState(s).coloured[rarity] <= 0) return null
-  const pool = animals.filter((a) => a.rarity === rarity)
+  const pool = eggPool(getState(), animals.filter((a) => a.rarity === rarity))
   if (!pool.length) return null
   const animal = pool[randomInt(pool.length)]
   const now = Date.now()
@@ -540,7 +545,7 @@ export function nameAnimal(animalId, name) {
  *  from now. Null if already collected. */
 export async function claimSprintPrize(key, rarity) {
   const animals = await loadCatalog()
-  const pool = animals.filter((a) => a.rarity === rarity)
+  const pool = eggPool(getState(), animals.filter((a) => a.rarity === rarity))
   if (!pool.length || takenPrizes(getState()).has(key)) return null
   const animal = pool[randomInt(pool.length)]
   const now = Date.now()

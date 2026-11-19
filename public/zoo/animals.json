@@ -1121,7 +1121,8 @@
    "x": 0.5,
    "y": 0.572,
    "zoom": 1.0
-  }
+  },
+  "spider": true
  },
  {
   "id": "turritopsis_dohrnii",
@@ -1682,7 +1683,8 @@
   "status": "",
   "image": "zoo/img/pholcus_phalangioides.webp",
   "credit": "Olei · CC BY-SA 3.0",
-  "url": "https://en.wikipedia.org/wiki/Pholcus_phalangioides"
+  "url": "https://en.wikipedia.org/wiki/Pholcus_phalangioides",
+  "spider": true
  },
  {
   "id": "zebrafish",
@@ -4842,7 +4844,8 @@
    "x": 0.5,
    "y": 0.616,
    "zoom": 1.0
-  }
+  },
+  "spider": true
  },
  {
   "id": "salticus_scenicus",
@@ -4868,7 +4871,8 @@
   "status": "",
   "image": "zoo/img/salticus_scenicus.webp",
   "credit": "Kaldari · CC0",
-  "url": "https://en.wikipedia.org/wiki/Zebra_spider"
+  "url": "https://en.wikipedia.org/wiki/Zebra_spider",
+  "spider": true
  },
  {
   "id": "buff_tailed_bumblebee",
@@ -6123,7 +6127,8 @@
   "status": "",
   "image": "zoo/img/diving_bell_spider.webp",
   "credit": "Norbert Schuller Baupi · CC BY-SA 3.0",
-  "url": "https://en.wikipedia.org/wiki/Diving_bell_spider"
+  "url": "https://en.wikipedia.org/wiki/Diving_bell_spider",
+  "spider": true
  },
  {
   "id": "deinopis_spinosa",
@@ -6149,7 +6154,8 @@
   "status": "",
   "image": "zoo/img/deinopis_spinosa.webp",
   "credit": "Jstaf13 · CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/Deinopis_spinosa"
+  "url": "https://en.wikipedia.org/wiki/Deinopis_spinosa",
+  "spider": true
  },
  {
   "id": "marabou_stork",
@@ -6854,7 +6860,8 @@
   "status": "",
   "image": "zoo/img/brazilian_wandering_spider.webp",
   "credit": "Rodrigo Tetsuo Argenton · CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/Phoneutria"
+  "url": "https://en.wikipedia.org/wiki/Phoneutria",
+  "spider": true
  },
  {
   "id": "tarantula_hawk",
@@ -9662,7 +9669,8 @@
   "status": "",
   "image": "zoo/img/argiope_bruennichi.webp",
   "credit": "Charles J. Sharp · CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/Argiope_bruennichi"
+  "url": "https://en.wikipedia.org/wiki/Argiope_bruennichi",
+  "spider": true
  },
  {
   "id": "misumena_vatia",
@@ -9693,7 +9701,8 @@
    "x": 0.5,
    "y": 0.506,
    "zoom": 1.0
-  }
+  },
+  "spider": true
  },
  {
   "id": "carcinus_maenas",
@@ -14255,7 +14264,8 @@
    "x": 0.5,
    "y": 0.461,
    "zoom": 1.0
-  }
+  },
+  "spider": true
  },
  {
   "id": "deathstalker",
@@ -14338,7 +14348,8 @@
    "x": 0.5,
    "y": 0.626,
    "zoom": 1.0
-  }
+  },
+  "spider": true
  },
  {
   "id": "laughing_kookaburra",
@@ -14867,7 +14878,8 @@
    "x": 0.5,
    "y": 0.527,
    "zoom": 1.0
-  }
+  },
+  "spider": true
  },
  {
   "id": "martial_eagle",
@@ -15769,7 +15781,8 @@
   "status": "",
   "image": "zoo/img/gasteracantha_cancriformis.webp",
   "credit": "Sam Fraser-Smith from Brisbane, Australia · CC BY 2.0",
-  "url": "https://en.wikipedia.org/wiki/Gasteracantha_cancriformis"
+  "url": "https://en.wikipedia.org/wiki/Gasteracantha_cancriformis",
+  "spider": true
  },
  {
   "id": "jaguarundi",
@@ -21199,7 +21212,8 @@
   "status": "Critically endangered",
   "image": "zoo/img/poecilotheria_metallica.webp",
   "credit": "Poecilotheria_metallica.JPG: Morkelsker derivative work: B kimmel (talk) · Public domain",
-  "url": "https://en.wikipedia.org/wiki/Poecilotheria_metallica"
+  "url": "https://en.wikipedia.org/wiki/Poecilotheria_metallica",
+  "spider": true
  },
  {
   "id": "wunderpus",

@@ -88,3 +88,11 @@ test('a holo and a plain copy are not counted together', () => {
   assert.equal(sameFinishCount([holo, plain], false), 1)
   assert.equal(sameFinishCount([holo, plain, { id: 'c' }], false), 2)
 })
+
+test('arachnophobia keeps spiders out of every egg pool', async () => {
+  const { eggPool } = await import('../src/model/zoo.js')
+  const pool = [{ id: 'fox' }, { id: 'goliath_birdeater', spider: true }, { id: 'owl' }]
+  assert.deepEqual(eggPool({ zoo: { arachnophobia: true } }, pool).map((a) => a.id), ['fox', 'owl'])
+  assert.equal(eggPool({ zoo: { arachnophobia: false } }, pool).length, 3)
+  assert.equal(eggPool({ zoo: {} }, pool).length, 3) // a state from before the setting
+})

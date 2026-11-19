@@ -54,7 +54,7 @@ export function collect(s) {
   out.prefs.set('race', JSON.stringify(pick(s.race, RACE_KEYS)))
   out.prefs.set('friends', JSON.stringify(pick(s.friends, FRIEND_KEYS)))
   // eggsTakenBack: early eggs taken back (zoo.js takeBackEarlyEggs) - so no other device does it again.
-  out.prefs.set('zoo', JSON.stringify({ base: s.zoo.base, trophyId: s.zoo.trophyId, trophyIds: s.zoo.trophyIds || [], ...(s.zoo.eggsTakenBack ? { eggsTakenBack: true } : {}) }))
+  out.prefs.set('zoo', JSON.stringify({ base: s.zoo.base, trophyId: s.zoo.trophyId, trophyIds: s.zoo.trophyIds || [], ...(s.zoo.eggsTakenBack ? { eggsTakenBack: true } : {}), arachnophobia: !!s.zoo.arachnophobia }))
   out.prefs.set('paused', JSON.stringify(s.paused || {}))
   return out
 }
@@ -122,7 +122,9 @@ export function applyRecords(s, records) {
           // The whole trophy case; a record from an older version only has its first (trophyId).
           // '' is an empty slot - slots keep their places.
           const trophyIds = Array.isArray(r.data.trophyIds) ? r.data.trophyIds.map((x) => (typeof x === 'string' ? x : '')) : (r.data.trophyId ? [r.data.trophyId] : [])
-          s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyIds, trophyId: trophyIds.find(Boolean) || null, eggsTakenBack: !!(r.data.eggsTakenBack || s.zoo.eggsTakenBack) }
+          s.zoo = { ...s.zoo, base: r.data.base ?? s.zoo.base, trophyIds, trophyId: trophyIds.find(Boolean) || null, eggsTakenBack: !!(r.data.eggsTakenBack || s.zoo.eggsTakenBack),
+            // Arachnophobia (the phone's too): only when the record has it - an older one leaves this choice alone.
+            arachnophobia: 'arachnophobia' in r.data ? !!r.data.arachnophobia : !!s.zoo.arachnophobia }
         }
         if (r.id === 'paused') s.paused = r.data || {}
         if (r.id.startsWith(NAMETAG_PREFIX) && (r.data.kind === 'earned' || r.data.kind === 'spent')) {
