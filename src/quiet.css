@@ -76,8 +76,15 @@
 :root[data-ui='quiet'] .list:has(> .entry):not(.normal-look *) { padding: 0; }
 /* The Zoo's eggs keep their outline on the panel (asked 2026-11-16): the egg's, and each rarity's colour. */
 /* The egg card keeps its outline in the egg's colours (primary to tertiary, the phone's lootBoxLook), on the panel's fill. */
-:root[data-ui='quiet'] .egg-card.egg-card.egg-card:not(.normal-look *):not(.tile-animal) { border: 1px solid transparent; border-radius: var(--r-large);
-  background: linear-gradient(var(--quiet-panel), var(--quiet-panel)) padding-box, linear-gradient(135deg, var(--primary), var(--tertiary)) border-box !important; }
+/* The outline is a ring of its own (masked to the edge), not a gradient behind the card: under a see-through fill
+   (Glass) that gradient showed through the whole card - far too strong (2026-11-19). */
+:root[data-ui='quiet'] .egg-card.egg-card.egg-card:not(.normal-look *):not(.tile-animal) { position: relative; border: 1px solid transparent; border-radius: var(--r-large);
+  background: var(--quiet-panel) !important; }
+:root[data-ui='quiet'] .egg-card.egg-card.egg-card:not(.normal-look *):not(.tile-animal)::before {
+  content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(135deg, var(--primary), var(--tertiary));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
 :root[data-ui='quiet'] .egg-card.compact .egg-stage { width: 40px; height: 40px; }
 :root[data-ui='quiet'] .egg-card.compact .egg-stage > div { transform: scale(.75); }
 :root[data-ui='quiet'] .egg-card.compact .bar { height: 3px !important; }
