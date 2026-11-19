@@ -327,12 +327,7 @@
 :root[data-ui='quiet'] .share-track { height: 3px; }
 
 /* An animal's page: the card keeps its frame, but nothing nests inside it. */
-:root[data-ui='quiet'] .acard-stats { gap: 0; }
-:root[data-ui='quiet'] .acard-stats > div { background: transparent !important; border-radius: 0; padding: 4px 10px; }
-:root[data-ui='quiet'] .acard-stats > div:first-child { padding-left: 0; }
-:root[data-ui='quiet'] .acard-stats > div + div { border-left: 1px solid var(--rule); }
 :root[data-ui='quiet'] .acard-cert { background: transparent !important; border: 0 !important; border-top: 1px solid var(--rule) !important; border-bottom: 1px solid var(--rule) !important; border-radius: 0; padding-left: 0; padding-right: 0; }
-:root[data-ui='quiet'] .acard-status { background: transparent !important; border: 0; padding: 0; }
 
 /* Pop-ups and menus: smaller corners, a thin edge, no heavy shadow. */
 :root[data-ui='quiet'] .dialog:not(.normal-look) { border-radius: 16px; border: 1px solid var(--rule); }

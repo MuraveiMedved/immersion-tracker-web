@@ -784,19 +784,22 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
             </div>
             {animal.scientific && <div class="acard-sci">{animal.scientific}</div>}
             {animal.blurb && <div class="acard-blurb">{animal.blurb}</div>}
+            {/* A fine rule in the rarity's colours, then the fact as a callout and the particulars as a spec sheet
+                (2026-11-18, as the phone's AnimalCard). */}
+            <div class="acard-rule" />
+            {animal.fact && <div class="acard-fact"><span style={{ color: p }}>✦</span><span>{animal.fact}</span></div>}
             {animal.stats?.length > 0 && (
-              <div class="acard-stats">
-                {animal.stats.slice(0, 3).map((st) => <div key={st.label} style={{ background: hexA(p, 0.12) }}><div class="k">{st.label}</div><div class="v">{st.value}</div></div>)}
+              <div class="acard-specs">
+                {animal.stats.slice(0, 3).map((st) => <div key={st.label}><i /><span class="k">{st.label}</span><span class="v">{st.value}</span></div>)}
               </div>
             )}
-            {animal.fact && <div class="acard-fact"><span style={{ color: p }}>✦</span><span>{animal.fact}</span></div>}
             {hasCert && (
               <div class="acard-cert" style={{ background: `linear-gradient(${hexA(p, 0.08)}, ${hexA(p, 0.08)}) padding-box, linear-gradient(var(--c-high), var(--c-high)) padding-box, ${rarityBrush(animal.rarity)} border-box` }}>
                 <div class="row"><span class="k grow">Birth certificate</span>{cert.hourMark != null && <b style={{ color: p }}>Hour {cert.hourMark.toLocaleString()}</b>}</div>
                 {cert.languageName && <span class="lang" style={{ background: cert.languageColor || p }}>Born to {cert.languageName}</span>}
               </div>
             )}
-            {animal.status && <span class="acard-status" style={{ color: statusColor(animal.status), background: hexA(statusColor(animal.status), 0.14) }}>{animal.status}</span>}
+            {animal.status && <ConservationScale status={animal.status} />}
             <div class="acard-credit" style={mythic ? { textAlign: 'center', padding: '12px 30px 0' } : {}}>
               {animal.credit && `Photo: ${animal.credit}. `}
               {animal.url ? <a href={animal.url} target="_blank" rel="noopener">Wikipedia</a> : 'Wikipedia'}
@@ -1285,6 +1288,37 @@ function SwipeAway({ enabled, onDismiss, children }) {
       onPointerCancel={() => { drag.current = null; set(0, true) }}
     >
       {children}
+    </div>
+  )
+}
+
+/** The IUCN steps, least to most at risk - where ConservationScale lights one (the phone's IUCN_STEPS). */
+const IUCN_STEPS = ['LC', 'NT', 'VU', 'EN', 'CR', 'EW', 'EX']
+function iucnStep(status) {
+  const t = status.toLowerCase()
+  if (t.includes('extinct in the wild')) return 5
+  if (t.includes('extinct')) return 6
+  if (t.includes('critically')) return 4
+  if (t.includes('endangered')) return 3
+  if (t.includes('vulnerable')) return 2
+  if (t.includes('near threatened')) return 1
+  if (t.includes('least concern')) return 0
+  return null
+}
+
+/** An animal's conservation status: the words in its colour, and the seven IUCN steps as short bars with its own lit
+ *  (and its code bold) - as the phone's ConservationScale. Off the scale (Data deficient), just the words. */
+function ConservationScale({ status }) {
+  const color = statusColor(status)
+  const step = iucnStep(status)
+  return (
+    <div class="acard-iucn">
+      <div class="row"><span class="k grow">Conservation</span><b style={{ color }}>{status}</b></div>
+      {step != null && (
+        <div class="steps">
+          {IUCN_STEPS.map((code, i) => <div key={code} class={i === step ? 'on' : ''} style={i === step ? { '--c': color } : undefined}><i /><span>{code}</span></div>)}
+        </div>
+      )}
     </div>
   )
 }

@@ -730,15 +730,29 @@ textarea.input { resize: vertical; }
 .acard-name { font-size: 22px; line-height: 28px; font-weight: 700; }
 .acard-sci { font-size: 14px; font-style: italic; color: var(--on-surface-variant); }
 .acard-blurb { font-size: 12px; color: var(--on-surface-variant); margin-top: 2px; }
-.acard-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
-.acard-stats > div { border-radius: 12px; padding: 8px; min-width: 0; }
-.acard-stats .k { font-size: 9px; letter-spacing: .6px; text-transform: uppercase; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.acard-stats .v { font-size: 14px; font-weight: 700; }
-.acard-fact { display: flex; gap: 8px; margin-top: 14px; font-size: 14px; }
-.acard-cert { margin-top: 14px; border-radius: 12px; border: 1px solid transparent; padding: 10px 12px; }
+.acard-rule { height: 1px; margin-top: 12px; background: linear-gradient(90deg, color-mix(in srgb, var(--p) 70%, transparent), color-mix(in srgb, var(--s) 35%, transparent), transparent); }
+.acard-fact { display: flex; gap: 8px; margin-top: 12px; font-size: 14px; padding: 10px 12px 10px 10px; border-radius: 10px; position: relative; overflow: hidden;
+  background: color-mix(in srgb, var(--p) 9%, transparent); }
+.acard-fact::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(var(--p), var(--s)); }
+.acard-fact > span:first-child { padding-left: 3px; }
+.acard-specs { margin-top: 12px; border-radius: 10px; background: color-mix(in srgb, var(--on-surface) 4%, transparent); border: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent); }
+.acard-specs > div { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 12px; }
+.acard-specs > div + div { border-top: 1px solid color-mix(in srgb, var(--on-surface) 7%, transparent); margin: 0 12px; padding-left: 0; padding-right: 0; }
+.acard-specs i { width: 5px; height: 5px; border-radius: 50%; background: var(--p); flex: none; }
+.acard-specs .k { font-size: 12px; font-weight: 500; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 4px; }
+.acard-specs .v { flex: 1; text-align: right; font-size: 14px; font-weight: 600; }
+.acard-iucn { margin-top: 14px; }
+.acard-iucn .k { font-size: 12px; color: var(--on-surface-variant); }
+.acard-iucn b { font-size: 14px; font-weight: 600; }
+.acard-iucn .steps { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-top: 6px; }
+.acard-iucn .steps > div { display: flex; flex-direction: column; align-items: center; }
+.acard-iucn .steps i { display: block; width: 100%; height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface) 10%, transparent); }
+.acard-iucn .steps span { font-size: 9px; margin-top: 3px; color: var(--on-surface-variant); opacity: .55; }
+.acard-iucn .steps .on i { height: 6px; background: var(--c); }
+.acard-iucn .steps .on span { color: var(--c); opacity: 1; font-weight: 700; }
+.acard-cert { margin-top: 12px; border-radius: 12px; border: 1px solid transparent; padding: 10px 12px; }
 .acard-cert .k { font-size: 9px; letter-spacing: .8px; text-transform: uppercase; color: var(--on-surface-variant); }
 .acard-cert .lang { display: inline-block; margin-top: 6px; color: #fff; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
-.acard-status { display: inline-block; margin-top: 12px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
 .acard-credit { margin-top: 12px; font-size: 11px; color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent); }
 .acard-credit a { color: inherit; }
 /* A foil's finish - see FoilSheen in Zoo.jsx (a port of the phone's): the photo a little punchier,
