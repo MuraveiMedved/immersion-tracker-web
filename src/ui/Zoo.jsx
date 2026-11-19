@@ -782,7 +782,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
             {animal.fact && <div class="acard-fact"><span style={{ color: p }}>✦</span><span>{animal.fact}</span></div>}
             {animal.stats?.length > 0 && (
               <div class="acard-specs">
-                {animal.stats.slice(0, 3).map((st) => <div key={st.label}><i /><span class="k">{st.label}</span><span class="v">{st.value}</span></div>)}
+                {animal.stats.slice(0, 3).map((st) => <div key={st.label}><span class="k">{st.label}</span><span class="v">{st.value}</span></div>)}
               </div>
             )}
             {hasCert && (
@@ -1253,10 +1253,10 @@ function ConservationScale({ status }) {
   const step = iucnStep(status)
   return (
     <div class="acard-iucn">
-      <div class="row"><span class="k grow">Conservation</span><b style={{ color }}>{status}</b></div>
+      <b style={{ color }}>{status}</b>
       {step != null && (
-        <div class="steps">
-          {IUCN_STEPS.map((code, i) => <div key={code} class={i === step ? 'on' : ''} style={i === step ? { '--c': color } : undefined}><i /><span>{code}</span></div>)}
+        <div class="steps" style={{ '--c': color }} aria-label={`${IUCN_STEPS[step]}, ${step + 1} of ${IUCN_STEPS.length}`}>
+          {IUCN_STEPS.map((code, i) => <i key={code} class={i === step ? 'on' : ''} />)}
         </div>
       )}
     </div>
