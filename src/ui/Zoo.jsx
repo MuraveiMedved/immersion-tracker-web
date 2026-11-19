@@ -847,16 +847,6 @@ export function GlowPill({ rarity, onClick, children, disabled, solid }) {
   )
 }
 
-/** A few faint rounded bars where the full card has its text - each card's own lengths (from its
- *  id, like the phone's CardTextLines), so a row of them doesn't look stamped out. */
-function CardTextLines({ seed }) {
-  let h = 0
-  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) | 0
-  const rnd = () => { h = (h * 1103515245 + 12345) | 0; return ((h >>> 16) & 0x7fff) / 0x7fff }
-  const widths = [0.82 + rnd() * 0.18, 0.7 + rnd() * 0.22, 0.35 + rnd() * 0.3]
-  return <div class="card-lines">{widths.map((w, i) => <i key={i} style={{ width: `${w * 100}%` }} />)}</div>
-}
-
 /** Only animals held, rarest first - like the phone; everything ever found is in Discovered, behind
  *  the book button. A long-press (or right-click) on one starts a trade-up of its tier, as does a
  *  tier's Trade up above; "Pick spares" fills the picks from duplicates. */
@@ -944,8 +934,7 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
                 onContextMenu={(e) => { e.preventDefault(); if (!trade) startTrade(a, c) }}
                 onPointerDown={() => { if (!trade) timer = setTimeout(() => startTrade(a, c), 500) }}
                 onPointerUp={() => clearTimeout(timer)} onPointerLeave={() => clearTimeout(timer)}>
-                {/* Shaped like the full card: its 4:3 photo, cropped by the same frame, then the name
-                    and faint lines standing in for its text. */}
+                {/* Shaped like the full card: its 4:3 photo, cropped by the same frame, then the name. */}
                 <div class="tile-photo">
                   <AnimalPhoto animal={a} />
                   {foil && <FoilSheen seed={a.id} />}
@@ -955,7 +944,6 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
                 {a.id === trophyId && first && <span class="count pick">🏆</span>}
                 {/* Up to four lines for a long name (its row grows to match) before it gets smaller. */}
                 <Fit class="cap" lines={4}>{names[a.id] ? `“${names[a.id]}”` : a.name}</Fit>
-                <CardTextLines seed={a.id} />
               </div>
             )
           })}

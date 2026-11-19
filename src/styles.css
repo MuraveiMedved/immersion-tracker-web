@@ -134,6 +134,8 @@ main.page {
   background: var(--block); border: 1px solid var(--block-line); border-radius: 20px;
   padding: 6px 16px 12px; margin: 8px 0;
 }
+/* Settings' blocks a clear step off the page (the phone's settingsCardFill, 2026-11-19). */
+.settings-page .block { background: color-mix(in srgb, var(--surface-variant) 85%, var(--bg)); border-color: var(--outline-variant); }
 .block-title { min-height: 44px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--primary); letter-spacing: .1px; }
 .block-title > span:first-child { flex: 1; }
 /* Settings' collapsible sections: the phone's card look (SettingsCard.kt, the "What's new" card) -
@@ -482,12 +484,8 @@ textarea.input { resize: vertical; }
 .tile-animal.card { aspect-ratio: auto; display: flex; flex-direction: column; background: var(--c-high, var(--surface-variant)); }
 .tile-animal.card .tile-photo { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--surface-variant); }
 .tile-animal.card .photo-rule { height: 1.5px; }
-.tile-animal.card .cap { position: static; background: none; color: var(--on-surface); padding: 5px 7px 4px; text-align: left; min-height: calc(2 * 1.2 * 10px + 9px); overflow: hidden; } /* px, not em: a long name's shrunk font mustn't make its tile shorter */
-.zoo-grid.roomy .tile-animal.card .cap { padding: 6px 7px 4px; min-height: calc(2 * 1.2 * 12px + 10px); }
-.card-lines { display: flex; flex-direction: column; gap: 4px; padding: 0 7px 8px; margin-top: auto; } /* at the card's foot when its row is taller */
-.card-lines i { display: block; height: 3px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface-variant) 24%, transparent); }
-.zoo-grid.roomy .card-lines { gap: 5px; padding-bottom: 10px; }
-.zoo-grid.roomy .card-lines i { height: 4px; }
+.tile-animal.card .cap { position: static; background: none; color: var(--on-surface); padding: 5px 7px 8px; text-align: left; min-height: calc(2 * 1.2 * 10px + 13px); overflow: hidden; } /* px, not em: a long name's shrunk font mustn't make its tile shorter */
+.zoo-grid.roomy .tile-animal.card .cap { padding: 6px 7px 8px; min-height: calc(2 * 1.2 * 12px + 14px); }
 .tile-animal.card:has(> .tile-photo > .foil-sheen) img { filter: saturate(1.22) contrast(1.1); }
 .egg-card { background: var(--block); border: 1px solid var(--block-line); border-radius: 26px; padding: 20px; margin: 8px 0; }
 .egg-stage { position: relative; width: 140px; height: 140px; margin: 0 auto; display: grid; place-items: center; cursor: pointer; }

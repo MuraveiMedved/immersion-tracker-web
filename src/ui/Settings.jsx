@@ -46,7 +46,7 @@ export function Settings({ params, nav }) {
   if (view === 'account') return <SubScreen title="Your devices" onBack={() => setView(null)}><AccountSection /></SubScreen>
 
   return (
-    <>
+    <div class="settings-page">
       <h1 class="page-title">Settings</h1>
 
       {/* Most-reached-for first, set-once things last - the phone's order. */}
@@ -129,7 +129,7 @@ export function Settings({ params, nav }) {
       {phone && <PhoneImportDialog data={phone} onClose={() => setPhone(null)} />}
       {removing && <Confirm title={`Remove ${removing.n} imported sessions?`} text={`Every session imported from ${removing.name} is deleted, here and on your other devices. Your CSV files aren't touched - you can import them again.`} confirmLabel="Remove" danger onConfirm={() => { removeImported(removing.source); toast(`${removing.n} sessions removed`) }} onClose={() => setRemoving(null)} />}
       {restore && <Confirm title="Restore this backup?" text="Everything in this browser will be replaced with the backup." confirmLabel="Restore" danger onConfirm={() => { replaceState(restore); toast('Backup restored') }} onClose={() => setRestore(null)} />}
-    </>
+    </div>
   )
 }
 
