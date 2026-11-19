@@ -1144,3 +1144,7 @@ textarea.input { resize: vertical; }
   background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); transition: transform var(--dur-fast, .15s); }
 .ed-step:active { transform: scale(.92); }
 .ed-step:disabled { opacity: .4; cursor: default; }
+
+/* The toast's ×: small, in the toast's own text colour. */
+.toast .toast-close { width: 36px; height: 36px; min-width: 36px; margin: -6px -8px -6px 0; color: inherit; opacity: .75; }
+.toast .toast-close:hover { opacity: 1; }

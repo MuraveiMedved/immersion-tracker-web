@@ -169,6 +169,8 @@ export function ToastHost() {
     <div class="toast">
       <span>{t.message}</span>
       {t.action && <button class="btn text small" onClick={() => { t.action.run(); setT(null) }}>{t.action.label}</button>}
+      {/* An × to send it away now (2026-11-18, as the phone's message bar). */}
+      <button class="icon-btn toast-close" title="Dismiss" aria-label="Dismiss" onClick={() => setT(null)}><Icon name="close" size={18} /></button>
       <button class="toast-close" title="Dismiss" aria-label="Dismiss" onClick={() => setT(null)}><Icon name="close" size={18} /></button>
     </div>
   )
