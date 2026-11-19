@@ -475,14 +475,15 @@ export function MomentumTierTable({ current, topTierFirst = false, showHolo = tr
 
 /** Rows that come into view this soon after a list's page opens are the ones already on screen: they just show. */
 const LIST_OPENING_MS = 350
-const RISE_PX = 18
+const RISE_PX = 24
 
-/** The phone's spring (damping 0.62, StiffnessMedium) sampled into keyframes: 0 -> 1 with a small overshoot. */
+/** The phone's spring (damping 0.68, stiffness 180 - slow enough to see, 2026-11-19) sampled into keyframes: 0 -> 1
+ *  with a small overshoot, settled in about half a second. */
 const RISE_FRAMES = (() => {
-  const k = 1500, zeta = 0.62, w = Math.sqrt(k), dt = 1 / 120
+  const k = 180, zeta = 0.68, w = Math.sqrt(k), dt = 1 / 120
   let x = 0, v = 0, t = 0
   const pts = [0]
-  while (t < 0.3) { // settled within ~150ms; the rest is a still tail
+  while (t < 0.7) { // settled within ~550ms; the rest is a still tail
     // Semi-implicit Euler on x'' = -k (x - 1) - 2 zeta w x'
     v += (-k * (x - 1) - 2 * zeta * w * v) * dt
     x += v * dt
@@ -496,7 +497,7 @@ const RISE_FRAMES = (() => {
   return {
     duration: Math.round(t * 1000),
     frames: picked.map((p) => ({
-      opacity: Math.min(1, Math.max(0, p * 2.5)),
+      opacity: Math.min(1, Math.max(0, p * 1.8)),
       transform: `translateY(${((1 - p) * RISE_PX).toFixed(2)}px) scale(${(0.97 + 0.03 * p).toFixed(4)})`,
     })),
   }
@@ -512,7 +513,7 @@ export function useListEntrance(key = '') {
 
 /** A row floating up into place as it scrolls into view - only going down, for a row further down than any
  *  shown so far, never the rows already there as the page opens or ones coming back into view going up.
- *  Quick, no stagger, off under reduced motion. Returns a ref for the row. */
+ *  Visible but brief (about half a second), no stagger, off under reduced motion. Returns a ref for the row. */
 export function useRiseIn(entrance) {
   const ref = useRef(null)
   useEffect(() => {
