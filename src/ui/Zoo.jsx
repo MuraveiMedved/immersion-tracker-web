@@ -100,12 +100,9 @@ export function Zoo({ nav }) {
   const heldOfTier = (r) => Object.entries(z.copies).filter(([id]) => rarityOfId(id) === r).reduce((t, [, l]) => t + l.length, 0)
   const startTradeOf = (r) => { setTrade({ from: r, picks: [] }); setTimeout(() => document.getElementById('zoo-collection')?.scrollIntoView({ behavior: 'smooth' }), 0) }
   // Like the phone: a tier shows only once there's a coloured egg to hatch or enough to trade up.
-  // A trade-only row (no egg of that colour to hatch) can be swiped away for good - kept on this device
-  // (settings.dismissedTradeRows isn't one of the synced settings), like the phone's.
-  const dismissedTrades = s.settings.dismissedTradeRows || []
-  const setTradeDismissed = (r, on) => setSetting('dismissedTradeRows', on ? [...new Set([...dismissedTrades, r])] : dismissedTrades.filter((x) => x !== r))
+  // Only tiers with an egg to hatch (2026-11-18): trading up has its own button by the collection's heading.
   const tierRows = RARITIES.map((r) => ({ r, eggs: z.coloured[r], canTrade: !!nextRarity(r) && heldOfTier(r) >= TRADE_UP_COUNT }))
-    .filter((t) => t.eggs > 0 || (t.canTrade && !dismissedTrades.includes(t.r)))
+    .filter((t) => t.eggs > 0)
   const ready = z.boxesReady > 0
 
   return (
@@ -136,11 +133,7 @@ export function Zoo({ nav }) {
       {/* A tier with an egg, or enough animals to trade, gets a row - Trade up is offered right here
           (a long-press on an animal in the collection also starts one). */}
       {tierRows.map(({ r, eggs, canTrade }) => (
-        <SwipeAway key={r} enabled={eggs === 0} onDismiss={() => {
-          setTradeDismissed(r, true)
-          toast(`${RARITY_LABEL[r]} trade reminder hidden`, { label: 'Undo', run: () => setTradeDismissed(r, false) })
-        }}>
-        <div class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
+        <div key={r} class="crate-row" style={{ borderColor: RARITY_COLOR[r] + '99' }}>
           {/* Faded while there's no egg of this colour - only a trade waiting. */}
           <div class={eggs > 0 ? 'wobble' : ''}><Egg rarity={r} width={44} glow={eggs > 0 ? 12 : 0} style={eggs > 0 ? undefined : { opacity: 0.45 }} /></div>
           <div class="grow">
@@ -151,7 +144,6 @@ export function Zoo({ nav }) {
           {/* With nothing to hatch, Trade up is the row's one (main) button. */}
           {canTrade && <button class={`btn small ${eggs > 0 ? 'tonal' : ''}`} onClick={() => startTradeOf(r)}>Trade up</button>}
         </div>
-        </SwipeAway>
       ))}
       {/* The trophy case, at the top of the collection - the eggs stay above. */}
       {Object.keys(z.copies).some((id) => z.copies[id]?.length) && <div style="margin-top:12px"><TrophyCase catalog={catalog} copies={z.copies} /></div>}
@@ -922,6 +914,8 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
     <>
       <div class="row collection-head">
         <div class="section-header grow">Collection ({held})</div>
+        {/* Trading up, always in view (2026-11-18, as the phone's TradeUpButton). */}
+        {found.size > 0 && <TradeUpMenu catalog={catalog} copies={copies} onPick={(r) => setTrade({ from: r, picks: [] })} />}
         {/* Everything ever found, held or not. */}
         {found.size > 0 && (
           <button class="col-pick discovered-btn" title="Discovered" aria-label="Discovered" onClick={() => setDiscovered(true)}>
@@ -1237,60 +1231,6 @@ function NametagDemo({ animal }) {
   )
 }
 
-/** A row that can be dragged off either side ([enabled]) to dismiss it: it follows the finger, fading as it
- *  goes, and past a third of its width slides out and calls [onDismiss]; short of that it springs back. A drag
- *  doesn't also click a button in it. Vertical scrolling still works (touch-action: pan-y). */
-function SwipeAway({ enabled, onDismiss, children }) {
-  const ref = useRef(null)
-  const drag = useRef(null)
-  if (!enabled) return children
-  const set = (dx, animate) => {
-    const el = ref.current
-    if (!el) return
-    el.style.transition = animate ? 'transform var(--dur-standard, .25s) var(--ease-enter, ease), opacity var(--dur-standard, .25s)' : 'none'
-    el.style.transform = dx ? `translateX(${dx}px)` : ''
-    el.style.opacity = dx ? String(Math.max(0, 1 - Math.abs(dx) / el.offsetWidth * 1.4)) : ''
-  }
-  return (
-    <div
-      ref={ref}
-      style="touch-action:pan-y"
-      onPointerDown={(e) => { drag.current = { x: e.clientX, y: e.clientY, dx: 0, moving: false, id: e.pointerId } }}
-      onPointerMove={(e) => {
-        const d = drag.current
-        if (!d || d.id !== e.pointerId) return
-        const dx = e.clientX - d.x
-        if (!d.moving) {
-          if (Math.abs(e.clientY - d.y) > 10) { drag.current = null; return }
-          if (Math.abs(dx) < 10) return
-          d.moving = true
-          ref.current?.setPointerCapture?.(e.pointerId)
-        }
-        d.dx = dx
-        set(dx, false)
-      }}
-      onPointerUp={() => {
-        const d = drag.current
-        drag.current = null
-        if (!d?.moving) return
-        const w = ref.current?.offsetWidth || 1
-        if (Math.abs(d.dx) > w / 3) {
-          set(Math.sign(d.dx) * w * 1.1, true)
-          setTimeout(onDismiss, 220)
-        } else {
-          set(0, true)
-        }
-        // The drag ends with a click on whatever's under it - swallow that one.
-        const stop = (ev) => { ev.stopPropagation(); ev.preventDefault() }
-        ref.current?.addEventListener('click', stop, { capture: true, once: true })
-        setTimeout(() => ref.current?.removeEventListener('click', stop, { capture: true }), 50)
-      }}
-      onPointerCancel={() => { drag.current = null; set(0, true) }}
-    >
-      {children}
-    </div>
-  )
-}
 
 /** The IUCN steps, least to most at risk - where ConservationScale lights one (the phone's IUCN_STEPS). */
 const IUCN_STEPS = ['LC', 'NT', 'VU', 'EN', 'CR', 'EW', 'EX']
@@ -1317,6 +1257,41 @@ function ConservationScale({ status }) {
       {step != null && (
         <div class="steps">
           {IUCN_STEPS.map((code, i) => <div key={code} class={i === step ? 'on' : ''} style={i === step ? { '--c': color } : undefined}><i /><span>{code}</span></div>)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Trading up's own way in, by the collection's heading: a pill opening a small menu of tiers ("Common to Rare,
+ *  12 held"), the options floating in one after another; a tier without five yet is faint, saying how many more. */
+function TradeUpMenu({ catalog, copies, onPick }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (e) => { if (!ref.current?.contains(e.target)) setOpen(false) }
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [open])
+  const held = (r) => catalog.filter((a) => a.rarity === r).reduce((n, a) => n + (copies[a.id]?.length || 0), 0)
+  const tiers = RARITIES.filter((r) => nextRarity(r))
+  const anyReady = tiers.some((r) => held(r) >= TRADE_UP_COUNT)
+  return (
+    <div class="tu-wrap" ref={ref}>
+      <button class={`col-pick tu-btn ${anyReady ? 'ready' : ''}`} onClick={() => setOpen(!open)} aria-expanded={open}><Icon name="swap_vert" size={16} />Trade up</button>
+      {open && (
+        <div class="tu-menu" role="menu">
+          {tiers.map((r, i) => {
+            const n = held(r)
+            const ready = n >= TRADE_UP_COUNT
+            return (
+              <button key={r} role="menuitem" class="tu-item" disabled={!ready} style={{ animationDelay: `${i * 45}ms` }} onClick={() => { setOpen(false); onPick(r) }}>
+                <i style={{ backgroundImage: rarityBrush(r) }} />
+                <span><b>{RARITY_LABEL[r]} to {RARITY_LABEL[nextRarity(r)]}</b><small>{ready ? `${n} held, 5 make an egg` : `${TRADE_UP_COUNT - n} more to trade`}</small></span>
+              </button>
+            )
+          })}
         </div>
       )}
     </div>
