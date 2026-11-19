@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow, setSetting } from '../store.js'
 import {
   loadCatalog, catalogNow, zooState, ensureBase, recordEarnedEggs, backfillHoloMomentum, raiseCertificateHours, hatchLootEgg, hatchColouredEgg, tradeUp, setTrophy, everFound, sameFinishCount, setTrophySlot, removeFromTrophyCase, TROPHY_CASE_SIZE,
@@ -782,7 +782,7 @@ export function AnimalCardView({ animal, cert, timesFound = 1, onDisplay = false
             {animal.fact && <div class="acard-fact"><span style={{ color: p }}>✦</span><span>{animal.fact}</span></div>}
             {animal.stats?.length > 0 && (
               <div class="acard-specs">
-                {animal.stats.slice(0, 3).map((st) => <div key={st.label}><span class="k">{st.label}</span><span class="v">{st.value}</span></div>)}
+                {animal.stats.slice(0, 3).map((st) => <div key={st.label}><Fit tag="span" class="k" lines={1}>{st.label}</Fit><Fit tag="span" class="v" lines={2}>{st.value}</Fit></div>)}
               </div>
             )}
             {hasCert && (
@@ -953,7 +953,7 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
                 </div>
                 {picked && <span class="count pick">✓</span>}
                 {a.id === trophyId && first && <span class="count pick">🏆</span>}
-                <div class="cap">{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
+                <Fit class="cap" lines={2}>{names[a.id] ? `“${names[a.id]}”` : a.name}</Fit>
                 <CardTextLines seed={a.id} />
               </div>
             )
@@ -1054,7 +1054,7 @@ function TrophySlots({ catalog, onFilled, onEmpty }) {
         ? <div key={`${i}${a.id}`} class="tile-animal" role="button" style={{ borderColor: RARITY_COLOR[a.rarity] }} onClick={() => onFilled(i, a)}>
             <AnimalPhoto animal={a} />
             {i === profileSlot && <span class="count pick">🏆</span>}
-            <div class="cap">{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
+            <Fit class="cap" lines={2}>{names[a.id] ? `“${names[a.id]}”` : a.name}</Fit>
           </div>
         : <button key={`empty${i}`} class="trophy-empty" title="Add to trophy case" onClick={() => onEmpty(i)}><Icon name="add" /></button>))}
     </div>
@@ -1094,7 +1094,7 @@ function TrophyCase({ catalog, copies }) {
             {choices.map((a) => (
               <div key={a.id} class="tile-animal" role="button" style={{ borderColor: RARITY_COLOR[a.rarity] }} onClick={() => { setTrophySlot(pickingSlot, a.id); setPickingSlot(null) }}>
                 <AnimalPhoto animal={a} />
-                <div class="cap">{names[a.id] ? `“${names[a.id]}”` : a.name}</div>
+                <Fit class="cap" lines={2}>{names[a.id] ? `“${names[a.id]}”` : a.name}</Fit>
               </div>
             ))}
           </div>
@@ -1296,4 +1296,30 @@ function TradeUpMenu({ catalog, copies, onPick }) {
       )}
     </div>
   )
+}
+
+/** Text that shows whole on a card (the phone's FitText): no "…" and no word split over two lines - if it doesn't fit
+ *  [lines] at its size, or a word is wider than the space, the size steps down a little at a time (to 8px). */
+function Fit({ tag = 'div', lines = 1, class: cls, children }) {
+  const ref = useRef(null)
+  const text = typeof children === 'string' ? children : String(children ?? '')
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const fit = () => {
+      el.style.fontSize = ''
+      const cs = getComputedStyle(el)
+      let fs = parseFloat(cs.fontSize)
+      const lh = parseFloat(cs.lineHeight) / fs || 1.2
+      const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0)
+      const tooBig = () => el.scrollHeight - pad > Math.ceil(lines * fs * lh) + 1 || el.scrollWidth > el.clientWidth + 1
+      while (fs > 8 && tooBig()) { fs -= 0.5; el.style.fontSize = `${fs}px` }
+    }
+    fit()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null
+    ro?.observe(el)
+    return () => ro?.disconnect()
+  }, [text, lines])
+  const Tag = tag
+  return <Tag ref={ref} class={`fit ${cls || ''}`}>{children}</Tag>
 }
