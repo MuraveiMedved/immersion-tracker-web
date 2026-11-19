@@ -953,7 +953,8 @@ function Collection({ catalog, copies, found, trophyId, trade, setTrade }) {
                 </div>
                 {picked && <span class="count pick">✓</span>}
                 {a.id === trophyId && first && <span class="count pick">🏆</span>}
-                <Fit class="cap" lines={2}>{names[a.id] ? `“${names[a.id]}”` : a.name}</Fit>
+                {/* Up to four lines for a long name (its row grows to match) before it gets smaller. */}
+                <Fit class="cap" lines={4}>{names[a.id] ? `“${names[a.id]}”` : a.name}</Fit>
                 <CardTextLines seed={a.id} />
               </div>
             )
