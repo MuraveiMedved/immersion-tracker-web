@@ -10816,6 +10816,203 @@
   }
  },
  {
+  "id": "maine_coon",
+  "rarity": "green",
+  "name": "Maine Coon",
+  "scientific": "Felis catus",
+  "blurb": "Breed of cat",
+  "fact": "One of the biggest domestic cats - one held the record for longest cat at 123 cm.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~1.2 m"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~11 kg"
+   },
+   {
+    "label": "Toes",
+    "value": "Often extra"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/maine_coon.webp",
+  "credit": "CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Maine_Coon",
+  "frame": {
+   "x": 0.5,
+   "y": 0.312,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "vespa_mandarinia",
+  "rarity": "green",
+  "name": "Northern giant hornet",
+  "scientific": "Vespa mandarinia",
+  "blurb": "Predatory hornet, largest in the world",
+  "fact": "A small group can wipe out an entire honey-bee hive in a few hours.",
+  "stats": [
+   {
+    "label": "A.k.a.",
+    "value": "Northern giant hornet"
+   },
+   {
+    "label": "Length",
+    "value": "Up to ~5 cm"
+   },
+   {
+    "label": "Raids",
+    "value": "30 can kill 30,000 bees"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/vespa_mandarinia.webp",
+  "credit": "Gary Alpert · CC BY 2.5",
+  "url": "https://en.wikipedia.org/wiki/Asian_giant_hornet"
+ },
+ {
+  "id": "arachnocampa_luminosa",
+  "rarity": "green",
+  "name": "New Zealand glowworm",
+  "scientific": "Arachnocampa luminosa",
+  "blurb": "Species of fly",
+  "fact": "Lights up New Zealand caves like a starry sky - the glow lures insects into its sticky threads.",
+  "stats": [
+   {
+    "label": "Glow",
+    "value": "Blue-green"
+   },
+   {
+    "label": "Hunts with",
+    "value": "Sticky silk threads"
+   },
+   {
+    "label": "Home",
+    "value": "NZ caves"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/arachnocampa_luminosa.webp",
+  "credit": "Alan Rockefeller · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Arachnocampa_luminosa"
+ },
+ {
+  "id": "stoat",
+  "rarity": "green",
+  "name": "Stoat",
+  "scientific": "Mustela erminea",
+  "blurb": "Species of mammal",
+  "fact": "Dances wildly to mesmerise rabbits before it strikes.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "~200 g"
+   },
+   {
+    "label": "Winter coat",
+    "value": "White ermine"
+   },
+   {
+    "label": "Trick",
+    "value": "Hypnotic dance"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/stoat.webp",
+  "credit": "Marton Berntsen, crop by User:MPF · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Stoat"
+ },
+ {
+  "id": "patagonian_mara",
+  "rarity": "green",
+  "name": "Patagonian mara",
+  "scientific": "Dolichotis patagonum",
+  "blurb": "Species of rodent",
+  "fact": "A giant guinea-pig relative that looks like a small deer and hops along like a rabbit.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "8–16 kg"
+   },
+   {
+    "label": "Pairs",
+    "value": "For life"
+   },
+   {
+    "label": "Gait",
+    "value": "Bounds like a hare"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/patagonian_mara.webp",
+  "credit": "Hugo Hulsberg · CC0",
+  "url": "https://en.wikipedia.org/wiki/Patagonian_mara",
+  "frame": {
+   "x": 0.5,
+   "y": 0.539,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "jorunna_parva",
+  "rarity": "green",
+  "name": "Sea bunny",
+  "scientific": "Jorunna parva",
+  "blurb": "Species of gastropod",
+  "fact": "Nicknamed the sea bunny - its fluffy \"ears\" are sensory organs for smelling the water.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~2.5 cm"
+   },
+   {
+    "label": "Ears",
+    "value": "Actually rhinophores"
+   },
+   {
+    "label": "Range",
+    "value": "Western Pacific"
+   }
+  ],
+  "status": "",
+  "image": "zoo/img/jorunna_parva.webp",
+  "credit": "Izuzuki Diver · CC BY-SA 2.5",
+  "url": "https://en.wikipedia.org/wiki/Jorunna_parva"
+ },
+ {
+  "id": "tibetan_antelope",
+  "rarity": "green",
+  "name": "Tibetan antelope",
+  "scientific": "Pantholops hodgsonii",
+  "blurb": "Species of mammal",
+  "fact": "Its wool is so fine a shawl could pass through a ring - poaching for it nearly wiped the species out.",
+  "stats": [
+   {
+    "label": "Habitat",
+    "value": "3,250–5,500 m"
+   },
+   {
+    "label": "Wool",
+    "value": "Shahtoosh, finest there is"
+   },
+   {
+    "label": "Migration",
+    "value": "Hundreds of km to calve"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/tibetan_antelope.webp",
+  "credit": "James Eaton · CC0",
+  "url": "https://en.wikipedia.org/wiki/Tibetan_antelope",
+  "frame": {
+   "x": 0.547,
+   "y": 0.369,
+   "zoom": 1.35
+  }
+ },
+ {
   "id": "eastern_hognose_snake",
   "rarity": "blue",
   "name": "Eastern hognose snake",
@@ -11267,58 +11464,6 @@
   }
  },
  {
-  "id": "sumatran_rhinoceros",
-  "rarity": "blue",
-  "name": "Sumatran rhinoceros",
-  "scientific": "Dicerorhinus sumatrensis",
-  "blurb": "Endangered species of Asian rhinoceros",
-  "fact": "The hairy rhino - the closest living relative of the extinct woolly rhinoceros.",
-  "stats": [
-   {
-    "label": "Left alive",
-    "value": "Under ~50"
-   },
-   {
-    "label": "Coat",
-    "value": "Hairy"
-   },
-   {
-    "label": "Weight",
-    "value": "500–1,000 kg"
-   }
-  ],
-  "status": "Critically endangered",
-  "image": "zoo/img/sumatran_rhinoceros.webp",
-  "credit": "26Isabella · CC BY-SA 3.0",
-  "url": "https://en.wikipedia.org/wiki/Sumatran_rhinoceros"
- },
- {
-  "id": "blue_whale",
-  "rarity": "blue",
-  "name": "Blue whale",
-  "scientific": "Balaenoptera musculus",
-  "blurb": "Species of whale; largest animal known",
-  "fact": "The largest animal that has ever lived - bigger than any dinosaur.",
-  "stats": [
-   {
-    "label": "Length",
-    "value": "Up to ~30 m"
-   },
-   {
-    "label": "Weight",
-    "value": "Up to ~190 t"
-   },
-   {
-    "label": "Heart",
-    "value": "~180 kg"
-   }
-  ],
-  "status": "Endangered",
-  "image": "zoo/img/blue_whale.webp",
-  "credit": "NOAA Fisheries (TBjornstad 11:20, 18 April 2007 (UTC)) · Public domain",
-  "url": "https://en.wikipedia.org/wiki/Blue_whale"
- },
- {
   "id": "milnesium_tardigradum",
   "rarity": "blue",
   "name": "Water bear (tardigrade)",
@@ -11605,37 +11750,6 @@
   "frame": {
    "x": 0.5,
    "y": 0.692,
-   "zoom": 1.0
-  }
- },
- {
-  "id": "maine_coon",
-  "rarity": "blue",
-  "name": "Maine Coon",
-  "scientific": "Felis catus",
-  "blurb": "Breed of cat",
-  "fact": "One of the biggest domestic cats - one held the record for longest cat at 123 cm.",
-  "stats": [
-   {
-    "label": "Length",
-    "value": "Up to ~1.2 m"
-   },
-   {
-    "label": "Weight",
-    "value": "Up to ~11 kg"
-   },
-   {
-    "label": "Toes",
-    "value": "Often extra"
-   }
-  ],
-  "status": "",
-  "image": "zoo/img/maine_coon.webp",
-  "credit": "CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/Maine_Coon",
-  "frame": {
-   "x": 0.5,
-   "y": 0.312,
    "zoom": 1.0
   }
  },
@@ -12599,32 +12713,6 @@
   }
  },
  {
-  "id": "vespa_mandarinia",
-  "rarity": "blue",
-  "name": "Northern giant hornet",
-  "scientific": "Vespa mandarinia",
-  "blurb": "Predatory hornet, largest in the world",
-  "fact": "A small group can wipe out an entire honey-bee hive in a few hours.",
-  "stats": [
-   {
-    "label": "A.k.a.",
-    "value": "Northern giant hornet"
-   },
-   {
-    "label": "Length",
-    "value": "Up to ~5 cm"
-   },
-   {
-    "label": "Raids",
-    "value": "30 can kill 30,000 bees"
-   }
-  ],
-  "status": "",
-  "image": "zoo/img/vespa_mandarinia.webp",
-  "credit": "Gary Alpert · CC BY 2.5",
-  "url": "https://en.wikipedia.org/wiki/Asian_giant_hornet"
- },
- {
   "id": "frilled_shark",
   "rarity": "blue",
   "name": "Frilled shark",
@@ -13345,32 +13433,6 @@
   "url": "https://en.wikipedia.org/wiki/Warty_frogfish"
  },
  {
-  "id": "arachnocampa_luminosa",
-  "rarity": "blue",
-  "name": "New Zealand glowworm",
-  "scientific": "Arachnocampa luminosa",
-  "blurb": "Species of fly",
-  "fact": "Lights up New Zealand caves like a starry sky - the glow lures insects into its sticky threads.",
-  "stats": [
-   {
-    "label": "Glow",
-    "value": "Blue-green"
-   },
-   {
-    "label": "Hunts with",
-    "value": "Sticky silk threads"
-   },
-   {
-    "label": "Home",
-    "value": "NZ caves"
-   }
-  ],
-  "status": "",
-  "image": "zoo/img/arachnocampa_luminosa.webp",
-  "credit": "Alan Rockefeller · CC BY 4.0",
-  "url": "https://en.wikipedia.org/wiki/Arachnocampa_luminosa"
- },
- {
   "id": "great_potoo",
   "rarity": "blue",
   "name": "Great potoo",
@@ -13452,32 +13514,6 @@
   "image": "zoo/img/least_weasel.webp",
   "credit": "Keven Law · CC BY-SA 2.0",
   "url": "https://en.wikipedia.org/wiki/Least_weasel"
- },
- {
-  "id": "stoat",
-  "rarity": "blue",
-  "name": "Stoat",
-  "scientific": "Mustela erminea",
-  "blurb": "Species of mammal",
-  "fact": "Dances wildly to mesmerise rabbits before it strikes.",
-  "stats": [
-   {
-    "label": "Weight",
-    "value": "~200 g"
-   },
-   {
-    "label": "Winter coat",
-    "value": "White ermine"
-   },
-   {
-    "label": "Trick",
-    "value": "Hypnotic dance"
-   }
-  ],
-  "status": "Least concern",
-  "image": "zoo/img/stoat.webp",
-  "credit": "Marton Berntsen, crop by User:MPF · CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/Stoat"
  },
  {
   "id": "aardwolf",
@@ -13753,32 +13789,6 @@
   "image": "zoo/img/bactrian_camel.webp",
   "credit": "Christian Ursilva from Copenhagen, Denmark · CC BY-SA 4.0",
   "url": "https://en.wikipedia.org/wiki/Bactrian_camel"
- },
- {
-  "id": "european_bison",
-  "rarity": "blue",
-  "name": "European bison",
-  "scientific": "Bison bonasus",
-  "blurb": "Eurasian species of mammal",
-  "fact": "Was hunted to extinction in the wild by 1927 and brought back from zoo animals.",
-  "stats": [
-   {
-    "label": "Weight",
-    "value": "Up to ~900 kg"
-   },
-   {
-    "label": "Once down to",
-    "value": "~54 animals"
-   },
-   {
-    "label": "Biggest",
-    "value": "Land animal in Europe"
-   }
-  ],
-  "status": "Near threatened",
-  "image": "zoo/img/european_bison.webp",
-  "credit": "Charles J. Sharp · CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/European_bison"
  },
  {
   "id": "north_sulawesi_babirusa",
@@ -15130,37 +15140,6 @@
   "frame": {
    "x": 0.513,
    "y": 0.5,
-   "zoom": 1.0
-  }
- },
- {
-  "id": "elk",
-  "rarity": "blue",
-  "name": "Elk",
-  "scientific": "Cervus canadensis",
-  "blurb": "Species of deer",
-  "fact": "Its 'bugle' is a surprisingly squeaky, whistling scream for such a huge animal.",
-  "stats": [
-   {
-    "label": "Weight",
-    "value": "Up to ~500 kg"
-   },
-   {
-    "label": "Bugle",
-    "value": "High-pitched scream"
-   },
-   {
-    "label": "Antlers",
-    "value": "~18 kg a pair"
-   }
-  ],
-  "status": "Least concern",
-  "image": "zoo/img/elk.webp",
-  "credit": "Membeth · CC0",
-  "url": "https://en.wikipedia.org/wiki/Elk",
-  "frame": {
-   "x": 0.5,
-   "y": 0.401,
    "zoom": 1.0
   }
  },
@@ -16659,37 +16638,6 @@
   }
  },
  {
-  "id": "patagonian_mara",
-  "rarity": "blue",
-  "name": "Patagonian mara",
-  "scientific": "Dolichotis patagonum",
-  "blurb": "Species of rodent",
-  "fact": "A giant guinea-pig relative that looks like a small deer and hops along like a rabbit.",
-  "stats": [
-   {
-    "label": "Weight",
-    "value": "8–16 kg"
-   },
-   {
-    "label": "Pairs",
-    "value": "For life"
-   },
-   {
-    "label": "Gait",
-    "value": "Bounds like a hare"
-   }
-  ],
-  "status": "Near threatened",
-  "image": "zoo/img/patagonian_mara.webp",
-  "credit": "Hugo Hulsberg · CC0",
-  "url": "https://en.wikipedia.org/wiki/Patagonian_mara",
-  "frame": {
-   "x": 0.5,
-   "y": 0.539,
-   "zoom": 1.0
-  }
- },
- {
   "id": "corsac_fox",
   "rarity": "blue",
   "name": "Corsac fox",
@@ -17351,7 +17299,12 @@
   "status": "Least concern",
   "image": "zoo/img/tiliqua_rugosa.webp",
   "credit": "PotMart186 · CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/Tiliqua_rugosa"
+  "url": "https://en.wikipedia.org/wiki/Tiliqua_rugosa",
+  "frame": {
+   "x": 0.577,
+   "y": 0.5,
+   "zoom": 1.0
+  }
  },
  {
   "id": "rhinoceros_iguana",
@@ -17538,7 +17491,12 @@
   "status": "Data Deficient",
   "image": "zoo/img/hippocampus_bargibanti.webp",
   "credit": "Rickard Zerpe · CC BY-SA 2.0",
-  "url": "https://en.wikipedia.org/wiki/Hippocampus_bargibanti"
+  "url": "https://en.wikipedia.org/wiki/Hippocampus_bargibanti",
+  "frame": {
+   "x": 0.5,
+   "y": 0.693,
+   "zoom": 1.0
+  }
  },
  {
   "id": "nile_monitor",
@@ -17565,32 +17523,6 @@
   "image": "zoo/img/nile_monitor.webp",
   "credit": "Charles J. Sharp · CC BY-SA 4.0",
   "url": "https://en.wikipedia.org/wiki/Nile_monitor"
- },
- {
-  "id": "jorunna_parva",
-  "rarity": "blue",
-  "name": "Sea bunny",
-  "scientific": "Jorunna parva",
-  "blurb": "Species of gastropod",
-  "fact": "Nicknamed the sea bunny - its fluffy \"ears\" are sensory organs for smelling the water.",
-  "stats": [
-   {
-    "label": "Length",
-    "value": "Up to ~2.5 cm"
-   },
-   {
-    "label": "Ears",
-    "value": "Actually rhinophores"
-   },
-   {
-    "label": "Range",
-    "value": "Western Pacific"
-   }
-  ],
-  "status": "",
-  "image": "zoo/img/jorunna_parva.webp",
-  "credit": "Izuzuki Diver · CC BY-SA 2.5",
-  "url": "https://en.wikipedia.org/wiki/Jorunna_parva"
  },
  {
   "id": "giraffe_weevil",
@@ -18013,37 +17945,6 @@
   "url": "https://en.wikipedia.org/wiki/Mountain_tapir"
  },
  {
-  "id": "tibetan_antelope",
-  "rarity": "blue",
-  "name": "Tibetan antelope",
-  "scientific": "Pantholops hodgsonii",
-  "blurb": "Species of mammal",
-  "fact": "Its wool is so fine a shawl could pass through a ring - poaching for it nearly wiped the species out.",
-  "stats": [
-   {
-    "label": "Habitat",
-    "value": "3,250–5,500 m"
-   },
-   {
-    "label": "Wool",
-    "value": "Shahtoosh, finest there is"
-   },
-   {
-    "label": "Migration",
-    "value": "Hundreds of km to calve"
-   }
-  ],
-  "status": "Near threatened",
-  "image": "zoo/img/tibetan_antelope.webp",
-  "credit": "James Eaton · CC0",
-  "url": "https://en.wikipedia.org/wiki/Tibetan_antelope",
-  "frame": {
-   "x": 0.547,
-   "y": 0.369,
-   "zoom": 1.35
-  }
- },
- {
   "id": "mexican_wolf",
   "rarity": "blue",
   "name": "Mexican wolf",
@@ -18120,6 +18021,94 @@
   "image": "zoo/img/hirola.webp",
   "credit": "Jan Ebr · CC BY 4.0",
   "url": "https://en.wikipedia.org/wiki/Hirola"
+ },
+ {
+  "id": "secretarybird",
+  "rarity": "blue",
+  "name": "Secretarybird",
+  "scientific": "Sagittarius serpentarius",
+  "blurb": "Bird of prey",
+  "fact": "Kills snakes by stomping them, with kicks faster than a blink.",
+  "stats": [
+   {
+    "label": "Kick force",
+    "value": "~5× its body weight"
+   },
+   {
+    "label": "Kick time",
+    "value": "~15 milliseconds"
+   },
+   {
+    "label": "Height",
+    "value": "Up to ~1.3 m"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/secretarybird.webp",
+  "credit": "Sumeet Moghe · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Secretarybird"
+ },
+ {
+  "id": "numbat",
+  "rarity": "blue",
+  "name": "Numbat",
+  "scientific": "Myrmecobius fasciatus",
+  "blurb": "Species of Australian marsupial",
+  "fact": "Eats about 20,000 termites a day with a tongue half its body length.",
+  "stats": [
+   {
+    "label": "Termites",
+    "value": "~20,000 a day"
+   },
+   {
+    "label": "Tongue",
+    "value": "~10 cm"
+   },
+   {
+    "label": "Teeth",
+    "value": "Up to 50"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/numbat.webp",
+  "credit": "JJ Harrison · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/Numbat",
+  "frame": {
+   "x": 0.586,
+   "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "rhinoceros_hornbill",
+  "rarity": "blue",
+  "name": "Rhinoceros hornbill",
+  "scientific": "Buceros rhinoceros",
+  "blurb": "Species of bird",
+  "fact": "Its bright orange casque curls up like a rhino horn and acts as a sounding box for its calls.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~1.2 m"
+   },
+   {
+    "label": "Casque",
+    "value": "Upturned orange horn"
+   },
+   {
+    "label": "Lifespan",
+    "value": "~35 years in the wild"
+   }
+  ],
+  "status": "Vulnerable",
+  "image": "zoo/img/rhinoceros_hornbill.webp",
+  "credit": "Wich'yanan L · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Rhinoceros_hornbill",
+  "frame": {
+   "x": 0.501,
+   "y": 0.518,
+   "zoom": 1.21
+  }
  },
  {
   "id": "raccoon",
@@ -18565,32 +18554,6 @@
    "y": 0.5,
    "zoom": 1.0
   }
- },
- {
-  "id": "secretarybird",
-  "rarity": "purple",
-  "name": "Secretarybird",
-  "scientific": "Sagittarius serpentarius",
-  "blurb": "Bird of prey",
-  "fact": "Kills snakes by stomping them, with kicks faster than a blink.",
-  "stats": [
-   {
-    "label": "Kick force",
-    "value": "~5× its body weight"
-   },
-   {
-    "label": "Kick time",
-    "value": "~15 milliseconds"
-   },
-   {
-    "label": "Height",
-    "value": "Up to ~1.3 m"
-   }
-  ],
-  "status": "Endangered",
-  "image": "zoo/img/secretarybird.webp",
-  "credit": "Sumeet Moghe · CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/Secretarybird"
  },
  {
   "id": "northern_white_rhinoceros",
@@ -20923,37 +20886,6 @@
   "url": "https://en.wikipedia.org/wiki/Gr%C3%A9vy's_zebra"
  },
  {
-  "id": "numbat",
-  "rarity": "purple",
-  "name": "Numbat",
-  "scientific": "Myrmecobius fasciatus",
-  "blurb": "Species of Australian marsupial",
-  "fact": "Eats about 20,000 termites a day with a tongue half its body length.",
-  "stats": [
-   {
-    "label": "Termites",
-    "value": "~20,000 a day"
-   },
-   {
-    "label": "Tongue",
-    "value": "~10 cm"
-   },
-   {
-    "label": "Teeth",
-    "value": "Up to 50"
-   }
-  ],
-  "status": "Near threatened",
-  "image": "zoo/img/numbat.webp",
-  "credit": "JJ Harrison · CC BY-SA 4.0",
-  "url": "https://en.wikipedia.org/wiki/Numbat",
-  "frame": {
-   "x": 0.586,
-   "y": 0.5,
-   "zoom": 1.0
-  }
- },
- {
   "id": "goodfellows_tree_kangaroo",
   "rarity": "purple",
   "name": "Goodfellow's tree-kangaroo",
@@ -21384,37 +21316,6 @@
   }
  },
  {
-  "id": "rhinoceros_hornbill",
-  "rarity": "purple",
-  "name": "Rhinoceros hornbill",
-  "scientific": "Buceros rhinoceros",
-  "blurb": "Species of bird",
-  "fact": "Its bright orange casque curls up like a rhino horn and acts as a sounding box for its calls.",
-  "stats": [
-   {
-    "label": "Length",
-    "value": "Up to ~1.2 m"
-   },
-   {
-    "label": "Casque",
-    "value": "Upturned orange horn"
-   },
-   {
-    "label": "Lifespan",
-    "value": "~35 years in the wild"
-   }
-  ],
-  "status": "Vulnerable",
-  "image": "zoo/img/rhinoceros_hornbill.webp",
-  "credit": "Wich'yanan L · CC BY 4.0",
-  "url": "https://en.wikipedia.org/wiki/Rhinoceros_hornbill",
-  "frame": {
-   "x": 0.501,
-   "y": 0.518,
-   "zoom": 1.21
-  }
- },
- {
   "id": "giant_sable_antelope",
   "rarity": "purple",
   "name": "Giant sable antelope",
@@ -21530,6 +21431,94 @@
   "frame": {
    "x": 0.403,
    "y": 0.5,
+   "zoom": 1.0
+  }
+ },
+ {
+  "id": "sumatran_rhinoceros",
+  "rarity": "purple",
+  "name": "Sumatran rhinoceros",
+  "scientific": "Dicerorhinus sumatrensis",
+  "blurb": "Endangered species of Asian rhinoceros",
+  "fact": "The hairy rhino - the closest living relative of the extinct woolly rhinoceros.",
+  "stats": [
+   {
+    "label": "Left alive",
+    "value": "Under ~50"
+   },
+   {
+    "label": "Coat",
+    "value": "Hairy"
+   },
+   {
+    "label": "Weight",
+    "value": "500–1,000 kg"
+   }
+  ],
+  "status": "Critically endangered",
+  "image": "zoo/img/sumatran_rhinoceros.webp",
+  "credit": "26Isabella · CC BY-SA 3.0",
+  "url": "https://en.wikipedia.org/wiki/Sumatran_rhinoceros",
+  "frame": {
+   "x": 0.577,
+   "y": 0.565,
+   "zoom": 1.18
+  }
+ },
+ {
+  "id": "european_bison",
+  "rarity": "purple",
+  "name": "European bison",
+  "scientific": "Bison bonasus",
+  "blurb": "Eurasian species of mammal",
+  "fact": "Was hunted to extinction in the wild by 1927 and brought back from zoo animals.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~900 kg"
+   },
+   {
+    "label": "Once down to",
+    "value": "~54 animals"
+   },
+   {
+    "label": "Biggest",
+    "value": "Land animal in Europe"
+   }
+  ],
+  "status": "Near threatened",
+  "image": "zoo/img/european_bison.webp",
+  "credit": "Charles J. Sharp · CC BY-SA 4.0",
+  "url": "https://en.wikipedia.org/wiki/European_bison"
+ },
+ {
+  "id": "elk",
+  "rarity": "purple",
+  "name": "Elk",
+  "scientific": "Cervus canadensis",
+  "blurb": "Species of deer",
+  "fact": "Its 'bugle' is a surprisingly squeaky, whistling scream for such a huge animal.",
+  "stats": [
+   {
+    "label": "Weight",
+    "value": "Up to ~500 kg"
+   },
+   {
+    "label": "Bugle",
+    "value": "High-pitched scream"
+   },
+   {
+    "label": "Antlers",
+    "value": "~18 kg a pair"
+   }
+  ],
+  "status": "Least concern",
+  "image": "zoo/img/elk.webp",
+  "credit": "Membeth · CC0",
+  "url": "https://en.wikipedia.org/wiki/Elk",
+  "frame": {
+   "x": 0.5,
+   "y": 0.401,
    "zoom": 1.0
   }
  },
@@ -23480,5 +23469,31 @@
    "y": 0.5,
    "zoom": 1.0
   }
+ },
+ {
+  "id": "blue_whale",
+  "rarity": "rainbow",
+  "name": "Blue whale",
+  "scientific": "Balaenoptera musculus",
+  "blurb": "Species of whale; largest animal known",
+  "fact": "The largest animal that has ever lived - bigger than any dinosaur.",
+  "stats": [
+   {
+    "label": "Length",
+    "value": "Up to ~30 m"
+   },
+   {
+    "label": "Weight",
+    "value": "Up to ~190 t"
+   },
+   {
+    "label": "Heart",
+    "value": "~180 kg"
+   }
+  ],
+  "status": "Endangered",
+  "image": "zoo/img/blue_whale.webp",
+  "credit": "NOAA Fisheries (TBjornstad 11:20, 18 April 2007 (UTC)) · Public domain",
+  "url": "https://en.wikipedia.org/wiki/Blue_whale"
  }
 ]
