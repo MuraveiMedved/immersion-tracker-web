@@ -2,13 +2,14 @@ import { useMemo, useState } from 'preact/hooks'
 import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
 import { durationOf, typeLabel } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
-import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, LanguageFilterChip, Seg, toast } from './common.jsx'
+import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, LanguageFilterChip, Seg, toast, useListEntrance, useRiseIn } from './common.jsx'
 import { Stats } from './Stats.jsx'
 import { HomeMenu } from './Home.jsx'
 
 /** The phone's EntryRow: the language's mark (by the "Entry language label" setting), the title and
  *  artist, and a grey pill with the duration. */
-export function EntryRow({ entry, now, onClick, selected, onLongPress }) {
+export function EntryRow({ entry, now, onClick, selected, onLongPress, entrance }) {
+  const rise = useRiseIn(entrance)
   const profile = profileById(entry.languageProfileId)
   const style = getState().settings.entryLabelStyle
   const running = entry.endTimeMillis == null
@@ -17,7 +18,7 @@ export function EntryRow({ entry, now, onClick, selected, onLongPress }) {
   const up = () => clearTimeout(pressTimer)
   const title = entry.mediaTitle || (entry.isManual ? `Manual ${typeLabel(entry.contentType).toLowerCase()} session` : typeLabel(entry.contentType))
   return (
-    <div class={`entry ${selected ? 'sel' : ''}`} onClick={onClick} onPointerDown={down} onPointerUp={up} onPointerLeave={up}
+    <div ref={rise} class={`entry ${selected ? 'sel' : ''}`} onClick={onClick} onPointerDown={down} onPointerUp={up} onPointerLeave={up}
       onContextMenu={onLongPress ? (e) => { e.preventDefault(); onLongPress() } : undefined}>
       {selected ? <Icon name="check_circle" size={18} color="var(--primary)" />
         : profile && style === 'CHIP' ? <LanguageChip profile={profile} />
@@ -174,6 +175,8 @@ export function Entries({ params, nav }) {
   const s = useStore()
   const now = useNow(1000)
   const tab = params?.tab === 'entries' ? 'entries' : 'stats'
+  // All entries' rows rise into place as they scroll into view (the phone's riseIn).
+  const entrance = useListEntrance(tab)
   const [menuOpen, setMenuOpen] = useState(false)
   const [limit, setLimit] = useState(PAGE)
   const [selected, setSelected] = useState(new Set())
@@ -232,7 +235,7 @@ export function Entries({ params, nav }) {
                 </div>
                 <div class="list">
                   {g.entries.map((e) => (
-                    <EntryRow key={e.id} entry={e} now={now} selected={selected.has(e.id)}
+                    <EntryRow key={e.id} entry={e} now={now} entrance={entrance} selected={selected.has(e.id)}
                       onClick={() => (selecting ? toggle(e.id) : setDetails(e.id))} onLongPress={() => toggle(e.id)} />
                   ))}
                 </div>

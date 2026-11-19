@@ -468,3 +468,68 @@ export function MomentumTierTable({ current, topTierFirst = false, showHolo = tr
     </div>
   )
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * List entrance - the phone's riseIn / rememberListEntrance (ui/theme/Squish.kt)
+ * --------------------------------------------------------------------------------------------- */
+
+/** Rows that come into view this soon after a list's page opens are the ones already on screen: they just show. */
+const LIST_OPENING_MS = 350
+const RISE_PX = 18
+
+/** The phone's spring (damping 0.62, StiffnessMedium) sampled into keyframes: 0 -> 1 with a small overshoot. */
+const RISE_FRAMES = (() => {
+  const k = 1500, zeta = 0.62, w = Math.sqrt(k), dt = 1 / 120
+  let x = 0, v = 0, t = 0
+  const pts = [0]
+  while (t < 0.3) { // settled within ~150ms; the rest is a still tail
+    // Semi-implicit Euler on x'' = -k (x - 1) - 2 zeta w x'
+    v += (-k * (x - 1) - 2 * zeta * w * v) * dt
+    x += v * dt
+    t += dt
+    pts.push(x)
+  }
+  pts.push(1)
+  const step = Math.max(1, Math.floor(pts.length / 24))
+  const picked = pts.filter((_, i) => i % step === 0)
+  if (picked[picked.length - 1] !== 1) picked.push(1)
+  return {
+    duration: Math.round(t * 1000),
+    frames: picked.map((p) => ({
+      opacity: Math.min(1, Math.max(0, p * 2.5)),
+      transform: `translateY(${((1 - p) * RISE_PX).toFixed(2)}px) scale(${(0.97 + 0.03 * p).toFixed(4)})`,
+    })),
+  }
+})()
+
+/** One per list page, made as it opens: when it opened and how far down a row has been shown so far. */
+export function useListEntrance(key = '') {
+  const ref = useRef(null)
+  // A new page (or another tab of the same one) opens afresh.
+  if (!ref.current || ref.current.key !== key) ref.current = { key, openedAt: performance.now(), furthest: -Infinity }
+  return ref.current
+}
+
+/** A row floating up into place as it scrolls into view - only going down, for a row further down than any
+ *  shown so far, never the rows already there as the page opens or ones coming back into view going up.
+ *  Quick, no stagger, off under reduced motion. Returns a ref for the row. */
+export function useRiseIn(entrance) {
+  const ref = useRef(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !entrance || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver((list) => {
+      if (!list.some((e) => e.isIntersecting)) return
+      io.disconnect()
+      const top = el.getBoundingClientRect().top + window.scrollY
+      const opening = performance.now() - entrance.openedAt < LIST_OPENING_MS
+      const newRow = top > entrance.furthest
+      if (newRow) entrance.furthest = top
+      const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      if (newRow && !opening && !reduced && el.animate) el.animate(RISE_FRAMES.frames, { duration: RISE_FRAMES.duration, easing: 'linear' })
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return ref
+}

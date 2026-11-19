@@ -9,7 +9,7 @@ import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, has
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
-import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast } from './common.jsx'
+import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast, useListEntrance } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
 import { startTimer, stopTimer, discardTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
@@ -25,6 +25,8 @@ const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
 /** Home, laid out like the phone's: title and today's total, what's being tracked (or a dashed
  *  "not tracking" box), Today with Momentum, the goal cards, then Recent. */
 export function Home({ nav }) {
+  // Today's rows rise into place as they scroll into view (the phone's riseIn).
+  const entrance = useListEntrance()
   const [menuOpen, setMenuOpen] = useState(false)
   const s = useStore()
   const now = useNow(1000)
@@ -194,7 +196,7 @@ export function Home({ nav }) {
         {(() => {
           const today = recent.filter((e) => e.startTimeMillis >= goalDayStart(now))
           return today.length
-            ? <div class="list">{today.map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => setDetails(e.id)} />)}</div>
+            ? <div class="list">{today.map((e) => <EntryRow key={e.id} entry={e} now={now} entrance={entrance} onClick={() => setDetails(e.id)} />)}</div>
             : <p class="muted" style="margin:8px 0">Nothing logged yet today.</p>
         })()}
         {/* Everything older: the All entries tab. */}
@@ -209,7 +211,7 @@ export function Home({ nav }) {
         {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} />}
         {!recent.length && !uncategorized.length
           ? <p class="muted" style="margin:12px 0">Nothing tracked yet. Start a session and it'll show up here.</p>
-          : <div class="list">{recent.map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => setDetails(e.id)} />)}</div>}
+          : <div class="list">{recent.map((e) => <EntryRow key={e.id} entry={e} now={now} entrance={entrance} onClick={() => setDetails(e.id)} />)}</div>}
       </>}
 
       <StartAgain now={now} running={running} light={light} />
