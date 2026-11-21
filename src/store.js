@@ -172,7 +172,7 @@ function migrate(saved) {
 export async function loadState() {
   const saved = await readSaved()
   if (saved) state = migrate(saved)
-  if (uncategorizeLegacyAnki(state)) writeSaved(state)
+  if (uncategorizeLegacyAnki(state) | clearMusicLanguages(state)) writeSaved(state)
   try { navigator.storage?.persist?.() } catch { /* not supported */ }
   version++
   listeners.forEach((l) => l())
@@ -199,6 +199,7 @@ export function subscribe(fn) {
 /** Runs [fn] on the state (mutating it), then saves and re-renders. */
 export function update(fn) {
   fn(state)
+  clearMusicLanguages(state)
   // Fresh references, so views memoized on them (useMemo deps) recompute.
   state = { ...state, entries: state.entries.slice(), profiles: state.profiles.slice(), zoo: { ...state.zoo }, race: { ...state.race }, friends: { ...state.friends }, settings: { ...state.settings }, sync: { ...state.sync } }
   version++
@@ -268,6 +269,21 @@ export function uncategorizeLegacyAnki(s) {
   for (const e of s.entries) {
     if (e.languageProfileId != null && legacy.has(e.languageProfileId)) {
       e.languageProfileId = home ? home.id : null
+      e.detectionReason = null
+      changed = true
+    }
+  }
+  return changed
+}
+
+/** Music isn't tracked by language: takes the language off any music entry that has one (older
+ *  saves, imports, an older phone). Run on every change, like the phone's clearMusicLanguages.
+ *  Returns whether anything changed. */
+export function clearMusicLanguages(s) {
+  let changed = false
+  for (const e of s.entries) {
+    if (e.contentType === LISTENING && e.languageProfileId != null) {
+      e.languageProfileId = null
       e.detectionReason = null
       changed = true
     }
@@ -540,7 +556,7 @@ export function removeImported(source) {
 
 export function deleteAllUncategorized() {
   // Anki is kept: it counts in races with or without a language (as on the phone).
-  update((s) => { s.entries = s.entries.filter((e) => e.languageProfileId != null || e.endTimeMillis == null || e.contentType === ANKI) })
+  update((s) => { s.entries = s.entries.filter((e) => e.languageProfileId != null || e.endTimeMillis == null || e.contentType === ANKI || e.contentType === LISTENING) })
 }
 
 /** Adds finished entries, skipping any session already here (same start, end and type), however it

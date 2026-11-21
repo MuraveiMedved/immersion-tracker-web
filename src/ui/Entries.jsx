@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'preact/hooks'
 import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
-import { durationOf, typeLabel } from '../model/rules.js'
+import { durationOf, typeLabel, isUnresolved, LISTENING } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
 import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, LanguageFilterChip, Seg, toast, useListEntrance, useRiseIn } from './common.jsx'
 import { Stats } from './Stats.jsx'
@@ -21,6 +21,7 @@ export function EntryRow({ entry, now, onClick, selected, onLongPress, entrance 
     <div ref={rise} class={`entry ${selected ? 'sel' : ''}`} onClick={onClick} onPointerDown={down} onPointerUp={up} onPointerLeave={up}
       onContextMenu={onLongPress ? (e) => { e.preventDefault(); onLongPress() } : undefined}>
       {selected ? <Icon name="check_circle" size={18} color="var(--primary)" />
+        : !profile && entry.contentType === LISTENING ? <Icon name="music_note" size={18} color="var(--on-surface-variant)" />
         : profile && style === 'CHIP' ? <LanguageChip profile={profile} />
           : style === 'ICON' ? <TypeBadge type={entry.contentType} profile={profile} />
             : <span class="dot" style={{ background: profile?.colorHex || '#BFBFCC' }} />}
@@ -105,11 +106,14 @@ export function EntryDetails({ id, onClose }) {
           </div>
         </>)}
 
+        {/* Not for music: it isn't tracked by language. */}
+        {entry.contentType !== LISTENING && (<>
         <div class="section-header ed-label">Language</div>
         <div class="chips wrap" style="gap:8px">
           {languages.map((p) => <LanguageFilterChip key={p.id} profile={p} selected={entry.languageProfileId === p.id} onClick={() => editEntry(entry.id, { languageProfileId: p.id })} />)}
           <button class={`pill-toggle ${entry.languageProfileId == null ? 'on' : ''}`} onClick={() => editEntry(entry.id, { languageProfileId: null })}>Uncategorized</button>
         </div>
+        </>)}
 
         <div class="divider" style="margin:20px 0 8px" />
         <button class={`btn ${armDelete ? 'danger' : 'text danger'}`} onClick={() => {
@@ -186,8 +190,8 @@ export function Entries({ params, nav }) {
 
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])
   // Anki without a language (from before Anki was a mode of each language) is always listed.
-  const uncategorized = sorted.filter((e) => e.languageProfileId == null && (s.settings.logUncategorized || e.contentType === ANKI))
-  const shown = sorted.filter((e) => e.languageProfileId != null).slice(0, limit)
+  const uncategorized = sorted.filter((e) => isUnresolved(e) && (s.settings.logUncategorized || e.contentType === ANKI))
+  const shown = sorted.filter((e) => !isUnresolved(e)).slice(0, limit)
   const groups = []
   for (const e of shown) {
     const d = dayStart(e.startTimeMillis)

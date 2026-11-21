@@ -5,7 +5,7 @@ import {
   editRunningElapsed, editRunningTitle, editEntry, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry,
   removeRecentManualSession, isHiddenManualSession, setSetting,
 } from '../store.js'
-import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel } from '../model/rules.js'
+import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel, isUnresolved } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
@@ -91,9 +91,9 @@ export function Home({ nav }) {
   }
   const languages = s.profiles.filter((p) => !p.isAnki)
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])
-  const recent = sorted.filter((e) => e.languageProfileId != null).slice(0, 5)
+  const recent = sorted.filter((e) => !isUnresolved(e)).slice(0, 5)
   // Anki without a language (from before Anki was a mode of each language) is always listed.
-  const uncategorized = sorted.filter((e) => e.languageProfileId == null && (s.settings.logUncategorized || e.contentType === ANKI))
+  const uncategorized = sorted.filter((e) => isUnresolved(e) && (s.settings.logUncategorized || e.contentType === ANKI))
   const paused = running.length ? null : pausedEntry()
   const activeProfile = running.map((e) => profileById(e.languageProfileId)).find((p) => p && !p.isAnki)
   const gains = useSessionGains(running.length ? running : paused ? [paused] : [], s.entries)
@@ -264,7 +264,7 @@ function NowTrackingBanner({ entry, now, light, mode, paused = false, onOpen }) 
     <div class={`now-banner ${paused ? '' : 'live'} ${justStarted ? 'just-started' : ''} ${grey ? '' : 'tinted'}`} style={{ background: bg, '--goal-stain': stain, ...tint, '--lang': stops?.[0] || color, borderColor: grey ? 'var(--block-line)' : withAlpha(color, 0.6) }} onClick={() => (paused ? onOpen?.() : setEdit(true))}>
       <span class="dot8" style={{ background: profile ? languageFill(profile, 135) : color }} />
       <div class="grow">
-        <div class="label-large" style={{ color: ink }}>{typeLabel(entry.contentType)} in {profile?.name || 'Uncategorized'}, {formatClock(durationOf(entry, now))}</div>
+        <div class="label-large" style={{ color: ink }}>{!profile && entry.contentType === LISTENING ? typeLabel(entry.contentType) : `${typeLabel(entry.contentType)} in ${profile?.name || 'Uncategorized'}`}, {formatClock(durationOf(entry, now))}</div>
         {entry.mediaTitle && <div class="small ellipsis">{entry.mediaTitle}</div>}
         <div class="small" style={{ color: withAlpha(ink.startsWith('#') ? ink : '#888888', 0.7) }}>
           {paused ? 'Paused, tap to edit' : phone ? 'On your phone' : 'Manual, tap to edit'}
@@ -509,7 +509,7 @@ function StartAgain({ now, running, light }) {
                 <span class="sa-bar" />
                 <span class="grow" style="min-width:0">
                   <span class="sa-title">{e.mediaTitle}</span>
-                  <span class="sa-meta"><b style={{ color: ink }}>{profile?.name || 'Uncategorized'}</b>, {live ? `running ${formatClock(durationOf(live, now))}` : ago(e.startTimeMillis)}</span>
+                  <span class="sa-meta"><b style={{ color: ink }}>{profile?.name || (g.type === LISTENING ? 'Music' : 'Uncategorized')}</b>, {live ? `running ${formatClock(durationOf(live, now))}` : ago(e.startTimeMillis)}</span>
                 </span>
                 <span class="sa-go"><Icon name={live ? 'stop' : 'play_arrow'} size={20} /></span>
               </StartAgainItem>

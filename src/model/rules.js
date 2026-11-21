@@ -27,6 +27,9 @@ const MAX_GOLDEN_LOOKBACK_DAYS = 400
 
 export const durationOf = (e, now = Date.now()) => Math.max(0, (e.endTimeMillis ?? now) - e.startTimeMillis)
 
+/** Waiting to be given a language. Music never is: it isn't tracked by language (TimeEntry.isUnresolved). */
+export const isUnresolved = (e) => e.languageProfileId == null && e.contentType !== LISTENING
+
 /** Immersion is spoken listening or reading, with a language - not music, not Anki. */
 export const counts = (type, languageProfileId) => languageProfileId != null && (type === PODCAST || type === READING)
 

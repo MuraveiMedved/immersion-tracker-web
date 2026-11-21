@@ -1,7 +1,7 @@
 // Run with: TZ=America/Chicago npm test
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { goldenStreakDays, goldenTodayMillis, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, vouchedEntries } from '../src/model/rules.js'
+import { goldenStreakDays, goldenTodayMillis, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, vouchedEntries, isUnresolved } from '../src/model/rules.js'
 import { goalDayStart } from '../src/model/time.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate, hourMarkAt } from '../src/model/zoo.js'
@@ -18,6 +18,12 @@ test('what counts as immersion', () => {
   assert.equal(counts(LISTENING, 1), false)
   assert.equal(counts(ANKI, 1), false)
   assert.equal(counts(PODCAST, null), false)
+})
+
+test('music has no language and is never waiting for one', () => {
+  assert.equal(isUnresolved({ contentType: LISTENING, languageProfileId: null }), false)
+  assert.equal(isUnresolved({ contentType: PODCAST, languageProfileId: null }), true)
+  assert.equal(isUnresolved({ contentType: READING, languageProfileId: 2 }), false)
 })
 
 test('Momentum: today counts only once it reaches 1h', () => {
