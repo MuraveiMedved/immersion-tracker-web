@@ -75,19 +75,35 @@ export function Home({ nav }) {
     for (const p of cards) { if (choiceOf(p) === false) endRun(); else run.push(p) }
     endRun()
   }
-  const isWide = (p) => choiceOf(p) === false || p === oddOne || loneHalves.has(p)
-  const laidOut = oddOne?.isMain ? [oddOne, ...cards.filter((p) => p !== oddOne)] : cards
-  // Full-width cards keep their place and split the half-width ones into separate two-column runs.
-  const blocks = []
-  for (const p of laidOut) {
-    if (isWide(p)) { blocks.push({ wide: p }); continue }
-    let run = blocks[blocks.length - 1]
-    if (!run || run.wide) blocks.push(run = { columns: [[], []], weights: [0, 0] })
-    // Roughly the card's height: the name row plus each ring (about twice as tall), Anki's too.
-    const w = 1 + 2 * ((listeningGoalOf(p) > 0) + (readingGoalOf(p) > 0) + (generalGoalOf(p) > 0) + (ankiGoalOf(p) > 0))
-    const i = run.weights[0] <= run.weights[1] ? 0 : 1
-    run.columns[i].push(p)
-    run.weights[i] += w
+  // Roughly a card's height: the name row plus each ring (about twice as tall), Anki's too.
+  const weightOf = (p) => 1 + 2 * ((listeningGoalOf(p) > 0) + (readingGoalOf(p) > 0) + (generalGoalOf(p) > 0) + (ankiGoalOf(p) > 0))
+  // The shorter column's last card stretches to end level with the other. Where that would stretch it by a
+  // whole ring card or more (a one-goal card beside a three-goal one ending up twice its height, mostly
+  // empty), the run's cards nobody gave a shape go full width instead, rings side by side. A card picked
+  // as half width keeps it - stretched, if that's what it takes.
+  const autoWide = new Set()
+  let blocks = []
+  for (let pass = 0; pass < 4; pass++) {
+    const isWide = (p) => choiceOf(p) === false || p === oddOne || loneHalves.has(p) || autoWide.has(p)
+    const laidOut = oddOne?.isMain ? [oddOne, ...cards.filter((p) => p !== oddOne)] : cards
+    // Full-width cards keep their place and split the half-width ones into separate two-column runs.
+    blocks = []
+    for (const p of laidOut) {
+      if (isWide(p)) { blocks.push({ wide: p }); continue }
+      let run = blocks[blocks.length - 1]
+      if (!run || run.wide) blocks.push(run = { columns: [[], []], weights: [0, 0] })
+      const i = run.weights[0] <= run.weights[1] ? 0 : 1
+      run.columns[i].push(p)
+      run.weights[i] += weightOf(p)
+    }
+    if (s.settings.quietUi) break
+    let changed = false
+    for (const run of blocks) {
+      if (run.wide || !run.columns[1].length) continue
+      if (Math.abs(run.weights[0] - run.weights[1]) < 3) continue
+      for (const p of run.columns.flat()) if (choiceOf(p) == null && !autoWide.has(p)) { autoWide.add(p); changed = true }
+    }
+    if (!changed) break
   }
   const languages = s.profiles.filter((p) => !p.isAnki)
   const sorted = useMemo(() => [...s.entries].sort((a, b) => b.startTimeMillis - a.startTimeMillis), [s.entries])

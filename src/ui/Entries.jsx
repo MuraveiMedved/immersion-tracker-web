@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'preact/hooks'
-import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
+import { useStore, useNow, editEntry, editRunningElapsed, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
 import { durationOf, typeLabel, isUnresolved, LISTENING } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
 import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, LanguageFilterChip, Seg, toast, useListEntrance, useRiseIn } from './common.jsx'
@@ -61,62 +61,70 @@ export function EntryDetails({ id, onClose }) {
   const profile = profileById(entry.languageProfileId)
   const running = entry.endTimeMillis == null
   const languages = s.profiles.filter((p) => !p.isAnki)
-  // A session made by hand can be made longer or shorter right here, 5 minutes at a time, or to the minute by
-  // tapping its length (2026-11-18, as the phone). Others open the editor from the pencil.
-  const manualAdjust = entry.isManual && !running
+  // A session made by hand - running or finished - can be made longer or shorter right here, 5 minutes at a time,
+  // or to the minute by tapping its length (as the phone). Others open the editor from the pencil.
+  const manualAdjust = entry.isManual
   const ms = durationOf(entry, now)
-  const setLength = (next) => editEntry(entry.id, { endTimeMillis: entry.startTimeMillis + Math.max(60000, next) })
+  const setLength = (next) => {
+    const v = Math.max(60000, next)
+    if (running) editRunningElapsed(entry.contentType, v)
+    else editEntry(entry.id, { endTimeMillis: entry.startTimeMillis + v })
+  }
+  const canTapLength = !running || manualAdjust
   const color = profile?.colorHex || 'var(--on-surface-variant)'
   return (
     <Dialog title={null} onClose={onClose}>
       <div class="col entry-details" style="gap:0">
         <div class="row" style="gap:12px">
-          <span class="ed-icon" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}><TypeIcon type={entry.contentType} size={24} /></span>
+          <span class="ed-icon" style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}><TypeIcon type={entry.contentType} size={22} /></span>
           <div class="grow" style="min-width:0">
             <button class="ed-title" title="Change title" onClick={() => setMode('title')}>
               <span class="title-large ellipsis">{entry.mediaTitle || typeLabel(entry.contentType)}</span><Icon name="edit" size={16} />
             </button>
-            <div class="muted small ellipsis">{entry.isManual ? 'Added by hand' : typeLabel(entry.contentType)}</div>
+            <div class="muted small ellipsis">{[entry.mediaArtist, entry.isManual ? 'Added by hand' : typeLabel(entry.contentType)].filter(Boolean).join(', ')}</div>
           </div>
         </div>
 
-        <div class="section-header ed-label">Length</div>
-        <div class="row" style="gap:8px">
-          {manualAdjust && <button class="ed-step" style={{ '--c': color }} title="5 minutes shorter" disabled={ms <= 60000} onClick={() => setLength(ms - 5 * 60000)}><Icon name="remove" /></button>}
-          <button class={`ed-length grow ${manualAdjust ? 'center' : ''}`} style={{ color }} disabled={running} onClick={() => !running && setMode('dur')}>
-            <span class="headline-small">{running ? `${formatHm(ms)} so far` : formatHm(ms)}</span>
-            {!running && !manualAdjust && <Icon name="edit" size={18} color="var(--on-surface-variant)" />}
-          </button>
-          {manualAdjust && <button class="ed-step" style={{ '--c': color }} title="5 minutes longer" onClick={() => setLength(ms + 5 * 60000)}><Icon name="add" /></button>}
+        {/* How long, and when: one panel, the length large in the middle. */}
+        <div class="ed-panel">
+          <div class="row" style="gap:8px;width:100%">
+            {manualAdjust && <button class="ed-step" style={{ '--c': color }} title="5 minutes shorter" aria-label="5 minutes shorter" disabled={ms <= 60000} onClick={() => setLength(ms - 5 * 60000)}><Icon name="remove" /></button>}
+            <button class="ed-length grow center" style={{ color }} disabled={!canTapLength} title={canTapLength ? 'Change duration' : undefined} onClick={() => canTapLength && setMode('dur')}>
+              <span class="ed-figure">{formatHm(ms)}</span>
+              {canTapLength && !manualAdjust && <Icon name="edit" size={18} color="var(--on-surface-variant)" />}
+            </button>
+            {manualAdjust && <button class="ed-step" style={{ '--c': color }} title="5 minutes longer" aria-label="5 minutes longer" onClick={() => setLength(ms + 5 * 60000)}><Icon name="add" /></button>}
+          </div>
+          <div class="ed-when">
+            {running ? <span class="ed-live" style={{ background: color }} /> : <Icon name="schedule" size={14} />}
+            {running ? `Started ${formatTime(entry.startTimeMillis)}` : `${formatDateTime(entry.startTimeMillis)} – ${formatTime(entry.endTimeMillis)}`}
+          </div>
         </div>
-        <div class="muted small">
-          {running ? `Started ${formatTime(entry.startTimeMillis)}, still tracking` : `${formatDateTime(entry.startTimeMillis)} – ${formatTime(entry.endTimeMillis)}`}
-        </div>
-        {entry.detectionReason && <div class="muted tiny" style="margin-top:4px">{entry.detectionReason}</div>}
 
         {/* The kind, fixable afterwards - listening and reading swap; not while it's running (only
             one of each type runs at a time). */}
         {!running && (entry.contentType === PODCAST || entry.contentType === READING) && (<>
-          <div class="section-header ed-label">Kind</div>
-          <div class="row" style="gap:10px">
+          <div class="section-header ed-label">Type</div>
+          <div class="ed-seg" role="radiogroup">
             {[[PODCAST, 'Listening'], [READING, 'Reading']].map(([t, l]) => (
-              <button key={t} class={`type-btn ${entry.contentType === t ? 'on' : ''}`} title={l} aria-label={l} aria-pressed={entry.contentType === t}
-                onClick={() => entry.contentType !== t && editEntry(entry.id, { contentType: t })}><TypeIcon type={t} size={22} /></button>
+              <button key={t} role="radio" class={entry.contentType === t ? 'on' : ''} style={{ '--c': color }} aria-checked={entry.contentType === t}
+                onClick={() => entry.contentType !== t && editEntry(entry.id, { contentType: t })}><TypeIcon type={t} size={18} />{l}</button>
             ))}
           </div>
         </>)}
 
         {/* Not for music: it isn't tracked by language. */}
         {entry.contentType !== LISTENING && (<>
-        <div class="section-header ed-label">Language</div>
-        <div class="chips wrap" style="gap:8px">
-          {languages.map((p) => <LanguageFilterChip key={p.id} profile={p} selected={entry.languageProfileId === p.id} onClick={() => editEntry(entry.id, { languageProfileId: p.id })} />)}
-          <button class={`pill-toggle ${entry.languageProfileId == null ? 'on' : ''}`} onClick={() => editEntry(entry.id, { languageProfileId: null })}>Uncategorized</button>
-        </div>
+          <div class="section-header ed-label">Language</div>
+          <div class="chips wrap" style="gap:8px">
+            {languages.map((p) => <LanguageFilterChip key={p.id} profile={p} selected={entry.languageProfileId === p.id} onClick={() => editEntry(entry.id, { languageProfileId: p.id })} />)}
+            <button class={`pill-toggle ${entry.languageProfileId == null ? 'on' : ''}`} onClick={() => editEntry(entry.id, { languageProfileId: null })}>Uncategorized</button>
+          </div>
         </>)}
 
-        <div class="divider" style="margin:20px 0 8px" />
-        <button class={`btn ${armDelete ? 'danger' : 'text danger'}`} onClick={() => {
+        {entry.detectionReason && <div class="ed-note"><Icon name="info" size={14} />{entry.detectionReason}</div>}
+
+        <button class={`btn ${armDelete ? 'danger' : 'text danger'}`} style="margin-top:20px" onClick={() => {
           if (!armDelete) { setArmDelete(true); return }
           const copy = { ...entry }
           deleteEntries([entry.id])

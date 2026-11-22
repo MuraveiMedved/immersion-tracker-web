@@ -1187,6 +1187,20 @@ textarea.input { resize: vertical; }
   background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); transition: transform var(--dur-fast, .15s); }
 .ed-step:active { transform: scale(.92); }
 .ed-step:disabled { opacity: .4; cursor: default; }
+.ed-icon { width: 44px; height: 44px; }
+.ed-panel { margin-top: 16px; padding: 16px 12px; border-radius: var(--r-medium, 14px); display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--quiet-panel, color-mix(in srgb, var(--surface-variant) 60%, var(--bg))); }
+.ed-figure { font-size: 28px; line-height: 36px; font-weight: 500; white-space: nowrap; }
+.ed-when { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--on-surface-variant); }
+.ed-live { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.ed-seg { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-small, 10px); background: var(--quiet-panel, color-mix(in srgb, var(--surface-variant) 60%, var(--bg))); }
+.ed-seg button { flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--on-surface-variant); font: inherit; font-size: 14px; font-weight: 500; transition: background var(--dur-fast, .15s), transform var(--dur-fast, .15s); }
+.ed-seg button:active { transform: scale(.97); }
+.ed-seg button.on { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--on-surface); }
+.ed-seg button.on svg { color: var(--c); }
+.ed-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 16px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); opacity: .85; }
+.ed-note svg { flex: none; margin-top: 1px; }
 
 /* The toast's ×: small, in the toast's own text colour. */
 .toast .toast-close { width: 36px; height: 36px; min-width: 36px; margin: -6px -8px -6px 0; color: inherit; opacity: .75; }
