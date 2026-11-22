@@ -679,6 +679,9 @@ textarea.input { resize: vertical; }
 .trophy-slot .photo .count { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
 .trophy-slot .name { font-size: 12px; font-weight: 600; text-align: center; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .trophy-slot.empty { cursor: default; }
+/* A holo (foil) copy in a trophy case: the collection's holo glow in its rarity's colours. */
+.trophy-slot.holo .photo, .trophy-card .photo.holo { box-shadow: 0 0 12px color-mix(in srgb, var(--p) 80%, transparent), 0 0 24px color-mix(in srgb, var(--s) 55%, transparent); }
+.trophy-card .photo { position: relative; }
 .trophy-slot.empty .photo { border: 1px solid color-mix(in srgb, var(--on-surface-variant) 20%, transparent); box-shadow: none; background: color-mix(in srgb, var(--on-surface) 5%, transparent); }
 
 /* Race cards (the phone's OpenEventCard / CompletedEventCard). */

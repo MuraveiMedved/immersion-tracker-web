@@ -1045,17 +1045,21 @@ function Discovered({ catalog, copies, onOpen, onClose }) {
 
 /** The trophy case's three slots (ZooScreen.kt TrophyCase): [onFilled](slot, animal) for a filled
  *  one, [onEmpty](slot) for an empty one. The first filled slot - the profile's - wears the 🏆. */
-function TrophySlots({ catalog, onFilled, onEmpty }) {
+function TrophySlots({ catalog, onFilled, onEmpty, copies }) {
   const s = useStore()
   const ids = s.zoo.trophyIds || []
+  // Each animal's best copy comes first, so a holo copy shows as holo here (the phone's AnimalTile bestCopy).
+  const held = useMemo(() => copies || zooState(s).copies, [copies, s])
   const names = nametagsOf(s).names
   const byId = Object.fromEntries(catalog.map((a) => [a.id, a]))
   const profileSlot = ids.findIndex(Boolean)
   return (
     <div class="trophy-slots">
       {Array.from({ length: TROPHY_CASE_SIZE }, (_, i) => byId[ids[i]] || null).map((a, i) => (a
-        ? <div key={`${i}${a.id}`} class="tile-animal" role="button" style={{ borderColor: RARITY_COLOR[a.rarity] }} onClick={() => onFilled(i, a)}>
+        ? <div key={`${i}${a.id}`} class={`tile-animal ${held[a.id]?.[0]?.cert?.foil ? holoClass(a.rarity) : ''}`} role="button"
+            style={{ borderColor: RARITY_COLOR[a.rarity], ...glowColors(a.rarity) }} onClick={() => onFilled(i, a)}>
             <AnimalPhoto animal={a} />
+            {held[a.id]?.[0]?.cert?.foil && <FoilSheen seed={a.id} />}
             {i === profileSlot && <span class="count pick">🏆</span>}
             <Fit class="cap" lines={2}>{names[a.id] ? `“${names[a.id]}”` : a.name}</Fit>
           </div>
@@ -1090,7 +1094,7 @@ function TrophyCase({ catalog, copies }) {
   return (
     <div class="trophy-case">
       <div class="zoo-heading" style="margin-top:0">Trophy case</div>
-      <TrophySlots catalog={catalog} onFilled={(_, a) => setOpen(a)} onEmpty={setPickingSlot} />
+      <TrophySlots catalog={catalog} copies={copies} onFilled={(_, a) => setOpen(a)} onEmpty={setPickingSlot} />
       {pickingSlot != null && (
         <Dialog title="Pick an animal" onClose={() => setPickingSlot(null)} actions={<button class="btn text" onClick={() => setPickingSlot(null)}>Close</button>}>
           <div class="zoo-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>

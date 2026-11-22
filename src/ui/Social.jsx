@@ -1512,7 +1512,7 @@ function ProfileSections({ p }) {
           <div class="row muted" style="gap:4px;font-size:12px;font-weight:500;margin-bottom:10px"><Icon name="emoji_events" size={16} />Trophy case</div>
           <div class="trophy-slots">
             {caseSlots.map((a, i) => (a
-              ? <button key={`${i}${a.id}`} class="trophy-slot" style={{ '--rarity': RARITY_COLOR[a.rarity] }} onClick={() => setOpen({ animal: a, cert: cert(a.id) })}>
+              ? <button key={`${i}${a.id}`} class={`trophy-slot ${cert(a.id)?.foil ? 'holo' : ''}`} style={{ '--rarity': RARITY_COLOR[a.rarity], ...glowColors(a.rarity) }} onClick={() => setOpen({ animal: a, cert: cert(a.id) })}>
                   <div class="photo"><AnimalPhoto animal={a} />{cert(a.id)?.foil && <FoilSheen seed={a.id} />}{i === firstFilled && <span class="count pick">🏆</span>}</div>
                   <div class="name">{p.names?.[a.id] ? `“${p.names[a.id]}”` : a.name}</div>
                 </button>
@@ -1522,7 +1522,7 @@ function ProfileSections({ p }) {
       )}
       {!showCase && trophy && p.shows.trophy && (
         <button class="trophy-card" style={{ '--rarity': RARITY_COLOR[trophy.rarity] }} onClick={() => setOpen({ animal: trophy, cert: cert(trophy.id) })}>
-          <div class="photo"><AnimalPhoto animal={trophy} /></div>
+          <div class={`photo ${cert(trophy.id)?.foil ? 'holo' : ''}`} style={glowColors(trophy.rarity)}><AnimalPhoto animal={trophy} />{cert(trophy.id)?.foil && <FoilSheen seed={trophy.id} />}</div>
           <div class="grow" style="min-width:0;text-align:left">
             <div class="row muted" style="gap:4px;font-size:12px;font-weight:500"><Icon name="emoji_events" size={16} color={RARITY_COLOR[trophy.rarity]} />On display</div>
             {p.names?.[trophy.id]
