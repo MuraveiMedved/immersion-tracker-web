@@ -1193,6 +1193,11 @@ textarea.input { resize: vertical; }
 .ed-icon { width: 44px; height: 44px; }
 .ed-panel { margin-top: 16px; padding: 16px 12px; border-radius: var(--r-medium, 14px); display: flex; flex-direction: column; align-items: center; gap: 4px;
   background: var(--quiet-panel, color-mix(in srgb, var(--surface-variant) 60%, var(--bg))); }
+.ed-length.tappable { padding: 4px 16px 4px 20px; border-radius: var(--r-large, 24px); background: color-mix(in srgb, var(--c) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); transition: transform var(--dur-fast, .15s), background var(--dur-fast, .15s); }
+.ed-length.tappable:hover { background: color-mix(in srgb, var(--c) 18%, transparent); }
+.ed-length.tappable:active { transform: scale(.97); }
+.ed-length.tappable svg { opacity: .75; }
 .ed-figure { font-size: 28px; line-height: 36px; font-weight: 500; white-space: nowrap; }
 .ed-when { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--on-surface-variant); }
 .ed-live { width: 7px; height: 7px; border-radius: 50%; flex: none; }

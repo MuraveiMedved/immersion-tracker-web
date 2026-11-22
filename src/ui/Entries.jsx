@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'preact/hooks'
-import { useStore, useNow, editEntry, editRunningElapsed, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
+import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
 import { durationOf, typeLabel, isUnresolved, LISTENING } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
 import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, LanguageFilterChip, Seg, toast, useListEntrance, useRiseIn } from './common.jsx'
@@ -61,16 +61,9 @@ export function EntryDetails({ id, onClose }) {
   const profile = profileById(entry.languageProfileId)
   const running = entry.endTimeMillis == null
   const languages = s.profiles.filter((p) => !p.isAnki)
-  // A session made by hand - running or finished - can be made longer or shorter right here, 5 minutes at a time,
-  // or to the minute by tapping its length (as the phone). Others open the editor from the pencil.
-  const manualAdjust = entry.isManual
+  // The length opens the editor; where it can, it sits on a soft pill with a pencil, so it reads as tappable.
   const ms = durationOf(entry, now)
-  const setLength = (next) => {
-    const v = Math.max(60000, next)
-    if (running) editRunningElapsed(entry.contentType, v)
-    else editEntry(entry.id, { endTimeMillis: entry.startTimeMillis + v })
-  }
-  const canTapLength = !running || manualAdjust
+  const canTapLength = !running
   const color = profile?.colorHex || 'var(--on-surface-variant)'
   return (
     <Dialog title={null} onClose={onClose}>
@@ -87,14 +80,10 @@ export function EntryDetails({ id, onClose }) {
 
         {/* How long, and when: one panel, the length large in the middle. */}
         <div class="ed-panel">
-          <div class="row" style="gap:8px;width:100%">
-            {manualAdjust && <button class="ed-step" style={{ '--c': color }} title="5 minutes shorter" aria-label="5 minutes shorter" disabled={ms <= 60000} onClick={() => setLength(ms - 5 * 60000)}><Icon name="remove" /></button>}
-            <button class="ed-length grow center" style={{ color }} disabled={!canTapLength} title={canTapLength ? 'Change duration' : undefined} onClick={() => canTapLength && setMode('dur')}>
-              <span class="ed-figure">{formatHm(ms)}</span>
-              {canTapLength && !manualAdjust && <Icon name="edit" size={18} color="var(--on-surface-variant)" />}
-            </button>
-            {manualAdjust && <button class="ed-step" style={{ '--c': color }} title="5 minutes longer" aria-label="5 minutes longer" onClick={() => setLength(ms + 5 * 60000)}><Icon name="add" /></button>}
-          </div>
+          <button class={`ed-length ${canTapLength ? 'tappable' : ''}`} style={{ '--c': color, color }} disabled={!canTapLength} title={canTapLength ? 'Change duration' : undefined} onClick={() => canTapLength && setMode('dur')}>
+            <span class="ed-figure">{formatHm(ms)}</span>
+            {canTapLength && <Icon name="edit" size={18} />}
+          </button>
           <div class="ed-when">
             {running ? <span class="ed-live" style={{ background: color }} /> : <Icon name="schedule" size={14} />}
             {running ? `Started ${formatTime(entry.startTimeMillis)}` : `${formatDateTime(entry.startTimeMillis)} – ${formatTime(entry.endTimeMillis)}`}
