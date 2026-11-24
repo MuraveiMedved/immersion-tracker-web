@@ -818,6 +818,18 @@ function WeekStrip({ now, light }) {
 /** A language on the redesign's Home without a card (the phone's QuietGoalLines): its name, then a line per
  *  goal - its icon (tap to start or stop that timer), a thin bar in the language's colour, "32m / 1h" and the
  *  streak - over a rule. Plain on purpose: the figures are what's read, so they line up in one column. */
+/** StreakBadge as two fixed columns for Folio's lines (the phone's StreakColumns): the running streak, then the record. */
+function StreakColumns({ streak }) {
+  const cur = streak.current > 0
+  const rec = cur ? streak.current < streak.record : true
+  return (
+    <span class="streak-cols">
+      <span class="sc-cur">{cur && <><span style="font-size:12px">🔥</span><span class="cur">{streak.current}d</span></>}</span>
+      <span class="sc-rec">{rec && <><Icon name="emoji_events" size={12} color="var(--on-surface-variant)" /><span class="rec">{streak.record}d</span></>}</span>
+    </span>
+  )
+}
+
 function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
   const s = useStore()
   const todayStart = goalDayStart(now)
@@ -859,8 +871,11 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
               <div class="gl-track"><div style={{ width: `${Math.min(100, (ms / goalMs) * 100)}%`, background: bar }} /></div>
               <LineBurst met={met} colors={grey ? ['var(--on-surface)'] : stops && stops.length > 1 ? stops : [profile.colorHex]} />
             </div>
-            <span class={`gl-figure ${met ? 'met' : ''}`}>{met && <Icon name="check" size={15} color="var(--lang)" />}{formatHm(ms)} / {formatHm(goalMs, true)}</span>
-            <span class="gl-streak"><StreakBadge streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} /></span>
+            {/* Fixed columns, as the phone (2026-11-23): what's done right-aligned so the "/" lines up down Home, then the
+                goal; then the running streak and the record in a column each. */}
+            <span class={`gl-figure ${met ? 'met' : ''}`}>{met && <Icon name="check" size={15} color="var(--lang)" />}{formatHm(ms)}</span>
+            <span class="gl-goal">&nbsp;/ {formatHm(goalMs, true)}</span>
+            <span class="gl-streak"><StreakColumns streak={computeStreak(dailyTotalsFor(s.entries, profile.id, type, now), goalMs, now)} /></span>
           </div>
         )
       })}

@@ -234,10 +234,15 @@
 }
 @media (prefers-reduced-motion: reduce) { .gl-burst i { animation-duration: .5s; } .gl-burst::before { animation: none; opacity: 0; } }
 /* Fixed widths, so every bar on Home is the same length. */
-:root[data-ui='quiet'] .gl-figure { flex: none; width: 100px; white-space: nowrap; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--on-surface); }
+:root[data-ui='quiet'] .gl-figure { flex: none; width: 60px; white-space: nowrap; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--on-surface); }
+:root[data-ui='quiet'] .gl-goal { flex: none; width: 46px; white-space: nowrap; overflow: hidden; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--on-surface-variant); }
 :root[data-ui='quiet'] .gl-figure { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; }
 :root[data-ui='quiet'] .gl-figure.met { color: var(--lang); font-weight: 700; }
-:root[data-ui='quiet'] .gl-streak { flex: none; width: 84px; margin-left: 14px; display: flex; justify-content: flex-end; white-space: nowrap; }
+:root[data-ui='quiet'] .gl-streak { flex: none; width: 84px; margin-left: 6px; display: flex; justify-content: flex-end; white-space: nowrap; }
+:root[data-ui='quiet'] .streak-cols { display: flex; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+:root[data-ui='quiet'] .streak-cols > span { display: inline-flex; align-items: center; justify-content: flex-end; gap: 2px; }
+:root[data-ui='quiet'] .sc-cur { width: 40px; } :root[data-ui='quiet'] .sc-rec { width: 44px; }
+:root[data-ui='quiet'] .streak-cols .cur { font-weight: 700; color: var(--streak-green); } :root[data-ui='quiet'] .streak-cols .rec { color: var(--on-surface-variant); }
 :root[data-ui='quiet'] .gl-streak .streak { margin: 0; }
 
 /* Home's This week (WeekStrip): seven plain bars, stacked by language. */
