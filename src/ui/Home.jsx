@@ -3,7 +3,7 @@ import { createPortal } from 'preact/compat'
 import {
   useStore, useNow, getState, startManualEntry, stopRunningEntry, deleteRunningEntry,
   editRunningElapsed, editRunningTitle, editEntry, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry,
-  removeRecentManualSession, isHiddenManualSession, setSetting,
+  removeRecentManualSession, isHiddenManualSession, setSetting, resumedAt,
 } from '../store.js'
 import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel, isUnresolved } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
@@ -832,11 +832,11 @@ function StreakColumns({ streak }) {
   )
 }
 
-/** "+1h2m3s", the session running now (the phone's sessionClock). */
+/** "+1h 2m 3s", the session running now (the phone's sessionClock). */
 function sessionClock(ms) {
   const t = Math.max(0, Math.floor(ms / 1000))
   const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60
-  return h > 0 ? `${h}h${m}m${sec}s` : m > 0 ? `${m}m${sec}s` : `${sec}s`
+  return h > 0 ? `${h}h ${m}m ${sec}s` : m > 0 ? `${m}m ${sec}s` : `${sec}s`
 }
 
 /** The session running now beside the total, in the language's colour - holding its last figure and colour while
@@ -844,7 +844,9 @@ function sessionClock(ms) {
 function SessionPlus({ running, now, profile, light }) {
   const session = running.filter((e) => e.languageProfileId != null && e.contentType !== LISTENING).sort((a, b) => b.startTimeMillis - a.startTimeMillis)[0]
   const last = useRef({ text: '', color: '' })
-  if (session && profile) last.current = { text: '+' + sessionClock(now - session.startTimeMillis), color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
+  // Only this stretch: a session resumed after a pause counts from the resume.
+  const from = session ? Math.max(session.startTimeMillis, resumedAt(session.id) ?? 0) : 0
+  if (session && profile) last.current = { text: '+' + sessionClock(now - from), color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
   return <span class={`session-plus ${session && profile ? 'on' : ''}`} style={{ color: last.current.color }}>{last.current.text}</span>
 }
 

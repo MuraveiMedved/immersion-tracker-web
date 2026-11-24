@@ -432,6 +432,21 @@ export function pausedEntry() {
 /** Carries on the paused session as the same entry, its start moved forward by the paused gap so
  *  that gap never counts (the phone's TimeEntryDao.reopenAsRunning). Whatever else is running
  *  stops - one session at a time. */
+/** When a resumed session picked up again (entry id -> millis), per device: Home's "+" counts only this stretch
+ *  (2 minutes, a pause, 3 more shows +3m), like the phone's TrackingRepository.resumedAt. */
+const RESUMED_KEY = 'session-resumed-at'
+function readResumed() {
+  try { return JSON.parse(localStorage.getItem(RESUMED_KEY) || '{}') || {} } catch { return {} }
+}
+export function resumedAt(entryId) {
+  return readResumed()[entryId]
+}
+function noteResumed(entryId, at) {
+  const next = Object.fromEntries(Object.entries(readResumed()).sort((a, b) => b[1] - a[1]).slice(0, 7))
+  next[entryId] = at
+  try { localStorage.setItem(RESUMED_KEY, JSON.stringify(next)) } catch {}
+}
+
 export function resumePaused(type) {
   const p = state.paused[type]
   if (!p) return
@@ -449,6 +464,7 @@ export function resumePaused(type) {
     if (!e) return
     e.startTimeMillis += Math.max(0, now - e.endTimeMillis)
     e.endTimeMillis = null
+    noteResumed(e.id, now)
   })
 }
 
