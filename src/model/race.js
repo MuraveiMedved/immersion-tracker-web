@@ -1,7 +1,7 @@
 // Races and friends on the same Apps Script server the phones use (race-backend/Code.gs) - the
 // web app is just another racer: it reports its own totals, worked out from its own entries.
 import { getState, update } from '../store.js'
-import { ANKI, PODCAST, READING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor, vouchedEntries } from './rules.js'
+import { ANKI, PODCAST, READING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor, vouchedEntries, raceEntries } from './rules.js'
 import { DAY, HOUR, localZone, zonedParts, dayStart, goalDayStart, ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
 
 /** The owner's server, built into the phone app too (see Tracker APP/CLAUDE.md - temporary until
@@ -366,7 +366,7 @@ export async function sync({ joinEventId = null, followUp = true } = {}) {
   const scores = s.race.cachedEvents
     .filter((e) => e.id === joinEventId || competedIn(e, s.race.userId))
     .filter((e) => !e.standings.some((st) => st.userId === s.race.userId && st.final))
-    .map((e) => scoreFor(e, vouchedEntries(s.entries), now))
+    .map((e) => scoreFor(e, raceEntries(vouchedEntries(s.entries), s.profiles), now))
   const report = { action: 'sync', name: s.race.name, emoji: s.race.emoji, color: s.race.chartColor, scores }
   const profile = buildProfileBody()
   if (profile) report.profile = profile

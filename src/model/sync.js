@@ -85,8 +85,11 @@ const SET_LIST = { entry: (s, v) => { s.entries = v }, profile: (s, v) => { s.pr
 /** A record from an older app or web version lacks the fields added since - those keep the value
  *  this device has (the phone's WebSyncCodec.profileFrom does the same). */
 function keepNewerFields(coll, existing, data) {
-  if (coll !== 'profile' || !existing || !data || 'ankiGoalMinutes' in data) return data
-  return { ...data, ankiGoalMinutes: existing.ankiGoalMinutes ?? 0 }
+  if (coll !== 'profile' || !existing || !data) return data
+  let out = data
+  if (!('ankiGoalMinutes' in data)) out = { ...out, ankiGoalMinutes: existing.ankiGoalMinutes ?? 0 }
+  if (!('excludeFromRaces' in data)) out = { ...out, excludeFromRaces: !!existing.excludeFromRaces }
+  return out
 }
 
 export function applyRecords(s, records) {

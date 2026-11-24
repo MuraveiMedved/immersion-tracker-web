@@ -135,6 +135,13 @@ export function dailyTotalsFor(entries, profileId, type, now = Date.now()) {
  * then showed friends hours that were never done. Used for everything sent or credited from here
  * (race scores, the profile, Zoo eggs, challenges), not for what's shown on screen.
  */
+/** [entries] without those of languages left out of races (a language's excludeFromRaces) - what races and Challenges
+ *  total (the phone's countedInRaces). */
+export function raceEntries(entries, profiles) {
+  const left = new Set((profiles || []).filter((p) => p.excludeFromRaces).map((p) => p.id))
+  return left.size ? entries.filter((e) => !left.has(e.languageProfileId)) : entries
+}
+
 export const vouchedEntries = (entries) => entries.filter((e) => e.endTimeMillis != null || e.appPackage === 'web')
 
 export function immersionTotal(entries, now = Date.now()) {

@@ -114,7 +114,7 @@ function startBackgroundWork() {
   // Starting or stopping tracking is reported straight away (a beat later, so a quick switch from
   // one session to another goes up as one report), so your green tag shows for everyone at once.
   const runningKey = () => {
-    const r = runningForRace(getState().entries)
+    const r = runningForRace(raceEntries(getState().entries, getState().profiles))
     return r ? `${r.id}:${r.contentType}` : ''
   }
   // A start or stop that doesn't get through (offline for a moment) is tried again soon -

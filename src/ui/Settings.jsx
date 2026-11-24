@@ -236,6 +236,11 @@ function LanguageEdit({ id, onClose }) {
               count is picked on the phone. */}
           <label class="field"><TypeLabel type="ANKI" size={14}>Study (min)</TypeLabel><input class="input" inputMode="numeric" value={p.ankiGoalMinutes || 0} onInput={(e) => set('ankiGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
         </div>
+        {/* Races: this language's time counts toward them, or it's left out (its goals still count). */}
+        <div class="form-label">Races</div>
+        <SettingRow icon="emoji_events" title="Count toward races" hint="Off: this language's time is left out of races and Challenges. Its goals still count.">
+          <Switch checked={!p.excludeFromRaces} onChange={(on) => set('excludeFromRaces', !on)} />
+        </SettingRow>
         <details>
           <summary class="form-label clickable">Detection</summary>
           <div class="col" style="margin-top:10px">

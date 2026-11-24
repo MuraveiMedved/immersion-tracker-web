@@ -315,6 +315,8 @@ export function newProfile(fields = {}) {
     // Home card's layout: true = half width, rings stacked; false = full width, rings beside the
     // name; null = not picked (the phone's LanguageProfile.ringsStacked).
     ringsStacked: null,
+    // Left out of races and Challenges (the phone's LanguageProfile.excludeFromRaces); its goals still count.
+    excludeFromRaces: false,
     ...fields,
   }
 }

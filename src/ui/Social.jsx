@@ -5,7 +5,7 @@ import {
   raceStatus, onRaceStatus, errorText, ordinal, localTodayKey, dailyPoints, refreshFriends, addFriendByCode, addFriendById, respondFriend, removeFriend,
   readProfile, buildProfileBody, raceConfigured, DEFAULT_RACE_URL, runningForRace, activeKindOf,
 } from '../model/race.js'
-import { GOLDEN_DAYS } from '../model/rules.js'
+import { GOLDEN_DAYS, raceEntries } from '../model/rules.js'
 import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ymdToEpochDay, epochDayToYmd, ymdOf, epochDayStart, goalDayStart } from '../model/time.js'
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Bolt, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill, displayEmoji, firstGrapheme } from './common.jsx'
@@ -415,7 +415,7 @@ function RaceCard({ event: raw, now: tickNow, completed, onOpenMe, menuExtras })
   const me = s.race.userId
   // Ticks every 30s for countdowns; your own live tag follows the store straight away.
   const now = Math.max(tickNow, Date.now())
-  const event = withMyLive(raw, me, s.entries, now)
+  const event = withMyLive(raw, me, raceEntries(s.entries, s.profiles), now)
   const [menu, setMenu] = useState(false)
   const [person, setPerson] = useState(null)
   const [confirm, setConfirm] = useState(null)

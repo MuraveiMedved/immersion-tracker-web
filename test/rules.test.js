@@ -1,7 +1,7 @@
 // Run with: TZ=America/Chicago npm test
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { goldenStreakDays, goldenTodayMillis, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, vouchedEntries, isUnresolved } from '../src/model/rules.js'
+import { goldenStreakDays, goldenTodayMillis, isGolden, computeStreak, counts, dailyTotalsFor, momentumTier, nextMomentumTier, PODCAST, READING, ANKI, LISTENING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, vouchedEntries, isUnresolved, raceEntries } from '../src/model/rules.js'
 import { goalDayStart } from '../src/model/time.js'
 import { cappedAnki, scoreFor, addSplitByDay } from '../src/model/race.js'
 import { lootBoxTier, immersionReachedAt, computeCertificate, hourMarkAt } from '../src/model/zoo.js'
@@ -292,4 +292,11 @@ test('stats type filter keeps only the picked type, Study included', () => {
   assert.equal(quickStats(entries, win, null, now, STATS_TYPES.LISTENING).total, HOUR)
   assert.equal(quickStats(entries, win, null, now, STATS_TYPES.READING).total, 2 * HOUR)
   assert.equal(quickStats(entries, win, null, now, STATS_TYPES.STUDY).total, 30 * 60000)
+})
+
+test('a language left out of races is not counted in them', () => {
+  const entries = [{ id: 1, languageProfileId: 'a' }, { id: 2, languageProfileId: 'b' }, { id: 3, languageProfileId: null }]
+  const profiles = [{ id: 'a' }, { id: 'b', excludeFromRaces: true }]
+  assert.deepEqual(raceEntries(entries, profiles).map((e) => e.id), [1, 3])
+  assert.equal(raceEntries(entries, [{ id: 'a' }]), entries)
 })
