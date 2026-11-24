@@ -19083,13 +19083,8 @@
   ],
   "status": "",
   "image": "zoo/img/pachycephalosaurus.webp",
-  "credit": "IJReid · CC BY 4.0",
-  "url": "https://en.wikipedia.org/wiki/Pachycephalosaurus",
-  "frame": {
-   "x": 0.5,
-   "y": 0.397,
-   "zoom": 1.0
-  }
+  "credit": "DataBase Center for Life Science (DBCLS) · CC BY 4.0",
+  "url": "https://en.wikipedia.org/wiki/Pachycephalosaurus"
  },
  {
   "id": "humpback_whale",

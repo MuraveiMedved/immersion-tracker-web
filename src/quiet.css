@@ -351,8 +351,8 @@
 :root[data-ui='quiet'] .dialog h2:not(.normal-look *) { font-size: 18px; line-height: 24px; font-weight: 500; }
 :root[data-ui='quiet'] .menu { border-radius: 10px; background: var(--c-high); border: 1px solid var(--rule); box-shadow: 0 6px 18px rgba(0, 0, 0, .25); padding: 4px 0; }
 
-/* Recent finds: ruled rows, the rarity a word beside the time. */
-:root[data-ui='quiet'] .feed-row { background: transparent; border-radius: 0; border-bottom: 1px solid var(--rule); padding: 10px 0; }
+/* Recent finds: soft outlined panels like the phone's, the rarity a word beside the time. */
+:root[data-ui='quiet'] .feed-row { background: var(--quiet-panel); }
 :root[data-ui='quiet'] .feed-head .badge-ico { background: transparent; width: 28px; }
 :root[data-ui='quiet'] .feed-row .rarity-pill { background: transparent !important; color: var(--on-surface-variant); padding: 0; letter-spacing: .6px; font-weight: 500; }
 

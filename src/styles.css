@@ -1136,7 +1136,7 @@ textarea.input { resize: vertical; }
 .feed-row.tappable { cursor: pointer; }
 /* In a row it sits in the line: the animal card's own .rarity-pill is pinned to the card's corner. */
 .feed-row .rarity-pill { position: static; }
-.feed-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: color-mix(in srgb, var(--on-surface) 6%, transparent); font-size: 14px; line-height: 1.35; }
+.feed-row { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: var(--r-medium); border: 1px solid color-mix(in srgb, var(--on-surface) 12%, transparent); background: color-mix(in srgb, var(--on-surface) 6%, transparent); font-size: 14px; line-height: 1.35; }
 .feed-thumb { flex: none; width: 52px; height: 52px; border-radius: 14px; padding: 2px; display: block; overflow: hidden; }
 .holo-pill { background: rgba(0,0,0,.55); }
 .feed-thumb > * { width: 100%; height: 100%; border-radius: 12px; overflow: hidden; display: block; }
