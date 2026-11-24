@@ -157,7 +157,9 @@ export function Home({ nav }) {
           <button class="icon-btn" title="Start a manual session" onClick={() => setManual({})}><Icon name="add" /></button>
         </HomeTabs>
         <div class="quiet-hero">
-          <div class="total">{formatHm(todayTotal)}</div>
+          {/* Today's total in its own colour; beside it, smaller, the session running now in its language's colour,
+              fading in and out as it starts and stops (the phone's SessionPlus, 2026-11-23). */}
+          <div class="total-row"><div class="total">{formatHm(todayTotal)}</div><SessionPlus running={running} now={now} profile={activeProfile} light={light} /></div>
           <div class="sub">Immersion Tracker</div>
         </div>
       </> : <div class="home-head">
@@ -828,6 +830,22 @@ function StreakColumns({ streak }) {
       <span class="sc-rec">{rec && <><Icon name="emoji_events" size={12} color="var(--on-surface-variant)" /><span class="rec">{streak.record}d</span></>}</span>
     </span>
   )
+}
+
+/** "+1h2m3s", the session running now (the phone's sessionClock). */
+function sessionClock(ms) {
+  const t = Math.max(0, Math.floor(ms / 1000))
+  const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), sec = t % 60
+  return h > 0 ? `${h}h${m}m${sec}s` : m > 0 ? `${m}m${sec}s` : `${sec}s`
+}
+
+/** The session running now beside the total, in the language's colour - holding its last figure and colour while
+ *  it fades out. */
+function SessionPlus({ running, now, profile, light }) {
+  const session = running.filter((e) => e.languageProfileId != null && e.contentType !== LISTENING).sort((a, b) => b.startTimeMillis - a.startTimeMillis)[0]
+  const last = useRef({ text: '', color: '' })
+  if (session && profile) last.current = { text: '+' + sessionClock(now - session.startTimeMillis), color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
+  return <span class={`session-plus ${session && profile ? 'on' : ''}`} style={{ color: last.current.color }}>{last.current.text}</span>
 }
 
 function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {

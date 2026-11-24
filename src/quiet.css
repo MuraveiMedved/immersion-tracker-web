@@ -294,6 +294,9 @@
 :root[data-ui='quiet'] .quiet-tabs .icon-btn { width: 44px; height: 48px; margin-right: -12px; padding: 0; color: var(--on-surface-variant); }
 :root[data-ui='quiet'] .quiet-hero { padding: 16px 0 12px; }
 :root[data-ui='quiet'] .quiet-hero .total { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -.2px; }
+:root[data-ui='quiet'] .quiet-hero .total-row { display: flex; align-items: center; gap: 12px; }
+:root[data-ui='quiet'] .session-plus { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; opacity: 0; transition: opacity var(--dur-slow, .4s) var(--ease-enter, ease); }
+:root[data-ui='quiet'] .session-plus.on { opacity: 1; }
 :root[data-ui='quiet'] .quiet-hero .sub { font-size: 12px; line-height: 16px; color: var(--on-surface-variant); }
 
 /* Language filters: a dot and the name, dimmed when switched off, as on the phone. */
