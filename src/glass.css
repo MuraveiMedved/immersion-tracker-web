@@ -132,11 +132,19 @@
 :root[data-glass][data-ui='quiet'] .goal-card { -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); }
 /* Folio's language panels in Glass: the same tinted glass as the normal look's goal cards (the phone's glassTint). */
 :root[data-glass][data-ui='quiet'] .goal-lines { background: var(--glass) !important; -webkit-backdrop-filter: var(--glass-filter); backdrop-filter: var(--glass-filter); }
-:root[data-glass][data-ui='quiet'] .goal-lines.tinted { --tint-s: .16; }
-:root[data-glass][data-theme='light'][data-ui='quiet'] .goal-lines.tinted { --tint-s: .12; }
-:root[data-glass][data-ui='quiet'] :is(.goal-lines.tinted.live, .now-banner.tinted) { --tint-s: .30; }
-:root[data-glass][data-theme='light'][data-ui='quiet'] :is(.goal-lines.tinted.live, .now-banner.tinted) { --tint-s: .24; }
-:root[data-glass][data-ui='quiet'] :is(.goal-lines, .now-banner).tinted {
+/* The panels themselves (2026-11-24): the colour evenly across, at the tracked strength whether or not it plays -
+   the corner wash thinned to a dark grey (the phone's glassTintEven). */
+:root[data-glass][data-ui='quiet'] :is(.goal-lines, .now-banner).tinted { --tint-s: .30; }
+:root[data-glass][data-theme='light'][data-ui='quiet'] :is(.goal-lines, .now-banner).tinted { --tint-s: .24; }
+:root[data-glass][data-ui='quiet'] .goal-lines.tinted {
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--tint-a) calc(var(--tint-s) * 100%), transparent) 0%,
+      color-mix(in srgb, var(--tint-b) calc(var(--tint-s) * 100%), transparent) 50%,
+      color-mix(in srgb, var(--tint-c) calc(var(--tint-s) * 100%), transparent) 100%),
+    var(--glass-strong) !important;
+}
+:root[data-glass][data-ui='quiet'] .now-banner.tinted {
   background:
     linear-gradient(135deg,
       color-mix(in srgb, var(--tint-a) calc(var(--tint-s) * 100%), transparent) 0%,
