@@ -866,9 +866,10 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
     : { color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
   const goals = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]].filter(([, g]) => g > 0)
   // The panel takes the normal look's card treatment (as GoalCard, asked for 2026-11-16): the language's colour,
-  // dimmed by the card style and brighter while it plays, outlined only then; tinted glass with Glass on (glass.css).
+  // outlined while it plays; tinted glass with Glass on (glass.css).
   const multi = stops && stops.length > 1
-  const [sat, val] = active ? [0.9, 0.32] : [0.6, 0.18]
+  // Always the playing shade (2026-11-24): idle ones used to fade down to a dark greyish panel.
+  const [sat, val] = [0.9, 0.32]
   const bg = grey ? undefined : multi
     ? `linear-gradient(135deg, ${stops.map((c) => dimColor(c, sat, val, light)).join(', ')})`
     : dimColor(profile.colorHex, sat, val, light)
