@@ -481,13 +481,13 @@ export function MomentumTierTable({ current, topTierFirst = false, showHolo = tr
 const LIST_OPENING_MS = 350
 const RISE_PX = 24
 
-/** The phone's spring (damping 0.68, stiffness 180 - slow enough to see, 2026-11-19) sampled into keyframes: 0 -> 1
- *  with a small overshoot, settled in about half a second. */
+/** The phone's spring (damping 0.68, stiffness 120 - slow enough to see, 2026-11-19; a touch slower 2026-11-26)
+ *  sampled into keyframes: 0 -> 1 with a small overshoot, settled in about two thirds of a second. */
 const RISE_FRAMES = (() => {
-  const k = 180, zeta = 0.68, w = Math.sqrt(k), dt = 1 / 120
+  const k = 120, zeta = 0.68, w = Math.sqrt(k), dt = 1 / 120
   let x = 0, v = 0, t = 0
   const pts = [0]
-  while (t < 0.7) { // settled within ~550ms; the rest is a still tail
+  while (t < 0.85) { // settled within ~675ms; the rest is a still tail
     // Semi-implicit Euler on x'' = -k (x - 1) - 2 zeta w x'
     v += (-k * (x - 1) - 2 * zeta * w * v) * dt
     x += v * dt
@@ -517,7 +517,7 @@ export function useListEntrance(key = '') {
 
 /** A row floating up into place as it scrolls into view - only going down, for a row further down than any
  *  shown so far, never the rows already there as the page opens or ones coming back into view going up.
- *  Visible but brief (about half a second), no stagger, off under reduced motion. Returns a ref for the row. */
+ *  Visible but brief (about two thirds of a second), no stagger, off under reduced motion. Returns a ref for the row. */
 export function useRiseIn(entrance) {
   const ref = useRef(null)
   useEffect(() => {
