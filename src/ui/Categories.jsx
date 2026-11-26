@@ -43,8 +43,16 @@ export function CategoriesDialog({ onClose }) {
   )
 }
 
+/** A new category straight from where it's needed (Add a session): saved, then handed to onCreated. */
+export function NewCategoryDialog({ onCreated, onClose }) {
+  const s = useStore()
+  const [fresh] = useState(() => ({ id: newCategoryId(), name: '', icon: DEFAULT_CATEGORY_ICON, immersion: true }))
+  return <CategoryEditDialog category={fresh} isNew takenNames={(s.settings.customCategories || []).map((c) => c.name.toLowerCase())}
+    onSaved={onCreated} onClose={onClose} />
+}
+
 /** Name, icon (one of 30, six to a row) and whether it counts as immersion. */
-function CategoryEditDialog({ category, isNew, takenNames, onClose }) {
+function CategoryEditDialog({ category, isNew, takenNames, onClose, onSaved }) {
   const [name, setName] = useState(category.name)
   const [icon, setIcon] = useState(categoryIconKey(category.icon))
   const [immersion, setImmersion] = useState(category.immersion)
@@ -54,8 +62,10 @@ function CategoryEditDialog({ category, isNew, takenNames, onClose }) {
   const canSave = trimmed.length > 0 && !clash
   const save = () => {
     if (!canSave) return
-    saveCustomCategory({ id: category.id, name: trimmed, icon, immersion })
-    onClose()
+    const saved = { id: category.id, name: trimmed, icon, immersion }
+    saveCustomCategory(saved)
+    if (onSaved) onSaved(saved)
+    else onClose()
   }
   return (
     <Dialog title={isNew ? 'New category' : 'Edit category'} sheet={false} onClose={onClose} actions={<>

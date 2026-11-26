@@ -11,6 +11,7 @@ import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance,
 import { Ring } from './Ring.jsx'
 import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, LanguageChip, Bolt, MomentumTierTable, Icon, TypeIcon, TypeLabel, LanguageFilterChip, GoalModeChoice, StreakBadge, MomentumPill, DayPicker, toast, useListEntrance } from './common.jsx'
 import { EntryRow, EntryDetails, UncategorizedFolder } from './Entries.jsx'
+import { NewCategoryDialog } from './Categories.jsx'
 import { startTimer, stopTimer, discardTimer, lastSession, sessionName, recentSessions, fromPhone, pauseTimer, resumeTimer, stopPausedTimer, discardPausedTimer } from './timers.js'
 import { ICONS } from './icons.js'
 
@@ -1171,6 +1172,7 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
     scrollTo(true)
   }
   const pickType = (t) => { setType(t); setPicked(null) }
+  const [creatingCategory, setCreatingCategory] = useState(false)
   const pickLang = (id) => { setProfileId(id); setPicked(null) }
   const saving = millis > 0 || isPast
   const visible = expanded ? presets : presets.slice(0, RECENT_SESSIONS_PREVIEW_COUNT)
@@ -1220,7 +1222,11 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
               {(s.settings.customCategories || []).map((c) => (
                 <TypePill key={c.id} type={customType(c.id)} label={c.name} selected={type === customType(c.id)} onClick={() => pickType(customType(c.id))} />
               ))}
+              {/* Make one on the spot: saved, it's the one picked. */}
+              <button class="type-pill" onClick={() => setCreatingCategory(true)}><Icon name="add" size={22} /><span class="ellipsis">New</span></button>
             </div>
+            {creatingCategory && <NewCategoryDialog onClose={() => setCreatingCategory(false)}
+              onCreated={(c) => { setCreatingCategory(false); pickType(customType(c.id)) }} />}
           </div>
           {/* Opened from a language's goal card, it's that language (named in the title): no picker. */}
           {!fixedLanguage && (
