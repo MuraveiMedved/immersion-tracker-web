@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { createPortal } from 'preact/compat'
 import { GRADIENTS, LANGUAGE_COLORS, LANGUAGE_COLORS_BRIGHT, languageFill, luminance, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { getState } from '../store.js'
-import { MOMENTUM_TIERS, momentumTier } from '../model/rules.js'
-import { ICONS } from './icons.js'
+import { MOMENTUM_TIERS, momentumTier, isCustomType, categoryIconOf } from '../model/rules.js'
+import { ICONS, CATEGORY_ICONS } from './icons.js'
 
 /** [hideScrollbar]: still scrolls, just without the bar (profiles, which are mostly pictures). */
 /** The redesign's way between Today, All entries and Stats: the same words at the top of all three,
@@ -294,7 +294,7 @@ export function EntryLabel({ profile, type }) {
 /** A Material icon by name (see icons.js), drawn in the current text colour. */
 export function Icon({ name, size = 24, color = 'currentColor', style }) {
   return <svg viewBox="0 0 24 24" width={size} height={size} fill={color} aria-hidden="true"
-    style={{ flex: 'none', verticalAlign: '-0.18em', ...style }} dangerouslySetInnerHTML={{ __html: ICONS[name] || '' }} />
+    style={{ flex: 'none', verticalAlign: '-0.18em', ...style }} dangerouslySetInnerHTML={{ __html: ICONS[name] || CATEGORY_ICONS[name] || '' }} />
 }
 
 export const NavIcon = ({ name, size = 22 }) => <Icon name={name} size={size} />
@@ -302,8 +302,13 @@ export const NavIcon = ({ name, size = 22 }) => <Icon name={name} size={size} />
 // The phone's content-type glyphs (ContentTypeIcon.kt).
 const TYPE_ICON = { PODCAST: 'headphones', READING: 'menu_book', ANKI: 'style', LISTENING: 'music_note', GENERAL: 'general' }
 
-/** A content type's icon - headphones (listening), open book (reading), cards (Anki), note (music). */
-export const TypeIcon = ({ type, size = 18, color, style }) => <Icon name={TYPE_ICON[type]} size={size} color={color || 'currentColor'} style={style} />
+/** The icon name for a content type: the built-in glyphs, or a category's own icon (school for a
+ *  deleted one) - see CATEGORY_ICONS. */
+export const typeIconName = (type) => TYPE_ICON[type] || (isCustomType(type) ? categoryIconOf(type) : undefined)
+
+/** A content type's icon - headphones (listening), open book (reading), cards (Anki), note (music),
+ *  or a category's own. */
+export const TypeIcon = ({ type, size = 18, color, style }) => <Icon name={typeIconName(type)} size={size} color={color || 'currentColor'} style={style} />
 
 /** "<icon> Label" in one line. */
 export function TypeLabel({ type, children, size = 16 }) {

@@ -5,7 +5,7 @@ import {
   editRunningElapsed, editRunningTitle, editEntry, logCompletedManualEntry, upsertProfile, saveGoalCardLayout, profileById, PODCAST, READING, ANKI, LISTENING, pausedEntry,
   removeRecentManualSession, isHiddenManualSession, setSetting, resumedAt,
 } from '../store.js'
-import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel, isUnresolved } from '../model/rules.js'
+import { GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, ankiGoalOf, customGoalOf, customType, cleanCustomGoals, hasGoal, fillsGoal, counts, computeStreak, dailyTotalsFor, durationOf, goldenStreakDays, goldenTodayMillis, GOLDEN_DAILY_MILLIS, momentumTier, nextMomentumTier, typeLabel, isUnresolved } from '../model/rules.js'
 import { dayStart, goalDayStart, formatClock, formatHm, formatDate, addDays, HOUR } from '../model/time.js'
 import { languageFill, withAlpha, gradientStops, deepened, isDarkFor, luminance, dimColor } from '../model/theme.js'
 import { Ring } from './Ring.jsx'
@@ -21,6 +21,16 @@ function glassTintVars(stops) {
 
 
 const RUNNING_ORDER = [LISTENING, PODCAST, READING, ANKI]
+/** The types something can be running in, in the order the now-tracking bar lists them: the
+ *  built-in four, then the user's categories (and a deleted category's, if one still runs). */
+function runningOrder(s) {
+  const order = [...RUNNING_ORDER, ...(s.settings.customCategories || []).map((c) => customType(c.id))]
+  for (const e of s.entries) if (e.endTimeMillis == null && !order.includes(e.contentType)) order.push(e.contentType)
+  return order
+}
+
+/** The user's categories with a goal in effect for language [p], with that goal in minutes. */
+const categoryGoals = (s, p) => (s.settings.customCategories || []).map((c) => [c, customGoalOf(p, c)]).filter(([, g]) => g > 0)
 
 /** Home, laid out like the phone's: title and today's total, what's being tracked (or a dashed
  *  "not tracking" box), Today with Momentum, the goal cards, then Recent. */
@@ -36,16 +46,16 @@ export function Home({ nav }) {
   const [details, setDetails] = useState(null)
   const light = !isDarkFor(s.settings.uiColorPreset)
 
-  const running = RUNNING_ORDER.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).filter(Boolean)
+  const running = runningOrder(s).map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).filter(Boolean)
   const todayStart = goalDayStart(now) // goal days run from 4 AM
+  // Today's immersion: listening, reading and the categories that count - with a language.
   const todayTotal = s.entries.reduce((t, e) => {
-    if (e.startTimeMillis < todayStart || e.languageProfileId == null) return t
-    if (e.contentType === LISTENING || e.contentType === ANKI) return t
+    if (e.startTimeMillis < todayStart || !counts(e.contentType, e.languageProfileId)) return t
     return t + durationOf(e, now)
   }, 0)
   const goldenDays = useMemo(() => goldenStreakDays(s.entries, now), [s.entries, Math.floor(now / 60000)])
   const goldenToday = goldenTodayMillis(s.entries, now)
-  const immersing = running.some((e) => (e.contentType === PODCAST || e.contentType === READING) && e.languageProfileId != null)
+  const immersing = running.some((e) => counts(e.contentType, e.languageProfileId))
 
   const sortedCards = s.profiles
     .filter((p) => !p.isAnki && hasGoal(p))
@@ -76,7 +86,7 @@ export function Home({ nav }) {
     endRun()
   }
   // Roughly a card's height: the name row plus each ring (about twice as tall), Anki's too.
-  const weightOf = (p) => 1 + 2 * ((listeningGoalOf(p) > 0) + (readingGoalOf(p) > 0) + (generalGoalOf(p) > 0) + (ankiGoalOf(p) > 0))
+  const weightOf = (p) => 1 + 2 * ((listeningGoalOf(p) > 0) + (readingGoalOf(p) > 0) + (generalGoalOf(p) > 0) + (ankiGoalOf(p) > 0) + categoryGoals(s, p).length)
   // The shorter column's last card stretches to end level with the other. Where that would stretch it by a
   // whole ring card or more (a one-goal card beside a three-goal one ending up twice its height, mostly
   // empty), the run's cards nobody gave a shape go full width instead, rings side by side. A card picked
@@ -131,7 +141,7 @@ export function Home({ nav }) {
       if (e.code !== 'Space' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return
       if (e.target.closest?.('input, textarea, select, button, [contenteditable], a') || document.querySelector('.scrim')) return
       e.preventDefault()
-      const live = RUNNING_ORDER.map((t) => getState().entries.find((x) => x.endTimeMillis == null && x.contentType === t)).filter(Boolean)
+      const live = getState().entries.filter((x) => x.endTimeMillis == null)
       if (live.length) stopTimer(live.reduce((a, b) => (b.startTimeMillis > a.startTimeMillis ? b : a)))
       else if (pausedEntry()) resumeTimer(pausedEntry())
       else {
@@ -496,9 +506,9 @@ function StartAgain({ now, running, light }) {
   const s = useStore()
   const [removing, setRemoving] = useState(null)
   const showRecent = s.settings.showRecentManualSessions !== false
-  const groups = useMemo(() => [[PODCAST, 'Listening'], [READING, 'Reading']]
-    .map(([type, label]) => ({ type, label, items: recentSessions(type) }))
-    .filter((g) => g.items.length), [s.entries, s.settings.hiddenManualSessions])
+  const groups = useMemo(() => [PODCAST, READING, ...(s.settings.customCategories || []).map((c) => customType(c.id))]
+    .map((type) => ({ type, label: typeLabel(type), items: recentSessions(type) }))
+    .filter((g) => g.items.length), [s.entries, s.settings.hiddenManualSessions, s.settings.customCategories])
   if (!groups.length) return null
   const ago = (ms) => {
     const d = Math.floor((dayStart(now) - dayStart(ms)) / 86400000)
@@ -560,7 +570,7 @@ function StartAgainItem({ onLongPress, children, ...props }) {
 export function TabTitle() {
   const s = useStore()
   const now = useNow(1000)
-  const live = RUNNING_ORDER.map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).filter(Boolean)
+  const live = runningOrder(s).map((t) => s.entries.find((e) => e.endTimeMillis == null && e.contentType === t)).filter(Boolean)
   const label = live.length ? `${formatClock(durationOf(live[0], now))}, ${sessionName(live[0].contentType, live[0].languageProfileId)}` : 'Immersion Tracker'
   useEffect(() => { document.title = label }, [label])
   return null
@@ -855,7 +865,8 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
   const todayStart = goalDayStart(now)
   const todayOf = (type) => s.entries.reduce((t, e) => (e.languageProfileId === profile.id && fillsGoal(type, e.contentType) && e.startTimeMillis >= todayStart ? t + durationOf(e, now) : t), 0)
   const isActive = (type) => running.some((e) => e.languageProfileId === profile.id && fillsGoal(type, e.contentType))
-  const active = isActive(PODCAST) || isActive(READING) || isActive(ANKI)
+  // Anything of this language running - listening, reading, Study or one of the user's categories (music has no language).
+  const active = running.some((e) => e.languageProfileId === profile.id)
   const stops = gradientStops(profile)
   const grey = s.settings.goalCardStyleMode === 'GREY_TINT'
   const ink = grey ? 'var(--on-surface)' : light ? deepened(profile.colorHex, 0.42) : profile.colorHex
@@ -864,7 +875,8 @@ function GoalLines({ profile, now, running, light, lifted, selected, onOpen }) {
   const nameStyle = stops && stops.length > 1
     ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
     : { color: light ? deepened(profile.colorHex, 0.42) : profile.colorHex }
-  const goals = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]].filter(([, g]) => g > 0)
+  const goals = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)],
+    ...categoryGoals(s, profile).map(([c, g]) => [customType(c.id), g])].filter(([, g]) => g > 0)
   // The panel takes the normal look's card treatment (as GoalCard, asked for 2026-11-16): the language's colour,
   // dimmed by the card style and brighter while it plays, outlined only then; tinted glass with Glass on (glass.css).
   const multi = stops && stops.length > 1
@@ -908,7 +920,8 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
   const todayStart = goalDayStart(now) // goal days run from 4 AM
   const todayOf = (type) => s.entries.reduce((t, e) => (e.languageProfileId === profile.id && fillsGoal(type, e.contentType) && e.startTimeMillis >= todayStart ? t + durationOf(e, now) : t), 0)
   const isActive = (type) => running.some((e) => e.languageProfileId === profile.id && fillsGoal(type, e.contentType))
-  const active = isActive(PODCAST) || isActive(READING) || isActive(ANKI)
+  // Anything of this language running - listening, reading, Study or one of the user's categories (music has no language).
+  const active = running.some((e) => e.languageProfileId === profile.id)
   const stops = gradientStops(profile)
   const multi = stops && stops.length > 1
   const grey = s.settings.goalCardStyleMode === 'GREY_TINT'
@@ -928,7 +941,9 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
   const tint = grey ? {} : glassTintVars(multi ? stops : [profile.colorHex])
   const iconColor = light ? '#000' : '#fff'
   // Anki is a third mode, with its own goal - never part of the General one (it isn't immersion).
-  const rings = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)]]
+  // Then a ring for each of the user's categories with a goal here, in the categories' order.
+  const rings = [[PODCAST, listeningGoalOf(profile)], [READING, readingGoalOf(profile)], [GENERAL, generalGoalOf(profile)], [ANKI, ankiGoalOf(profile)],
+    ...categoryGoals(s, profile).map(([c, g]) => [customType(c.id), g])]
     .filter(([, g]) => g > 0)
   return (
     <div class={`goal-card ${wide ? 'wide' : ''} ${lifted ? 'lifted' : ''} ${selected ? 'selected' : ''} ${stacked ? 'stacked' : ''} ${active ? 'live' : ''} ${grey ? '' : 'tinted'}`}
@@ -967,6 +982,9 @@ function GoalCard({ profile, now, running, light, wide, lifted, selected, stacke
 }
 
 function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
+  const categories = useStore().settings.customCategories || []
+  // The user's categories' goals (id -> text), kept for immersion ones while General hides them.
+  const [custom, setCustom] = useState(() => Object.fromEntries(categories.map((c) => [c.id, String(profile.customGoals?.[c.id] || 0)])))
   const [listen, setListen] = useState(String(profile.podcastGoalMinutes))
   const [read, setRead] = useState(String(profile.readingGoalMinutes))
   const [anki, setAnki] = useState(String(profile.ankiGoalMinutes || 0))
@@ -978,6 +996,7 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
       ...profile, podcastGoalMinutes: Number(listen) || 0, readingGoalMinutes: Number(read) || 0,
       generalGoal: general, generalGoalMinutes: general ? Number(gen) || 0 : profile.generalGoalMinutes || 0,
       ankiGoalMinutes: Number(anki) || 0,
+      customGoals: withCategoryGoals(profile.customGoals, custom),
     })
     onClose()
   }
@@ -1008,10 +1027,34 @@ function GoalEditDialog({ profile, onClose, onAdd, onSettings }) {
               </div>}
           {/* Anki's own goal, beside either mode - review isn't immersion. */}
           <label class="field"><TypeLabel type={ANKI}>Study (min)</TypeLabel>{minutes(anki, setAnki)}</label>
+          <CategoryGoalFields categories={categories} general={general} values={custom} onChange={(id, v) => setCustom({ ...custom, [id]: v })} />
         </>
       </div>
     </Dialog>
   )
+}
+
+/** A minutes field for each of the user's categories (two to a row) - the ones that count as immersion
+ *  hidden while the General goal is on (they count toward it then; their values are kept). */
+export function CategoryGoalFields({ categories, general, values, onChange }) {
+  const shown = categories.filter((c) => !(general && c.immersion))
+  if (!shown.length) return null
+  return (
+    <div class="category-goals">
+      {shown.map((c) => (
+        <label key={c.id} class="field"><TypeLabel type={customType(c.id)}><span class="ellipsis">{c.name} (min)</span></TypeLabel>
+          <input class="input" inputMode="numeric" value={values[c.id] ?? '0'} onInput={(e) => onChange(c.id, e.currentTarget.value.replace(/\D/g, ''))} /></label>
+      ))}
+    </div>
+  )
+}
+
+/** [goals] (a language's customGoals) with the edited [values] (category id -> text) put in - other ids
+ *  (a category deleted elsewhere, say) kept as they were. */
+export function withCategoryGoals(goals, values) {
+  const next = { ...(goals || {}) }
+  for (const [id, v] of Object.entries(values)) next[id] = Number(v) || 0
+  return cleanCustomGoals(next)
 }
 
 /** What Momentum is and what it's for (HomeScreen.kt GoldenStreakDialog): on its own glowing stage in
@@ -1173,6 +1216,10 @@ export function ManualSessionDialog({ initialType, initialProfileId, onClose }) 
               <TypePill type={PODCAST} label="Listening" selected={type === PODCAST} onClick={() => pickType(PODCAST)} />
               <TypePill type={READING} label="Reading" selected={type === READING} onClick={() => pickType(READING)} />
               <TypePill type={ANKI} label="Study" selected={type === ANKI} onClick={() => pickType(ANKI)} />
+              {/* The user's own categories after them, wrapping into rows of three. */}
+              {(s.settings.customCategories || []).map((c) => (
+                <TypePill key={c.id} type={customType(c.id)} label={c.name} selected={type === customType(c.id)} onClick={() => pickType(customType(c.id))} />
+              ))}
             </div>
           </div>
           {/* Opened from a language's goal card, it's that language (named in the title): no picker. */}
@@ -1337,7 +1384,7 @@ function GradientIcon({ name, size, ink, brush }) {
 /** A session type in the form: its icon over its name, one of a row sharing the band's width
  *  (the phone's TypePill). */
 function TypePill({ type, label, selected, onClick }) {
-  return <button class={`type-pill ${selected ? 'on' : ''}`} aria-pressed={selected} onClick={onClick}><TypeIcon type={type} size={22} /><span>{label}</span></button>
+  return <button class={`type-pill ${selected ? 'on' : ''}`} aria-pressed={selected} onClick={onClick}><TypeIcon type={type} size={22} /><span class="ellipsis">{label}</span></button>
 }
 
 /** Today, Yesterday, a chip for an older picked day, then a calendar button (the app's own

@@ -2,15 +2,16 @@
 // tap with an Undo in its toast instead of a confirm dialog - timers get started and stopped many
 // times a day, and a mis-tap should cost one more tap, not a trip into the entry list.
 import { getState, isHiddenManualSession, startManualEntry, stopRunningEntry, deleteRunningEntry, reopenEntry, discardEntry, profileById, runningEntry, pauseRunningEntry, resumePaused, dismissPaused, discardPaused, restorePaused, WEB_APP, PODCAST, READING, ANKI } from '../store.js'
-import { durationOf } from '../model/rules.js'
+import { durationOf, isCustomType, typeLabel } from '../model/rules.js'
 import { formatHm } from '../model/time.js'
 import { toast } from './common.jsx'
 
 const KIND = { [PODCAST]: 'listening', [READING]: 'reading', [ANKI]: 'study' }
 
-/** "Japanese listening", "Japanese study", "Uncategorized reading". */
+/** "Japanese listening", "Japanese study", "Uncategorized reading" - and a category by its own name ("Japanese Watching"). */
 export function sessionName(type, languageProfileId) {
-  return `${profileById(languageProfileId)?.name || 'Uncategorized'} ${KIND[type] || 'music'}`
+  const kind = KIND[type] || (isCustomType(type) ? typeLabel(type) : 'music')
+  return `${profileById(languageProfileId)?.name || 'Uncategorized'} ${kind}`
 }
 
 /** The title a fresh session gets - "Manual Japanese session", as the phone names one. Repeating
@@ -123,7 +124,7 @@ export function lastSession(now = Date.now()) {
   const hideMinutes = getState().settings.resumeHideMinutes ?? 60
   let best = null
   for (const e of getState().entries) {
-    if (e.endTimeMillis == null || e.languageProfileId == null || e.appPackage !== WEB_APP || (e.contentType !== PODCAST && e.contentType !== READING && e.contentType !== ANKI)) continue
+    if (e.endTimeMillis == null || e.languageProfileId == null || e.appPackage !== WEB_APP || (e.contentType !== PODCAST && e.contentType !== READING && e.contentType !== ANKI && !isCustomType(e.contentType))) continue
     if (!best || e.endTimeMillis > best.endTimeMillis) best = e
   }
   if (best && hideMinutes > 0 && now - best.endTimeMillis >= hideMinutes * 60000) return null

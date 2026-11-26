@@ -3,11 +3,14 @@ import { useStore, getState, upsertProfile, deleteProfile, newProfile, setSettin
 import { CURATED_PRESETS, PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS, GRADIENTS, mix, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntries, exportBackup, readJsonBackup, readPhoneBackup } from '../model/imports.js'
 import { formatHm } from '../model/time.js'
+import { customType } from '../model/rules.js'
 import { Ring, RING_STYLES, RING_LABEL } from './Ring.jsx'
 import { AccountSection } from './Account.jsx'
 import { BackgroundImage, CustomThemeTiles } from './CustomLook.jsx'
 import { RESUME_HIDE_CHOICES, resumeHideLabel } from './timers.js'
 import { setArachnophobia } from '../model/zoo.js'
+import { CategoriesDialog } from './Categories.jsx'
+import { CategoryGoalFields, withCategoryGoals } from './Home.jsx'
 import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorTile, GoalModeChoice, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
 
 const SCRIPTS = [
@@ -26,7 +29,9 @@ export function Settings({ params, nav }) {
   const [phone, setPhone] = useState(null)
   const [restore, setRestore] = useState(null)
   const [removing, setRemoving] = useState(null)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
   const languages = s.profiles.filter((p) => !p.isAnki).sort((a, b) => a.sortOrder - b.sortOrder)
+  const categories = s.settings.customCategories || []
 
   useEffect(() => {
     if (params?.addLanguage) setEditing('new')
@@ -65,6 +70,8 @@ export function Settings({ params, nav }) {
       </Block>
 
       <Block collapsible icon="timer" title="Tracking">
+        <SettingRow icon="category" title="Categories" onClick={() => setCategoriesOpen(true)}
+          hint={categories.length ? categories.map((c) => c.name).join(', ') : 'Kinds of activity of your own, next to Listening, Reading and Study.'} />
         <SettingRow icon="play_arrow" title="Resume button" hint="How long Home offers your last session again after it ends.">
           <ResumeHideStepper minutes={s.settings.resumeHideMinutes ?? 60} />
         </SettingRow>
@@ -131,6 +138,7 @@ export function Settings({ params, nav }) {
       </Block>
 
       {editing != null && <LanguageEdit id={editing} onClose={() => setEditing(null)} />}
+      {categoriesOpen && <CategoriesDialog onClose={() => setCategoriesOpen(false)} />}
       {importKind && <ImportDialog kind={importKind.kind} files={importKind.files} onClose={() => setImportKind(null)} />}
       {phone && <PhoneImportDialog data={phone} onClose={() => setPhone(null)} />}
       {removing && <Confirm title={`Remove ${removing.n} imported sessions?`} text={`Every session imported from ${removing.name} is deleted, here and on your other devices. Your CSV files aren't touched - you can import them again.`} confirmLabel="Remove" danger onConfirm={() => { removeImported(removing.source); toast(`${removing.n} sessions removed`) }} onClose={() => setRemoving(null)} />}
@@ -185,7 +193,7 @@ function LanguageEdit({ id, onClose }) {
   const s = useStore()
   const existing = id === 'new' ? null : s.profiles.find((p) => p.id === id)
   const used = new Set(s.profiles.map((p) => p.colorHex))
-  const [p, setP] = useState(() => existing ? { ...existing } : { name: '', colorHex: LANGUAGE_COLORS.find((c) => !used.has(c)) || LANGUAGE_COLORS[0], gradientColors: null, scriptDetectors: [], keywords: [], podcastGoalMinutes: 30, readingGoalMinutes: 30, ankiGoalMinutes: 0, isMain: !s.profiles.some((x) => x.isMain && !x.isAnki) })
+  const [p, setP] = useState(() => existing ? { ...existing } : { name: '', colorHex: LANGUAGE_COLORS.find((c) => !used.has(c)) || LANGUAGE_COLORS[0], gradientColors: null, scriptDetectors: [], keywords: [], podcastGoalMinutes: 30, readingGoalMinutes: 30, ankiGoalMinutes: 0, customGoals: {}, isMain: !s.profiles.some((x) => x.isMain && !x.isAnki) })
   const [kw, setKw] = useState('')
   const [del, setDel] = useState(false)
   const set = (k, v) => setP((x) => ({ ...x, [k]: v }))
@@ -235,6 +243,10 @@ function LanguageEdit({ id, onClose }) {
           {/* Anki's own goal, beside either mode - review isn't immersion. Which AnkiDroid decks
               count is picked on the phone. */}
           <label class="field"><TypeLabel type="ANKI" size={14}>Study (min)</TypeLabel><input class="input" inputMode="numeric" value={p.ankiGoalMinutes || 0} onInput={(e) => set('ankiGoalMinutes', Number(e.currentTarget.value.replace(/\D/g, '')) || 0)} /></label>
+          {/* The user's own categories' goals - immersion ones hidden while General is on (their values kept). */}
+          <CategoryGoalFields categories={s.settings.customCategories || []} general={!!p.generalGoal}
+            values={Object.fromEntries((s.settings.customCategories || []).map((c) => [c.id, String(p.customGoals?.[c.id] || 0)]))}
+            onChange={(cid, v) => setP((x) => ({ ...x, customGoals: withCategoryGoals(x.customGoals, { [cid]: v }) }))} />
         </div>
         {/* Races: this language's time counts toward them, or it's left out (its goals still count). */}
         <div class="form-label">Races</div>
@@ -492,7 +504,7 @@ function ImportDialog({ kind, files, onClose }) {
               <div key={p.name} class="card" style="padding:12px">
                 <div class="row"><b class="grow ellipsis">{p.name || '(No project)'}</b><span class="muted small">{p.count} entries, {formatHm(p.ms)}</span></div>
                 <div class="chips" style="margin-top:8px">
-                  {TYPE_OPTIONS.map(([t, l]) => <button key={String(t)} class={`chip ${m.type === t ? 'on' : ''}`} onClick={() => setM({ type: t, languageProfileId: m.languageProfileId })}>{t && <TypeIcon type={t} size={15} />}{l}</button>)}
+                  {[...TYPE_OPTIONS, ...(s.settings.customCategories || []).map((c) => [customType(c.id), c.name])].map(([t, l]) => <button key={String(t)} class={`chip ${m.type === t ? 'on' : ''}`} onClick={() => setM({ type: t, languageProfileId: m.languageProfileId })}>{t && <TypeIcon type={t} size={15} />}{l}</button>)}
                 </div>
                 {m.type && (
                   <div class="chips" style="margin-top:8px">

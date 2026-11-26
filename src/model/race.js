@@ -1,7 +1,7 @@
 // Races and friends on the same Apps Script server the phones use (race-backend/Code.gs) - the
 // web app is just another racer: it reports its own totals, worked out from its own entries.
 import { getState, update } from '../store.js'
-import { ANKI, PODCAST, READING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, hasGoal, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor, vouchedEntries, raceEntries } from './rules.js'
+import { ANKI, PODCAST, READING, GENERAL, listeningGoalOf, readingGoalOf, generalGoalOf, isImmersionType, counts, durationOf, goldenStreakDays, computeStreak, dailyTotalsFor, vouchedEntries, raceEntries } from './rules.js'
 import { DAY, HOUR, localZone, zonedParts, dayStart, goalDayStart, ymdOf, ymdToEpochDay, epochDayToYmd, isValidYmd } from './time.js'
 
 /** The owner's server, built into the phone app too (see Tracker APP/CLAUDE.md - temporary until
@@ -98,10 +98,10 @@ export function cappedAnki(immersionByDay, ankiByDay, share = ANKI_RACE_SHARE) {
   return { countedByDay, counted, banked: anki - counted }
 }
 
-/** What this browser is tracking that counts in races (listening, reading or Anki with a
- *  language) - the newest, if several. Shared by the report and your own row's live tag. */
+/** What this browser is tracking that counts in races (listening, reading, a category that
+ *  counts as immersion, or Anki - with a language) - the newest, if several. Shared by the report and your own row's live tag. */
 export function runningForRace(entries) {
-  return entries.filter((e) => e.endTimeMillis == null && e.languageProfileId != null && (e.contentType === PODCAST || e.contentType === READING || e.contentType === ANKI))
+  return entries.filter((e) => e.endTimeMillis == null && e.languageProfileId != null && (isImmersionType(e.contentType) || e.contentType === ANKI))
     .sort((a, b) => b.startTimeMillis - a.startTimeMillis)[0] || null
 }
 export const activeKindOf = (e) => (e ? (e.contentType === READING ? 'reading' : e.contentType === ANKI ? 'anki' : 'listening') : '')
@@ -116,7 +116,9 @@ export function scoreFor(event, entries, now = Date.now()) {
   if (windowEnd > windowStart) {
     for (const e of entries) {
       const isAnki = e.contentType === ANKI
-      if (!isAnki && (e.languageProfileId == null || !(e.contentType === PODCAST || e.contentType === READING))) continue
+      // A category that counts as immersion counts too - on the listening side of the split (the
+      // server only knows reading and the rest), as on the phone.
+      if (!isAnki && (e.languageProfileId == null || !isImmersionType(e.contentType))) continue
       const from = Math.max(e.startTimeMillis, windowStart)
       const until = Math.min(e.endTimeMillis ?? now, windowEnd)
       if (until - from <= 0) continue
@@ -529,8 +531,10 @@ export function buildProfileBody(now = Date.now()) {
     if (e.endTimeMillis != null) total += ms
   }
   let longest = 0
+  const spoken = entries.filter((e) => e.contentType === PODCAST || e.contentType === READING)
   const languages = s.profiles
-    .filter((p) => !p.isAnki && hasGoal(p))
+    // Only the goals a profile shows (category goals aren't part of it, as on the phone's ProfileBuilder).
+    .filter((p) => !p.isAnki && (listeningGoalOf(p) > 0 || readingGoalOf(p) > 0 || generalGoalOf(p) > 0))
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((p) => {
       const out = { name: p.name, color: p.colorHex }
@@ -539,7 +543,8 @@ export function buildProfileBody(now = Date.now()) {
       if (p.isMain) out.main = true
       for (const [type, goal, key] of [[PODCAST, listeningGoalOf(p), 'listen'], [READING, readingGoalOf(p), 'read'], [GENERAL, generalGoalOf(p), 'gen']]) {
         if (goal <= 0) continue
-        const daily = dailyTotalsFor(entries, p.id, type, now)
+        // The profile's General ring is listening and reading, as the phone's ProfileBuilder sends it.
+        const daily = dailyTotalsFor(type === GENERAL ? spoken : entries, p.id, type, now)
         const todayMs = daily.get(todayStart) || 0
         const streak = computeStreak(daily, goal * 60000, now)
         longest = Math.max(longest, streak.record, streak.current)

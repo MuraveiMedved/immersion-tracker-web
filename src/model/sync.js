@@ -8,6 +8,7 @@
 import { getState, update, readExtra, writeExtra, subscribe, uncategorizeLegacyAnki, isImported } from '../store.js'
 import { remapIds } from './ids.js'
 import { takeBackEarlyEggs } from './zoo.js'
+import { categoriesFromJson, categoryToJson, cleanCustomGoals } from './rules.js'
 
 /** The built-in sync server (sync-backend/Code.gs, deployed 2026-10-16 - see its SETUP.md). A
  *  different one can still be pasted in Settings. */
@@ -37,7 +38,8 @@ const pick = (o, keys) => Object.fromEntries(keys.filter((k) => k in o).map((k) 
 export function collect(s) {
   const out = { entry: new Map(), profile: new Map(), opening: new Map(), grant: new Map(), tradeIn: new Map(), egg: new Map(), prefs: new Map() }
   for (const e of s.entries) out.entry.set(String(e.id), JSON.stringify(e))
-  for (const p of s.profiles) out.profile.set(String(p.id), JSON.stringify(p))
+  // customGoals always goes out ({} when none), in the phone's shape (positive minutes, ids sorted).
+  for (const p of s.profiles) out.profile.set(String(p.id), JSON.stringify({ ...p, customGoals: cleanCustomGoals(p.customGoals) }))
   for (const o of s.zoo.openings) out.opening.set(String(o.id), JSON.stringify(o))
   for (const g of s.zoo.grants) out.grant.set(String(g.id), JSON.stringify(g))
   for (const t of s.zoo.tradeIns) out.tradeIn.set(String(t.id), JSON.stringify(t))
@@ -51,6 +53,10 @@ export function collect(s) {
   out.prefs.set('settings', JSON.stringify(pick(s.settings, SETTINGS_KEYS)))
   // Once themes have been touched here, even an empty list means something: the last one deleted.
   if (s.settings.customThemes?.length || s.settings.customThemesTouched) out.prefs.set('uiThemes', JSON.stringify({ themes: s.settings.customThemes || [] }))
+  // The user's own categories - the same rule: once touched here, an empty list means the last one went.
+  if (s.settings.customCategories?.length || s.settings.customCategoriesTouched) {
+    out.prefs.set('categories', JSON.stringify({ categories: (s.settings.customCategories || []).map(categoryToJson) }))
+  }
   out.prefs.set('race', JSON.stringify(pick(s.race, RACE_KEYS)))
   out.prefs.set('friends', JSON.stringify(pick(s.friends, FRIEND_KEYS)))
   // eggsTakenBack: early eggs taken back (zoo.js takeBackEarlyEggs) - so no other device does it again.
@@ -85,10 +91,14 @@ const SET_LIST = { entry: (s, v) => { s.entries = v }, profile: (s, v) => { s.pr
 /** A record from an older app or web version lacks the fields added since - those keep the value
  *  this device has (the phone's WebSyncCodec.profileFrom does the same). */
 function keepNewerFields(coll, existing, data) {
-  if (coll !== 'profile' || !existing || !data) return data
+  if (coll !== 'profile' || !data) return data
+  // A language's category goals, in one shape whoever sent them.
+  if ('customGoals' in data) data = { ...data, customGoals: cleanCustomGoals(data.customGoals) }
+  if (!existing) return data
   let out = data
   if (!('ankiGoalMinutes' in data)) out = { ...out, ankiGoalMinutes: existing.ankiGoalMinutes ?? 0 }
   if (!('excludeFromRaces' in data)) out = { ...out, excludeFromRaces: !!existing.excludeFromRaces }
+  if (!('customGoals' in data)) out = { ...out, customGoals: cleanCustomGoals(existing.customGoals) }
   return out
 }
 
@@ -119,6 +129,7 @@ export function applyRecords(s, records) {
           // The theme in use went away: back to the plain preset, as on the phone.
           if (String(s.settings.uiColorPreset).startsWith('custom:') && !themes.some((t) => 'custom:' + t.id === s.settings.uiColorPreset)) s.settings.uiColorPreset = 'SLATE'
         }
+        if (r.id === 'categories') s.settings = { ...s.settings, customCategories: categoriesFromJson(r.data.categories) }
         if (r.id === 'race') s.race = { ...s.race, ...r.data }
         if (r.id === 'friends') s.friends = { ...s.friends, ...r.data }
         if (r.id === 'zoo') {

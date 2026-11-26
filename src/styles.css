@@ -608,7 +608,14 @@ textarea.input { resize: vertical; }
 /* The add-session form's labelled groups (the phone's FormGroup / TypePill). */
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-label { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: .1px; color: var(--on-surface-variant); }
-.type-pills { display: flex; gap: 8px; }
+.type-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Three to a row, so the user's categories wrap under Listening / Reading / Study. */
+.type-pills > .type-pill { flex: 1 1 calc(33.333% - 6px); min-width: 0; max-width: 100%; }
+.type-pills > .type-pill > span { max-width: 100%; }
+/* A language's goals for the user's categories: two minutes fields to a row. */
+.category-goals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 12px; }
+.category-goals .field > span { min-width: 0; max-width: 100%; }
+.category-goals .field .ellipsis { min-width: 0; }
 /* The language editor's title: the name itself, edited in place, with the main-language star. */
 .lang-title { display: flex; align-items: center; gap: 4px; width: 100%; }
 .lang-title-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 24px; font-weight: 600; padding: 0; }
@@ -1207,6 +1214,9 @@ textarea.input { resize: vertical; }
 .ed-seg button:active { transform: scale(.97); }
 .ed-seg button.on { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--on-surface); }
 .ed-seg button.on svg { color: var(--c); }
+/* With the user's categories: three to a row, wrapping. */
+.ed-seg.wrap { flex-wrap: wrap; }
+.ed-seg.wrap button { flex: 1 1 calc(33.333% - 4px); min-width: 0; padding: 0 8px; }
 .ed-note { display: flex; align-items: flex-start; gap: 6px; margin-top: 16px; font-size: 12px; line-height: 16px; color: var(--on-surface-variant); opacity: .85; }
 .ed-note svg { flex: none; margin-top: 1px; }
 
@@ -1242,3 +1252,16 @@ textarea.input { resize: vertical; }
 .emoji-pick.on { background: color-mix(in srgb, var(--primary) 18%, transparent); border-color: var(--primary); }
 .friend-code-input { text-transform: uppercase; letter-spacing: 2px; }
 .friend-code-input::placeholder, .code-input::placeholder { text-transform: none; letter-spacing: .2px; }
+
+/* Settings > Categories (the phone's CategoriesSheet): the empty state, the icon picker (30 icons, six to a
+   row, at least 44px each) and the kinds a deleted category's sessions can move to. */
+.cat-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 8px; text-align: center; }
+.icon-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.icon-cell { aspect-ratio: 1; min-height: 44px; display: grid; place-items: center; padding: 0; cursor: pointer; border-radius: var(--r-small, 10px);
+  background: transparent; color: var(--on-surface-variant); border: 1px solid var(--outline-variant, var(--block-line));
+  transition: background var(--dur-fast, .15s), transform var(--dur-fast, .15s); }
+.icon-cell:active { transform: scale(.94); }
+.icon-cell.on { background: color-mix(in srgb, var(--primary) 18%, transparent); border-color: var(--primary); color: var(--primary); }
+.title-field.error { border-color: var(--danger); }
+.chip.move-target { height: auto; min-height: 44px; padding: 0 12px; }
+@media (prefers-reduced-motion: reduce) { .icon-cell, .icon-cell:active { transition: none; transform: none; } }

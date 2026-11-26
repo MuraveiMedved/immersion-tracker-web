@@ -2,7 +2,7 @@
 // and PolyLoggerImport), this web app's own JSON backup, and a phone backup zip (its SQLite
 // database read in the browser with sql.js).
 import { getState, replaceState, defaultState } from '../store.js'
-import { ANKI, LISTENING, PODCAST, READING } from './rules.js'
+import { ANKI, LISTENING, PODCAST, READING, categoriesFromJson, cleanCustomGoals } from './rules.js'
 import { localZone } from './time.js'
 import { remapIds } from './ids.js'
 
@@ -190,6 +190,18 @@ function readPrefsXml(text) {
   return out
 }
 
+/** A phone language's customGoals text ("id=minutes" pairs, comma-separated) as { id: minutes }. */
+export function parseCustomGoals(text) {
+  const out = {}
+  for (const part of String(text || '').split(',')) {
+    const [id, minutes] = part.split('=')
+    if (minutes == null || part.split('=').length !== 2) continue
+    const m = parseInt(minutes.trim(), 10)
+    if (m > 0 && id.trim()) out[id.trim()] = m
+  }
+  return cleanCustomGoals(out)
+}
+
 const SEP = '\u001F'
 const splitList = (v) => (v ? String(v).split(SEP).filter(Boolean) : [])
 
@@ -239,7 +251,15 @@ export async function readPhoneBackup(file) {
       generalGoal: !!p.generalGoal, generalGoalMinutes: p.generalGoalMinutes || 0, ankiGoalMinutes: p.isAnki ? 0 : p.ankiGoalMinutes || 0,
       isMain: !!p.isMain, isAnki: !!p.isAnki, ringsStacked: p.ringsStacked == null ? null : !!p.ringsStacked,
       excludeFromRaces: !!p.excludeFromRaces,
+      // "id=minutes,..." on the phone (LanguageProfile.customGoals).
+      customGoals: parseCustomGoals(p.customGoals),
     }))
+    // The phone's own categories (immersion_prefs custom_categories) - a phone backup brings them, as the
+    // sessions in them say "CUSTOM_<id>".
+    try {
+      const cats = categoriesFromJson(JSON.parse(prefs.immersion_prefs?.custom_categories || '[]'))
+      if (cats.length) s.settings = { ...s.settings, customCategories: cats, customCategoriesTouched: true }
+    } catch { /* keep this browser's */ }
     s.entries = entries.map((e) => ({
       id: e.id, startTimeMillis: e.startTimeMillis, endTimeMillis: e.endTimeMillis ?? null, mediaTitle: e.mediaTitle || '',
       mediaArtist: e.mediaArtist || '', appPackage: e.appPackage || '', languageProfileId: e.languageProfileId ?? null,

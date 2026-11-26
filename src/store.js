@@ -2,7 +2,7 @@
 // told about each save over a BroadcastChannel and reload, so two windows never fight.
 import { useEffect, useState } from 'preact/hooks'
 import { localZone } from './model/time.js'
-import { ANKI, PODCAST, READING, LISTENING } from './model/rules.js'
+import { ANKI, PODCAST, READING, LISTENING, setCustomCategories, cleanCustomGoals, customType } from './model/rules.js'
 
 const DB_NAME = 'immersion-tracker'
 const STORE = 'kv'
@@ -61,6 +61,10 @@ export function defaultState() {
       glassUi: false,
       customThemes: [], // { id, name, page, accent } - synced as the 'uiThemes' prefs record
       customThemesTouched: false,
+      // The user's own categories { id, name, icon, immersion } (model/rules.js) - synced as the
+      // 'categories' prefs record; touched like customThemes (an empty list is only sent once changed here).
+      customCategories: [],
+      customCategoriesTouched: false,
       bgImage: 0, // when the background image was set (it lives apart, under BACKGROUND_KEY); 0 is none
       bgFit: 'FILL',
       bgDim: 0.6,
@@ -109,6 +113,8 @@ export function defaultState() {
 
 let state = defaultState()
 let version = 0
+/** Mirrors the categories into model/rules.js for the rules that have no state at hand. */
+const mirrorCategories = () => setCustomCategories(state.settings.customCategories)
 const listeners = new Set()
 let savePending = false
 const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('immersion-tracker') : null
@@ -163,7 +169,9 @@ function migrate(saved) {
   s.friends.share = { ...base.friends.share, ...(saved.friends?.share || {}) }
   // From before the trophy case: the one trophy becomes its first.
   if (!saved.zoo?.trophyIds) s.zoo.trophyIds = s.zoo.trophyId ? [s.zoo.trophyId] : []
-  s.profiles = saved.profiles || []
+  // Every language carries its category goals (always sent, {} when none - the phone keeps its own
+  // when a record has none).
+  s.profiles = (saved.profiles || []).map((p) => (p.customGoals && typeof p.customGoals === 'object' ? p : { ...p, customGoals: {} }))
   s.entries = saved.entries || []
   s.paused = saved.paused || {}
   return s
@@ -172,6 +180,7 @@ function migrate(saved) {
 export async function loadState() {
   const saved = await readSaved()
   if (saved) state = migrate(saved)
+  mirrorCategories()
   if (uncategorizeLegacyAnki(state) | clearMusicLanguages(state)) writeSaved(state)
   try { navigator.storage?.persist?.() } catch { /* not supported */ }
   version++
@@ -179,7 +188,7 @@ export async function loadState() {
   channel && (channel.onmessage = async (msg) => {
     if (msg.data?.from === tabId) return
     const fresh = await readSaved()
-    if (fresh) { state = migrate(fresh); version++; listeners.forEach((l) => l()) }
+    if (fresh) { state = migrate(fresh); mirrorCategories(); version++; listeners.forEach((l) => l()) }
   })
 }
 
@@ -202,6 +211,7 @@ export function update(fn) {
   clearMusicLanguages(state)
   // Fresh references, so views memoized on them (useMemo deps) recompute.
   state = { ...state, entries: state.entries.slice(), profiles: state.profiles.slice(), zoo: { ...state.zoo }, race: { ...state.race }, friends: { ...state.friends }, settings: { ...state.settings }, sync: { ...state.sync } }
+  mirrorCategories()
   version++
   listeners.forEach((l) => l())
   // Saved straight away (several updates in one tick are written once) - a debounce lost changes
@@ -317,6 +327,8 @@ export function newProfile(fields = {}) {
     ringsStacked: null,
     // Left out of races and Challenges (the phone's LanguageProfile.excludeFromRaces); its goals still count.
     excludeFromRaces: false,
+    // Daily goals for the user's own categories: category id -> minutes (the phone's LanguageProfile.customGoals).
+    customGoals: {},
     ...fields,
   }
 }
@@ -354,8 +366,11 @@ function addEntry(s, fields) {
   return entry
 }
 
-/** Every content type a session can run under - only one session runs at a time, across all of them. */
-const ALL_TYPES = [PODCAST, READING, ANKI, LISTENING]
+/** Every content type a session can run under right now - the built-in four, the user's
+ *  categories, and any other type something is still running in. Only one session runs at a time,
+ *  across all of them. */
+const allTypes = (s) => [...new Set([PODCAST, READING, ANKI, LISTENING, ...(s.settings.customCategories || []).map((c) => customType(c.id)),
+  ...s.entries.filter((e) => e.endTimeMillis == null).map((e) => e.contentType)])]
 
 /** Starts a live timer, closing whatever was running (of any type - one session at a time).
  *  Returns the new entry's id. */
@@ -365,7 +380,7 @@ export function startManualEntry(type, languageProfileId, title) {
     const now = Date.now()
     // A new session replaces a paused one, which stays in history as it is.
     s.paused = {}
-    for (const t of ALL_TYPES) closeRunning(s, t, now)
+    for (const t of allTypes(s)) closeRunning(s, t, now)
     id = addEntry(s, {
       startTimeMillis: now,
       contentType: type,
@@ -382,7 +397,7 @@ export function startManualEntry(type, languageProfileId, title) {
 export function reopenEntry(snapshot) {
   update((s) => {
     const now = Date.now()
-    for (const t of ALL_TYPES) closeRunning(s, t, now)
+    for (const t of allTypes(s)) closeRunning(s, t, now)
     delete s.paused[snapshot.contentType]
     const e = s.entries.find((x) => x.id === snapshot.id)
     if (e) e.endTimeMillis = null
@@ -459,7 +474,7 @@ export function resumePaused(type) {
   update((s) => {
     const now = Date.now()
     s.paused = {}
-    for (const t of ALL_TYPES) closeRunning(s, t, now)
+    for (const t of allTypes(s)) closeRunning(s, t, now)
     const e = s.entries.find((x) => x.id === paused.id)
     if (!e) return
     e.startTimeMillis += Math.max(0, now - e.endTimeMillis)
@@ -659,6 +674,43 @@ export function removeRecentManualSession(title, type, languageProfileId, delete
     const key = manualSessionKey(title, type, languageProfileId)
     s.settings.hiddenManualSessions = { ...(s.settings.hiddenManualSessions || {}), [key]: Date.now() }
     if (deleteLogs) s.entries = s.entries.filter((e) => !(e.isManual && e.endTimeMillis != null && manualSessionKey(e.mediaTitle, e.contentType, e.languageProfileId) === key))
+  })
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * The user's own categories (the phone's TrackingRepository.saveCustomCategory / deleteCustomCategory).
+ * --------------------------------------------------------------------------------------------- */
+
+/** Adds [category] or updates the one with its id. */
+export function saveCustomCategory(category) {
+  update((s) => {
+    const list = s.settings.customCategories || []
+    s.settings.customCategoriesTouched = true
+    s.settings.customCategories = list.some((c) => c.id === category.id) ? list.map((c) => (c.id === category.id ? { ...category } : c)) : [...list, { ...category }]
+  })
+}
+
+/** Sessions in category [id] (each one, every language) - shown before deleting it. */
+export const customCategorySessionCount = (id) => state.entries.filter((e) => e.contentType === customType(id)).length
+
+/** Deletes a category: its sessions move to [moveTo] (a session running in it ends first), its goal
+ *  goes from every language, and it leaves the list. */
+export function deleteCustomCategory(id, moveTo) {
+  const type = customType(id)
+  update((s) => {
+    const now = Date.now()
+    if (s.paused?.[type]) s.paused = {}
+    closeRunning(s, type, now)
+    for (const e of s.entries) if (e.contentType === type) e.contentType = moveTo
+    // Music has no language, and Listening/Reading/Study/categories all keep theirs.
+    s.profiles = s.profiles.map((p) => {
+      if (!p.customGoals || !(id in p.customGoals)) return p
+      const goals = { ...p.customGoals }
+      delete goals[id]
+      return { ...p, customGoals: cleanCustomGoals(goals) }
+    })
+    s.settings.customCategoriesTouched = true
+    s.settings.customCategories = (s.settings.customCategories || []).filter((c) => c.id !== id)
   })
 }
 

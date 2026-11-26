@@ -1,6 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from 'preact/hooks'
 import { useStore, useNow, getState } from '../store.js'
-import { RANGES, RANGE_LABEL, STATS_TYPES, windowFor, barsFor, quickStats, heatmap, timeOfDay } from '../model/stats.js'
+import { RANGES, RANGE_LABEL, statsTypesFor, windowFor, barsFor, quickStats, heatmap, timeOfDay } from '../model/stats.js'
 import { epochDayStart, formatDate, formatHm } from '../model/time.js'
 import { withAlpha, mix, deepened, isDarkFor, gradientStops } from '../model/theme.js'
 import { LanguageFilterChip, Icon, TypeIcon } from './common.jsx'
@@ -21,7 +21,10 @@ export function Stats() {
   const [hidden, setHidden] = useState(new Set())
   // Which kind of time: all of it (listening and reading), or just listening, reading or Study.
   const [typeFilter, setTypeFilter] = useState(null)
-  const types = typeFilter ? STATS_TYPES[typeFilter] : null
+  const categories = s.settings.customCategories || []
+  // A category that's gone (deleted on another device) leaves its filter.
+  const shownFilter = typeFilter && typeFilter.startsWith('CUSTOM_') && !categories.some((c) => 'CUSTOM_' + c.id === typeFilter) ? null : typeFilter
+  const types = statsTypesFor(shownFilter)
   const light = !isDarkFor(s.settings.uiColorPreset)
   const languages = s.profiles.filter((p) => !p.isAnki).sort((a, b) => a.sortOrder - b.sortOrder)
   const visible = languages.filter((p) => !hidden.has(p.id))
@@ -33,14 +36,14 @@ export function Stats() {
     const win = windowFor(range, o, now, firstEntry)
     return { win, bars: barsFor(s.entries, win, langSet, now, types) }
   }
-  const current = useMemo(() => page(offset), [range, offset, minute, firstEntry, s.entries, hidden, typeFilter])
+  const current = useMemo(() => page(offset), [range, offset, minute, firstEntry, s.entries, hidden, shownFilter])
   // The scale is shared with the spans either side (as on the phone), so swiping doesn't jump it.
   const scaleMax = useMemo(() => {
     const pages = [current, page(offset + 1), offset > 0 ? page(offset - 1) : null].filter(Boolean)
     return Math.max(1, ...pages.flatMap((p) => p.bars.flatMap((b) => [...b.values()])))
   }, [current])
   const stats = useMemo(() => quickStats(s.entries, current.win, langSet, now, types), [current])
-  const heat = useMemo(() => heatmap(s.entries, langSet, visible, now, types), [s.entries, hidden, typeFilter, Math.floor(now / 3600000)])
+  const heat = useMemo(() => heatmap(s.entries, langSet, visible, now, types), [s.entries, hidden, shownFilter, Math.floor(now / 3600000)])
   const tod = useMemo(() => timeOfDay(s.entries, langSet, now, types, current.win), [current])
 
   const zoomTo = (i) => {
@@ -81,9 +84,10 @@ export function Stats() {
         {RANGES.map((r) => <button key={r} class={`pill-toggle ${range === r ? 'on' : ''}`} onClick={() => { setRange(r); setOffset(0) }}>{RANGE_LABEL[r]}</button>)}
       </div>
       <div class="chips scroll" style="gap:6px;margin-top:8px">
-        <button class={`pill-toggle ${typeFilter == null ? 'on' : ''}`} onClick={() => setTypeFilter(null)}>All</button>
-        {[['LISTENING', 'PODCAST', 'Listening'], ['READING', 'READING', 'Reading'], ['STUDY', 'ANKI', 'Study']].map(([key, icon, label]) => (
-          <button key={key} class={`pill-toggle row ${typeFilter === key ? 'on' : ''}`} style="gap:6px;display:inline-flex;align-items:center" onClick={() => setTypeFilter(key)}><TypeIcon type={icon} size={16} />{label}</button>
+        <button class={`pill-toggle ${shownFilter == null ? 'on' : ''}`} onClick={() => setTypeFilter(null)}>All</button>
+        {[['LISTENING', 'PODCAST', 'Listening'], ['READING', 'READING', 'Reading'], ['STUDY', 'ANKI', 'Study'],
+          ...categories.map((c) => ['CUSTOM_' + c.id, 'CUSTOM_' + c.id, c.name])].map(([key, icon, label]) => (
+          <button key={key} class={`pill-toggle row ${shownFilter === key ? 'on' : ''}`} style="gap:6px;display:inline-flex;align-items:center" onClick={() => setTypeFilter(key)}><TypeIcon type={icon} size={16} />{label}</button>
         ))}
       </div>
       {/* Folio: the languages on a row of their own, right under the kinds (2026-11-18, as on the phone). */}

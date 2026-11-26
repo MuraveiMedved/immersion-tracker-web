@@ -9,6 +9,99 @@ export const ANKI = 'ANKI'
 /** Not an entry type: the General goal's ring - listening and reading together (∞ icon). */
 export const GENERAL = 'GENERAL'
 
+/* ------------------------------------------------------------------------------------------------
+ * The user's own categories (the phone's CustomCategory.kt / CustomCategories): kinds of activity
+ * next to Listening, Reading and Study, each { id, name, icon, immersion }. A session in one has the
+ * type "CUSTOM_<id>" - kept even after the category is deleted on another device ("Other" then).
+ * The list lives in settings.customCategories (synced as the prefs record 'categories'); the store
+ * mirrors it here with setCustomCategories, for the rules that have no state at hand (counts,
+ * fillsGoal, typeLabel) - like the phone's CustomCategories object.
+ * --------------------------------------------------------------------------------------------- */
+export const CUSTOM_PREFIX = 'CUSTOM_'
+export const CATEGORY_NAME_MAX = 24
+export const DEFAULT_CATEGORY_ICON = 'school'
+/** The icons a category can have, in the picker's order (CategoryIcons.KEYS; the SVGs are CATEGORY_ICONS in ui/icons.js). */
+export const CATEGORY_ICON_KEYS = [
+  'school', 'translate', 'edit_note', 'spellcheck', 'quiz', 'psychology',
+  'lightbulb', 'auto_stories', 'article', 'newspaper', 'mic', 'record_voice_over',
+  'hearing', 'chat', 'forum', 'groups', 'movie', 'tv',
+  'live_tv', 'sports_esports', 'theater_comedy', 'piano', 'draw', 'brush',
+  'keyboard', 'laptop', 'public', 'flight', 'local_cafe', 'self_improvement',
+]
+
+let customCategories = []
+/** Only the store (and tests) set it. */
+export function setCustomCategories(list) { customCategories = Array.isArray(list) ? list : [] }
+export const getCustomCategories = () => customCategories
+
+export const customType = (id) => CUSTOM_PREFIX + id
+export const isCustomType = (type) => typeof type === 'string' && type.startsWith(CUSTOM_PREFIX) && type.length > CUSTOM_PREFIX.length
+export const customIdOf = (type) => (isCustomType(type) ? type.slice(CUSTOM_PREFIX.length) : null)
+/** [type]'s category while it exists - null for the built-in types and deleted categories. */
+export function categoryOf(type, categories = customCategories) {
+  const id = customIdOf(type)
+  return id == null ? null : categories.find((c) => c.id === id) || null
+}
+/** The type itself is immersion (whatever the language): Listening, Reading, or a category that counts as immersion. */
+export const isImmersionType = (type, categories = customCategories) =>
+  type === PODCAST || type === READING || (isCustomType(type) && categoryOf(type, categories)?.immersion === true)
+
+/** One category from synced/stored JSON, or null (CustomCategory.fromJson): an id of letters and digits,
+ *  a name trimmed and cut to 24, the icon kept as sent (blank: school), immersion true unless it says false. */
+export function categoryFromJson(o) {
+  if (!o || typeof o !== 'object') return null
+  const id = String(o.id ?? '').trim()
+  const name = String(o.name ?? '').trim()
+  if (!id || !name || !/^[\p{L}\p{N}]+$/u.test(id)) return null
+  const icon = String(o.icon ?? '').trim() ? String(o.icon) : DEFAULT_CATEGORY_ICON
+  return { id, name: name.slice(0, CATEGORY_NAME_MAX), icon, immersion: typeof o.immersion === 'boolean' ? o.immersion : true }
+}
+/** A list of them, bad ones and repeated ids left out (CustomCategory.listFromJson). */
+export function categoriesFromJson(list) {
+  if (!Array.isArray(list)) return []
+  const seen = new Set()
+  const out = []
+  for (const o of list) {
+    const c = categoryFromJson(o)
+    if (!c || seen.has(c.id)) continue
+    seen.add(c.id)
+    out.push(c)
+  }
+  return out
+}
+/** The JSON sent for a category, fields in the phone's order (CustomCategory.toJson). */
+export const categoryToJson = (c) => ({ id: c.id, name: c.name, icon: c.icon, immersion: !!c.immersion })
+/** A fresh id: 8 letters and digits (it's part of the stored type name). */
+export function newCategoryId() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  let id = ''
+  for (let i = 0; i < 8; i++) id += chars[Math.floor(Math.random() * chars.length)]
+  return id
+}
+/** The icon key to draw for [type]'s category: its own if it's one of ours, else school (deleted, or unknown). */
+export function categoryIconOf(type, categories = customCategories) {
+  const icon = categoryOf(type, categories)?.icon
+  return CATEGORY_ICON_KEYS.includes(icon) ? icon : DEFAULT_CATEGORY_ICON
+}
+export const categoryIconKey = (icon) => (CATEGORY_ICON_KEYS.includes(icon) ? icon : DEFAULT_CATEGORY_ICON)
+
+/** A language's category goals (category id -> minutes), only positive whole minutes, ids sorted -
+ *  the shape synced as a language record's customGoals (the phone's encodeCustomGoals). */
+export function cleanCustomGoals(goals) {
+  const out = {}
+  if (!goals || typeof goals !== 'object') return out
+  for (const id of Object.keys(goals).sort()) {
+    const m = Math.floor(Number(goals[id]) || 0)
+    if (m > 0 && id.trim()) out[id] = m
+  }
+  return out
+}
+/** [category]'s goal in effect for language [p] (LanguageProfile.customGoal): none for an immersion
+ *  category while the General goal replaces the separate ones (it counts toward General then), and
+ *  none on the retired Anki profile. Kept apart categories keep theirs, like Study. */
+export const customGoalOf = (p, category) =>
+  p.isAnki || (p.generalGoal && category.immersion) ? 0 : Math.max(0, Math.floor(Number(p.customGoals?.[category.id]) || 0))
+
 /** A language's goals in effect (LanguageProfile.listeningGoal / readingGoal / generalGoalOrZero):
  *  with [generalGoal] on, one General goal replaces the separate listening and reading ones. */
 export const listeningGoalOf = (p) => (p.generalGoal ? 0 : p.podcastGoalMinutes || 0)
@@ -17,9 +110,12 @@ export const generalGoalOf = (p) => (p.generalGoal ? p.generalGoalMinutes || 0 :
 /** The language's daily Anki goal (LanguageProfile.ankiGoal) - Anki is a third mode of each
  *  language, never part of the General goal; the retired Anki profile has none. */
 export const ankiGoalOf = (p) => (p.isAnki ? 0 : p.ankiGoalMinutes || 0)
-export const hasGoal = (p) => listeningGoalOf(p) > 0 || readingGoalOf(p) > 0 || generalGoalOf(p) > 0 || ankiGoalOf(p) > 0
-/** Whether an entry type fills a goal ring of [goalType] - GENERAL takes listening and reading. */
-export const fillsGoal = (goalType, type) => (goalType === GENERAL ? type === PODCAST || type === READING : type === goalType)
+/** Any goal at all in effect - what puts a language's card on Home (a category goal too). */
+export const hasGoal = (p, categories = customCategories) =>
+  listeningGoalOf(p) > 0 || readingGoalOf(p) > 0 || generalGoalOf(p) > 0 || ankiGoalOf(p) > 0 || categories.some((c) => customGoalOf(p, c) > 0)
+/** Whether an entry type fills a goal ring of [goalType] - GENERAL takes every kind of immersion
+ *  (listening, reading and the categories that count). */
+export const fillsGoal = (goalType, type) => (goalType === GENERAL ? isImmersionType(type) : type === goalType)
 
 export const GOLDEN_DAYS = 10
 export const GOLDEN_DAILY_MILLIS = HOUR
@@ -30,8 +126,9 @@ export const durationOf = (e, now = Date.now()) => Math.max(0, (e.endTimeMillis 
 /** Waiting to be given a language. Music never is: it isn't tracked by language (TimeEntry.isUnresolved). */
 export const isUnresolved = (e) => e.languageProfileId == null && e.contentType !== LISTENING
 
-/** Immersion is spoken listening or reading, with a language - not music, not Anki. */
-export const counts = (type, languageProfileId) => languageProfileId != null && (type === PODCAST || type === READING)
+/** Immersion is spoken listening or reading, with a language - not music, not Anki. A category
+ *  counts when it says so. */
+export const counts = (type, languageProfileId, categories = customCategories) => languageProfileId != null && isImmersionType(type, categories)
 
 /** Immersion per goal day (epoch-day numbers, days from 4 AM like the goal rings) for the last [days]
  *  days up to [now] - a running session counts up to now, and one crossing 4 AM is split between its days. */
@@ -150,4 +247,13 @@ export function immersionTotal(entries, now = Date.now()) {
   return t
 }
 
-export const typeLabel = (t) => ({ [PODCAST]: 'Listening', [READING]: 'Reading', [ANKI]: 'Study', [LISTENING]: 'Music' }[t] || t)
+/** A type's name: the built-in four, a category's own name, "Other" for a deleted category's. */
+export function typeLabel(t) {
+  const builtIn = { [PODCAST]: 'Listening', [READING]: 'Reading', [ANKI]: 'Study', [LISTENING]: 'Music' }[t]
+  if (builtIn) return builtIn
+  if (isCustomType(t)) return categoryOf(t)?.name || 'Other'
+  return t
+}
+
+/** Names a category can't have: the built-in kinds' (so two kinds never read the same). */
+export const BUILT_IN_TYPE_NAMES = ['Listening', 'Reading', 'Study', 'Music']

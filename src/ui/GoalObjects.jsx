@@ -9,7 +9,8 @@
 
 import { useEffect, useRef } from 'preact/hooks'
 import { hexToRgb } from '../model/theme.js'
-import { ICONS } from './icons.js'
+import { ICONS, CATEGORY_ICONS } from './icons.js'
+import { isCustomType, categoryIconOf } from '../model/rules.js'
 
 const TAU = Math.PI * 2
 const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v))
@@ -27,11 +28,18 @@ export const OBJECT_STYLES = ['MOON', 'FLOWER']
 const TYPE_ICON = { PODCAST: 'headphones', READING: 'menu_book', ANKI: 'style', LISTENING: 'music_note', GENERAL: 'general' }
 const iconPaths = {}
 function iconPath(type) {
-  const name = TYPE_ICON[type]
+  const name = TYPE_ICON[type] || (isCustomType(type) ? categoryIconOf(type) : null)
   if (!name) return null
   if (!iconPaths[name]) {
     const p = new Path2D()
-    for (const m of (ICONS[name] || '').matchAll(/ d="([^"]+)"/g)) p.addPath(new Path2D(m[1]))
+    const svg = ICONS[name] || CATEGORY_ICONS[name] || ''
+    for (const m of svg.matchAll(/ d="([^"]+)"/g)) p.addPath(new Path2D(m[1]))
+    // A few category icons have a dot drawn as a circle.
+    for (const m of svg.matchAll(/<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)"/g)) {
+      const c = new Path2D()
+      c.arc(Number(m[1]), Number(m[2]), Number(m[3]), 0, Math.PI * 2)
+      p.addPath(c)
+    }
     iconPaths[name] = p
   }
   return iconPaths[name]

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'preact/hooks'
 import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
-import { durationOf, typeLabel, isUnresolved, LISTENING } from '../model/rules.js'
+import { durationOf, typeLabel, isUnresolved, LISTENING, isCustomType, customType } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
 import { HomeTabs, Dialog, Confirm, DurationInput, hmToMillis, EntryLabel, TypeBadge, TypeIcon, Icon, LanguageChip, LanguageFilterChip, Seg, toast, useListEntrance, useRiseIn } from './common.jsx'
 import { Stats } from './Stats.jsx'
@@ -90,17 +90,21 @@ export function EntryDetails({ id, onClose }) {
           </div>
         </div>
 
-        {/* The kind, fixable afterwards - listening and reading swap; not while it's running (only
-            one of each type runs at a time). */}
-        {!running && (entry.contentType === PODCAST || entry.contentType === READING) && (<>
-          <div class="section-header ed-label">Type</div>
-          <div class="ed-seg" role="radiogroup">
-            {[[PODCAST, 'Listening'], [READING, 'Reading']].map(([t, l]) => (
-              <button key={t} role="radio" class={entry.contentType === t ? 'on' : ''} style={{ '--c': color }} aria-checked={entry.contentType === t}
-                onClick={() => entry.contentType !== t && editEntry(entry.id, { contentType: t })}><TypeIcon type={t} size={18} />{l}</button>
-            ))}
-          </div>
-        </>)}
+        {/* The kind, fixable afterwards - listening, reading and the user's own categories swap (three
+            to a row once there are categories); not while it's running (only one of each type runs at a time). */}
+        {!running && (entry.contentType === PODCAST || entry.contentType === READING || isCustomType(entry.contentType)) && (() => {
+          const kinds = [PODCAST, READING, ...(s.settings.customCategories || []).map((c) => customType(c.id))]
+          if (!kinds.includes(entry.contentType)) kinds.push(entry.contentType) // a deleted category's ("Other")
+          return (<>
+            <div class="section-header ed-label">Type</div>
+            <div class={`ed-seg ${kinds.length > 2 ? 'wrap' : ''}`} role="radiogroup">
+              {kinds.map((t) => (
+                <button key={t} role="radio" class={entry.contentType === t ? 'on' : ''} style={{ '--c': color }} aria-checked={entry.contentType === t}
+                  onClick={() => entry.contentType !== t && editEntry(entry.id, { contentType: t })}><TypeIcon type={t} size={18} /><span class="ellipsis">{typeLabel(t)}</span></button>
+              ))}
+            </div>
+          </>)
+        })()}
 
         {/* Not for music: it isn't tracked by language. */}
         {entry.contentType !== LISTENING && (<>

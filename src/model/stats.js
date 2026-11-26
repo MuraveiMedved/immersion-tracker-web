@@ -68,14 +68,17 @@ export function windowFor(range, offset, now = Date.now(), firstEntryMs = now) {
   return { buckets, label, start: buckets[0][0], end: buckets[buckets.length - 1][1] }
 }
 
-/** [types]: the stats screen's type filter (STATS_TYPES) - only those kinds of entry, Study
- *  included when picked; null = immersion as everywhere else (listening and reading). */
+/** [types]: the stats screen's type filter (STATS_TYPES, or a category's type) - only those kinds of
+ *  entry, Study included when picked; null = immersion as everywhere else (listening, reading and the
+ *  categories that count). */
 const included = (e, langSet, types = null) =>
   (types ? e.languageProfileId != null && types.includes(e.contentType) : counts(e.contentType, e.languageProfileId)) &&
   (!langSet || langSet.has(e.languageProfileId))
 
 /** The stats screen's type filter, as on the phone (EntriesStatsSection's StatsTypeFilter). */
 export const STATS_TYPES = { LISTENING: ['PODCAST', 'LISTENING'], READING: ['READING'], STUDY: ['ANKI'] }
+/** The entry types a filter key takes: one of STATS_TYPES, or a category's own type ("CUSTOM_<id>"). */
+export const statsTypesFor = (key) => (key == null ? null : STATS_TYPES[key] || [key])
 
 /** Bars: per bucket, millis per language (stacked). */
 export function barsFor(entries, win, langSet, now = Date.now(), types = null) {
@@ -118,8 +121,8 @@ export function quickStats(entries, win, langSet, now = Date.now(), types = null
     byLang.set(e.languageProfileId, (byLang.get(e.languageProfileId) || { total: 0, PODCAST: 0, READING: 0, LISTENING: 0, ANKI: 0 }))
     const l = byLang.get(e.languageProfileId)
     l.total += to - from
-    l[e.contentType] += to - from
-    byType[e.contentType] += to - from
+    l[e.contentType] = (l[e.contentType] || 0) + (to - from)
+    byType[e.contentType] = (byType[e.contentType] || 0) + (to - from)
   }
   const firstDay = epochDay(win.start)
   const lastDay = Math.min(epochDay(win.end - 1), epochDay(now))
