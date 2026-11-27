@@ -493,7 +493,7 @@ function ImportDialog({ kind, files, onClose, onOpenHistory }) {
     const added = importEntries(entries)
     // Kept whole, left-out groups too, so Import history can show it and count it differently later.
     const source = kind === 'polylogger' || rows.every((r) => r.source === 'polylogger') ? 'polylogger' : 'toggl'
-    saveImportHistory([makeRecord({ source, fileCount: files.length, rows, mapping }), ...getImportHistory()])
+    saveImportHistory([makeRecord({ source, fileCount: files.length, fileNames: files.map((f) => f.name), rows, mapping }), ...getImportHistory()])
     toast(`Added ${added} entries. Anything imported before was skipped.`, { label: 'See history', run: onOpenHistory })
     onClose()
   }

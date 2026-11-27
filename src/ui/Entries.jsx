@@ -8,8 +8,8 @@ import { HomeMenu } from './Home.jsx'
 
 /** The phone's EntryRow: the language's mark (by the "Entry language label" setting), the title and
  *  artist, and a grey pill with the duration. */
-export function EntryRow({ entry, now, onClick, selected, onLongPress, entrance }) {
-  const rise = useRiseIn(entrance)
+export function EntryRow({ entry, now, onClick, selected, onLongPress, entrance, riseOnOpen = false }) {
+  const rise = useRiseIn(entrance, riseOnOpen)
   const profile = profileById(entry.languageProfileId)
   const style = getState().settings.entryLabelStyle
   const running = entry.endTimeMillis == null
@@ -240,7 +240,7 @@ export function Entries({ params, nav }) {
                 </div>
                 <div class="list">
                   {g.entries.map((e) => (
-                    <EntryRow key={e.id} entry={e} now={now} entrance={entrance} selected={selected.has(e.id)}
+                    <EntryRow key={e.id} entry={e} now={now} entrance={entrance} riseOnOpen selected={selected.has(e.id)}
                       onClick={() => (selecting ? toggle(e.id) : setDetails(e.id))} onLongPress={() => toggle(e.id)} />
                   ))}
                 </div>

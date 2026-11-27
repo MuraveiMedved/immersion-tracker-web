@@ -518,7 +518,7 @@ export function useListEntrance(key = '') {
 /** A row floating up into place as it scrolls into view - only going down, for a row further down than any
  *  shown so far, never the rows already there as the page opens or ones coming back into view going up.
  *  Visible but brief (about two thirds of a second), no stagger, off under reduced motion. Returns a ref for the row. */
-export function useRiseIn(entrance) {
+export function useRiseIn(entrance, onOpen = false) {
   const ref = useRef(null)
   useEffect(() => {
     const el = ref.current
@@ -527,11 +527,16 @@ export function useRiseIn(entrance) {
       if (!list.some((e) => e.isIntersecting)) return
       io.disconnect()
       const top = el.getBoundingClientRect().top + window.scrollY
-      const opening = performance.now() - entrance.openedAt < LIST_OPENING_MS
+      const now = performance.now()
+      // onOpen (All entries, as on the phone): the rows already there as the list first shows float up too,
+      // one after another down the page.
+      if (entrance.firstRowAt == null) { entrance.firstRowAt = now; entrance.openCount = 0 }
+      const opening = now - (onOpen ? entrance.firstRowAt : entrance.openedAt) < LIST_OPENING_MS
       const newRow = top > entrance.furthest
       if (newRow) entrance.furthest = top
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      if (newRow && !opening && !reduced && el.animate) el.animate(RISE_FRAMES.frames, { duration: RISE_FRAMES.duration, easing: 'linear' })
+      const delay = onOpen && opening ? Math.min(entrance.openCount++, 12) * 40 : 0
+      if (newRow && (!opening || onOpen) && !reduced && el.animate) el.animate(RISE_FRAMES.frames, { duration: RISE_FRAMES.duration, easing: 'linear', delay, fill: 'backwards' })
     })
     io.observe(el)
     return () => io.disconnect()

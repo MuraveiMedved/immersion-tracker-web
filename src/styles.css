@@ -1360,3 +1360,5 @@ textarea.input { resize: vertical; }
 .cat-hero .cat-preview-name { font-size: 24px; max-width: 100%; }
 .cat-kind-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-small, 10px); font-size: 12.5px; font-weight: 500;
   color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, transparent); }
+.ih-note { display: flex; gap: 8px; align-items: flex-start; padding: 4px 16px 2px; font-size: 12.5px; color: var(--on-surface-variant); }
+.ih-note svg { flex: none; margin-top: 1px; }

@@ -15,13 +15,14 @@ export function newRecordId(at = Date.now()) {
 }
 
 /** A record from what the import dialog had: its rows and the mapping picked for each project. */
-export function makeRecord({ source, fileCount, rows, mapping, at = Date.now() }) {
+export function makeRecord({ source, fileCount, fileNames = [], rows, mapping, at = Date.now() }) {
   const projects = [...new Set(rows.map((r) => r.project))]
   return {
     id: newRecordId(at),
     source,
     atMillis: at,
     fileCount,
+    fileNames,
     groups: projects.map((project) => {
       const m = mapping[project]
       const type = m?.type || null
@@ -96,4 +97,43 @@ export function earlierGroups(records, entries, importTags) {
     .map((g) => ({ ...g, count: g.rows.length, ms: g.rows.reduce((n, r) => n + r.end - r.start, 0),
       first: Math.min(...g.rows.map((r) => r.start)), last: Math.max(...g.rows.map((r) => r.end)) }))
     .sort((a, b) => a.source.localeCompare(b.source) || b.ms - a.ms)
+}
+
+/** The imports made before history was kept, pieced back together (the phone's ImportHistory.reconstruct).
+ *  Entry ids grow with time, so one import's entries are one unbroken run of ids from its source; any
+ *  other entry in between ends it. Dated by its first id (milliseconds x 1000) - when it was saved here.
+ *  Groups are where its sessions went, named by [label](type, languageProfileId). */
+export function reconstruct(records, entries, importTags, label) {
+  const known = new Set(records.flatMap((r) => r.rows.map((row) => `${row.start}:${row.end}`)))
+  const sourceOf = (pkg) => Object.keys(importTags).find((k) => importTags[k].includes(pkg))
+  const sorted = [...entries].filter((e) => e.endTimeMillis != null).sort((a, b) => a.id - b.id)
+  const runs = []
+  let cur = null
+  for (const e of sorted) {
+    const source = sourceOf(e.appPackage)
+    if (!source || known.has(`${e.startTimeMillis}:${e.endTimeMillis}`)) { if (!source) cur = null; continue }
+    if (!cur || cur.source !== source) { cur = { source, entries: [] }; runs.push(cur) }
+    cur.entries.push(e)
+  }
+  return runs.map(({ source, entries: list }) => {
+    const by = new Map()
+    for (const e of list) {
+      const lang = e.contentType === LISTENING ? null : e.languageProfileId ?? null
+      const key = `${e.contentType}|${lang ?? ''}`
+      if (!by.has(key)) by.set(key, { type: e.contentType, lang, items: [] })
+      by.get(key).items.push(e)
+    }
+    const groups = [...by.values()]
+    const minId = Math.min(...list.map((e) => e.id))
+    return {
+      id: `early-${minId}`,
+      source,
+      atMillis: Math.floor(minId / 1000),
+      fileCount: 0,
+      fileNames: [],
+      reconstructed: true,
+      groups: groups.map((g) => ({ project: label(g.type, g.lang), type: g.type, languageProfileId: g.lang })),
+      rows: groups.flatMap((g) => g.items.map((e) => ({ project: label(g.type, g.lang), description: e.mediaTitle || '', start: e.startTimeMillis, end: e.endTimeMillis }))),
+    }
+  })
 }

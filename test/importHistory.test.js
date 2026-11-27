@@ -60,3 +60,18 @@ test('earlier imports: sessions no record holds, by source and destination', () 
   const g = earlierGroups([record], entries, tags)
   assert.deepEqual(g.map((x) => [x.source, x.type, x.count, x.ms]), [['polylogger', READING, 1, H], ['toggl', PODCAST, 1, 2 * H]])
 })
+
+test('reconstruct: one record per unbroken run of ids from a source', async () => {
+  const { reconstruct } = await import('../src/model/importHistory.js')
+  const tags = { toggl: ['import:toggl', 'toggl-import'], polylogger: ['import:polylogger', 'polylogger-import'] }
+  const e = (id, pkg, start, type = PODCAST) => ({ id, appPackage: pkg, startTimeMillis: start, endTimeMillis: start + H, contentType: type, languageProfileId: 3, mediaTitle: '' })
+  const entries = [
+    e(1000_001, 'toggl-import', 0), e(1000_002, 'toggl-import', H, READING),
+    e(1000_003, 'polylogger-import', 2 * H),
+    e(2000_000, 'web', 3 * H),
+    e(5000_000, 'import:toggl', 4 * H),
+  ]
+  const out = reconstruct([], entries, tags, (t, l) => `${t}/${l}`)
+  assert.deepEqual(out.map((r) => [r.source, r.rows.length, r.atMillis]), [['toggl', 2, 1000], ['polylogger', 1, 1000], ['toggl', 1, 5000]])
+  assert.ok(out.every((r) => r.reconstructed))
+})

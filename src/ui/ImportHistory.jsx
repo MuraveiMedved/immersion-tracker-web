@@ -1,9 +1,9 @@
 // Settings > Backup > Import history (the phone's ImportHistorySheet.kt): every Toggl / PolyLogger
 // import, where each group in it went (or that it was left out), and a tap to count a group
 // differently - Listening, Reading, Study, Music or a category of your own, made right there.
-import { useMemo, useState } from 'preact/hooks'
+import { useEffect, useMemo, useState } from 'preact/hooks'
 import { useStore, useImportHistory, saveImportHistory, getImportHistory, rerouteImported, removeImportedRows, IMPORT_TAGS, PODCAST, READING, ANKI, LISTENING } from '../store.js'
-import { summaries, totals, rowsOf, withGroup, earlierGroups } from '../model/importHistory.js'
+import { summaries, totals, rowsOf, withGroup, earlierGroups, reconstruct } from '../model/importHistory.js'
 import { customType, typeLabel } from '../model/rules.js'
 import { formatHm } from '../model/time.js'
 import { NewCategoryDialog } from './Categories.jsx'
@@ -45,6 +45,11 @@ export function ImportHistoryDialog({ onClose }) {
   const [removing, setRemoving] = useState(null)
   const earlier = useMemo(() => earlierGroups(records, s.entries, IMPORT_TAGS), [records, s.entries])
   const profile = (id) => s.profiles.find((p) => p.id === id)
+  // Imports made before history was kept come back one by one, as records of their own.
+  useEffect(() => {
+    const found = reconstruct(getImportHistory(), s.entries, IMPORT_TAGS, (type, lang) => destLabel(type, s.profiles.find((p) => p.id === lang)))
+    if (found.length) saveImportHistory([...getImportHistory(), ...found])
+  }, [records.length])
 
   const apply = (target, type, languageProfileId) => {
     const lang = type == null || type === LISTENING ? null : languageProfileId ?? null
@@ -76,14 +81,20 @@ export function ImportHistoryDialog({ onClose }) {
           const list = summaries(record)
           const counted = list.filter((x) => x.group.type != null)
           const left = list.filter((x) => x.group.type == null)
-          const when = new Date(record.atMillis).toLocaleDateString(undefined, { dateStyle: 'medium' })
+          const when = (record.reconstructed ? 'Around ' : '') + new Date(record.atMillis).toLocaleDateString(undefined, { dateStyle: 'medium' })
+          const first = Math.min(...record.rows.map((r) => r.start)), last = Math.max(...record.rows.map((r) => r.end))
+          const span = record.rows.length ? (month(first) === month(last) ? `Sessions from ${month(first)}` : `Sessions from ${month(first)} to ${month(last)}`) : null
+          const note = record.reconstructed
+            ? 'Imported before this history was kept, so it\'s grouped by where it went, and its date is roughly when. What it left out wasn\'t saved: import the file again to see that.'
+            : record.fileNames?.length ? record.fileNames.join(', ') : null
           const ms = record.rows.reduce((n, r) => n + r.end - r.start, 0)
           const kept = counted.reduce((n, x) => n + x.count, 0)
           const keptMs = counted.reduce((n, x) => n + x.ms, 0)
           return (
             <EventRow key={record.id} icon="file_upload" title={SOURCE_NAME[record.source] || record.source}
-              subtitle={`${when}, ${record.rows.length} sessions, ${formatHm(ms, true)}`} totals={totals(record)} categories={categories}
+              subtitle={`${when}, ${record.rows.length} sessions, ${formatHm(ms, true)}`} span={span} totals={totals(record)} categories={categories}
               leftOut={left.length} onRemove={() => setRemoving({ record, count: kept, ms: keptMs })}>
+              {note && <div class="ih-note"><Icon name={record.reconstructed ? 'history' : 'file_upload'} size={15} /><span>{note}</span></div>}
               {counted.length > 0 && <div class="ih-label">Counted ({counted.length})</div>}
               {counted.map((x, i) => <GroupRow key={x.group.project} i={i} title={x.group.project || '(No project)'} meta={groupMeta(x.count, x.ms, x.first, x.last)}
                 type={x.group.type} profile={profile(x.group.languageProfileId)} categories={categories} onClick={() => setRouting({ record, group: x.group, count: x.count, ms: x.ms, title: x.group.project || '(No project)' })} />)}
@@ -141,7 +152,7 @@ function DestBar({ totals: list, categories, showKey = true }) {
 
 /** One import as a row: what and when, a bar of where its time went and how much was left out; tapped,
  *  it opens to its groups. The bin removes it (after asking). */
-function EventRow({ icon, muted, title, subtitle, totals: list, categories, leftOut, onRemove, children }) {
+function EventRow({ icon, muted, title, subtitle, span, totals: list, categories, leftOut, onRemove, children }) {
   const [open, setOpen] = useState(false)
   return (
     <section class={`ih-panel ih-event ${open ? 'open' : ''}`}>
@@ -152,6 +163,7 @@ function EventRow({ icon, muted, title, subtitle, totals: list, categories, left
           <div class="grow">
             <div class="s-title ellipsis">{title}</div>
             <div class="muted small">{subtitle}</div>
+            {span && <div class="muted small" style="opacity:.8">{span}</div>}
           </div>
           <button class="icon-btn" title="Remove this import" aria-label="Remove this import" onClick={(e) => { e.stopPropagation(); onRemove() }}><Icon name="delete" size={20} /></button>
           <span class="ih-chevron"><Icon name="expand_more" size={22} /></span>
