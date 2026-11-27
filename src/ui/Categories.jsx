@@ -69,17 +69,16 @@ function CategoryEditDialog({ category, isNew, takenNames, onClose, onSaved }) {
     else onClose()
   }
   return (
-    <Dialog title={isNew ? 'New category' : 'Edit category'} onClose={onClose} actions={<>
+    <Dialog sheet={false} extraClass={`cat-dialog ${immersion ? '' : 'apart'}`} onClose={onClose} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
       <button class="btn grow" disabled={!canSave} onClick={save}>{isNew ? 'Create' : 'Save'}</button>
     </>}>
       <div class={`col cat-edit ${immersion ? '' : 'apart'}`} style="gap:14px">
-        <div class="cat-preview">
-          <span class="cat-preview-icon"><Icon key={icon} name={icon} size={30} /></span>
-          <div class="grow" style="min-width:0">
-            <div class={`cat-preview-name ${trimmed ? '' : 'empty'}`}>{trimmed || 'Watching'}</div>
-            <div class="cat-preview-kind small">{immersion ? 'Counts as immersion' : 'Kept apart from immersion'}</div>
-          </div>
+        <div class="cat-hero">
+          <div class="muted small">{isNew ? 'New category' : 'Edit category'}</div>
+          <span class="cat-preview-icon"><Icon key={icon} name={icon} size={38} /></span>
+          <div class={`cat-preview-name ${trimmed ? '' : 'empty'}`}>{trimmed || 'Watching'}</div>
+          <span class="cat-kind-pill"><Icon name={immersion ? 'auto_awesome' : 'adjust'} size={14} />{immersion ? 'Counts as immersion' : 'Kept apart from immersion'}</span>
         </div>
         <label class="field">Name
           <span class={`title-field ${clash ? 'error' : ''}`}>

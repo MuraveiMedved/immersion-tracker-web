@@ -1350,3 +1350,13 @@ textarea.input { resize: vertical; }
 .ih-left-pill { margin-top: 12px; padding: 3px 8px; border-radius: var(--r-small, 10px); border: 1px solid var(--outline-variant); font-size: 12.5px; font-weight: 500; color: var(--on-surface-variant); white-space: nowrap; }
 .ih-event-body { padding-bottom: 8px; animation: ih-rise var(--dur-standard, .25s) var(--ease-enter, ease) both; }
 @media (prefers-reduced-motion: reduce) { .ih-chevron, .ih-event-head { transition: none; } .ih-event-body { animation: none; } }
+
+/* The category maker as a centred card with a coloured header (the phone's CategoryEditDialog). */
+.dialog.cat-dialog { --tone: var(--primary); max-width: 460px; padding-top: 0; overflow-x: hidden; }
+.dialog.cat-dialog.apart { --tone: var(--secondary); }
+.cat-hero { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; margin: 0 -24px; padding: 20px 24px;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--tone) 20%, transparent), color-mix(in srgb, var(--tone) 3%, transparent)); }
+.cat-hero .cat-preview-icon { width: 80px; height: 80px; margin-top: 4px; }
+.cat-hero .cat-preview-name { font-size: 24px; max-width: 100%; }
+.cat-kind-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: var(--r-small, 10px); font-size: 12.5px; font-weight: 500;
+  color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, transparent); }
