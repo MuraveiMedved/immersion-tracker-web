@@ -666,6 +666,38 @@ textarea.input { resize: vertical; }
 .pp-animal img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .profile-card { border-radius: 20px; padding: 16px; background: var(--profile-block, var(--block)); }
 .profile-card .pc-title { font-size: 14px; font-weight: 600; letter-spacing: .1px; margin-bottom: 10px; }
+/* Profiles (revamped 2026-11-27): the hero header, the numbers strip, Today's lines, the Zoo's rarity split. */
+.profile-hero { position: relative; border-radius: 24px; overflow: hidden; background: var(--profile-block, var(--block)); }
+.ph-band { height: 92px; position: relative; }
+.ph-band::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent, rgba(0,0,0,.12)); }
+.ph-momentum { position: absolute; right: 14px; bottom: -32px; z-index: 1; }
+.ph-pic { position: absolute; left: 16px; top: 52px; padding: 4px; border-radius: 50%; background: var(--profile-block, var(--block)); }
+.ph-pic.animal { border-radius: 18px; }
+.ph-body { padding: 48px 18px 16px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ph-name { font-family: var(--display, var(--font)); font-size: 22px; line-height: 28px; font-weight: 600; }
+.ph-langs { font-size: 13px; color: var(--on-surface-variant); }
+.ps-head { display: flex; align-items: flex-end; gap: 8px; padding: 0 4px 8px; font-size: 14px; font-weight: 600; }
+:root[data-ui='quiet'] .ps-head > .grow { text-transform: uppercase; font-size: 11.5px; letter-spacing: 1.1px; opacity: .82; }
+.profile-stats { padding: 0; }
+.ps-cells { display: flex; padding: 14px 0; }
+.ps-cell { flex: 1; min-width: 0; text-align: center; padding: 0 4px; }
+.ps-cell + .ps-cell { border-left: 1px solid var(--rule, color-mix(in srgb, var(--on-surface) 15%, transparent)); }
+.ps-cell .v { font-family: var(--display, var(--font)); font-size: 19px; line-height: 25px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ps-cell .k { font-size: 12px; color: var(--on-surface-variant); }
+.ps-best { border-top: 1px solid var(--rule, color-mix(in srgb, var(--on-surface) 15%, transparent)); padding: 10px 14px; text-align: center; font-size: 12px; font-weight: 500; color: var(--on-surface-variant); }
+.pt-lang { display: flex; flex-direction: column; gap: 10px; }
+.pt-lang + .pt-lang { border-top: 1px solid var(--rule, color-mix(in srgb, var(--on-surface) 15%, transparent)); margin-top: 12px; padding-top: 12px; }
+.pt-name { font-size: 15px; font-weight: 600; }
+.pt-goal .row { gap: 8px; }
+.pt-fig { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.pt-fig.met { font-weight: 700; }
+.pt-track { margin-top: 6px; height: 6px; border-radius: 3px; overflow: hidden; background: color-mix(in srgb, var(--on-surface) 10%, transparent); }
+.pt-track > div { height: 100%; border-radius: 3px; }
+.rarity-split { margin-bottom: 10px; }
+.rarity-split .bar { display: flex; gap: 2px; height: 8px; border-radius: 4px; overflow: hidden; }
+.rarity-split .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12px; color: var(--on-surface-variant); }
+.rarity-split .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+.trophy-slot .rarity { font-size: 11px; font-weight: 500; margin-top: -4px; }
 .record-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .record-tile { border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--surface-variant) 50%, transparent); min-width: 0; }
 .record-tile .k { font-size: 11px; font-weight: 500; letter-spacing: .5px; color: var(--on-surface-variant); }

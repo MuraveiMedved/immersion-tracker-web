@@ -10,8 +10,8 @@ import { HOUR, DAY, formatHm, formatDate, formatDateTime, formatYmd, agoText, ym
 import { withAlpha, languageFill, LANGUAGE_COLORS_BRIGHT, GRADIENTS, PRESETS, presetLabel, schemeFor, dimColor, deepened, isDarkFor } from '../model/theme.js'
 import { Dialog, Confirm, Seg, Switch, SettingRow, toast, copyText, share, Spinner, Bolt, TypeIcon, TypeLabel, Icon, StreakBadge, MomentumPill, displayEmoji, firstGrapheme } from './common.jsx'
 import { Ring } from './Ring.jsx'
-import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill, FoilSheen, holoClass, glowColors } from './Zoo.jsx'
-import { RARITY_COLOR } from '../model/zoo.js'
+import { useCatalog, AnimalPhoto, AnimalCardView, RarityBadge, CardStage, Floaty, GlowPill, FoilSheen, holoClass, glowColors, RARITY_GRADIENT } from './Zoo.jsx'
+import { RARITY_COLOR, RARITY_LABEL } from '../model/zoo.js'
 
 const EMOJIS = ['🦊', '🐼', '🐯', '🦁', '🐸', '🐙', '🦉', '🐧', '🐢', '🦄', '🐝', '🦋', '🐳', '🦖', '🐲', '🌸', '⭐', '🔥', '⚡', '🍀', '🍣', '☕', '🎧', '📚']
 const BAR_PALETTES = {
@@ -1326,7 +1326,7 @@ function MyProfileSheet({ onClose }) {
   const bannerStops = (s.friends.banner || '').split(',').filter(Boolean)
   return (
     <Dialog hideScrollbar title="Your profile" onClose={onClose} actions={<button class="btn" onClick={onClose}>Done</button>}>
-      <ProfileFrame p={me}><ProfileBanner p={me} light={light} /><ProfileSections p={me} /></ProfileFrame>
+      <ProfileFrame p={me}><ProfileSections p={me} hero /></ProfileFrame>
 
       <div class="row" style="margin-top:16px;gap:8px">
         <label class="field grow">Name<input class="input" value={name} maxLength={24} onInput={(e) => setName(e.currentTarget.value)}
@@ -1373,70 +1373,95 @@ function MyProfileSheet({ onClose }) {
   )
 }
 
-/** A profile's goals laid out like its owner's Home: the heading with their Momentum pill, then a
- *  goal card per language - two columns, an odd one out across the full width. */
-function ProfileTodayCard({ p }) {
+/** Today on a profile (revamped 2026-11-27, the phone's ProfileGoalLines): per language its name in
+ *  its colour, then a line per goal - icon, today's time against the goal, the streak - over a bar
+ *  filling in the language's colour, main language first. */
+function ProfileToday({ p }) {
   const asOf = p.dayKey > 0 && p.dayKey !== ymdOf(goalDayStart(Date.now()))
   const has = (l, k) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || !!l[k + 'Streak']
-  const cards = p.languages.filter((l) => has(l, 'listen') || has(l, 'read') || has(l, 'gen'))
-  // As their Home lays them out: an odd one out goes full width - their main language, at the top
-  // (else the last, at the bottom) - the rest balanced between the columns by card height.
-  const odd = cards.length % 2 === 1 ? cards.find((l) => l.main) || cards[cards.length - 1] : null
-  const grid = cards.filter((l) => l !== odd)
-  const oddLeads = !!odd && (!!odd.main || !grid.length)
-  const columns = [[], []]
-  const weights = [0, 0]
-  for (const l of grid) {
-    const i = weights[0] <= weights[1] ? 0 : 1
-    columns[i].push(l)
-    weights[i] += 1 + 2 * (has(l, 'listen') + has(l, 'read') + has(l, 'gen'))
-  }
-  if (!cards.length) return null
+  const langs = p.languages.filter((l) => has(l, 'listen') || has(l, 'read') || has(l, 'gen')).sort((a, b) => (b.main ? 1 : 0) - (a.main ? 1 : 0))
+  if (!langs.length) return null
+  const light = !isDarkFor(getState().settings.uiColorPreset)
+  return (
+    <ProfileSection title="Today" trailing={asOf ? `as of ${formatYmd(p.dayKey)}` : null}>
+      {langs.map((l, i) => {
+        const color = l.color || '#888888'
+        const stops = l.gradient ? l.gradient.split(',').map((c) => c.trim()) : null
+        const multi = stops && stops.length > 1
+        const ink = light ? deepened(color, 0.42) : color
+        const nameStyle = multi
+          ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+          : { color: ink }
+        const bar = multi ? `linear-gradient(90deg, ${stops.join(', ')})` : color
+        const goals = [['listen', 'PODCAST'], ['read', 'READING'], ['gen', 'GENERAL']].filter(([k]) => has(l, k))
+        return (
+          <div key={i} class="pt-lang">
+            <div class="pt-name ellipsis" style={nameStyle}>{l.name}</div>
+            {goals.map(([k, type]) => {
+              const goal = l[k + 'Goal']
+              const today = l[k + 'Today'] ?? 0
+              const progress = l[k + 'Progress'] ?? (goal > 0 ? today / goal : null)
+              const streak = l[k + 'Streak']
+              const met = progress != null && progress >= 1
+              return (
+                <div key={k} class="pt-goal">
+                  <div class="row">
+                    <TypeIcon type={type} size={18} color={ink} />
+                    <span class={`pt-fig grow ${met ? 'met' : ''}`} style={met ? { color: ink } : null}>
+                      {goal != null ? `${formatHm(today * 60000)} / ${formatHm(goal * 60000, true)}` : progress != null ? `${Math.floor(progress * 100)}%` : ''}
+                    </span>
+                    {streak && <StreakBadge streak={{ current: streak.current, record: streak.record, golden: streak.pure }} />}
+                  </div>
+                  {progress != null && <div class="pt-track"><div style={{ width: `${Math.min(1, Math.max(0, progress)) * 100}%`, background: bar }} /></div>}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
+    </ProfileSection>
+  )
+}
+
+/** A section of a profile: its small heading (with [trailing] at the far end) over one soft panel. */
+function ProfileSection({ title, trailing, children }) {
   return (
     <div>
-      <div class="row" style="margin-bottom:6px">
-        <div class="title-medium grow" style="font-weight:400">Today</div>
-        {asOf && <span class="label-small muted">as of {formatYmd(p.dayKey)}</span>}
-        {p.shows.streaks && p.goldenDays >= GOLDEN_DAYS && <MomentumPill days={p.goldenDays} progress={1} />}
-      </div>
-      {odd && oddLeads && <ProfileGoalCard l={odd} ringStyle={p.ringStyle} wide />}
-      {grid.length > 0 && <div class="goal-cols">{columns.map((col, i) => <div key={i}>{col.map((l, j) => <ProfileGoalCard key={j} l={l} ringStyle={p.ringStyle} />)}</div>)}</div>}
-      {odd && !oddLeads && <ProfileGoalCard l={odd} ringStyle={p.ringStyle} wide />}
+      <div class="ps-head"><span class="grow">{title}</span>{trailing && <span class="label-small muted">{trailing}</span>}</div>
+      <div class="profile-card">{children}</div>
     </div>
   )
 }
 
-/** One language as a goal card on its owner's Home: the language's colour taken down to the card,
- *  its name in that colour, and per goal its ring, today's minutes and the streak under it. */
-function ProfileGoalCard({ l, ringStyle, wide }) {
-  const light = !isDarkFor(getState().settings.uiColorPreset)
-  const color = l.color || '#888888'
-  const stops = l.gradient ? l.gradient.split(',').map((c) => c.trim()) : null
-  const multi = stops && stops.length > 1
-  const bg = multi ? `linear-gradient(135deg, ${stops.map((c) => dimColor(c, 0.6, 0.18, light)).join(', ')})` : dimColor(color, 0.6, 0.18, light)
-  const nameStyle = multi
-    ? { backgroundImage: `linear-gradient(90deg, ${stops.map((c) => (light ? deepened(c, 0.42) : c)).join(', ')})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
-    : { color: light ? deepened(color, 0.42) : color }
-  const iconColor = light ? '#000' : '#fff'
-  const goals = [['listen', 'PODCAST'], ['read', 'READING'], ['gen', 'GENERAL']].filter(([k]) => l[k + 'Goal'] != null || l[k + 'Progress'] != null || l[k + 'Streak'])
+/** A long total in whole hours ("412h"); under ten hours as is. */
+const roundedHours = (ms) => (ms >= 10 * HOUR ? formatHm(Math.round(ms / HOUR) * HOUR, true) : formatHm(ms))
+
+/** The headline numbers in one strip (the phone's ProfileStats): all-time immersion, longest streak,
+ *  days tracked and animals held, whichever are shared, with their best day under them. */
+function ProfileStats({ p, zooCount }) {
+  const r = p.records
+  const cells = []
+  if (r) {
+    cells.push([roundedHours(r.totalMillis), 'Total'], [`${r.longestStreak}d`, 'Best streak'], [String(r.daysTracked), 'Days tracked'])
+  }
+  const animals = zooCount ?? p.zooFound
+  if (animals > 0) cells.push([String(animals), 'Animals'])
+  if (!cells.length) return null
   return (
-    <div class={`goal-card ${wide ? 'wide' : ''}`} style={{ background: bg, cursor: 'default', '--goal-stain': multi ? `linear-gradient(135deg, ${stops.map((c) => withAlpha(c, 0.24)).join(', ')})` : withAlpha(color, 0.24) }}>
-      <div class="name ellipsis" style={nameStyle}>{l.name}</div>
-      {goals.map(([k, type]) => {
-        const goal = l[k + 'Goal']
-        const today = l[k + 'Today'] ?? 0
-        const progress = l[k + 'Progress'] ?? (goal > 0 ? today / goal : null)
-        const streak = l[k + 'Streak']
-        return (
-          <div key={k} class="ring-stat">
-            {progress != null
-              ? <Ring size={64} progress={progress} color={color} stops={stops} ringStyle={ringStyle || 'CLASSIC'} iconType={type} iconColor={iconColor} light={light} />
-              : <div style="width:64px;height:64px;display:grid;place-items:center"><TypeIcon type={type} size={40} color={color} /></div>}
-            {goal != null && <span class="val">{formatHm(today * 60000)} / {formatHm(goal * 60000, true)}</span>}
-            {streak && <StreakBadge streak={{ current: streak.current, record: streak.record }} />}
-          </div>
-        )
-      })}
+    <div class="profile-card profile-stats">
+      <div class="ps-cells">{cells.map(([v, k]) => <div key={k} class="ps-cell"><div class="v">{v}</div><div class="k">{k}</div></div>)}</div>
+      {r && r.bestDay > 0 && <div class="ps-best">Best day {formatHm(r.bestDayMillis)}, {formatYmd(r.bestDay)}</div>}
+    </div>
+  )
+}
+
+/** How a collection splits by rarity: one bar, each rarity as long as its share, then a dot and a count each. */
+function RarityBar({ counts }) {
+  if (!counts.length) return null
+  return (
+    <div class="rarity-split">
+      <div class="bar">{counts.map(([r, n]) => <div key={r} style={{ flex: n, background: RARITY_GRADIENT[r] || RARITY_COLOR[r] }} />)}</div>
+      <div class="legend">{counts.map(([r, n]) => <span key={r}><i style={{ background: RARITY_COLOR[r] }} />{n} {RARITY_LABEL[r]}</span>)}</div>
     </div>
   )
 }
@@ -1450,8 +1475,7 @@ export function ProfileDialog({ profile: p, onClose, onRemove }) {
   return (
     <Dialog hideScrollbar onClose={onClose} actions={<>{onRemove && <button class="btn text danger" onClick={onRemove}>Remove friend</button>}<span class="spacer" /><button class="btn" onClick={onClose}>Close</button></>}>
       <ProfileFrame p={p}>
-        <ProfileBanner p={p} light={light} />
-        <ProfileSections p={p} />
+        <ProfileSections p={p} hero />
       </ProfileFrame>
     </Dialog>
   )
@@ -1474,8 +1498,9 @@ function ProfileFrame({ p, children }) {
   return <div class="profile-page" style={style}>{children}</div>
 }
 
-/** The animal on display, their zoo, Today's goal cards, records and when it was updated. */
-function ProfileSections({ p }) {
+/** Everything on a profile (revamped 2026-11-27, the phone's ProfileSections): with [hero] the header,
+ *  then the headline numbers, the trophy case, Today, and their Zoo. */
+function ProfileSections({ p, hero }) {
   const catalog = useCatalog()
   const [all, setAll] = useState(false)
   const [open, setOpen] = useState(null)
@@ -1505,20 +1530,23 @@ function ProfileSections({ p }) {
     const best = cert(c.a.id)
     return c.foil ? (best?.foil ? best : { foil: true }) : best?.foil ? null : best
   }
+  const byRarity = ORDER.map((r) => [r, zoo.filter(([a]) => a.rarity === r).length]).filter(([, n]) => n > 0)
   return (
-    <div class="col" style="gap:16px">
+    <div class="col" style="gap:18px">
+      {hero && <ProfileHero p={p} />}
+      <ProfileStats p={p} zooCount={p.zoo && catalog ? zoo.length : null} />
       {showCase && p.shows.trophy && (
-        <div class="profile-card">
-          <div class="row muted" style="gap:4px;font-size:12px;font-weight:500;margin-bottom:10px"><Icon name="emoji_events" size={16} />Trophy case</div>
+        <ProfileSection title="Trophy case">
           <div class="trophy-slots">
             {caseSlots.map((a, i) => (a
               ? <button key={`${i}${a.id}`} class={`trophy-slot ${cert(a.id)?.foil ? 'holo' : ''}`} style={{ '--rarity': RARITY_COLOR[a.rarity], ...glowColors(a.rarity) }} onClick={() => setOpen({ animal: a, cert: cert(a.id) })}>
                   <div class="photo"><AnimalPhoto animal={a} />{cert(a.id)?.foil && <FoilSheen seed={a.id} />}{i === firstFilled && <span class="count pick">🏆</span>}</div>
                   <div class="name">{p.names?.[a.id] ? `“${p.names[a.id]}”` : a.name}</div>
+                  <div class="rarity" style={{ color: RARITY_COLOR[a.rarity] }}>{RARITY_LABEL[a.rarity]}</div>
                 </button>
               : <div key={`empty${i}`} class="trophy-slot empty"><div class="photo" /></div>))}
           </div>
-        </div>
+        </ProfileSection>
       )}
       {!showCase && trophy && p.shows.trophy && (
         <button class="trophy-card" style={{ '--rarity': RARITY_COLOR[trophy.rarity] }} onClick={() => setOpen({ animal: trophy, cert: cert(trophy.id) })}>
@@ -1532,9 +1560,10 @@ function ProfileSections({ p }) {
           </div>
         </button>
       )}
+      {p.languages.length > 0 && (p.shows.rings || p.shows.goals || p.shows.streaks) && <ProfileToday p={p} />}
       {zoo.length > 0 && (
-        <div class="profile-card">
-          <div class="pc-title">Zoo ({zoo.length})</div>
+        <ProfileSection title={`Zoo (${zoo.length})`}>
+          <RarityBar counts={byRarity} />
           <div class="profile-zoo">
             {(all ? cards : cards.slice(0, 12)).map((c) => (
               <button key={c.key} class={`tile-animal ${c.foil ? holoClass(c.a.rarity) : ''}`} style={{ borderColor: RARITY_COLOR[c.a.rarity], ...glowColors(c.a.rarity) }} title={p.names?.[c.a.id] ? `“${p.names[c.a.id]}”, ${c.a.name}` : c.a.name} onClick={() => setOpen({ animal: c.a, cert: cardCert(c), n: c.n })}>
@@ -1543,21 +1572,9 @@ function ProfileSections({ p }) {
             ))}
           </div>
           {cards.length > 12 && <button class="btn text small" onClick={() => setAll(!all)}>{all ? 'Show fewer' : 'Show all'}</button>}
-        </div>
+        </ProfileSection>
       )}
-      {p.languages.length > 0 && (p.shows.rings || p.shows.goals || p.shows.streaks) && <ProfileTodayCard p={p} />}
-      {p.records && (
-        <div class="profile-card">
-          <div class="pc-title">Records</div>
-          <div class="record-tiles">
-            <RecordTile label="All-time immersion" value={formatHm(p.records.totalMillis)} />
-            <RecordTile label="Longest streak" value={`${p.records.longestStreak}d`} />
-            <RecordTile label="Best day" value={p.records.bestDay > 0 ? `${formatHm(p.records.bestDayMillis)} on ${formatYmd(p.records.bestDay)}` : '-'} />
-            <RecordTile label="Days tracked" value={String(p.records.daysTracked)} />
-          </div>
-        </div>
-      )}
-      {p.updatedAt > 0 && <div class="muted" style="font-size:11px;font-weight:500;letter-spacing:.5px">Updated {agoText(p.updatedAt)}</div>}
+      {!hero && p.updatedAt > 0 && <div class="muted" style="font-size:11px;font-weight:500;letter-spacing:.5px">Updated {agoText(p.updatedAt)}</div>}
       {open && (
         <CardStage rarity={open.animal.rarity} onClose={() => setOpen(null)}>
           <Floaty><AnimalCardView animal={open.animal} cert={open.cert} timesFound={open.n ?? (open.cert?.foil ? 1 : (p.zoo?.[open.animal.id] || 1) - holoOf(open.animal.id, p.zoo?.[open.animal.id] || 1))} nickname={p.names?.[open.animal.id] || null} /></Floaty>
@@ -1568,17 +1585,27 @@ function ProfileSections({ p }) {
   )
 }
 
-/** The top of a profile: their picture and name on a wash of their banner colour (or gradient),
- *  else their race colour, else the theme's. */
-function ProfileBanner({ p, light }) {
+/** The top of a profile (revamped 2026-11-27, the phone's ProfileHero): a band of their banner colour
+ *  or gradient (else their race colour, else the theme's), their picture large over its lower edge,
+ *  then their name, the languages they share in their colours, Momentum and when it was updated. */
+function ProfileHero({ p }) {
+  const light = !isDarkFor(getState().settings.uiColorPreset)
   const colors = (p.banner || p.color || '').split(',').map((c) => c.trim()).filter((c) => /^#[0-9a-f]{6}$/i.test(c))
-  const cs = colors.length ? (colors.length === 1 ? [colors[0], colors[0]] : colors) : null
-  const fill = cs ? `linear-gradient(90deg, ${cs.map((c) => withAlpha(c, light ? 0.4 : 0.5)).join(', ')})` : 'linear-gradient(color-mix(in srgb, var(--primary) 45%, transparent), color-mix(in srgb, var(--primary) 45%, transparent))'
-  const edge = cs ? `linear-gradient(90deg, ${cs.map((c) => withAlpha(c, 0.8)).join(', ')})` : 'linear-gradient(var(--primary), var(--primary))'
+  const band = colors.length ? `linear-gradient(135deg, ${(colors.length === 1 ? [colors[0], colors[0]] : colors).join(', ')})` : 'var(--primary)'
+  const langs = [...p.languages].sort((a, b) => (b.main ? 1 : 0) - (a.main ? 1 : 0))
+  const name = (l, i) => <span key={i} style={{ color: light ? deepened(l.color || '#888888', 0.42) : l.color || '#888888', fontWeight: 500 }}>{l.name}</span>
+  const joined = langs.flatMap((l, i) => [i === 0 ? null : i === langs.length - 1 ? ' and ' : ', ', name(l, i)]).filter((x) => x != null)
   return (
-    <div class="profile-banner" style={{ background: `${fill} padding-box, linear-gradient(var(--bg), var(--bg)) padding-box, ${edge} border-box` }}>
-      <ProfilePicture p={p} color={cs ? cs[0] : null} />
-      <div class="name ellipsis">{p.name}</div>
+    <div class="profile-hero">
+      <div class="ph-band" style={{ background: band }}>
+        {p.shows.streaks && p.goldenDays >= GOLDEN_DAYS && <div class="ph-momentum"><MomentumPill days={p.goldenDays} progress={1} /></div>}
+      </div>
+      <div class={`ph-pic ${p.avatar !== 'emoji' && p.trophy ? 'animal' : ''}`}><ProfilePicture p={p} color={colors[0] || null} size={72} /></div>
+      <div class="ph-body">
+        <div class="ph-name ellipsis">{p.name}</div>
+        {langs.length > 0 && <div class="ph-langs">{joined}</div>}
+        {p.updatedAt > 0 && <div class="label-small muted">Updated {agoText(p.updatedAt)}</div>}
+      </div>
     </div>
   )
 }
@@ -1588,11 +1615,7 @@ function ProfilePicture({ p, color, size = 48 }) {
   const catalog = useCatalog()
   const animal = p.avatar !== 'emoji' && p.trophy && catalog ? catalog.find((a) => a.id === p.trophy) : null
   if (animal) return <div class="pp-animal" style={{ width: size, height: size, borderColor: RARITY_COLOR[animal.rarity] }}><AnimalPhoto animal={animal} /></div>
-  return <div class="pp-emoji" style={{ width: size, height: size, background: color ? withAlpha(color, 0.3) : 'color-mix(in srgb, var(--primary) 30%, transparent)' }}>{displayEmoji(p.emoji) || (p.name || '?').slice(0, 1).toUpperCase()}</div>
-}
-
-function RecordTile({ label, value }) {
-  return <div class="record-tile"><div class="k">{label}</div><div class="v ellipsis">{value}</div></div>
+  return <div class="pp-emoji" style={{ width: size, height: size, fontSize: Math.round(size * 0.46), background: color ? withAlpha(color, 0.3) : 'color-mix(in srgb, var(--primary) 30%, transparent)' }}>{displayEmoji(p.emoji) || (p.name || '?').slice(0, 1).toUpperCase()}</div>
 }
 
 export { RarityBadge }
