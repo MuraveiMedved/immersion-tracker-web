@@ -1450,7 +1450,7 @@ function ProfileStats({ p, zooCount }) {
   return (
     <div class="profile-card profile-stats">
       <div class="ps-cells">{cells.map(([v, k]) => <div key={k} class="ps-cell"><div class="v">{v}</div><div class="k">{k}</div></div>)}</div>
-      {r && r.bestDay > 0 && <div class="ps-best">Best day {formatHm(r.bestDayMillis)}, {formatYmd(r.bestDay)}</div>}
+      {r && r.bestDay > 0 && <div class="ps-best">Best day {formatHm(r.bestDayMillis)}, {formatYmd(r.bestDay, { year: 'numeric', month: 'short', day: 'numeric' })}</div>}
     </div>
   )
 }
