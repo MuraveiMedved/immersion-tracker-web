@@ -34,19 +34,36 @@ export function EntryRow({ entry, now, onClick, selected, onLongPress, entrance,
   )
 }
 
+/** The folder's rows float up one after another as it opens, rise back into it (bottom first) as it closes,
+ *  and sweep away to the side before Delete all removes them - the phone's FolderMotion. */
 export function UncategorizedFolder({ entries, now, onOpen }) {
   const [open, setOpen] = useState(false)
   const [confirm, setConfirm] = useState(false)
+  const [leaving, setLeaving] = useState(null) // 'close' | 'delete'
+  const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const shown = entries.slice(0, 50)
+  const leaveMs = Math.min(shown.length - 1, 10) * 25 + 260
+  const leave = (kind, then) => {
+    if (reduced || !open) { then(); return }
+    setLeaving(kind)
+    setTimeout(() => { then(); setLeaving(null) }, leaveMs)
+  }
+  const toggle = () => { if (leaving) return; if (open) leave('close', () => setOpen(false)); else setOpen(true) }
   return (
-    <div class="folder">
-      <div class="folder-head" onClick={() => setOpen(!open)}>
+    <div class={`folder ${leaving === 'delete' ? 'folder-going' : ''}`} style={{ '--leave-ms': `${leaveMs}ms` }}>
+      <div class="folder-head" onClick={toggle}>
         <Icon name="folder" size={20} color="var(--on-surface-variant)" />
         <span class="grow body-large">Uncategorized ({entries.length})</span>
         <button class="icon-btn muted" title="Delete all uncategorized entries" onClick={(e) => { e.stopPropagation(); setConfirm(true) }}><Icon name="delete" size={20} /></button>
-        <span class="muted"><Icon name={open ? 'expand_less' : 'expand_more'} /></span>
+        <span class={`muted folder-chevron ${open && leaving !== 'close' ? 'open' : ''}`}><Icon name="expand_more" /></span>
       </div>
-      {open && <div class="list" style="margin:0 20px">{entries.slice(0, 50).map((e) => <EntryRow key={e.id} entry={e} now={now} onClick={() => onOpen(e.id)} />)}</div>}
-      {confirm && <Confirm title="Delete all uncategorized entries?" text="This deletes everything in this folder with no language assigned, except Study (it counts in races). This can't be undone." confirmLabel="Delete all" danger onConfirm={deleteAllUncategorized} onClose={() => setConfirm(false)} />}
+      {open && <div class={`list folder-rows ${leaving ? `leaving-${leaving}` : ''}`} style="margin:0 20px">{shown.map((e, i) => (
+        <div key={e.id} class="folder-row" style={{ '--i': Math.min(i, 10), '--j': Math.min(shown.length - 1 - i, 10) }}>
+          <EntryRow entry={e} now={now} onClick={() => onOpen(e.id)} />
+        </div>
+      ))}</div>}
+      {confirm && <Confirm title="Delete all uncategorized entries?" text="This deletes everything in this folder with no language assigned, except Study (it counts in races). This can't be undone." confirmLabel="Delete all" danger
+        onConfirm={() => { if (!open) setOpen(true); leave('delete', deleteAllUncategorized) }} onClose={() => setConfirm(false)} />}
     </div>
   )
 }

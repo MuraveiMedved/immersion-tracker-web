@@ -1362,3 +1362,15 @@ textarea.input { resize: vertical; }
   color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, transparent); }
 .ih-note { display: flex; gap: 8px; align-items: flex-start; padding: 4px 16px 2px; font-size: 12.5px; color: var(--on-surface-variant); }
 .ih-note svg { flex: none; margin-top: 1px; }
+
+/* The Uncategorized folder's rows (the phone's FolderMotion). */
+.folder-chevron { display: inline-grid; transition: transform var(--dur-standard, .25s) var(--ease-enter, ease); }
+.folder-chevron.open { transform: rotate(180deg); }
+.folder-row { animation: folder-in .5s cubic-bezier(.34, 1.4, .64, 1) both; animation-delay: calc(var(--i, 0) * 35ms); }
+.folder-rows.leaving-close .folder-row { animation: folder-up .22s var(--ease-exit, ease-in) forwards; animation-delay: calc(var(--j, 0) * 25ms); }
+.folder-rows.leaving-delete .folder-row { animation: folder-sweep .22s var(--ease-exit, ease-in) forwards; animation-delay: calc(var(--i, 0) * 25ms); }
+.folder.folder-going .folder-head { transition: opacity var(--leave-ms, .4s) var(--ease-exit, ease-in); opacity: 0; }
+@keyframes folder-in { from { opacity: 0; transform: translateY(24px) scale(.97); } }
+@keyframes folder-up { to { opacity: 0; transform: translateY(-18px) scale(.96); } }
+@keyframes folder-sweep { to { opacity: 0; transform: translateX(56px) scale(.92); } }
+@media (prefers-reduced-motion: reduce) { .folder-row, .folder-rows .folder-row { animation: none; } .folder-chevron { transition: none; } }

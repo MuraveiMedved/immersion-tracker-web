@@ -89,7 +89,7 @@
 :root[data-ui='quiet'] .egg-card.compact .egg-stage > div { transform: scale(.75); }
 :root[data-ui='quiet'] .egg-card.compact .bar { height: 3px !important; }
 :root[data-ui='quiet'] .crate-row:not(.normal-look *) { border-width: 1px; border-style: solid; }
-:root[data-ui='quiet'] .list > .entry:last-child::after { display: none; }
+:root[data-ui='quiet'] .list > .entry:last-child::after, :root[data-ui='quiet'] .list > .folder-row:last-child > .entry::after { display: none; }
 /* Figures and rows inside a panel stay flat. */
 :root[data-ui='quiet'] :is(.tile, .qtile, .winner-row):not(.normal-look *) {
   background: transparent !important; border: 0; border-bottom: 1px solid var(--rule); border-radius: 0; box-shadow: none; margin: 0; padding-left: 0; padding-right: 0;
@@ -103,7 +103,7 @@
 :root[data-ui='quiet'] .notice { padding-top: 8px; padding-bottom: 8px; }
 :root[data-ui='quiet'] .entry:not(.normal-look *) { padding-top: 9px; padding-bottom: 9px; position: relative; }
 /* A thin rule under each row, from the title to near the end (the phone's EntryRow in a group). */
-:root[data-ui='quiet'] .list > .entry:not(.normal-look *)::after { content: ''; position: absolute; left: 50px; right: 44px; bottom: 0; height: 1px; background: var(--rule); }
+:root[data-ui='quiet'] :is(.list > .entry, .list > .folder-row > .entry):not(.normal-look *)::after { content: ''; position: absolute; left: 50px; right: 44px; bottom: 0; height: 1px; background: var(--rule); }
 :root[data-ui='quiet'] .entry .title:not(.normal-look *) { font-size: 15px; line-height: 21px; }
 
 /* Goals keep their rounded shape, a thin sheet; only what's being tracked takes any colour. */
