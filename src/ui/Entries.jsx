@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'preact/hooks'
+import { useMemo, useRef, useState } from 'preact/hooks'
 import { useStore, useNow, editEntry, deleteEntries, deleteAllUncategorized, profileById, update, getState, ANKI, PODCAST, READING } from '../store.js'
 import { durationOf, typeLabel, isUnresolved, LISTENING, isCustomType, customType } from '../model/rules.js'
 import { dayLabel, dayStart, formatHm, formatTime, formatDateTime, HOUR } from '../model/time.js'
@@ -36,7 +36,14 @@ export function EntryRow({ entry, now, onClick, selected, onLongPress, entrance,
 
 /** The folder's rows float up one after another as it opens, rise back into it (bottom first) as it closes,
  *  and sweep away to the side before Delete all removes them - the phone's FolderMotion. */
-export function UncategorizedFolder({ entries, now, onOpen }) {
+/** A day's heading or divider in All entries, floating up with its rows as the list opens. */
+function Rise({ entrance, children, ...props }) {
+  const ref = useRiseIn(entrance, true)
+  return <div ref={ref} {...props}>{children}</div>
+}
+
+export function UncategorizedFolder({ entries, now, onOpen, divider = false }) {
+  const wrap = useRef(null)
   const [open, setOpen] = useState(false)
   const [confirm, setConfirm] = useState(false)
   const [leaving, setLeaving] = useState(null) // 'close' | 'delete'
@@ -44,13 +51,26 @@ export function UncategorizedFolder({ entries, now, onOpen }) {
   const shown = entries.slice(0, 50)
   const leaveMs = Math.min(shown.length - 1, 10) * 25 + 260
   const leave = (kind, then) => {
-    if (reduced || !open) { then(); return }
+    if (reduced || (!open && kind === 'close')) { then(); return }
     setLeaving(kind)
-    setTimeout(() => { then(); setLeaving(null) }, leaveMs)
+    setTimeout(() => {
+      if (kind !== 'delete' || !wrap.current) { then(); setLeaving(null); return }
+      // Deleting: once the rows have swept away, the folder (and the divider under it) shrinks to nothing so
+      // the days below glide up into its place instead of jumping.
+      const el = wrap.current
+      el.style.height = `${el.offsetHeight}px`
+      el.style.overflow = 'hidden'
+      requestAnimationFrame(() => {
+        el.style.transition = 'height 260ms cubic-bezier(.2, 0, 0, 1), margin 260ms cubic-bezier(.2, 0, 0, 1)'
+        el.style.height = '0px'
+        el.style.marginBottom = '0px'
+      })
+      setTimeout(() => { then(); setLeaving(null) }, 280)
+    }, open ? leaveMs : 0)
   }
   const toggle = () => { if (leaving) return; if (open) leave('close', () => setOpen(false)); else setOpen(true) }
   return (
-    <div class={`folder ${leaving === 'delete' ? 'folder-going' : ''}`} style={{ '--leave-ms': `${leaveMs}ms` }}>
+    <div ref={wrap} class={`folder ${leaving === 'delete' ? 'folder-going' : ''}`} style={{ '--leave-ms': `${leaveMs}ms` }}>
       <div class="folder-head" onClick={toggle}>
         <Icon name="folder" size={20} color="var(--on-surface-variant)" />
         <span class="grow body-large">Uncategorized ({entries.length})</span>
@@ -62,8 +82,9 @@ export function UncategorizedFolder({ entries, now, onOpen }) {
           <EntryRow entry={e} now={now} onClick={() => onOpen(e.id)} />
         </div>
       ))}</div>}
+      {divider && <div class="divider" style="margin:12px 0" />}
       {confirm && <Confirm title="Delete all uncategorized entries?" text="This deletes everything in this folder with no language assigned, except Study (it counts in races). This can't be undone." confirmLabel="Delete all" danger
-        onConfirm={() => { if (!open) setOpen(true); leave('delete', deleteAllUncategorized) }} onClose={() => setConfirm(false)} />}
+        onConfirm={() => leave('delete', deleteAllUncategorized)} onClose={() => setConfirm(false)} />}
     </div>
   )
 }
@@ -239,22 +260,21 @@ export function Entries({ params, nav }) {
       )}
       {tab === 'stats' && !selecting ? <Stats /> : (
         <div style="margin-top:12px">
-          {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} />}
-          {uncategorized.length > 0 && groups.length > 0 && <div class="divider" style="margin:12px 0" />}
+          {uncategorized.length > 0 && <UncategorizedFolder entries={uncategorized} now={now} onOpen={setDetails} divider={groups.length > 0} />}
           {!groups.length && !uncategorized.length && <div class="empty"><b>No entries yet</b><br /><span class="muted">Start a timer on Home, or log a session you did earlier.</span></div>}
           {groups.map((g, i) => {
             const ids = g.entries.map((e) => e.id)
             const allSel = ids.every((id) => selected.has(id))
             return (
               <div key={g.day}>
-                {i > 0 && !s.settings.quietUi && <div class="divider" style="margin:12px 0" />}
+                {i > 0 && !s.settings.quietUi && <Rise entrance={entrance} class="divider" style="margin:12px 0" />}
                 {/* Folio: the day as a small section label with its total at the end (the phone's day header). */}
-                <div class={`row clickable ${s.settings.quietUi ? 'day-head day-group-head' : ''}`} style={s.settings.quietUi ? undefined : 'padding:4px 0'} onClick={selecting ? () => setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => (allSel ? n.delete(id) : n.add(id))); return n }) : undefined}>
+                <Rise entrance={entrance} class={`row clickable ${s.settings.quietUi ? 'day-head day-group-head' : ''}`} style={s.settings.quietUi ? undefined : 'padding:4px 0'} onClick={selecting ? () => setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => (allSel ? n.delete(id) : n.add(id))); return n }) : undefined}>
                   {selecting && <Icon name={allSel ? 'check_circle' : 'expand_more'} size={18} color={allSel ? 'var(--primary)' : 'var(--on-surface-variant)'} />}
                   {s.settings.quietUi
                     ? <><span class="grow">{dayLabel(g.day, now)}</span><span class="day-total">{formatHm(g.entries.reduce((t, e) => t + durationOf(e, now), 0))}</span></>
                     : <h2>{dayLabel(g.day, now)}</h2>}
-                </div>
+                </Rise>
                 <div class="list">
                   {g.entries.map((e) => (
                     <EntryRow key={e.id} entry={e} now={now} entrance={entrance} riseOnOpen selected={selected.has(e.id)}
