@@ -590,6 +590,19 @@ export function removeImported(source) {
   saveImportHistory(importHistory.filter((r) => r.source !== source))
 }
 
+/** Removes one import's sessions (Import history's trash can): every [source] session whose start
+ *  and end are among [rows], whatever it's counted as now. Returns how many went. */
+export function removeImportedRows(source, rows) {
+  const spans = new Set(rows.map((r) => `${r.start}:${r.end}`))
+  let gone = 0
+  update((s) => {
+    const before = s.entries.length
+    s.entries = s.entries.filter((e) => !(IMPORT_TAGS[source].includes(e.appPackage) && spans.has(`${e.startTimeMillis}:${e.endTimeMillis}`)))
+    gone = before - s.entries.length
+  })
+  return gone
+}
+
 /* Import history (model/importHistory.js) - kept apart from the state, in this browser only. */
 let importHistory = []
 const historyListeners = new Set()

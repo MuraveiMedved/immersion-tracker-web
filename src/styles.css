@@ -1336,3 +1336,17 @@ textarea.input { resize: vertical; }
 @keyframes cat-pop { from { transform: scale(.6); opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .cat-preview-icon svg, .icon-grid.round .icon-cell { animation: none; } .cat-count { transition: none; } }
 .title-field > .muted.small { padding-right: 8px; white-space: nowrap; }
+
+/* Import history: each import is a row that opens to its groups. */
+.ih-event { padding: 0; }
+.ih-event-head { padding: 14px 0; cursor: pointer; border-radius: var(--r-medium, 14px); transition: transform var(--dur-fast, .15s); }
+.ih-event-head:active { transform: scale(.985); }
+.ih-event-head:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.ih-chevron { display: grid; place-items: center; width: 32px; color: var(--on-surface-variant); transition: transform var(--dur-standard, .25s) var(--ease-enter, ease); }
+.ih-event.open .ih-chevron { transform: rotate(180deg); }
+.ih-bar-row { display: flex; align-items: center; gap: 10px; padding-right: 16px; }
+.ih-bar-row .ih-pad { padding-right: 0; }
+.ih-bar-row .ih-bar { margin-top: 12px; }
+.ih-left-pill { margin-top: 12px; padding: 3px 8px; border-radius: var(--r-small, 10px); border: 1px solid var(--outline-variant); font-size: 12.5px; font-weight: 500; color: var(--on-surface-variant); white-space: nowrap; }
+.ih-event-body { padding-bottom: 8px; animation: ih-rise var(--dur-standard, .25s) var(--ease-enter, ease) both; }
+@media (prefers-reduced-motion: reduce) { .ih-chevron, .ih-event-head { transition: none; } .ih-event-body { animation: none; } }

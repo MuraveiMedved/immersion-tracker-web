@@ -2,7 +2,7 @@
 // import, where each group in it went (or that it was left out), and a tap to count a group
 // differently - Listening, Reading, Study, Music or a category of your own, made right there.
 import { useMemo, useState } from 'preact/hooks'
-import { useStore, useImportHistory, saveImportHistory, getImportHistory, rerouteImported, IMPORT_TAGS, PODCAST, READING, ANKI, LISTENING } from '../store.js'
+import { useStore, useImportHistory, saveImportHistory, getImportHistory, rerouteImported, removeImportedRows, IMPORT_TAGS, PODCAST, READING, ANKI, LISTENING } from '../store.js'
 import { summaries, totals, rowsOf, withGroup, earlierGroups } from '../model/importHistory.js'
 import { customType, typeLabel } from '../model/rules.js'
 import { formatHm } from '../model/time.js'
@@ -42,7 +42,7 @@ export function ImportHistoryDialog({ onClose }) {
   const records = useImportHistory()
   const categories = s.settings.customCategories || []
   const [routing, setRouting] = useState(null)
-  const [forgetting, setForgetting] = useState(null)
+  const [removing, setRemoving] = useState(null)
   const earlier = useMemo(() => earlierGroups(records, s.entries, IMPORT_TAGS), [records, s.entries])
   const profile = (id) => s.profiles.find((p) => p.id === id)
 
@@ -64,69 +64,105 @@ export function ImportHistoryDialog({ onClose }) {
   return (
     <Dialog wide title="Import history" onClose={onClose} actions={<button class="btn text" onClick={onClose}>Done</button>}>
       <div class="col" style="gap:12px">
-        <p class="muted small" style="margin:0">What came in from Toggl Track and PolyLogger, and where each part went. Tap a group to count it differently or bring it in.</p>
+        <p class="muted small" style="margin:0">Each import from Toggl Track and PolyLogger, and where everything in it went. Open one to count a part differently, or bring in what was left out.</p>
         {!records.length && !earlier.length && (
           <div class="cat-empty">
             <Icon name="history" size={36} color="var(--on-surface-variant)" />
             <div class="s-title">No imports yet</div>
-            <div class="muted small">Import from Toggl Track or PolyLogger under Backup, and each import shows here.</div>
+            <div class="muted small">Import from Toggl Track or PolyLogger under Imports, and each import shows here.</div>
           </div>
         )}
         {records.map((record) => {
           const list = summaries(record)
           const counted = list.filter((x) => x.group.type != null)
           const left = list.filter((x) => x.group.type == null)
-          const when = new Date(record.atMillis).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+          const when = new Date(record.atMillis).toLocaleDateString(undefined, { dateStyle: 'medium' })
+          const ms = record.rows.reduce((n, r) => n + r.end - r.start, 0)
+          const kept = counted.reduce((n, x) => n + x.count, 0)
+          const keptMs = counted.reduce((n, x) => n + x.ms, 0)
           return (
-            <section key={record.id} class="ih-panel">
-              <header class="ih-head">
-                <span class="ih-badge"><Icon name="file_upload" size={21} /></span>
-                <div class="grow">
-                  <div class="s-title">{SOURCE_NAME[record.source] || record.source}</div>
-                  <div class="muted small">{when}, from {record.fileCount} file{record.fileCount === 1 ? '' : 's'}</div>
-                </div>
-                <button class="icon-btn" title="Forget this import" onClick={() => setForgetting(record)}><Icon name="delete" size={20} /></button>
-              </header>
-              <DestBar totals={totals(record)} categories={categories} />
+            <EventRow key={record.id} icon="file_upload" title={SOURCE_NAME[record.source] || record.source}
+              subtitle={`${when}, ${record.rows.length} sessions, ${formatHm(ms, true)}`} totals={totals(record)} categories={categories}
+              leftOut={left.length} onRemove={() => setRemoving({ record, count: kept, ms: keptMs })}>
               {counted.length > 0 && <div class="ih-label">Counted ({counted.length})</div>}
               {counted.map((x, i) => <GroupRow key={x.group.project} i={i} title={x.group.project || '(No project)'} meta={groupMeta(x.count, x.ms, x.first, x.last)}
                 type={x.group.type} profile={profile(x.group.languageProfileId)} categories={categories} onClick={() => setRouting({ record, group: x.group, count: x.count, ms: x.ms, title: x.group.project || '(No project)' })} />)}
-              {left.length > 0 && <div class="ih-label">Left out ({left.length})</div>}
+              {left.length > 0 && <>
+                <div class="ih-label">Left out ({left.length})</div>
+                <p class="muted small ih-pad" style="margin:0 0 2px">Not counted anywhere yet. Tap one to count it as something.</p>
+              </>}
               {left.map((x, i) => <GroupRow key={x.group.project} i={counted.length + i} title={x.group.project || '(No project)'} meta={groupMeta(x.count, x.ms, x.first, x.last)}
                 type={null} categories={categories} onClick={() => setRouting({ record, group: x.group, count: x.count, ms: x.ms, title: x.group.project || '(No project)' })} />)}
-            </section>
+            </EventRow>
           )
         })}
-        {earlier.length > 0 && (
-          <section class="ih-panel">
-            <header class="ih-head">
-              <span class="ih-badge muted-badge"><Icon name="history" size={21} /></span>
-              <div class="grow s-title">Earlier imports</div>
-            </header>
-            <p class="muted small ih-pad" style="margin:0 0 4px">Brought in before this history was kept, here or on another device, so they're grouped by where they went. What was left out then wasn't saved: import the file again to see it here.</p>
-            {earlier.map((g, i) => <GroupRow key={g.key} i={i} title={SOURCE_NAME[g.source]} meta={groupMeta(g.count, g.ms, g.first, g.last)}
-              type={g.type} profile={profile(g.languageProfileId)} categories={categories} onClick={() => setRouting({ ...g, title: SOURCE_NAME[g.source], earlier: true })} />)}
-          </section>
-        )}
+        {earlier.length > 0 && (() => {
+          const count = earlier.reduce((n, g) => n + g.count, 0)
+          const ms = earlier.reduce((n, g) => n + g.ms, 0)
+          const byType = new Map()
+          for (const g of earlier) byType.set(g.type, (byType.get(g.type) || 0) + g.ms)
+          return (
+            <EventRow key="earlier" icon="history" muted title="Earlier imports" subtitle={`${count} sessions, ${formatHm(ms, true)}`}
+              totals={[...byType.entries()].sort((a, b) => b[1] - a[1])} categories={categories} leftOut={0}
+              onRemove={() => setRemoving({ earlier, count, ms })}>
+              <p class="muted small ih-pad" style="margin:4px 0">Brought in before this history was kept, here or on another device, so they're grouped by where they went. What was left out then wasn't saved: import the file again to see it here.</p>
+              {earlier.map((g, i) => <GroupRow key={g.key} i={i} title={SOURCE_NAME[g.source]} meta={groupMeta(g.count, g.ms, g.first, g.last)}
+                type={g.type} profile={profile(g.languageProfileId)} categories={categories} onClick={() => setRouting({ ...g, title: SOURCE_NAME[g.source], earlier: true })} />)}
+            </EventRow>
+          )
+        })()}
       </div>
       {routing && <RouteDialog target={routing} onApply={(t, l) => apply(routing, t, l)} onClose={() => setRouting(null)} />}
-      {forgetting && <Confirm title="Forget this import?" text="It leaves the history. Sessions it brought in stay where they are; left-out ones can only come back by importing the file again."
-        confirmLabel="Forget" onConfirm={() => saveImportHistory(getImportHistory().filter((r) => r.id !== forgetting.id))} onClose={() => setForgetting(null)} />}
+      {removing && <Confirm title={removing.record ? 'Remove this import?' : 'Remove earlier imports?'}
+        text={`Its ${removing.count} sessions (${formatHm(removing.ms, true)}) go from your history, on all your devices. Import the file again to bring them back.`}
+        confirmLabel="Remove" danger onConfirm={() => {
+          const r = removing
+          const gone = r.record ? removeImportedRows(r.record.source, r.record.rows) : r.earlier.reduce((n, g) => n + removeImportedRows(g.source, g.rows), 0)
+          if (r.record) saveImportHistory(getImportHistory().filter((x) => x.id !== r.record.id))
+          toast(`${gone} sessions removed`)
+        }} onClose={() => setRemoving(null)} />}
     </Dialog>
   )
 }
 
-function DestBar({ totals: list, categories }) {
+function DestBar({ totals: list, categories, showKey = true }) {
   const sum = Math.max(1, list.reduce((n, [, ms]) => n + ms, 0))
   return (
     <div class="ih-pad">
       <div class="ih-bar" role="img" aria-label={list.map(([t, ms]) => `${t == null ? 'Left out' : typeLabel(t)} ${formatHm(ms, true)}`).join(', ')}>
         {list.map(([t, ms]) => <span key={String(t)} style={{ flexGrow: Math.max(ms / sum, 0.01), background: destColor(t, categories) }} />)}
       </div>
-      <div class="ih-key">
+      {showKey && <div class="ih-key">
         {list.map(([t, ms]) => <span key={String(t)}><i style={{ background: destColor(t, categories) }} />{t == null ? 'Left out' : typeLabel(t)} {formatHm(ms, true)}</span>)}
-      </div>
+      </div>}
     </div>
+  )
+}
+
+/** One import as a row: what and when, a bar of where its time went and how much was left out; tapped,
+ *  it opens to its groups. The bin removes it (after asking). */
+function EventRow({ icon, muted, title, subtitle, totals: list, categories, leftOut, onRemove, children }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <section class={`ih-panel ih-event ${open ? 'open' : ''}`}>
+      <div class="ih-event-head" role="button" tabIndex={0} aria-expanded={open} onClick={() => setOpen(!open)}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen(!open))}>
+        <header class="ih-head">
+          <span class={`ih-badge ${muted ? 'muted-badge' : ''}`}><Icon name={icon} size={21} /></span>
+          <div class="grow">
+            <div class="s-title ellipsis">{title}</div>
+            <div class="muted small">{subtitle}</div>
+          </div>
+          <button class="icon-btn" title="Remove this import" aria-label="Remove this import" onClick={(e) => { e.stopPropagation(); onRemove() }}><Icon name="delete" size={20} /></button>
+          <span class="ih-chevron"><Icon name="expand_more" size={22} /></span>
+        </header>
+        <div class="ih-bar-row">
+          <div class="grow"><DestBar totals={list} categories={categories} showKey={open} /></div>
+          {leftOut > 0 && !open && <span class="ih-left-pill">{leftOut} left out</span>}
+        </div>
+      </div>
+      {open && <div class="ih-event-body">{children}</div>}
+    </section>
   )
 }
 
