@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'preact/hooks'
-import { useStore, getState, upsertProfile, deleteProfile, newProfile, setSetting, importEntries, replaceState, importedCount, removeImported, PODCAST, READING, ANKI, LISTENING } from '../store.js'
+import { useStore, getState, upsertProfile, deleteProfile, newProfile, setSetting, importEntries, replaceState, importedCount, removeImported, useImportHistory, saveImportHistory, getImportHistory, PODCAST, READING, ANKI, LISTENING } from '../store.js'
 import { CURATED_PRESETS, PRESETS, presetLabel, schemeFor, isLightPreset, languageFill, LANGUAGE_COLORS, GRADIENTS, mix, withAlpha, deepened, isDarkFor } from '../model/theme.js'
 import { parseToggl, parsePolyLogger, looksLikePolyLogger, guessMapping, toEntries, exportBackup, readJsonBackup, readPhoneBackup } from '../model/imports.js'
 import { formatHm } from '../model/time.js'
@@ -10,6 +10,8 @@ import { BackgroundImage, CustomThemeTiles } from './CustomLook.jsx'
 import { RESUME_HIDE_CHOICES, resumeHideLabel } from './timers.js'
 import { setArachnophobia } from '../model/zoo.js'
 import { CategoriesDialog } from './Categories.jsx'
+import { ImportHistoryDialog } from './ImportHistory.jsx'
+import { makeRecord } from '../model/importHistory.js'
 import { CategoryGoalFields, withCategoryGoals } from './Home.jsx'
 import { Dialog, Confirm, Switch, SettingRow, Block, Seg, ColorTile, GoalModeChoice, LanguageChip, Spinner, TypeIcon, TypeLabel, Icon, toast } from './common.jsx'
 
@@ -30,6 +32,8 @@ export function Settings({ params, nav }) {
   const [restore, setRestore] = useState(null)
   const [removing, setRemoving] = useState(null)
   const [categoriesOpen, setCategoriesOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const history = useImportHistory()
   const languages = s.profiles.filter((p) => !p.isAnki).sort((a, b) => a.sortOrder - b.sortOrder)
   const categories = s.settings.customCategories || []
 
@@ -123,6 +127,10 @@ export function Settings({ params, nav }) {
         })} />
         <SettingRow icon="file_upload" title="Import from Toggl Track" hint="Reports → Detailed → Export CSV (one year per file). Pick several at once." onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'toggl', files }))} />
         <SettingRow icon="file_upload" title="Import from PolyLogger" hint="The CSV PolyLogger exports." onClick={() => pickFile('.csv,text/csv', true, (files) => setImportKind({ kind: 'polylogger', files }))} />
+        {/* What each import brought in and where it went - shown once there's any. */}
+        {(importedCount(s, 'toggl') + importedCount(s, 'polylogger') > 0 || history.length > 0) && (
+          <SettingRow icon="history" title="Import history" hint="Where everything you imported went, and what was left out" onClick={() => setHistoryOpen(true)} />
+        )}
         {/* Undoing an import - shown only while there's one to undo. */}
         {[['toggl', 'Toggl Track'], ['polylogger', 'PolyLogger']].map(([source, name]) => {
           const n = importedCount(s, source)
@@ -139,7 +147,8 @@ export function Settings({ params, nav }) {
 
       {editing != null && <LanguageEdit id={editing} onClose={() => setEditing(null)} />}
       {categoriesOpen && <CategoriesDialog onClose={() => setCategoriesOpen(false)} />}
-      {importKind && <ImportDialog kind={importKind.kind} files={importKind.files} onClose={() => setImportKind(null)} />}
+      {importKind && <ImportDialog kind={importKind.kind} files={importKind.files} onClose={() => setImportKind(null)} onOpenHistory={() => setHistoryOpen(true)} />}
+      {historyOpen && <ImportHistoryDialog onClose={() => setHistoryOpen(false)} />}
       {phone && <PhoneImportDialog data={phone} onClose={() => setPhone(null)} />}
       {removing && <Confirm title={`Remove ${removing.n} imported sessions?`} text={`Every session imported from ${removing.name} is deleted, here and on your other devices. Your CSV files aren't touched - you can import them again.`} confirmLabel="Remove" danger onConfirm={() => { removeImported(removing.source); toast(`${removing.n} sessions removed`) }} onClose={() => setRemoving(null)} />}
       {restore && <Confirm title="Restore this backup?" text="Everything in this browser will be replaced with the backup." confirmLabel="Restore" danger onConfirm={() => { replaceState(restore); toast('Backup restored') }} onClose={() => setRestore(null)} />}
@@ -444,9 +453,9 @@ function EntryLabelPreview({ style }) {
   )
 }
 
-const TYPE_OPTIONS = [[null, 'Skip'], [PODCAST, 'Listening'], [READING, 'Reading'], [ANKI, 'Study'], [LISTENING, 'Music']]
+const TYPE_OPTIONS = [[null, 'Leave out'], [PODCAST, 'Listening'], [READING, 'Reading'], [ANKI, 'Study'], [LISTENING, 'Music']]
 
-function ImportDialog({ kind, files, onClose }) {
+function ImportDialog({ kind, files, onClose, onOpenHistory }) {
   const s = useStore()
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
@@ -486,7 +495,10 @@ function ImportDialog({ kind, files, onClose }) {
   const entries = rows ? toEntries(rows, mapping) : []
   const run = () => {
     const added = importEntries(entries)
-    toast(`Added ${added} entries. Anything imported before was skipped.`)
+    // Kept whole, left-out groups too, so Import history can show it and count it differently later.
+    const source = kind === 'polylogger' || rows.every((r) => r.source === 'polylogger') ? 'polylogger' : 'toggl'
+    saveImportHistory([makeRecord({ source, fileCount: files.length, rows, mapping }), ...getImportHistory()])
+    toast(`Added ${added} entries. Anything imported before was skipped.`, { label: 'See history', run: onOpenHistory })
     onClose()
   }
   return (

@@ -51,7 +51,8 @@ export function NewCategoryDialog({ onCreated, onClose }) {
     onSaved={onCreated} onClose={onClose} />
 }
 
-/** Name, icon (one of 30, six to a row) and whether it counts as immersion. */
+/** Name, icon (one of 30, six to a row) and whether it counts as immersion - with the category as it
+ *  will look at the top, kept live while it's made (the phone's CategoryEditDialog). */
 function CategoryEditDialog({ category, isNew, takenNames, onClose, onSaved }) {
   const [name, setName] = useState(category.name)
   const [icon, setIcon] = useState(categoryIconKey(category.icon))
@@ -68,29 +69,42 @@ function CategoryEditDialog({ category, isNew, takenNames, onClose, onSaved }) {
     else onClose()
   }
   return (
-    <Dialog title={isNew ? 'New category' : 'Edit category'} sheet={false} onClose={onClose} actions={<>
+    <Dialog title={isNew ? 'New category' : 'Edit category'} onClose={onClose} actions={<>
       <button class="btn text" onClick={onClose}>Cancel</button>
-      <button class="btn" disabled={!canSave} onClick={save}>Save</button>
+      <button class="btn grow" disabled={!canSave} onClick={save}>{isNew ? 'Create' : 'Save'}</button>
     </>}>
-      <div class="col" style="gap:12px">
+      <div class={`col cat-edit ${immersion ? '' : 'apart'}`} style="gap:14px">
+        <div class="cat-preview">
+          <span class="cat-preview-icon"><Icon key={icon} name={icon} size={30} /></span>
+          <div class="grow" style="min-width:0">
+            <div class={`cat-preview-name ${trimmed ? '' : 'empty'}`}>{trimmed || 'Watching'}</div>
+            <div class="cat-preview-kind small">{immersion ? 'Counts as immersion' : 'Kept apart from immersion'}</div>
+          </div>
+        </div>
         <label class="field">Name
           <span class={`title-field ${clash ? 'error' : ''}`}>
-            <Icon name={icon} size={20} />
             <input placeholder="Watching" aria-label="Name" maxLength={CATEGORY_NAME_MAX} value={name} autoFocus={isNew}
               onInput={(e) => setName(e.currentTarget.value.slice(0, CATEGORY_NAME_MAX))} onKeyDown={(e) => e.key === 'Enter' && save()} />
+            <span class="muted small">{name.length} / {CATEGORY_NAME_MAX}</span>
           </span>
           {clash && <span class="small err">There's already one with that name</span>}
         </label>
+        <div class="form-label">How it counts</div>
+        <div class="cat-counts" role="radiogroup" aria-label="How it counts">
+          <button type="button" role="radio" aria-checked={immersion} class={`cat-count ${immersion ? 'on' : ''}`} style="--c: var(--primary)" onClick={() => setImmersion(true)}>
+            <Icon name="auto_awesome" size={20} /><b>Counts as immersion</b><span class="muted small">Adds to Today, Momentum, races, the Zoo and the General goal</span>
+          </button>
+          <button type="button" role="radio" aria-checked={!immersion} class={`cat-count ${!immersion ? 'on' : ''}`} style="--c: var(--secondary)" onClick={() => setImmersion(false)}>
+            <Icon name="adjust" size={20} /><b>Kept apart</b><span class="muted small">Its own time and goals, like Study</span>
+          </button>
+        </div>
         <div class="form-label">Icon</div>
-        <div class="icon-grid" role="radiogroup" aria-label="Icon">
-          {CATEGORY_ICON_KEYS.map((key) => (
+        <div class="icon-grid round" role="radiogroup" aria-label="Icon">
+          {CATEGORY_ICON_KEYS.map((key, i) => (
             <button key={key} type="button" role="radio" aria-checked={key === icon} aria-label={key.replace(/_/g, ' ')} title={key.replace(/_/g, ' ')}
-              class={`icon-cell ${key === icon ? 'on' : ''}`} onClick={() => setIcon(key)}><Icon name={key} size={22} /></button>
+              class={`icon-cell ${key === icon ? 'on' : ''}`} style={{ '--row': Math.floor(i / 6) }} onClick={() => setIcon(key)}><Icon name={key} size={22} /></button>
           ))}
         </div>
-        <SettingRow title="Counts as immersion" hint="Its time adds to Today, Momentum, races, the Zoo and the General goal, like Listening and Reading. Off, it stays apart like Study.">
-          <Switch checked={immersion} onChange={setImmersion} />
-        </SettingRow>
       </div>
     </Dialog>
   )

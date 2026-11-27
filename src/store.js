@@ -2,6 +2,7 @@
 // told about each save over a BroadcastChannel and reload, so two windows never fight.
 import { useEffect, useState } from 'preact/hooks'
 import { localZone } from './model/time.js'
+import { HISTORY_KEY, toEntries as historyEntries, reasonFor as historyReason } from './model/importHistory.js'
 import { ANKI, PODCAST, READING, LISTENING, setCustomCategories, cleanCustomGoals, customType } from './model/rules.js'
 
 const DB_NAME = 'immersion-tracker'
@@ -585,6 +586,61 @@ export const importedCount = (s, source) => s.entries.filter((e) => IMPORT_TAGS[
  *  be imported again. */
 export function removeImported(source) {
   update((s) => { s.entries = s.entries.filter((e) => !IMPORT_TAGS[source].includes(e.appPackage)) })
+  // Its history would only describe sessions that are gone.
+  saveImportHistory(importHistory.filter((r) => r.source !== source))
+}
+
+/* Import history (model/importHistory.js) - kept apart from the state, in this browser only. */
+let importHistory = []
+const historyListeners = new Set()
+export async function loadImportHistory() {
+  const saved = await readSaved(HISTORY_KEY)
+  importHistory = Array.isArray(saved) ? saved : []
+  historyListeners.forEach((l) => l())
+  return importHistory
+}
+export function saveImportHistory(records) {
+  importHistory = [...records].sort((a, b) => b.atMillis - a.atMillis)
+  writeSaved(importHistory, HISTORY_KEY)
+  historyListeners.forEach((l) => l())
+}
+export const getImportHistory = () => importHistory
+export function useImportHistory() {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const l = () => setTick((n) => n + 1)
+    historyListeners.add(l)
+    loadImportHistory()
+    return () => historyListeners.delete(l)
+  }, [])
+  return importHistory
+}
+
+/** Counts imported sessions differently (the phone's TrackingRepository.rerouteImported): the
+ *  [source] sessions whose start and end are in [rows] and that are now [from] (null: left out, so
+ *  none are here - they're added) become [to] in [languageProfileId], or go when [to] is null. A
+ *  session deleted by hand since isn't brought back by a move. Returns how many changed. */
+export function rerouteImported(source, rows, from, to, languageProfileId) {
+  if (from == null) return to == null ? 0 : importEntries(historyEntries(source, rows, to, languageProfileId, localZone()))
+  const spans = new Set(rows.map((r) => `${r.start}:${r.end}`))
+  const language = to === LISTENING ? null : languageProfileId ?? null
+  let changed = 0
+  update((s) => {
+    const mine = (e) => IMPORT_TAGS[source].includes(e.appPackage) && e.contentType === from && spans.has(`${e.startTimeMillis}:${e.endTimeMillis}`)
+    const taken = new Set(s.entries.map((e) => `${e.startTimeMillis}:${e.endTimeMillis}:${e.contentType}`))
+    const drop = new Set()
+    for (const e of s.entries) {
+      if (!mine(e)) continue
+      changed++
+      // Gone when left out - or already there as the new type, so it isn't doubled.
+      if (to == null || (to !== from && taken.has(`${e.startTimeMillis}:${e.endTimeMillis}:${to}`))) { drop.add(e); continue }
+      e.contentType = to
+      e.languageProfileId = language
+      e.detectionReason = historyReason(source, language)
+    }
+    if (drop.size) s.entries = s.entries.filter((e) => !drop.has(e))
+  })
+  return changed
 }
 
 export function deleteAllUncategorized() {
